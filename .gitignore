@@ -1,0 +1,26 @@
+# Installed on each computer by "Install missing tools" (portable Node.js, Codex, Gemini)
+.runtime/
+
+# Logs and state of this computer
+.jobs/
+
+# Books, their intermediate work and the translations: each user's own data
+books/
+
+# Secrets never belong in the repository (the application keeps none in this folder)
+.env
+.env.*
+*.pem
+*.key
+
+# Assistant session notes
+.remember/
+.claude/
+graphify-out/
+
+# Python and operating system files
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+Thumbs.db

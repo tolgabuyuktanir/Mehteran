@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Translation Desk</title>
+<link rel="stylesheet" href="/style.css">
+<script>window.TOKEN = "__TOKEN__";</script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="mark">ت</span>
+    <div>
+      <h1 data-i18n="app_title"></h1>
+      <p data-i18n="app_subtitle"></p>
+    </div>
+  </div>
+  <div class="top-right">
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" aria-controls="setup" data-tab="setup" data-i18n="tab_setup"></button>
+      <button type="button" class="tab" role="tab" aria-controls="books" data-tab="books" data-i18n="tab_books"></button>
+      <span class="tab-sep" aria-hidden="true"></span>
+      <button type="button" class="tab quiet" role="tab" aria-controls="workflow" data-tab="workflow" data-i18n="tab_workflow"></button>
+      <button type="button" class="tab quiet" role="tab" aria-controls="prompts" data-tab="prompts" data-i18n="tab_prompts"></button>
+    </nav>
+    <div class="lang-switch" role="group" aria-label="Language / Dil">
+      <button type="button" data-ui-lang="tr">TR</button>
+      <button type="button" data-ui-lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- SETUP -->
+  <section id="setup" class="panel" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="setup_title"></h2>
+        <p class="muted" data-i18n="setup_intro"></p>
+      </div>
+      <button type="button" class="btn" id="tools-refresh" data-i18n="refresh_status"></button>
+    </div>
+    <section class="card box onboarding" id="onboarding"></section>
+    <div id="tools" class="tool-grid"></div>
+
+    <details class="sub flow-box">
+      <summary data-i18n="flow_title"></summary>
+      <div id="flow" class="flow"></div>
+      <button type="button" class="btn small" data-goto="workflow" data-i18n="edit_workflow"></button>
+    </details>
+  </section>
+
+  <!-- WORKFLOW -->
+  <section id="workflow" class="panel" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="workflow_title"></h2>
+        <p class="muted" data-i18n="workflow_intro"></p>
+      </div>
+      <div class="row">
+        <span class="badge warn" id="board-dirty" hidden data-i18n="unsaved"></span>
+        <button type="button" class="btn" id="board-preset" data-i18n="preset"></button>
+        <button type="button" class="btn" id="board-revert" data-i18n="revert"></button>
+        <button type="button" class="btn primary" id="board-save" data-i18n="save"></button>
+      </div>
+    </div>
+    <div class="board">
+      <aside class="palette" id="palette"></aside>
+      <div>
+        <div id="board-warnings"></div>
+        <ol class="steps" id="steps"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKS -->
+  <section id="books" class="panel" role="tabpanel" hidden>
+    <div class="notice warn banner" id="setup-banner" hidden>
+      <span data-i18n="setup_banner"></span>
+      <button type="button" class="btn small" data-goto="setup" data-i18n="go_setup"></button>
+    </div>
+    <div class="books">
+      <aside class="book-list">
+        <h2 data-i18n="tab_books"></h2>
+        <ul id="book-list"></ul>
+        <form id="new-book" class="stack">
+          <label for="new-book-name" data-i18n="new_book"></label>
+          <div class="row">
+            <input id="new-book-name" data-i18n-placeholder="new_book_placeholder" required>
+            <button type="submit" class="btn primary" data-i18n="add"></button>
+          </div>
+        </form>
+      </aside>
+      <div id="book" class="book-detail"></div>
+    </div>
+  </section>
+
+  <!-- PROMPTS -->
+  <section id="prompts" class="panel" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="tab_prompts"></h2>
+        <p class="muted" data-i18n="prompts_intro"></p>
+      </div>
+    </div>
+    <div class="prompts">
+      <ul id="prompt-list" class="prompt-list"></ul>
+      <div id="prompt" class="prompt-editor"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="reader" aria-labelledby="reader-title">
+  <div class="dialog-head">
+    <h3 id="reader-title"></h3>
+    <div class="row">
+      <a id="reader-download" class="btn" href="#" data-i18n="download"></a>
+      <button type="button" class="btn" id="reader-close" data-i18n="close"></button>
+    </div>
+  </div>
+  <pre id="reader-text" class="reader"></pre>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>

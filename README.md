@@ -1,0 +1,199 @@
+# Translation Pipeline
+
+[Türkçe](README.tr.md)
+
+Translates Turkish Islamic books into new languages. The Turkish source is the authority. Existing translations of the same book in related languages are used as references. ChatGPT, Gemini and Claude translate, review and check the text in turn. The result is the translated book and a report for the human translator.
+
+Example: for a Norwegian translation, the Turkish book is the source; the Danish and Swedish translations are the references.
+
+It runs on macOS, Windows and Linux. The application is available in Turkish and English. The web interface has a TR / EN switch. On the command line, use `--lang tr` or `--lang en`; the default is `[general] language` in `config.toml`.
+
+## Getting started (new users)
+
+You do not need to install anything first. An internet connection is enough.
+
+1. Download the application and unpack the zip file into a folder (for example Documents/Translation).
+2. Open the application:
+   - **macOS:** right-click `Open Interface.command`, choose **Open**, and click **Open** again in the warning. You need this only the first time; macOS asks this for files downloaded from the internet.
+     If you see "you do not have appropriate access privileges": open Terminal, type `sh ` (with a space), drag `Open Interface.command` into the Terminal window and press Enter.
+   - **Windows:** double-click `Open Interface.bat`. If "Windows protected your PC" appears, click **More info**, then **Run anyway**.
+3. On the first start, if the computer has no suitable Python, the application installs a private Python for itself (a minute or two). Then the interface opens in the browser.
+4. Follow the **Getting started** list on the **Setup** tab:
+   - **Install missing tools:** installs Claude Code, Codex and Gemini. When needed, it also installs Node.js into the application's own folder. No administrator rights are needed.
+   - Sign in with the "With … account" button on each tool's card. The card shows the subscription needed and the steps.
+   - Add your first book on the **Books** tab.
+
+All three tools are installed: Claude Code, Codex and Gemini CLI. The accounts you need depend on the tools that your workflow uses: a Claude Pro/Max subscription (or Anthropic Console), a paid ChatGPT plan (or an OpenAI API key), and, if you use Gemini, a Google account that Gemini CLI accepts (or a Gemini API key). Google no longer accepts free personal accounts in Gemini CLI. The default workflow uses all three tools. Without an account for one of the tools, the steps of that tool do not work; assign another model to those steps on the **Workflow** tab. You can change which tool does which step on the **Workflow** tab.
+
+Everything the application installs stays in its own folder (`.runtime/`, about 0.7 GB). To remove the application, delete the folder. Claude Code and the private Python (uv) go into your user folder (`~/.local/bin`).
+
+## Web interface (recommended)
+
+To open the interface, double-click `Open Interface.command` (macOS) or `Open Interface.bat` (Windows). From a terminal: `./translate ui` (Windows: `translate ui`).
+
+The browser opens `http://127.0.0.1:8765/`. The interface runs while the terminal window stays open.
+
+Nothing needs to be installed in advance (see "Getting started" above). The interface has four tabs:
+
+| Tab | What you do there |
+|---|---|
+| Setup | Installs Claude Code, Codex and Gemini CLI. Signs in to each of them. "Test" checks that a tool answers. Shows which tool does which step. |
+| Workflow | Assigns a tool and model to each step by drag and drop (see below). |
+| Books | Adds books. Uploads the Turkish source and the reference translations. Selects the target language and starts or stops the translation. Shows the progress and the log. Reads the translation and the report, and exports them as Markdown, Word, PDF or HTML. |
+| Instructions | Edits the instructions given to the models. Restores changed instructions to the default. |
+
+Sign-in methods:
+
+- Claude: "With Claude account" opens a terminal window. Sign in in the browser.
+- Codex (ChatGPT): "With ChatGPT account" opens a terminal window. Alternative: an OpenAI API key.
+- Gemini: "With Google account" opens a terminal window. When Gemini starts, sign in with Google, then type `/quit`. Then check with the "Test" button that the account is accepted. Alternative: an API key from https://aistudio.google.com/apikey (saved in `~/.gemini/.env`).
+
+After you sign in, click "Refresh status".
+
+Security: the interface is reachable only from this computer (`127.0.0.1`). Each start creates a new session key, so other web sites cannot send commands to the server. Uploaded files are checked by content; the maximum file size is 300 MB.
+
+The interface runs a book with the `./translate run` command. A started translation continues when the interface closes. When the interface opens again, it shows the running translation and can stop it.
+
+## Workflow tab: which model does which step
+
+The steps are fixed; each step uses the result of the one before. You choose which tool and model does each step:
+
+- Drag a model card from the left onto a step, or choose it from the list in the step.
+- The two review steps take up to 4 models; they run in parallel and independently.
+- Add a model under a tool by typing its name (for example `opus`, or a Gemini model from "Fetch model list"). "Test" sends a short request, to check that the name is valid and the tool answers.
+- The page warns when a model checks its own work, for example when the translating model is also the reviewer. These are warnings; you can still save.
+- "Diagram assignment" restores the assignment of the "Translation and Review Workflow" diagram. Save writes the `[stages]` section of `config.toml`; it applies to runs started afterwards.
+
+Adding, removing or reordering steps is deliberately not possible: the steps depend on each other (the reconciliation needs two reviews), and the reliability of the result depends on each change being checked by a different model.
+
+## Export
+
+The pipeline writes Markdown (`output/<lang>.md`, `output/<lang>.report.md`). In the Books tab you can export each of them:
+
+- Word (.docx): headings as Word headings, footnotes as real Word footnotes, right-to-left layout for Arabic, Persian, Urdu and similar languages.
+- PDF: opens a print-ready page; choose "Save as PDF" in the print dialog. The browser's fonts are used, so every script prints correctly.
+- HTML and Markdown.
+
+## Long books, usage limits and sleep
+
+- Before you start, the Books tab shows how many segments will be processed, how many model calls each tool needs, and an estimated time. While the run is going, it shows the current step, the elapsed time and the remaining calls and time (measured from the run's own speed).
+- When a tool reaches its usage limit (quota), the run does not stop. All requests to that tool wait until the limit resets, then continue by themselves. If the tool does not say when the limit resets, the run waits `quota_wait_minutes` (default 30) and tries again; after `quota_max_hours` (default 24) it gives up. The Books tab and the Setup tab show the wait and the time it ends.
+- The computer is kept awake while a translation runs (`keep_awake`; macOS, Windows, and Linux with systemd). On a laptop, keep the lid open and the computer plugged in: when the lid closes, the computer still sleeps and the translation stops. Click "Start" again to continue.
+- Segments that were not found in a reference translation are listed under the reference.
+
+## Command line
+
+On Windows, write `translate` instead of `./translate`.
+
+```sh
+./translate setup                       # checks the tools
+./translate new <book>                  # creates a book folder
+./translate run <book> <lang>           # translates
+./translate status [book]               # shows the progress
+./translate ui                          # starts the web interface
+```
+
+`run` options:
+
+| Option | Meaning |
+|---|---|
+| `--refs da,sv` | Uses only these reference languages. Default: all languages in `references/`. |
+| `--segments 1-3` | Processes only these segments. `1-5,9` is also valid. |
+| `--until glossary` | Stops after this stage. |
+| `--redo translate` | Deletes the output of this stage and of the later stages for the selected segments, and produces it again. |
+| `--parallel 5` | Number of requests that run at the same time. |
+
+`run` continues where it stopped. If an error or a usage limit stops the work, run the same command again. Finished segments are not produced again.
+
+## Recommended way of working
+
+Review the glossary and a few segments before you translate the whole book.
+
+1. Extract only the glossary: `./translate run ilmihal no --until glossary`
+2. Open `glossary/no.tsv` and correct the renderings. This file is shared by all books in that language.
+3. Translate the first three segments as a trial, and read the output: `./translate run ilmihal no --segments 1-3`
+4. If the result is good, run the whole book: `./translate run ilmihal no`
+5. Give the book and `output/no.report.md` to the human translator. After the translator, a human editor reads the book.
+
+If you change the glossary later, produce the translation again: `./translate run ilmihal no --redo translate`
+
+## Workflow
+
+Each segment goes through these steps in order. The numbers are the steps of the "Translation and Review Workflow" diagram.
+
+| Step | Stage | What it does | Default tool |
+|---|---|---|---|
+| preparation | `prepare` | Converts the source and the references to text. Splits the source into segments of about 6000 characters. | none |
+| preparation | `align` | Finds each Turkish segment in the reference translations. | Gemini |
+| preparation | `glossary` | Extracts religious terms and proper names. Adds only new terms to `glossary/<lang>.tsv`. | Claude |
+| 1 | `translate` | First translation, with the Turkish source, the reference passages and the glossary. | ChatGPT |
+| 2 | `review1` | Review: compares the translation with the Turkish source sentence by sentence and reports the issues. | Gemini |
+| 3 | `revise1` | Weighs each finding against the Turkish source. Applies correct findings and rejects the others with a reason. | ChatGPT |
+| 4 | `source_check` | Compares the text with the Turkish source from the start, without relying on the earlier steps, and corrects the errors. | Claude |
+| 5a, 5b | `review2` | Second independent review: two models write findings reports in parallel, without seeing each other. | ChatGPT and Gemini |
+| 6 | `reconcile` | Reconciles the two reports against the Turkish source and produces the final text. | Claude |
+| delivery | `assemble` | Joins the segments, runs the mechanical checks and writes the report. | none |
+| 7 | | The human translator receives the book and the report. Then a human editor reads it. | human |
+
+The reason for this order: each step that changes the text is checked by a model that did not make the change. Gemini reviews ChatGPT's translation. ChatGPT and Gemini check Claude's corrections from step 4.
+
+Every text a model returns (steps 1, 3, 4 and 6) passes a completeness gate before the next step uses it: it must have the same paragraphs and footnote marks as the source, a correction must not make the text noticeably shorter, and no long paragraph may lose a large part of its text. A rejected answer is requested again (up to 3 times); if it is still incomplete, the segment is marked as failed and is not passed on. Segments that are not finished appear in the output as a visible `[[MISSING SEGMENT …]]` line and are listed in the report.
+
+The mechanical checks use no AI. They compare the translation with the source: Arabic-script passages, numbers, footnote marks and their texts, number of paragraphs, headings and sentences per paragraph, length of the translation.
+
+The report lists: the mechanical warnings, all critical findings, the major findings that were not accepted, and the segments without a reference passage. The models write their explanations in the interface language of the run. All findings and decisions are in the `revise1`, `source_check` and `reconcile` folders under `work/<lang>/`, one `.json` file per segment. The text of each step is in the same folders, so you can see in which step a sentence changed.
+
+## Folders
+
+```
+Open Interface.command  starts the web interface (macOS, double-click)
+Open Interface.bat      starts the web interface (Windows, double-click)
+translate, translate.cmd  command-line launcher (macOS/Linux, Windows)
+config.toml             which tool and model does which stage, language codes
+prompts/                instructions for the models (the translation rules are here)
+prompts/defaults/       the original instructions; "Restore default" uses them
+glossary/<lang>.tsv     one glossary per language; edited by hand; shared by all books
+books/<book>/
+  source/               the Turkish book (one file)
+  references/           existing translations: da.docx, sv.epub ...
+  work/                 intermediate files; produced by the pipeline
+  output/               <lang>.md and <lang>.report.md
+  logs/                 the log of each run
+pipeline/               the code (pipeline/i18n.py: messages; pipeline/ui/: web interface)
+```
+
+Supported file types: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. If possible, supply `.docx` or `.epub`. From a PDF, paragraph breaks and footnotes do not come out reliably, and reading a PDF needs the `pdftotext` program (Poppler or Xpdf); the interface checks this when you upload.
+
+## Configuration
+
+In `config.toml`:
+
+- `[stages]`: the tool and model for each stage, as `provider` or `provider/model`. The Workflow tab edits this section.
+- `[providers.*]`: the commands of the tools. If `model` is empty, the tool's default model is used.
+- `[languages]`: language codes. For a new language, add one line, for example `tg = "Tajik"`. The models see the English name.
+- `[general]`: interface language, segment size, number of parallel requests, timeout, usage-limit waiting, keeping awake.
+
+The translation rules are in `prompts/translate.md`. Examples: how verses and hadiths are translated, keeping Arabic expressions, adding no explanations. If your publishing policy is different, edit this file. The other prompts: `review.md` (steps 2 and 5), `revise.md` (steps 3 and 6), `source_check.md` (step 4).
+
+## Limits
+
+- The output is Markdown; export gives Word, PDF and HTML. Headings and footnotes are kept. Bold, italics and tables of the source are not. Typesetting is a separate step.
+- Windows support is written for and tested on macOS only; it has not run on a Windows computer yet.
+- If the source file changes after the first run, the pipeline stops. To start again with a new source, click "Reset work" in the interface, or delete `books/<book>/work/`.
+- If a reference translation is organised very differently from the Turkish book, some segments have no reference passage. These segments are translated without a reference and listed in the report.
+- AI review does not replace human review. Before publication, the human translator and the human editor must read the book.
+
+## Development
+
+The code, the comments and the names are in English. User-facing texts are in two languages:
+
+- Python messages: `pipeline/i18n.py` (`MESSAGES`, a `tr` and an `en` text for each key)
+- Web interface texts: the `I18N` dictionary at the top of `pipeline/ui/app.js`
+
+A new message needs both languages. A test checks that every Python message has both languages with the same placeholders.
+
+```sh
+python3 -m unittest discover -s tests
+```
+
+The tests make no real AI calls. They use a fake tool (`tests/fake_llm.py`).

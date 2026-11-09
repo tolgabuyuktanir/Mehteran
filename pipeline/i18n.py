@@ -1,0 +1,430 @@
+"""User-facing messages in Turkish and English.
+
+The language is chosen per web request (set_request) or once per process (set_default: command line,
+or the TP_LANG environment variable that the web interface passes to the pipeline process).
+Prompts sent to the models are not translated; only the language of the notes they write changes (note_language).
+"""
+
+from __future__ import annotations
+
+import os
+import threading
+
+LANGUAGES = ("tr", "en")
+_default = os.environ.get("TP_LANG") if os.environ.get("TP_LANG") in LANGUAGES else "tr"
+_local = threading.local()
+
+
+def set_default(lang: str | None) -> None:
+    global _default
+    if lang in LANGUAGES:
+        _default = lang
+
+
+def set_request(lang: str | None) -> None:
+    """Language for the current thread only (one web request)."""
+    _local.lang = lang if lang in LANGUAGES else None
+
+
+def current() -> str:
+    return getattr(_local, "lang", None) or _default
+
+
+def note_language() -> str:
+    """The language in which the models write explanations, notes and reasons."""
+    return {"tr": "Turkish", "en": "English"}[current()]
+
+
+def t(key: str, **values) -> str:
+    text = MESSAGES[key][current()]
+    return text.format(**values) if values else text
+
+
+MESSAGES = {
+    # --- general ---
+    "error": {"tr": "HATA", "en": "ERROR"},
+    "interrupted": {"tr": "Durduruldu. Aynı komutla kaldığı yerden devam edebilirsiniz.",
+                    "en": "Stopped. Run the same command again to continue where it stopped."},
+    "config_missing": {"tr": "Ayar dosyası yok: {path}", "en": "Configuration file not found: {path}"},
+    "config_invalid": {"tr": "config.toml okunamadı: {error}", "en": "Cannot read config.toml: {error}"},
+    "unknown_language": {
+        "tr": "'{code}' dil kodu tanımlı değil. config.toml dosyasında [languages] altına ekleyin, örnek: {code} = \"Language name\"",
+        "en": "Language code '{code}' is not defined. Add it under [languages] in config.toml, for example: {code} = \"Language name\""},
+
+    # --- documents ---
+    "unsupported_file": {"tr": "Desteklenmeyen dosya türü: {name} (desteklenen: {supported})",
+                         "en": "Unsupported file type: {name} (supported: {supported})"},
+    "pdftotext_missing": {
+        "tr": "{name}: PDF okumak için 'pdftotext' gerekli (brew install poppler). Mümkünse kitabı .docx veya .epub olarak verin.",
+        "en": "{name}: reading a PDF needs 'pdftotext' (brew install poppler). If possible, supply the book as .docx or .epub."},
+    "xml_entity": {"tr": "Dosyadaki XML varlık (ENTITY) tanımı içeriyor; güvenlik nedeniyle okunmadı.",
+                   "en": "The XML in the file contains an entity (ENTITY) declaration; it was not read for security reasons."},
+    "epub_missing_part": {"tr": "EPUB dosyası eksik: içindeki {name} bulunamadı.", "en": "The EPUB file is incomplete: {name} is missing inside it."},
+    "zip_member_too_large": {"tr": "Dosyanın içindeki {name} çok büyük; okunmadı.",
+                             "en": "{name} inside the file is too large; it was not read."},
+
+    # --- providers ---
+    "provider_not_configured": {"tr": "config.toml dosyasında [providers.{name}] tanımlı değil.",
+                                "en": "[providers.{name}] is not defined in config.toml."},
+    "no_answer_in_time": {"tr": "{seconds} saniyede yanıt gelmedi", "en": "no answer within {seconds} seconds"},
+    "command_not_found": {"tr": "'{command}' komutu bulunamadı. './translate setup' ile denetleyin.",
+                          "en": "Command '{command}' not found. Check with './translate setup'."},
+    "empty_answer": {"tr": "çıkış kodu {code}, boş yanıt", "en": "exit code {code}, empty answer"},
+    "llm_failed": {"tr": "{name} yanıt vermedi: {error}", "en": "{name} did not answer: {error}"},
+    "stopped": {"tr": "durduruldu", "en": "stopped"},
+    "quota_waiting": {"tr": "{name} kullanım sınırına ulaştı; {time} saatine kadar bekleniyor, sonra kendiliğinden devam edecek.",
+                      "en": "{name} reached its usage limit; waiting until {time}, then it continues by itself."},
+    "quota_hit": {"tr": "{name} kullanım sınırına ulaştı. Yeniden deneme: {time}.",
+                  "en": "{name} reached its usage limit. Try again at {time}."},
+    "quota_gave_up": {"tr": "{name} kullanım sınırı çok uzun sürdü; bekleme bırakıldı. Daha sonra yeniden başlatın.",
+                      "en": "The usage limit of {name} lasted too long; stopped waiting. Start again later."},
+    "bad_format": {"tr": "{name} beklenen biçimde yanıt vermedi: {error}",
+                   "en": "{name} did not answer in the expected format: {error}"},
+
+    # --- mechanical checks ---
+    "check_arabic_missing": {"tr": "Arap harfli {count} ibare çeviride aynen yer almıyor: {sample}",
+                             "en": "{count} Arabic-script passages do not appear unchanged in the translation: {sample}"},
+    "check_numbers_missing": {"tr": "Kaynaktaki şu sayılar çeviride yok: {numbers}",
+                              "en": "These numbers of the source are missing in the translation: {numbers}"},
+    "check_numbers_extra": {"tr": "Çeviride kaynakta olmayan sayılar var: {numbers}",
+                            "en": "The translation has numbers that are not in the source: {numbers}"},
+    "check_footnotes": {"tr": "Dipnot işaretleri ([^n]) kaynakla aynı değil.",
+                        "en": "The footnote marks ([^n]) are not the same as in the source."},
+    "check_paragraphs": {"tr": "Paragraf sayısı farklı: kaynak {source}, çeviri {translation}.",
+                         "en": "Different number of paragraphs: source {source}, translation {translation}."},
+    "check_headings": {"tr": "Başlık sayısı farklı: kaynak {source}, çeviri {translation}.",
+                       "en": "Different number of headings: source {source}, translation {translation}."},
+    "check_too_short": {
+        "tr": "Çeviri beklenenden kısa (oran {ratio}, kitap ortancası {median}): atlanmış metin olabilir.",
+        "en": "The translation is shorter than expected (ratio {ratio}, book median {median}): text may be missing."},
+    "check_too_long": {
+        "tr": "Çeviri beklenenden uzun (oran {ratio}, kitap ortancası {median}): eklenmiş metin olabilir.",
+        "en": "The translation is longer than expected (ratio {ratio}, book median {median}): text may have been added."},
+
+    "check_note_pairs": {"tr": "Dipnot işareti ile dipnot metni eşleşmiyor: {numbers}",
+                         "en": "Footnote marks and footnote texts do not match: {numbers}"},
+    "check_sentences": {"tr": "Şu paragraflarda kaynağa göre belirgin daha az cümle var (atlanmış cümle olabilir): {paragraphs}",
+                        "en": "These paragraphs have clearly fewer sentences than the source (a sentence may be missing): {paragraphs}"},
+    "gate_paragraphs": {"tr": "cevapta {answer} paragraf var, kaynakta {source}",
+                        "en": "the answer has {answer} paragraphs, the source {source}"},
+    "gate_footnotes": {"tr": "cevaptaki dipnot işaretleri kaynakla aynı değil", "en": "the footnote marks of the answer differ from the source"},
+    "gate_shrunk": {"tr": "düzeltilmiş metin öncekinden %{percent} kısa", "en": "the corrected text is {percent}% shorter than before"},
+    "gate_paragraph_shrunk": {"tr": "{n}. paragraf belirgin kısalmış (atlanmış cümle olabilir)",
+                              "en": "paragraph {n} became clearly shorter (a sentence may be missing)"},
+    "gate_paragraph_short": {"tr": "{n}. paragrafın çevirisi diğerlerine göre çok kısa (atlanmış cümle olabilir)",
+                             "en": "the translation of paragraph {n} is much shorter than the others (a sentence may be missing)"},
+    "gate_checked_count": {"tr": "tashihçi {got} paragrafı okuduğunu gösterdi, metinde {expected} paragraf var",
+                           "en": "the reviewer showed that it read {got} paragraphs, the text has {expected}"},
+    "gate_checked_wrong": {"tr": "tashihçinin okuma kanıtı şu paragraflarla uyuşmuyor: {paragraphs}",
+                           "en": "the reviewer's reading proof does not match these paragraphs: {paragraphs}"},
+    "gate_decisions_missing": {"tr": "şu bulgular için karar verilmedi: {ids}", "en": "no decision for these findings: {ids}"},
+    "answer_rejected": {"tr": "cevap reddedildi: {problems}", "en": "answer rejected: {problems}"},
+    "missing_segment_marker": {"tr": "[[EKSİK BÖLÜM {id} — henüz çevrilmedi / MISSING SEGMENT {id} — not translated yet]]",
+                               "en": "[[MISSING SEGMENT {id} — not translated yet / EKSİK BÖLÜM {id} — henüz çevrilmedi]]"},
+    "report_missing_segments": {"tr": "Çıktıda eksik bölümler (işaretli): {segments}",
+                                "en": "Segments missing from the output (marked): {segments}"},
+
+    # --- stages ---
+    "nothing_to_do": {"tr": "yapılacak iş yok, hepsi hazır", "en": "nothing to do, all done"},
+    "stage_failed": {
+        "tr": "'{stage}' aşamasında {count} iş başarısız: {names}. Aynı komutu yeniden çalıştırın; kaldığı yerden devam eder.",
+        "en": "{count} tasks failed in stage '{stage}': {names}. Run the same command again; it continues where it stopped."},
+    "need_one_source": {"tr": "{folder} içinde tam bir Türkçe kaynak dosyası olmalı ({supported}); bulunan: {found}.",
+                        "en": "{folder} must contain exactly one Turkish source file ({supported}); found: {found}."},
+    "need_one_reference": {"tr": "{folder} içinde tam bir '{ref}.*' dosyası olmalı; bulunan: {found}.",
+                           "en": "{folder} must contain exactly one '{ref}.*' file; found: {found}."},
+    "no_text": {"tr": "{name} dosyasından metin çıkarılamadı.", "en": "No text could be extracted from {name}."},
+    "prepared_source": {"tr": "{name}: {count} bölüm", "en": "{name}: {count} segments"},
+    "prepared_reference": {"tr": "referans {name}: {count} paragraf", "en": "reference {name}: {count} paragraphs"},
+    "source_changed": {
+        "tr": "Kaynak dosya ({name}) ilk çalıştırmadan sonra değişmiş. Yeni kaynakla baştan başlamak için {work} klasörünü silin.",
+        "en": "The source file ({name}) has changed since the first run. To start again with the new source, delete the folder {work}."},
+    "reference_changed": {
+        "tr": "Referans dosya ({name}) ilk çalıştırmadan sonra değişmiş. Yeniden işlemek için {work}/references/{ref}.md ve "
+              "{work}/alignment/{ref}.json dosyalarını silin, {meta} içinden '{ref}' satırını çıkarın.",
+        "en": "The reference file ({name}) has changed since the first run. To process it again, delete {work}/references/{ref}.md "
+              "and {work}/alignment/{ref}.json, and remove the '{ref}' line from {meta}."},
+    "align_skipped": {"tr": "referans dil yok, atlandı", "en": "no reference language, skipped"},
+    "paragraphs": {"tr": "paragraf {first}-{last}", "en": "paragraphs {first}-{last}"},
+    "align_not_found": {"tr": "bulunamadı", "en": "not found"},
+    "glossary_done": {"tr": "{added} yeni terim eklendi, toplam {total}: {path}",
+                      "en": "{added} new terms added, {total} in total: {path}"},
+    "nothing_to_assemble": {"tr": "Birleştirilecek tamamlanmış bölüm yok.", "en": "There are no finished segments to assemble."},
+    "output_translation": {"tr": "çeviri", "en": "translation"},
+    "output_report": {"tr": "rapor ", "en": "report     "},
+    "output_incomplete": {"tr": "DİKKAT: çıktı eksik, {done}/{total} bölüm tamamlandı",
+                          "en": "WARNING: the output is incomplete, {done}/{total} segments finished"},
+    "reset_done": {"tr": "{count} bölümde '{stage}' ve sonrası silindi",
+                   "en": "'{stage}' and later stages deleted for {count} segments"},
+
+    # --- report ---
+    "report_title": {"tr": "Çeviri raporu: {book} → {language} ({code})", "en": "Translation report: {book} → {language} ({code})"},
+    "report_incomplete": {"tr": "EKSİK ÇIKTI: {total} bölümün {done} tanesi tamamlandı.",
+                          "en": "INCOMPLETE OUTPUT: {done} of {total} segments finished."},
+    "report_segments": {"tr": "Tamamlanan bölüm: {done}/{total}", "en": "Finished segments: {done}/{total}"},
+    "report_references": {"tr": "Referans diller: {refs}", "en": "Reference languages: {refs}"},
+    "report_review1": {"tr": "Birinci tashih (review1)", "en": "First review (review1)"},
+    "report_source_check": {"tr": "Baştan kaynak kontrolü (source_check)", "en": "Source check from the start (source_check)"},
+    "report_review2": {"tr": "İkinci bağımsız tashih (review2)", "en": "Second independent review (review2)"},
+    "report_summary": {
+        "tr": "{total} bulgu (kritik {critical}, önemli {major}, küçük {minor}); kabul {accepted}, ret {rejected}",
+        "en": "{total} findings (critical {critical}, major {major}, minor {minor}); accepted {accepted}, rejected {rejected}"},
+    "report_warnings": {"tr": "Mekanik uyarı bulunan bölüm: {count}", "en": "Segments with mechanical warnings: {count}"},
+    "report_unaligned": {"tr": "Referansı ({ref}) bulunamayan bölümler: {segments}",
+                         "en": "Segments without a reference passage ({ref}): {segments}"},
+    "report_attention": {"tr": "İnsan tercümanın bakması gerekenler", "en": "For the human translator to check"},
+    "report_attention_intro": {
+        "tr": "Aşağıda mekanik uyarılar, kritik bulgular ve kabul edilmeyen önemli bulgular yer alır. Bütün bulgular ve kararlar "
+              "`work/{lang}/` altındaki `revise1`, `source_check` ve `reconcile` klasörlerinde, bölüm başına bir `.json` dosyasındadır.",
+        "en": "Below are the mechanical warnings, the critical findings and the major findings that were not accepted. All findings "
+              "and decisions are in the `revise1`, `source_check` and `reconcile` folders under `work/{lang}/`, one `.json` file per segment."},
+    "report_segment": {"tr": "Bölüm {id}", "en": "Segment {id}"},
+    "report_warning": {"tr": "UYARI", "en": "WARNING"},
+    "report_source": {"tr": "Kaynak", "en": "Source"},
+    "report_translation": {"tr": "Çeviri", "en": "Translation"},
+    "report_suggestion": {"tr": "Öneri", "en": "Suggestion"},
+    "report_reason": {"tr": "Karar gerekçesi", "en": "Reason for the decision"},
+    "report_nothing": {"tr": "Bakılması gereken bir kayıt yok.", "en": "Nothing needs checking."},
+    "report_audit": {"tr": "Tashihçi denetimi", "en": "Reviewer audit"},
+    "report_audit_intro": {
+        "tr": "Her tashihçi her paragrafı okuduğunu kanıtlamak zorundadır; kanıtsız cevap reddedilir. Yine de bulgu yazmamak "
+              "\"metin temiz\" demek olmayabilir. Aşağıda tashihçi başına sayılar ve sonradan hata çıkan sessiz bölümler yer alır.",
+        "en": "Each reviewer must prove that it read every paragraph; an answer without the proof is rejected. Still, no "
+              "findings does not always mean a clean text. Below are the numbers per reviewer, and the silent segments in which "
+              "errors were found later."},
+    "report_audit_row": {"tr": "{stage} · {reviewer}: {segments} bölüm, {empty} bölümde bulgu yok, toplam {issues} bulgu",
+                         "en": "{stage} · {reviewer}: {segments} segments, no findings in {empty}, {issues} findings in total"},
+    "report_audit_quiet": {
+        "tr": "DİKKAT: {reviewer} bölümlerin %{percent} kadarında hiçbir bulgu yazmadı. Birkaç bölümü elle kontrol edin; "
+              "gerekirse bu adım için başka bir model seçin.",
+        "en": "ATTENTION: {reviewer} wrote no findings in {percent}% of the segments. Check a few segments by hand; "
+              "if needed, choose another model for this step."},
+    "report_audit_missed": {
+        "tr": "DİKKAT: {reviewer} şu bölümlerde bulgu yazmadı, ama {by} aynı bölümlerde kritik veya önemli hata buldu: {segments}",
+        "en": "ATTENTION: {reviewer} wrote no findings in these segments, but {by} found critical or major errors in them: {segments}"},
+    "report_audit_by_source_check": {"tr": "baştan kaynak kontrolü", "en": "the source check"},
+    "report_audit_by_other": {"tr": "diğer tashihçi", "en": "the other reviewer"},
+    "decision_accepted": {"tr": "kabul edildi", "en": "accepted"},
+    "decision_rejected": {"tr": "REDDEDİLDİ", "en": "REJECTED"},
+    "decision_none": {"tr": "karar yok", "en": "no decision"},
+    "severity_critical": {"tr": "kritik", "en": "critical"},
+    "severity_major": {"tr": "önemli", "en": "major"},
+    "severity_minor": {"tr": "küçük", "en": "minor"},
+    "type_omission": {"tr": "eksik", "en": "omission"},
+    "type_addition": {"tr": "fazlalık", "en": "addition"},
+    "type_mistranslation": {"tr": "yanlış anlam", "en": "mistranslation"},
+    "type_terminology": {"tr": "terim", "en": "terminology"},
+    "type_religious": {"tr": "dinî içerik", "en": "religious content"},
+    "type_names": {"tr": "özel ad", "en": "names"},
+    "type_format": {"tr": "biçim", "en": "format"},
+    "type_language": {"tr": "dil", "en": "language"},
+
+    # --- command line ---
+    "cli_description": {"tr": "İslami kitaplar için LLM çeviri pipeline'ı", "en": "LLM translation pipeline for Islamic books"},
+    "cli_lang": {"tr": "arayüz dili (tr veya en)", "en": "interface language (tr or en)"},
+    "cli_setup": {"tr": "claude / gemini / codex araçları kurulu ve yanıt veriyor mu, denetler",
+                  "en": "checks that the claude / gemini / codex tools are installed and answer"},
+    "cli_new": {"tr": "yeni kitap klasörü oluşturur", "en": "creates a new book folder"},
+    "cli_book": {"tr": "kitabın kısa adı (klasör adı), örnek: ilmihal", "en": "short name of the book (folder name), for example: ilmihal"},
+    "cli_run": {"tr": "kitabı hedef dile çevirir; kaldığı yerden devam eder",
+                "en": "translates the book into the target language; continues where it stopped"},
+    "cli_target": {"tr": "hedef dil kodu, örnek: no", "en": "target language code, for example: no"},
+    "cli_refs": {"tr": "kullanılacak referans diller, örnek: da,sv (varsayılan: references/ içindekilerin hepsi)",
+                 "en": "reference languages to use, for example: da,sv (default: all in references/)"},
+    "cli_segments": {"tr": "yalnızca bu bölümler, örnek: 1-3 (deneme çevirisi için)",
+                     "en": "only these segments, for example: 1-3 (for a trial translation)"},
+    "cli_until": {"tr": "bu aşamadan sonra dur", "en": "stop after this stage"},
+    "cli_redo": {"tr": "bu aşamanın ve sonrakilerin çıktısını silip yeniden üret",
+                 "en": "delete the output of this stage and later stages, and produce it again"},
+    "cli_parallel": {"tr": "aynı anda çalışan istek sayısı", "en": "number of requests that run at the same time"},
+    "cli_status": {"tr": "kitapların ilerleme durumunu gösterir", "en": "shows the progress of the books"},
+    "cli_ui": {"tr": "web arayüzünü başlatır (yalnızca bu bilgisayardan erişilir)",
+               "en": "starts the web interface (reachable only from this computer)"},
+    "cli_no_browser": {"tr": "tarayıcıyı otomatik açma", "en": "do not open the browser automatically"},
+    "bad_segments": {"tr": "--segments değeri anlaşılmadı: '{spec}'. Örnek: 1-5 veya 1-5,9",
+                     "en": "Cannot read the --segments value '{spec}'. Example: 1-5 or 1-5,9"},
+    "no_such_segments": {"tr": "--segments {spec}: kitapta bu numarada bölüm yok (1-{total}).",
+                         "en": "--segments {spec}: the book has no segment with this number (1-{total})."},
+    "unused": {"tr": "kullanılmıyor", "en": "not used"},
+    "tool_missing": {"tr": "'{command}' komutu kurulu değil. Kurulum: {hint}", "en": "command '{command}' is not installed. Install: {hint}"},
+    "tool_ok": {"tr": "çalışıyor (yanıt: {answer})", "en": "works (answer: {answer})"},
+    "tool_no_answer": {"tr": "kurulu ama yanıt alınamadı: {error}", "en": "installed, but no answer: {error}"},
+    "all_ready": {"tr": "Her şey hazır.", "en": "Everything is ready."},
+    "fix_and_retry": {"tr": "Eksikleri giderdikten sonra yeniden deneyin.", "en": "Fix the problems above, then try again."},
+    "book_created": {
+        "tr": "Klasör hazır: {path}\n"
+              "1. Türkçe kitabı {source} içine koyun (tek dosya; .docx, .epub, .md, .txt veya .pdf).\n"
+              "2. Mevcut tercümeleri {references} içine dil koduyla koyun (örnek: da.docx, sv.epub).\n"
+              "3. Çalıştırın: ./translate run {book} <hedef-dil-kodu>",
+        "en": "Folder ready: {path}\n"
+              "1. Put the Turkish book into {source} (one file: .docx, .epub, .md, .txt or .pdf).\n"
+              "2. Put the existing translations into {references}, named by language code (for example: da.docx, sv.epub).\n"
+              "3. Run: ./translate run {book} <target-language-code>"},
+    "book_busy": {"tr": "Bu kitap için başka bir çalıştırma sürüyor. Onun bitmesini bekleyin.",
+                  "en": "Another run of this book is in progress. Wait until it finishes."},
+    "book_not_found": {"tr": "Kitap bulunamadı: {path}. Önce: ./translate new {book}",
+                       "en": "Book not found: {path}. First run: ./translate new {book}"},
+    "no_references_warning": {"tr": "UYARI: referans tercüme yok; çeviri yalnızca Türkçe kaynaktan yapılacak.",
+                              "en": "WARNING: no reference translation; the translation uses only the Turkish source."},
+    "tools_not_installed": {"tr": "Şu araçlar kurulu değil: {names}. Ayrıntı için: ./translate setup",
+                            "en": "These tools are not installed: {names}. For details: ./translate setup"},
+    "run_header": {"tr": "{book} → {language}: {selected}/{total} bölüm, referans: {refs}",
+                   "en": "{book} → {language}: {selected}/{total} segments, references: {refs}"},
+    "no_books": {"tr": "Henüz kitap yok. Başlamak için: ./translate new <kitap-adi>",
+                 "en": "No books yet. To start: ./translate new <book-name>"},
+    "segments_count": {"tr": "{count} bölüm", "en": "{count} segments"},
+    "not_prepared": {"tr": "henüz hazırlanmadı", "en": "not prepared yet"},
+    "status_alignment": {"tr": "referans {ref}: {aligned}/{total} bölüm hizalı",
+                         "en": "reference {ref}: {aligned}/{total} segments aligned"},
+    "status_unaligned": {"tr": "referansta bulunamayan bölümler (referanssız çevrilir): {segments}",
+                         "en": "segments not found in the reference (translated without it): {segments}"},
+    "ui_port_busy": {"tr": "{port} numaralı bağlantı noktası kullanımda; arayüz büyük olasılıkla zaten açık: {url}\n"
+                           "Başka bir arayüz açmak için: ./translate ui --port 8766",
+                     "en": "Port {port} is in use; the interface is probably already open: {url}\n"
+                           "To open another one: ./translate ui --port 8766"},
+    "run_failed_at_start": {"tr": "Çeviri başlatılamadı: {reason}", "en": "The translation could not start: {reason}"},
+    "pdf_tool_missing": {"tr": "PDF okumak için 'pdftotext' gerekli (macOS: brew install poppler; Linux: poppler-utils paketi). Mümkünse kitabı .docx veya .epub olarak yükleyin.",
+                         "en": "Reading a PDF needs 'pdftotext' (macOS: brew install poppler; Linux: the poppler-utils package). If possible, upload the book as .docx or .epub."},
+    "pdf_tool_missing_windows": {"tr": "PDF okumak için 'pdftotext' gerekli (Xpdf veya Poppler araçları, PATH'e eklenmiş olarak). Mümkünse kitabı .docx veya .epub olarak yükleyin.",
+                                 "en": "Reading a PDF needs 'pdftotext' (the Xpdf or Poppler tools, added to PATH). If possible, upload the book as .docx or .epub."},
+    "ui_running": {"tr": "Arayüz çalışıyor: {url}\nKapatmak için bu pencerede Ctrl+C'ye basın.",
+                   "en": "The interface is running: {url}\nTo stop it, press Ctrl+C in this window."},
+
+    # --- tools ---
+    "gemini_settings_invalid": {"tr": "{path} okunamadı (geçerli JSON değil). Dosyayı elle düzeltin.",
+                                "en": "Cannot read {path} (not valid JSON). Correct the file by hand."},
+    "status_unreadable": {"tr": "Oturum durumu okunamadı.", "en": "Cannot read the sign-in status."},
+    "claude_subscription": {"tr": "Claude aboneliği", "en": "Claude subscription"},
+    "not_signed_in": {"tr": "Oturum açılmamış.", "en": "Not signed in."},
+    "google_account": {"tr": "Google hesabı", "en": "Google account"},
+    "api_key": {"tr": "API anahtarı", "en": "API key"},
+    "google_not_selected": {"tr": "Google oturumu var ama seçili değil. 'Google hesabıyla' düğmesine basın.",
+                            "en": "A Google sign-in exists but is not selected. Click 'With Google account'."},
+    "need_curl": {"tr": "Kurulum için 'curl' komutu gerekli.", "en": "The installation needs the 'curl' command."},
+    "run_in_terminal": {"tr": "Bir terminal açıp şu komutu çalıştırın: {command}", "en": "Open a terminal and run: {command}"},
+    "terminal_opened": {
+        "tr": "Terminal penceresi açıldı. Oradaki adımları tamamlayın, sonra bu sayfada 'Durumu yenile' düğmesine basın.",
+        "en": "A Terminal window opened. Complete the steps there, then click 'Refresh status' on this page."},
+    "invalid_key": {"tr": "Anahtar geçersiz görünüyor (boşluksuz, en az 20 karakter olmalı).",
+                    "en": "The key does not look valid (it must have no spaces and at least 20 characters)."},
+    "install_first": {"tr": "Önce aracı kurun.", "en": "Install the tool first."},
+    "google_selected": {"tr": "Mevcut Google oturumu seçildi.", "en": "The existing Google sign-in is selected."},
+    "gemini_key_saved": {"tr": "Gemini API anahtarı kaydedildi.", "en": "Gemini API key saved."},
+    "codex_key_rejected": {"tr": "Codex anahtarı kabul etmedi.", "en": "Codex did not accept the key."},
+    "codex_key_saved": {"tr": "OpenAI API anahtarıyla oturum açıldı.", "en": "Signed in with the OpenAI API key."},
+    "login_method_unsupported": {"tr": "Bu araç için bu oturum açma yöntemi yok.",
+                                 "en": "This sign-in method is not available for this tool."},
+
+    # --- installation ---
+    "cli_install": {"tr": "araçları kurar (gerekirse taşınabilir Node.js'i de); yönetici izni gerekmez",
+                    "en": "installs the tools (and a portable Node.js when needed); no administrator rights needed"},
+    "tool_installed": {"tr": "{name} kuruldu.", "en": "{name} is installed."},
+    "nothing_to_install": {"tr": "Bütün araçlar zaten kurulu.", "en": "All tools are already installed."},
+    "download_progress": {"tr": "  indiriliyor: %{percent} ({mb} MB)", "en": "  downloading: {percent}% ({mb} MB)"},
+    "node_downloading": {"tr": "Node.js {version} indiriliyor (uygulamanın kendi klasörüne; yönetici izni gerekmez)...",
+                         "en": "Downloading Node.js {version} (into the application's own folder; no administrator rights needed)..."},
+    "node_installed": {"tr": "Node.js {version} kuruldu ve doğrulandı.", "en": "Node.js {version} is installed and verified."},
+    "node_unsupported": {"tr": "Bu işlemci türü için Node.js indirilemiyor: {machine}. Node.js'i https://nodejs.org adresinden kurun.",
+                         "en": "No Node.js download for this processor type: {machine}. Install Node.js from https://nodejs.org."},
+    "node_no_checksum": {"tr": "{name} için doğrulama bilgisi bulunamadı; indirme yapılmadı.",
+                         "en": "No checksum found for {name}; nothing was downloaded."},
+    "node_checksum_mismatch": {"tr": "İndirilen Node.js doğrulanamadı (SHA-256 farklı); kullanılmadı. Yeniden deneyin.",
+                               "en": "The downloaded Node.js failed verification (SHA-256 differs); it was not used. Try again."},
+    "node_install_failed": {"tr": "Node.js kurulamadı.", "en": "Node.js could not be installed."},
+    "archive_unsafe": {"tr": "İndirilen arşiv güvenli değil; açılmadı.", "en": "The downloaded archive is not safe; it was not unpacked."},
+    "install_step_failed": {"tr": "Kurulum adımı başarısız oldu (çıkış kodu {code}). Ayrıntı yukarıdaki satırlarda.",
+                            "en": "An installation step failed (exit code {code}). The details are in the lines above."},
+    "requirements_claude": {"tr": "Gerekenler: Claude Pro veya Max aboneliği ya da Anthropic Console (API) hesabı.",
+                            "en": "Needs: a Claude Pro or Max subscription, or an Anthropic Console (API) account."},
+    "requirements_codex": {"tr": "Gerekenler: ücretli bir ChatGPT planı (Plus, Pro, Business…) ya da OpenAI API anahtarı.",
+                           "en": "Needs: a paid ChatGPT plan (Plus, Pro, Business…) or an OpenAI API key."},
+    "requirements_gemini": {
+        "tr": "Gerekenler: Gemini CLI'nin kabul ettiği bir Google hesabı ya da bir Gemini API anahtarı. Google, ücretsiz kişisel "
+              "hesapları bu araçta artık kabul etmiyor; hesabınızı \"Dene\" düğmesiyle kontrol edin.",
+        "en": "Needs: a Google account that Gemini CLI accepts, or a Gemini API key. Google no longer accepts free personal "
+              "accounts in this tool; check your account with the \"Test\" button."},
+    "sign_in_help_claude": {"tr": "Oturum açma: açılan terminal tarayıcıda bir sayfa açar; hesabınızla giriş yapın. Terminal girişin başarılı olduğunu yazınca pencereyi kapatabilirsiniz.",
+                            "en": "Sign-in: the terminal opens a page in your browser; sign in with your account. When the terminal says the login succeeded, you can close the window."},
+    "sign_in_help_codex": {"tr": "Oturum açma: tarayıcıda ChatGPT hesabınızla giriş yapın. Terminal girişin başarılı olduğunu yazınca pencereyi kapatabilirsiniz.",
+                           "en": "Sign-in: sign in with your ChatGPT account in the browser. When the terminal says the login succeeded, you can close the window."},
+    "sign_in_help_gemini": {
+        "tr": "Oturum açma: Gemini terminalde açılır ve tarayıcıda Google girişini başlatır. Giriş bitince terminale /quit yazıp "
+              "Enter'a basın. Alternatif: https://aistudio.google.com/apikey adresinden alınan bir API anahtarı.",
+        "en": "Sign-in: Gemini opens in the terminal and starts the Google sign-in in your browser. When it is done, type /quit in "
+              "the terminal and press Enter. Alternative: an API key from https://aistudio.google.com/apikey."},
+    "account_refused": {
+        "tr": "{name} bu hesabı kabul etmiyor ({reason}). Kurulum sekmesinde başka bir hesapla ya da API anahtarıyla oturum açın, "
+              "veya İş akışı sekmesinde bu aracın adımlarına başka bir model atayın.",
+        "en": "{name} does not accept this account ({reason}). Sign in with another account or with an API key on the Setup tab, "
+              "or assign another model to this tool's steps on the Workflow tab."},
+
+    # --- web ---
+    "bad_host": {"tr": "Geçersiz adres.", "en": "Invalid address."},
+    "bad_token": {"tr": "Oturum anahtarı geçersiz. Sayfayı yenileyin.", "en": "Invalid session key. Reload the page."},
+    "not_found": {"tr": "Bulunamadı.", "en": "Not found."},
+    "not_allowed": {"tr": "İzin verilmiyor.", "en": "Not allowed."},
+    "bad_request": {"tr": "Geçersiz istek.", "en": "Invalid request."},
+    "request_too_large": {"tr": "İstek çok büyük.", "en": "The request is too large."},
+    "unexpected_error": {"tr": "Beklenmeyen bir hata oluştu. Ayrıntı sunucunun terminalinde.",
+                         "en": "An unexpected error occurred. The details are in the server's terminal."},
+    "job_running": {"tr": "Bu iş zaten çalışıyor.", "en": "This job is already running."},
+    "job_done": {"tr": "tamamlandı", "en": "completed"},
+    "job_failed": {"tr": "hata ile bitti (kod {code})", "en": "failed (code {code})"},
+    "install_started": {"tr": "Kurulum başladı.", "en": "Installation started."},
+    "test_answer": {"tr": "Yanıt alındı ({seconds} sn): {answer}", "en": "Answer received ({seconds} s): {answer}"},
+    "language_code_invalid": {"tr": "Dil kodu 2-3 küçük harf olmalı (örnek: tg, ckb).",
+                              "en": "The language code must be 2-3 lowercase letters (for example: tg, ckb)."},
+    "language_name_invalid": {"tr": "Dil adını İngilizce yazın (örnek: Tajik). Model bu adı görür.",
+                              "en": "Write the language name in English (for example: Tajik). The model sees this name."},
+    "language_exists": {"tr": "Bu dil kodu zaten tanımlı.", "en": "This language code is already defined."},
+    "languages_not_last": {"tr": "config.toml içinde [languages] son bölüm olmalı; dili elle ekleyin.",
+                           "en": "[languages] must be the last section of config.toml; add the language by hand."},
+    "language_added": {"tr": "{name} ({code}) eklendi.", "en": "{name} ({code}) added."},
+    "book_missing": {"tr": "Kitap bulunamadı.", "en": "Book not found."},
+    "book_name_invalid": {"tr": "Kitap adı geçersiz. Harf ve rakam kullanın.", "en": "Invalid book name. Use letters and digits."},
+    "book_exists": {"tr": "'{name}' adlı kitap zaten var.", "en": "A book named '{name}' already exists."},
+    "book_added": {"tr": "'{name}' oluşturuldu.", "en": "'{name}' created."},
+    "book_running": {"tr": "Bu kitap şu anda çalışıyor. Önce durdurun veya bitmesini bekleyin.",
+                     "en": "This book is running now. Stop it first, or wait until it finishes."},
+    "upload_type": {"tr": "Desteklenmeyen dosya türü. Desteklenenler: {supported}", "en": "Unsupported file type. Supported: {supported}"},
+    "upload_size": {"tr": "Dosya boş veya çok büyük (en çok {limit} MB).", "en": "The file is empty or too large (at most {limit} MB)."},
+    "upload_incomplete": {"tr": "Yükleme yarıda kaldı.", "en": "The upload is incomplete."},
+    "upload_not_valid": {"tr": "Dosya geçerli bir {ext} değil.", "en": "The file is not a valid {ext}."},
+    "upload_not_utf8": {"tr": "Metin dosyası UTF-8 olmalı.", "en": "A text file must be UTF-8."},
+    "source_locked": {"tr": "Bu kitap hazırlanmış. Kaynağı değiştirmek için önce 'Çalışmayı sıfırla' düğmesine basın.",
+                      "en": "This book is prepared. To change the source, first click 'Reset work'."},
+    "uploaded": {"tr": "{name} yüklendi.", "en": "{name} uploaded."},
+    "reference_deleted": {"tr": "Referans silindi.", "en": "Reference deleted."},
+    "book_reset": {"tr": "Çalışma dosyaları silindi. Kitap baştan hazırlanacak.",
+                   "en": "The work files are deleted. The book will be prepared again."},
+    "target_not_turkish": {"tr": "Hedef dil Türkçe olamaz.", "en": "The target language cannot be Turkish."},
+    "segments_format": {"tr": "Bölüm biçimi: 1-3 veya 1-5,9", "en": "Segment format: 1-3 or 1-5,9"},
+    "stage_invalid": {"tr": "Geçersiz aşama.", "en": "Invalid stage."},
+    "run_started": {"tr": "Çalıştırma başladı.", "en": "The run started."},
+    "nothing_running": {"tr": "Çalışan bir iş yok.", "en": "Nothing is running."},
+    "run_stopped": {"tr": "Durduruldu. Aynı ayarlarla yeniden başlatınca kaldığı yerden devam eder.",
+                    "en": "Stopped. Start it again with the same settings to continue where it stopped."},
+    "output_missing": {"tr": "Çıktı bulunamadı.", "en": "Output not found."},
+    "model_invalid": {"tr": "Geçersiz model adı: {name}. Biçim: araç veya araç/model (örnek: claude/opus).",
+                      "en": "Invalid model name: {name}. Format: tool or tool/model (for example: claude/opus)."},
+    "stage_needs_model": {"tr": "'{stage}' adımına en az bir model atayın.", "en": "Assign at least one model to step '{stage}'."},
+    "stage_one_model": {"tr": "'{stage}' adımına tek model atanabilir.", "en": "Step '{stage}' takes exactly one model."},
+    "stage_too_many": {"tr": "'{stage}' adımına en çok 4 model atanabilir.", "en": "Step '{stage}' takes at most 4 models."},
+    "stages_saved": {"tr": "İş akışı kaydedildi. Bundan sonra başlatılan çalıştırmalarda kullanılır.",
+                     "en": "The workflow is saved. It applies to runs started from now on."},
+    "report_word": {"tr": "Rapor", "en": "Report"},
+    "prompt_translate": {"tr": "1. adım: ilk tercüme", "en": "Step 1: first translation"},
+    "prompt_review": {"tr": "2. ve 5. adım: tashih raporu", "en": "Steps 2 and 5: review report"},
+    "prompt_revise": {"tr": "3. ve 6. adım: tashihleri uygulama ve iki raporu uzlaştırma",
+                      "en": "Steps 3 and 6: applying the review and reconciling the two reports"},
+    "prompt_source_check": {"tr": "4. adım: baştan kaynak kontrolü", "en": "Step 4: source check from the start"},
+    "prompt_glossary": {"tr": "Hazırlık: terim sözlüğü", "en": "Preparation: terminology glossary"},
+    "prompt_align": {"tr": "Hazırlık: referans tercümede karşılığı bulma", "en": "Preparation: finding the passage in the reference translation"},
+    "placeholders_missing": {"tr": "eksik yer tutucular: {names}", "en": "missing placeholders: {names}"},
+    "placeholders_unknown": {"tr": "tanınmayan yer tutucular: {names}", "en": "unknown placeholders: {names}"},
+    "prompt_not_saved": {"tr": "Kaydedilmedi; {problems}. Yer tutucular pipeline'ın metni koyduğu yerlerdir.",
+                         "en": "Not saved; {problems}. Placeholders are where the pipeline inserts the text."},
+    "prompt_saved": {"tr": "Kaydedildi. Bundan sonra işlenen bölümlerde kullanılır.",
+                     "en": "Saved. It applies to the segments processed from now on."},
+    "prompt_restored": {"tr": "Varsayılan talimat geri yüklendi.", "en": "The default instructions are restored."},
+}

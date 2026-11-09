@@ -1,0 +1,3 @@
+#!/bin/sh
+# Command-line launcher on macOS and Linux. Usage: ./translate <command> ...   (help: ./translate -h)
+exec sh "$(dirname "$0")/scripts/start.sh" "$@"
