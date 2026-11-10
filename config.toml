@@ -1,19 +1,19 @@
 # Translation pipeline configuration
 
 # Which AI tool and model does each stage. Write "provider" for the tool's default model, or "provider/model",
-# for example "claude/opus" or "gemini/gemini-2.5-pro". Providers are the [providers.*] sections below.
+# for example "claude/opus" or "antigravity/gemini-4-argon@high". Providers are the [providers.*] sections below.
 # The web interface (Workflow tab) edits this section: steps can be added, removed and reordered there.
 [stages]
 # The nodes after the first translation, in order: review<n> (findings), revise<n>/reconcile/apply<n> (applies
 # them), source_check[<n>], custom<n> and gate<n> (checkpoint). Each node works on the latest text.
 flow         = ["review1", "revise1", "source_check", "review2", "reconcile", "apply2"]
-align        = "gemini"                 # preparation: finds each Turkish segment in the reference translations
+align        = "antigravity"            # preparation: finds each Turkish segment in the reference translations
 glossary     = "claude"                 # preparation: extracts the terminology glossary
 translate    = "chatgpt"                # first translation
-review1      = ["gemini"]               # reviewers report findings (in parallel); the text is unchanged
+review1      = ["antigravity"]          # reviewers report findings (in parallel); the text is unchanged
 revise1      = "chatgpt"                # applies the findings reported since the last text
 source_check = "claude"                 # checks the text against the Turkish source from the start, and corrects it
-review2      = ["chatgpt", "gemini"]    # reviewers report findings (in parallel); the text is unchanged
+review2      = ["chatgpt", "antigravity"] # reviewers report findings (in parallel); the text is unchanged
 reconcile    = "claude"                 # applies the findings reported since the last text
 apply2       = "claude"                 # applies the findings reported since the last text
 
@@ -49,6 +49,10 @@ word_template    = ""  # the original name of export/word-template.docx; "" = no
 #   models       : model names offered in the Workflow tab (edited there).
 #   {output}     : if the command contains it, the answer is read from this file instead of stdout.
 #   json_field   : if set, stdout is parsed as JSON and this field is the answer.
+#   effort       : the option that sets the thinking level; "{effort}" is replaced by the level of the assignment
+#                  ("claude/opus@high"). efforts: the levels offered in the Workflow tab.
+#   input        : "stream-json": the prompt goes to stdin as one stream-json message, the answer is read from the
+#                  result event (Antigravity CLI).
 #   install_hint : shown by './translate setup' when the tool is missing.
 
 [providers.claude]
@@ -58,7 +62,20 @@ command = [
   "--system-prompt", "You are a meticulous professional translator and editor of Islamic religious books. Follow the instructions in the user message exactly and output only what is requested.",
 ]
 model = ""
+effort = ["--effort", "{effort}"]
+efforts = ["low", "medium", "high", "xhigh", "max"]
 install_hint = "https://claude.com/claude-code  (then sign in: claude auth login)"
+
+# Antigravity CLI: Google's tool for personal Google accounts (Gemini CLI no longer accepts them). It runs the Gemini
+# models and some Claude models; "agy models" lists them. Its default model is a Gemini model.
+[providers.antigravity]
+models = []
+command = ["agy", "--input-format", "stream-json", "--output-format", "stream-json", "--disable-slash-commands"]
+input = "stream-json"
+model = ""
+effort = ["--effort", "{effort}"]
+efforts = ["low", "medium", "high"]
+install_hint = "curl -fsSL https://antigravity.google/cli/install.sh | bash  (then sign in: agy)"
 
 [providers.gemini]
 models = []
@@ -71,6 +88,8 @@ install_hint = "npm install -g @google/gemini-cli  (then sign in: gemini)"
 models = []
 command = ["codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only", "--ephemeral", "--color", "never", "-o", "{output}"]
 model = ""
+effort = ["-c", "model_reasoning_effort={effort}"]
+efforts = ["low", "medium", "high", "xhigh", "max"]
 install_hint = "npm install -g @openai/codex  (then sign in: codex login)"
 
 # Language codes and the English names given to the models. Add a line here for a new language.

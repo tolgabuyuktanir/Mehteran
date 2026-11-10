@@ -55,12 +55,10 @@ MESSAGES = {
     "unsupported_file": {"tr": "Desteklenmeyen dosya türü: {name} (desteklenen: {supported})",
                          "en": "Unsupported file type: {name} (supported: {supported})"},
     "pdftotext_missing": {
-        "tr": "{name}: PDF okumak için 'pdftotext' programı (Poppler) gerekli. macOS: brew install poppler · Linux: sudo apt install "
-              "poppler-utils · Windows: https://github.com/oschwartz10612/poppler-windows/releases adresinden indirip 'bin' klasörünü "
-              "PATH'e ekleyin. Mümkünse kitabı .docx veya .epub olarak verin.",
-        "en": "{name}: reading a PDF needs the 'pdftotext' program (Poppler). macOS: brew install poppler · Linux: sudo apt install "
-              "poppler-utils · Windows: download it from https://github.com/oschwartz10612/poppler-windows/releases and add its 'bin' "
-              "folder to PATH. If possible, supply the book as .docx or .epub."},
+        "tr": "{name}: PDF okumak için PDF okuyucu (Poppler) gerekli. Kurulum sekmesinde \"PDF okuyucu\" kartındaki \"Kur\" "
+              "düğmesine basın (komut satırında: ./translate install pdf). Mümkünse kitabı .docx veya .epub olarak verin.",
+        "en": "{name}: reading a PDF needs the PDF reader (Poppler). Click \"Install\" on the \"PDF reader\" card of the Setup tab "
+              "(on the command line: ./translate install pdf). If possible, supply the book as .docx or .epub."},
     "pdf_no_text": {
         "tr": "{name} dosyasında metin yok; büyük olasılıkla taranmış (resim olarak kaydedilmiş) bir PDF. Önce bir OCR programıyla "
               "metne çevirin (örneğin Adobe Acrobat veya ABBYY FineReader) ya da kitabın .docx veya .epub hâlini verin.",
@@ -300,10 +298,19 @@ MESSAGES = {
                      "en": "Port {port} is in use; the interface is probably already open: {url}\n"
                            "To open another one: ./translate ui --port 8766"},
     "run_failed_at_start": {"tr": "Çeviri başlatılamadı: {reason}", "en": "The translation could not start: {reason}"},
-    "pdf_tool_missing": {"tr": "PDF okumak için 'pdftotext' gerekli (macOS: brew install poppler; Linux: poppler-utils paketi). Mümkünse kitabı .docx veya .epub olarak yükleyin.",
-                         "en": "Reading a PDF needs 'pdftotext' (macOS: brew install poppler; Linux: the poppler-utils package). If possible, upload the book as .docx or .epub."},
-    "pdf_tool_missing_windows": {"tr": "PDF okumak için 'pdftotext' gerekli (Xpdf veya Poppler araçları, PATH'e eklenmiş olarak). Mümkünse kitabı .docx veya .epub olarak yükleyin.",
-                                 "en": "Reading a PDF needs 'pdftotext' (the Xpdf or Poppler tools, added to PATH). If possible, upload the book as .docx or .epub."},
+    "pdf_tool_missing": {"tr": "PDF okumak için PDF okuyucu (Poppler) gerekli. Kurulum sekmesinde \"PDF okuyucu\" kartındaki \"Kur\" düğmesine basın; kurulum birkaç dakika sürer. Mümkünse kitabı .docx veya .epub olarak yükleyin.",
+                         "en": "Reading a PDF needs the PDF reader (Poppler). Click \"Install\" on the \"PDF reader\" card of the Setup tab; it takes a few minutes. If possible, upload the book as .docx or .epub."},
+    "pdf_tool_downloading": {"tr": "PDF okuyucu için paket yöneticisi (micromamba) indiriliyor (uygulamanın kendi klasörüne; yönetici izni gerekmez)...",
+                             "en": "Downloading the package manager for the PDF reader (micromamba; into the application's own folder; no administrator rights needed)..."},
+    "pdf_tool_checksum_mismatch": {"tr": "İndirilen paket yöneticisi doğrulanamadı (SHA-256 farklı); kullanılmadı. Yeniden deneyin.",
+                                   "en": "The downloaded package manager failed verification (SHA-256 differs); it was not used. Try again."},
+    "pdf_tool_install_failed": {"tr": "PDF okuyucu kurulamadı: kurulumdan sonra pdftotext bulunamadı. Ayrıntı yukarıdaki satırlarda.",
+                                "en": "The PDF reader could not be installed: pdftotext is missing after the installation. The details are in the lines above."},
+    "pdf_tool_unsupported": {"tr": "Bu işlemci türü için PDF okuyucu kurulamıyor: {machine}. Kitabı .docx veya .epub olarak verin.",
+                             "en": "The PDF reader cannot be installed for this processor type: {machine}. Supply the book as .docx or .epub."},
+    "tool_name_pdf": {"tr": "PDF okuyucu (Poppler)", "en": "PDF reader (Poppler)"},
+    "tool_use_denied": {"tr": "(model metinle cevap vermek yerine bir araç kullanmaya çalıştı; izin verilmedi)",
+                        "en": "(the model tried to use a tool instead of answering with text; it was not allowed)"},
     "ui_running": {"tr": "Arayüz çalışıyor: {url}\nKapatmak için bu pencerede Ctrl+C'ye basın.",
                    "en": "The interface is running: {url}\nTo stop it, press Ctrl+C in this window."},
 
@@ -338,8 +345,8 @@ MESSAGES = {
     "cli_package_out": {"tr": "zip dosyasının yolu (varsayılan: dist/translation-pipeline.zip)",
                         "en": "path of the zip file (default: dist/translation-pipeline.zip)"},
     "package_done": {"tr": "Paket yazıldı ({count} dosya): {path}", "en": "Package written ({count} files): {path}"},
-    "cli_install": {"tr": "araçları kurar (gerekirse taşınabilir Node.js'i de); yönetici izni gerekmez",
-                    "en": "installs the tools (and a portable Node.js when needed); no administrator rights needed"},
+    "cli_install": {"tr": "araçları ve PDF okuyucuyu kurar (gerekirse taşınabilir Node.js'i de); yönetici izni gerekmez",
+                    "en": "installs the tools and the PDF reader (and a portable Node.js when needed); no administrator rights needed"},
     "tool_installed": {"tr": "{name} kuruldu.", "en": "{name} is installed."},
     "nothing_to_install": {"tr": "Bütün araçlar zaten kurulu.", "en": "All tools are already installed."},
     "download_progress": {"tr": "  indiriliyor: %{percent} ({mb} MB)", "en": "  downloading: {percent}% ({mb} MB)"},
@@ -360,11 +367,19 @@ MESSAGES = {
                             "en": "Needs: a Claude Pro or Max subscription, or an Anthropic Console (API) account."},
     "requirements_codex": {"tr": "Gerekenler: ücretli bir ChatGPT planı (Plus, Pro, Business…) ya da OpenAI API anahtarı.",
                            "en": "Needs: a paid ChatGPT plan (Plus, Pro, Business…) or an OpenAI API key."},
+    "requirements_antigravity": {
+        "tr": "Gerekenler: bir Google hesabı. Google AI Pro veya Ultra aboneliği daha yüksek kullanım sınırı verir. Gemini "
+              "modellerinin yanında Claude modelleri de seçilebilir.",
+        "en": "Needs: a Google account. A Google AI Pro or Ultra subscription gives higher usage limits. Besides the Gemini "
+              "models, Claude models can be selected too."},
     "requirements_gemini": {
-        "tr": "Gerekenler: Gemini CLI'nin kabul ettiği bir Google hesabı ya da bir Gemini API anahtarı. Google, ücretsiz kişisel "
-              "hesapları bu araçta artık kabul etmiyor; hesabınızı \"Dene\" düğmesiyle kontrol edin.",
-        "en": "Needs: a Google account that Gemini CLI accepts, or a Gemini API key. Google no longer accepts free personal "
-              "accounts in this tool; check your account with the \"Test\" button."},
+        "tr": "Gerekenler: bir Gemini API anahtarı veya bir şirket (Google Cloud) hesabı. Google, 18 Haziran 2026'dan beri kişisel "
+              "hesapları (ücretsiz, Pro ve Ultra) bu araçta kabul etmiyor; kişisel hesap için Antigravity CLI'ı kullanın.",
+        "en": "Needs: a Gemini API key or a company (Google Cloud) account. Since 18 June 2026 Google does not accept personal "
+              "accounts (free, Pro and Ultra) in this tool; for a personal account, use Antigravity CLI."},
+    "requirements_pdf": {
+        "tr": "Gerekenler: yok. Uygulamanın kendi klasörüne kurulur; yönetici izni gerekmez.",
+        "en": "Needs: nothing. It is installed into the application's own folder; no administrator rights are needed."},
     "sign_in_help_claude": {"tr": "Oturum açma: açılan terminal tarayıcıda bir sayfa açar; hesabınızla giriş yapın. Terminal girişin başarılı olduğunu yazınca pencereyi kapatabilirsiniz.",
                             "en": "Sign-in: the terminal opens a page in your browser; sign in with your account. When the terminal says the login succeeded, you can close the window."},
     "sign_in_help_codex": {"tr": "Oturum açma: tarayıcıda ChatGPT hesabınızla giriş yapın. Terminal girişin başarılı olduğunu yazınca pencereyi kapatabilirsiniz.",
@@ -374,6 +389,23 @@ MESSAGES = {
               "Enter'a basın. Alternatif: https://aistudio.google.com/apikey adresinden alınan bir API anahtarı.",
         "en": "Sign-in: Gemini opens in the terminal and starts the Google sign-in in your browser. When it is done, type /quit in "
               "the terminal and press Enter. Alternative: an API key from https://aistudio.google.com/apikey."},
+    "sign_in_help_antigravity": {
+        "tr": "Oturum açma: Antigravity terminalde açılır ve tarayıcıda Google girişini başlatır. Giriş bitince terminale /exit "
+              "yazıp Enter'a basın, sonra \"Dene\" düğmesiyle kontrol edin.",
+        "en": "Sign-in: Antigravity opens in the terminal and starts the Google sign-in in your browser. When it is done, type "
+              "/exit in the terminal and press Enter, then check with the \"Test\" button."},
+    "sign_in_help_pdf": {"tr": "", "en": ""},
+    # Shown first in the sign-in terminal window. No characters that cmd (Windows) would read: & | < > ^ % "
+    "terminal_note_claude": {"tr": "Tarayıcıda bir sayfa açılacak: Claude hesabınızla giriş yapın. Giriş başarılı yazınca bu pencereyi kapatıp arayüze dönün.",
+                             "en": "A page opens in your browser: sign in with your Claude account. When the login succeeds, close this window and return to the interface."},
+    "terminal_note_codex": {"tr": "Tarayıcıda bir sayfa açılacak: ChatGPT hesabınızla giriş yapın. Giriş başarılı yazınca bu pencereyi kapatıp arayüze dönün.",
+                            "en": "A page opens in your browser: sign in with your ChatGPT account. When the login succeeds, close this window and return to the interface."},
+    "terminal_note_antigravity": {"tr": "Tarayıcıda Google girişi açılacak: Google hesabınızla giriş yapın. Antigravity açılınca /exit yazıp Enter'a basın, sonra arayüzde Dene düğmesine basın.",
+                                  "en": "A Google sign-in opens in your browser: sign in with your Google account. When Antigravity opens, type /exit and press Enter, then click Test in the interface."},
+    "terminal_note_gemini": {"tr": "Gemini açılınca Google ile giriş yapın. Giriş bitince /quit yazıp Enter'a basın.",
+                             "en": "When Gemini starts, sign in with Google. When it is done, type /quit and press Enter."},
+    "effort_invalid": {"tr": "{name}: bu araç bu düşünme seviyesini desteklemiyor.",
+                       "en": "{name}: this tool does not support this thinking level."},
     "account_refused": {
         "tr": "{name} bu hesabı kabul etmiyor ({reason}). Kurulum sekmesinde başka bir hesapla ya da API anahtarıyla oturum açın, "
               "veya İş akışı sekmesinde bu aracın adımlarına başka bir model atayın.",
@@ -410,6 +442,28 @@ MESSAGES = {
                      "en": "This book is running now. Stop it first, or wait until it finishes."},
     "upload_type": {"tr": "Desteklenmeyen dosya türü. Desteklenenler: {supported}", "en": "Unsupported file type. Supported: {supported}"},
     "upload_size": {"tr": "Dosya boş veya çok büyük (en çok {limit} MB).", "en": "The file is empty or too large (at most {limit} MB)."},
+    "uploaded_with_warnings": {"tr": "{name} yüklendi. Kontrol edin: {warnings}", "en": "{name} is uploaded. Please check: {warnings}"},
+    "ref_looks_turkish": {
+        "tr": "Bu dosya Türkçe görünüyor. Referans, kitabın başka bir dildeki tercümesi olmalı; Türkçe kitabı \"Türkçe kaynak\" adımında yükleyin.",
+        "en": "This file looks Turkish. A reference must be a translation of the book into another language; upload the Turkish book in the \"Turkish source\" step."},
+    "ref_wrong_script": {
+        "tr": "Bu dosya {found} harflerle yazılmış, ama seçilen dil ({lang}) {expected} harflerle yazılır. Dili doğru seçtiğinizi kontrol edin.",
+        "en": "This file is written in {found} letters, but the selected language ({lang}) is written in {expected} letters. Check that you selected the right language."},
+    "ref_not_same_book": {
+        "tr": "Bu dosya aynı kitabın tercümesi gibi görünmüyor: Arapça ibarelerinin ve numaralarının yalnızca %{percent}'i Türkçe kaynakta var. Doğru kitabı yüklediğinizi kontrol edin.",
+        "en": "This file does not look like a translation of the same book: only {percent}% of its Arabic phrases and numbers are in the Turkish source. Check that you uploaded the right book."},
+    "ref_too_short": {
+        "tr": "Referans, Türkçe kaynağın yalnızca yaklaşık %{percent}'i uzunluğunda; kitabın bir kısmı olabilir. Karşılığı bulunamayan bölümler referanssız çevrilir.",
+        "en": "The reference is only about {percent}% as long as the Turkish source; it may be a part of the book. The segments without a match are translated without the reference."},
+    "ref_too_long": {
+        "tr": "Referans, Türkçe kaynağın {times} katı uzunluğunda; başka metinler de içeriyor olabilir.",
+        "en": "The reference is {times} times as long as the Turkish source; it may contain other texts as well."},
+    "script_latin": {"tr": "Latin", "en": "Latin"}, "script_cyrillic": {"tr": "Kiril", "en": "Cyrillic"},
+    "script_arabic": {"tr": "Arap", "en": "Arabic"}, "script_greek": {"tr": "Yunan", "en": "Greek"},
+    "script_hebrew": {"tr": "İbrani", "en": "Hebrew"}, "script_georgian": {"tr": "Gürcü", "en": "Georgian"},
+    "script_armenian": {"tr": "Ermeni", "en": "Armenian"}, "script_devanagari": {"tr": "Devanagari", "en": "Devanagari"},
+    "script_bengali": {"tr": "Bengal", "en": "Bengali"}, "script_thai": {"tr": "Tay", "en": "Thai"},
+    "script_cjk": {"tr": "Çin, Japon veya Kore", "en": "Chinese, Japanese or Korean"}, "script_other": {"tr": "başka", "en": "other"},
     "upload_incomplete": {"tr": "Yükleme yarıda kaldı.", "en": "The upload is incomplete."},
     "export_invalid": {"tr": "Biçim ayarı geçersiz: {field}.", "en": "Invalid layout setting: {field}."},
     "export_field_page_size": {"tr": "sayfa boyutu", "en": "page size"},

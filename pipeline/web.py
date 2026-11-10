@@ -20,8 +20,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import configfile, export, i18n, stages, system, tools
-from .core import PipelineError, Project, read_json, say, split_name, write_json, write_text
+from . import configfile, documents, export, i18n, refcheck, stages, system, tools
+from .core import EFFORTS, PipelineError, Project, effort_of, read_json, say, split_name, write_json, write_text
 from .documents import SUPPORTED
 from .i18n import t
 from .providers import QuotaError, run as run_llm
@@ -120,6 +120,7 @@ class App:
         self.root = proj.root
         self.jobs = Jobs()
         self.model_lists: dict[str, tuple[float, list[str]]] = {}
+        self.texts: dict[tuple, str] = {}  # the text of a book file, by (path, size, modification time)
         self.token = secrets.token_urlsafe(32)
         self.run_lock = threading.Lock()
 
@@ -154,6 +155,10 @@ class App:
             for name in proj.providers_for(stage):
                 used.setdefault(split_name(name)[0], []).append(stage)
         lang = i18n.current()
+        # The jobs are read before the tools: a job that ends during the check then still counts as running, and the
+        # interface asks again instead of keeping a status from before the end of the installation.
+        jobs = {tool: self.jobs.info(f"install:{tool}") for tool in tools.TOOLS}
+        all_job = self.jobs.info("install:all")
 
         def status(tool):
             i18n.set_request(lang)  # pool threads do not inherit the request language
@@ -164,16 +169,21 @@ class App:
         quota = read_json(self.root / ".jobs" / "quota.json", {})
         for item in items:
             item["stages"] = used.get(item["provider"], [])
-            item["job"] = self.jobs.info(f"install:{item['id']}")
+            # Needed on this computer: the tools of the workflow, and the PDF reader (books often come as PDF).
+            item["required"] = bool(item["stages"]) or item["provider"] is None
+            if item["provider"] is None:
+                item["name"] = t(f"tool_name_{item['id']}")
+            item["job"] = jobs[item["id"]]
             item["requirements"] = t(f"requirements_{item['id']}")
             item["sign_in_help"] = t(f"sign_in_help_{item['id']}")
             item["quota"] = quota.get(item["provider"])
         books = [p for p in (self.root / "books").glob("*") if p.is_dir()]
-        return {"tools": items, "terminal": system.can_open_terminal(), "all_job": self.jobs.info("install:all"),
+        return {"tools": items, "terminal": system.can_open_terminal(), "all_job": all_job,
                 "books": len(books)}
 
-    def tool(self, tool: str) -> dict:
-        if tool not in tools.TOOLS:
+    def tool(self, tool: str, model: bool = False) -> dict:
+        """A tool of tools.TOOLS; model=True: only a tool that runs models (sign-in, test, model list)."""
+        if tool not in tools.TOOLS or (model and tools.TOOLS[tool]["provider"] is None):
             raise HTTPError(404, t("not_found"))
         return tools.TOOLS[tool]
 
@@ -191,15 +201,19 @@ class App:
         return self.install([tool], tool)
 
     def install_missing(self) -> dict:
+        """Installs the tools that the workflow uses and the PDF reader; the others have their own button."""
+        proj = self.reload()
         tools.extend_path(self.root)
-        missing = [tool for tool, spec in tools.TOOLS.items() if not shutil.which(spec["command"])]
+        used = {split_name(name)[0] for stage in stages.llm_stages(proj) for name in proj.providers_for(stage)}
+        missing = [tool for tool, spec in tools.TOOLS.items()
+                   if (spec["provider"] is None or spec["provider"] in used) and not shutil.which(spec["command"])]
         if not missing:
             return {"message": t("nothing_to_install")}
         return self.install(missing, "all")
 
     def models(self, tool: str) -> dict:
         """The model list of a tool. Reading it can start the tool, so the answer is kept for ten minutes."""
-        self.tool(tool)
+        self.tool(tool, model=True)
         tools.extend_path(self.root)
         known = self.model_lists.get(tool)
         if not known or time.time() - known[0] > 600 or not known[1]:
@@ -207,11 +221,11 @@ class App:
         return {"models": known[1]}
 
     def login(self, tool: str, body: dict) -> dict:
-        self.tool(tool)
+        self.tool(tool, model=True)
         return {"message": tools.login(tool, str(body.get("method", "")), str(body.get("key", "")))}
 
     def test_tool(self, tool: str) -> dict:
-        return self.test_model({"name": self.tool(tool)["provider"]})
+        return self.test_model({"name": self.tool(tool, model=True)["provider"]})
 
     def test_model(self, body: dict) -> dict:
         name = str(body.get("name", ""))
@@ -265,6 +279,7 @@ class App:
             "stage_order": stages.all_stages(proj),
             "providers": {
                 name: {"default_model": spec.get("model", ""), "models": list(spec.get("models", [])),
+                       "efforts": [e for e in spec.get("efforts", []) if e in EFFORTS],
                        "tool": tool_of.get(name)}
                 for name, spec in proj.cfg["providers"].items()
             },
@@ -352,6 +367,9 @@ class App:
             for name in names:
                 if not isinstance(name, str) or not configfile.NAME_RE.match(name) or split_name(name)[0] not in proj.cfg["providers"]:
                     raise HTTPError(400, t("model_invalid", name=name))
+                effort = effort_of(name)
+                if effort and effort not in proj.cfg["providers"][split_name(name)[0]].get("efforts", []):
+                    raise HTTPError(400, t("effort_invalid", name=name))
         texts = body.get("instructions") or {}
         if not isinstance(texts, dict):
             raise HTTPError(400, t("bad_request"))
@@ -394,8 +412,8 @@ class App:
         out = []
         for book_dir in sorted(p for p in (self.root / "books").glob("*") if p.is_dir() and BOOK_RE.match(p.name)):
             sources = [f.name for f in sorted((book_dir / "source").glob("*")) if f.suffix.lower() in SUPPORTED]
-            refs = [{"lang": f.stem, "file": f.name} for f in sorted((book_dir / "references").glob("*"))
-                    if f.suffix.lower() in SUPPORTED]
+            refs = [{"lang": f.stem, "file": f.name, "warnings": self.reference_warnings(book_dir, f)}
+                    for f in sorted((book_dir / "references").glob("*")) if f.suffix.lower() in SUPPORTED]
             meta = read_json(book_dir / "work" / "prep.json", {})
             outputs = sorted(f.stem for f in (book_dir / "output").glob("*.md") if not f.stem.endswith(".report"))
             running = bool(_book_pid(book_dir))
@@ -404,6 +422,32 @@ class App:
                 "status": stages.book_status(proj, book_dir.name), "running": running,
                 "outputs": outputs, "run": self.run_info(proj, book_dir, running),
             })
+        return out
+
+    def _text(self, path: Path) -> str:
+        """The text of a book file ("" when it cannot be read); each version of the file is read once."""
+        stat = path.stat()
+        key = (str(path), stat.st_size, stat.st_mtime_ns)
+        if key not in self.texts:
+            try:
+                self.texts[key] = "\n\n".join(documents.read_blocks(path))
+            except Exception:  # noqa: BLE001  (an unreadable file gets its own message when the book is prepared)
+                self.texts[key] = ""
+        return self.texts[key]
+
+    def reference_warnings(self, book_dir: Path, path: Path) -> list[str]:
+        """What looks wrong with a reference: Turkish text, another alphabet, another book, only a part of the book."""
+        reference = self._text(path)
+        if not reference:
+            return []
+        sources = [f for f in sorted((book_dir / "source").glob("*")) if f.suffix.lower() in SUPPORTED]
+        source = self._text(sources[0]) if sources else ""
+        language = self.proj.language_name(path.stem)
+        out = []
+        for key, values in refcheck.problems(source, reference, path.stem):
+            if key == "ref_wrong_script":
+                values = {"lang": language, "found": t("script_" + values["found"]), "expected": t("script_" + values["expected"])}
+            out.append(t(key, **values))
         return out
 
     def run_info(self, proj: Project, book_dir: Path, running: bool) -> dict | None:
@@ -457,7 +501,7 @@ class App:
             if not 0 < length <= UPLOAD_LIMIT:
                 raise HTTPError(413, t("upload_size", limit=UPLOAD_LIMIT // 1024 // 1024))
             if ext == ".pdf" and not shutil.which("pdftotext"):
-                raise HTTPError(400, t("pdf_tool_missing_windows" if system.IS_WINDOWS else "pdf_tool_missing"))
+                raise HTTPError(400, t("pdf_tool_missing"))
             if kind == "source":
                 if "source" in read_json(book_dir / "work" / "prep.json", {}):
                     raise HTTPError(409, t("source_locked"))
@@ -493,6 +537,9 @@ class App:
             tmp.unlink(missing_ok=True)
         if kind == "references":
             _forget_reference(book_dir, lang)
+            warnings = self.reference_warnings(book_dir, folder / f"{stem}{ext}")
+            if warnings:  # said at once; the reference list shows them too
+                return {"message": t("uploaded_with_warnings", name=filename, warnings=" ".join(warnings))}
         return {"message": t("uploaded", name=filename)}
 
     def delete_reference(self, book: str, lang: str) -> dict:

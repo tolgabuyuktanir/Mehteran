@@ -14,7 +14,7 @@ Nothing needs to be installed in advance (see [Getting started](../README.md#get
 
 | Tab | What you do there |
 |---|---|
-| Setup | Installs Claude Code, Codex and Gemini CLI. Signs in to each of them. "Test" checks that a tool answers. Shows which tool does which step. |
+| Setup | Installs Claude Code, Codex, Antigravity CLI, Gemini CLI and the PDF reader. Signs in to each tool. "Test" checks that a tool answers. Shows which tool does which step. |
 | Workflow | Builds the steps of the workflow and their models by drag and drop (see below). |
 | Books | Adds books. Uploads the Turkish source and the reference translations. Selects the target language and starts or stops the translation. Shows the progress and the log. Reads the translation and the report, and exports them as Markdown, Word, PDF or HTML. |
 | Instructions | Edits the instructions given to the models. Restores changed instructions to the default. |
@@ -23,13 +23,23 @@ Sign-in methods:
 
 - Claude: "With Claude account" opens a terminal window. Sign in in the browser.
 - Codex (ChatGPT): "With ChatGPT account" opens a terminal window. Alternative: an OpenAI API key.
-- Gemini: "With Google account" opens a terminal window. When Gemini starts, sign in with Google, then type `/quit`. Then check with the "Test" button that the account is accepted. Alternative: an API key from https://aistudio.google.com/apikey (saved in `~/.gemini/.env`).
+- Antigravity (Gemini models): "With Google account" opens a terminal window. Antigravity starts the Google sign-in in the browser; when it is done, type `/exit`. Then check with the "Test" button. Antigravity also offers some Claude models; the default is a Gemini model. Each call is stored by Antigravity as a conversation; the pipeline deletes the ones it made.
+- Gemini CLI: since 18 June 2026 Google accepts only API keys and company (Google Cloud) accounts here, no personal accounts. "With Google account" opens a terminal window. When Gemini starts, sign in with Google, then type `/quit`. Then check with the "Test" button that the account is accepted. Alternative: an API key from https://aistudio.google.com/apikey (saved in `~/.gemini/.env`).
 
 After you sign in, click "Refresh status".
 
 Security: the interface is reachable only from this computer (`127.0.0.1`). Each start creates a new session key, so other web sites cannot send commands to the server. Uploaded files are checked by content; the maximum file size is 300 MB.
 
 The interface runs a book with the `./translate run` command. A started translation continues when the interface closes. When the interface opens again, it shows the running translation and can stop it.
+
+## Reference translations
+
+A reference is an earlier, published translation of the same book into another language, for example the Danish and Swedish translations for a Norwegian translation. It is optional.
+
+- Before the translation, the application finds the match of each Turkish segment in each reference (step "align"). The matching passages are given to the models of the first translation, the glossary, the source check and the apply steps. From them the models see how terms, names, honorific formulas and difficult sentences were handled.
+- The Turkish source always decides: the instructions tell the models to follow the source wherever a reference differs, is missing a passage or has an error.
+- Upload each reference with its language. The application checks the file at once and warns when it looks Turkish, when its alphabet does not fit the selected language, when its Arabic phrases and numbers are not in the Turkish source (probably another book), or when it is much shorter or longer than the source. A warning is shown on the reference and on the closed "Reference translations" step; the reference can still be used.
+- Segments that the alignment does not find in a reference are listed under it; they are translated without that reference.
 
 ## Workflow tab: which model does which step
 
@@ -47,9 +57,10 @@ The workflow is drawn as boxes joined by arrows, from left to right: preparation
 - Add a step: drag it from the left onto an arrow, or press the + on an arrow. A click on the card adds it at the end.
 - Change the order: drag a box onto another arrow. Preparation and the first translation stay at the start; their models can be changed.
 - Click a box to set its options and models below. A reporting step takes up to 4 models (switched on and off); the other steps take one. You can also drop a model card from the left on a role in a box. The panel also has "Move earlier", "Move later" and "Remove step".
+- Under the models of a box, choose the **thinking level** of each model (low … maximum; Claude Code and Codex up to maximum, Antigravity up to high; Gemini CLI has no level option). "Default level" leaves it to the tool. A higher level works more carefully but more slowly and uses more of the quota. In `config.toml` the level follows the name: `claude/opus@high`.
 - A checkpoint's arc shows where it sends segments back. Checkpoints cannot overlap: a checkpoint cannot send back past the checkpoint before it. Each sending back runs the steps in between again for that segment, which uses quota and time.
 - A box marked red cannot run, for example findings that no "Apply" step uses, or a checkpoint without a target. The workflow is not saved until it is fixed. A "!" on a box is a warning only, for example a model that reviews the text it wrote itself.
-- The model lists are read from the tools themselves (Claude's model names, the list that Codex keeps, `gemini --list-models`). Add another model by name under its tool; "Test" sends a short request to check that the tool answers.
+- The model lists are read from the tools themselves (Claude's model names, the list that Codex keeps, `agy models`, `gemini --list-models`). Add another model by name under its tool; "Test" sends a short request to check that the tool answers.
 - Every change is saved at once in `config.toml` (`[stages]` and `[nodes]`; the instructions of custom steps in `prompts/custom/`) and applies to runs started afterwards. "Diagram assignment" restores the workflow of the "Translation and Review Workflow" diagram. A changed order does not redo finished segments; the Books screen shows which segments need to be made again. A stopped run continues where it stopped, also inside a loop.
 
 ## Export
@@ -120,13 +131,13 @@ Each segment goes through these steps in order. The numbers are the steps of the
 | Step | Stage | What it does | Default tool |
 |---|---|---|---|
 | preparation | `prepare` | Converts the source and the references to text. Splits the source into segments of about 6000 characters. | none |
-| preparation | `align` | Finds each Turkish segment in the reference translations. | Gemini |
+| preparation | `align` | Finds each Turkish segment in the reference translations. | Antigravity (Gemini) |
 | preparation | `glossary` | Extracts religious terms and proper names. Adds only new terms to `glossary/<lang>.tsv`. | Claude |
 | 1 | `translate` | First translation, with the Turkish source, the reference passages and the glossary. | ChatGPT |
-| 2 | `review1` | Review: compares the translation with the Turkish source sentence by sentence and reports the issues. | Gemini |
+| 2 | `review1` | Review: compares the translation with the Turkish source sentence by sentence and reports the issues. | Antigravity (Gemini) |
 | 3 | `revise1` | Weighs each finding against the Turkish source. Applies correct findings and rejects the others with a reason. | ChatGPT |
 | 4 | `source_check` | Compares the text with the Turkish source from the start, without relying on the earlier steps, and corrects the errors. | Claude |
-| 5a, 5b | `review2` | Second independent review: two models write findings reports in parallel, without seeing each other. | ChatGPT and Gemini |
+| 5a, 5b | `review2` | Second independent review: two models write findings reports in parallel, without seeing each other. | ChatGPT and Antigravity (Gemini) |
 | 6 | `reconcile` | Reconciles the two reports against the Turkish source and produces the final text. | Claude |
 | delivery | `assemble` | Joins the segments, runs the mechanical checks and writes the report. | none |
 | 7 | | The human translator receives the book and the report. Then a human editor reads it. | human |
@@ -163,7 +174,7 @@ books/<book>/
 pipeline/               the code (pipeline/i18n.py: messages; pipeline/ui/: web interface)
 ```
 
-Supported file types: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. If possible, supply `.docx` or `.epub`: from these, headings (also the publisher's own heading styles), footnotes, italics, bold and numbered items are read completely. A PDF is read from the position and type size of each word: page headers and page numbers are dropped; footnotes in a smaller type at the page bottom and raised note numbers in the text become footnotes; paragraphs are found from indentation and spacing, headings from the type size; a paragraph that runs on to the next page is joined. Arabic and Persian text is read from the PDF's own glyphs and put in reading order with its vowel signs; a repeated Besmele is not taken for a page header. A letter that the PDF does not identify (some fonts do not say which letters a ligature shows) stays as pdftotext reads it; check the âyat and hadîths in the preview. A scanned PDF (images) cannot be read; it needs OCR first. Before you translate, check how the text is read with the "Split the text and preview" button on the Books screen. Reading a PDF needs the `pdftotext` program (Poppler or Xpdf); the interface checks this when you upload.
+Supported file types: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. If possible, supply `.docx` or `.epub`: from these, headings (also the publisher's own heading styles), footnotes, italics, bold and numbered items are read completely. A PDF is read from the position and type size of each word: page headers and page numbers are dropped; footnotes in a smaller type at the page bottom and raised note numbers in the text become footnotes; paragraphs are found from indentation and spacing, headings from the type size; a paragraph that runs on to the next page is joined. Arabic and Persian text is read from the PDF's own glyphs and put in reading order with its vowel signs; a repeated Besmele is not taken for a page header. A letter that the PDF does not identify (some fonts do not say which letters a ligature shows) stays as pdftotext reads it; check the âyat and hadîths in the preview. A scanned PDF (images) cannot be read; it needs OCR first. Before you translate, check how the text is read with the "Split the text and preview" button on the Books screen. Reading a PDF needs the PDF reader (Poppler's `pdftotext`); the Setup tab installs it into `.runtime/poppler` (command line: `./translate install pdf`).
 
 ## Configuration
 

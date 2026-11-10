@@ -10,7 +10,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from . import i18n, stages, system
+from . import i18n, stages, system, tools
 from .core import ROOT, PipelineError, Project, say, split_name
 from .i18n import t
 from .providers import run as run_llm
@@ -163,10 +163,11 @@ def cmd_install(proj: Project, args) -> int:
     from . import runtime, tools
     tools.extend_path(proj.root)
     for tool in args.tools:
-        say(f"=== {tools.TOOLS[tool]['name']} ===")
+        name = t(f"tool_name_{tool}") if tools.TOOLS[tool]["provider"] is None else tools.TOOLS[tool]["name"]
+        say(f"=== {name} ===")
         runtime.install_tool(tool, proj.root)
         tools.extend_path(proj.root)
-        say(t("tool_installed", name=tools.TOOLS[tool]["name"]))
+        say(t("tool_installed", name=name))
     return 0
 
 
@@ -244,7 +245,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     p.add_argument("book", nargs="?")
 
     p = sub.add_parser("install", help=t("cli_install"))
-    p.add_argument("tools", nargs="+", choices=["claude", "codex", "gemini"])
+    p.add_argument("tools", nargs="+", choices=list(tools.TOOLS))
 
     p = sub.add_parser("package", help=t("cli_package"))
     p.add_argument("--out", help=t("cli_package_out"))

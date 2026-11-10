@@ -14,7 +14,7 @@ Tarayıcıda `http://127.0.0.1:8765/` açılır. Terminal penceresi açık kald�
 
 | Sekme | Ne yapılır |
 |---|---|
-| Kurulum | Claude Code, Codex ve Gemini CLI'ı kurar. Her birinde oturum açar. "Dene" düğmesi aracın yanıt verdiğini denetler. Hangi adımı hangi aracın yaptığını gösterir. |
+| Kurulum | Claude Code, Codex, Antigravity CLI, Gemini CLI ve PDF okuyucuyu kurar. Araçlarda oturum açar. "Dene" düğmesi aracın yanıt verdiğini denetler. Hangi adımı hangi aracın yaptığını gösterir. |
 | İş akışı | İş akışının adımlarını ve modellerini sürükle-bırakla kurar (aşağıya bakın). |
 | Kitaplar | Kitap ekler. Türkçe kaynağı ve referans tercümeleri yükler. Hedef dili seçip çeviriyi başlatır veya durdurur. İlerlemeyi ve günlüğü gösterir. Çeviriyi ve raporu okur; Markdown, Word, PDF veya HTML olarak dışa aktarır. |
 | Talimatlar | Modellere verilen talimatları düzenler. Değiştirilmiş bir talimatı varsayılana döndürür. |
@@ -23,13 +23,23 @@ Oturum açma yöntemleri:
 
 - Claude: "Claude hesabıyla" düğmesi bir terminal penceresi açar. Tarayıcıda oturum açın.
 - Codex (ChatGPT): "ChatGPT hesabıyla" düğmesi bir terminal penceresi açar. Alternatif: OpenAI API anahtarı.
-- Gemini: "Google hesabıyla" düğmesi bir terminal penceresi açar. Gemini açılınca Google ile oturum açın, sonra `/quit` yazın. Ardından "Dene" düğmesiyle hesabın kabul edildiğini kontrol edin. Alternatif: https://aistudio.google.com/apikey adresinden alınan bir API anahtarı (`~/.gemini/.env` dosyasına kaydedilir).
+- Antigravity (Gemini modelleri): "Google hesabıyla" düğmesi bir terminal penceresi açar. Antigravity tarayıcıda Google girişini başlatır; giriş bitince `/exit` yazın. Ardından "Dene" düğmesiyle kontrol edin. Antigravity bazı Claude modellerini de sunar; varsayılanı bir Gemini modelidir. Antigravity her çağrıyı bir konuşma olarak saklar; pipeline kendi açtıklarını siler.
+- Gemini CLI: Google 18 Haziran 2026'dan beri burada yalnızca API anahtarlarını ve şirket (Google Cloud) hesaplarını kabul ediyor, kişisel hesapları kabul etmiyor. "Google hesabıyla" düğmesi bir terminal penceresi açar. Gemini açılınca Google ile oturum açın, sonra `/quit` yazın. Ardından "Dene" düğmesiyle hesabın kabul edildiğini kontrol edin. Alternatif: https://aistudio.google.com/apikey adresinden alınan bir API anahtarı (`~/.gemini/.env` dosyasına kaydedilir).
 
 Oturumu açtıktan sonra "Durumu yenile" düğmesine basın.
 
 Güvenlik: arayüz yalnızca bu bilgisayardan erişilebilir (`127.0.0.1`). Her açılışta yeni bir oturum anahtarı üretilir; başka bir web sitesi bu sunucuya komut gönderemez. Yüklenen dosyaların içeriği denetlenir; en büyük dosya boyutu 300 MB'tır.
 
 Arayüz kitabı `./translate run` komutuyla çalıştırır. Arayüz kapansa da başlatılmış çeviri sürer. Arayüz yeniden açıldığında çalışan çeviriyi görür ve durdurabilir.
+
+## Referans tercümeler
+
+Referans, aynı kitabın başka bir dile daha önce yapılmış, yayımlanmış tercümesidir; örneğin Norveççe çeviri için Danca ve İsveççe tercümeler. Zorunlu değildir.
+
+- Çeviriden önce uygulama her Türkçe bölümün her referanstaki karşılığını bulur ("hizalama" adımı). Karşılık pasajlar ilk tercüme, sözlük, kaynak kontrolü ve uygula adımlarının modellerine verilir. Modeller oradan terimlerin, özel adların, saygı ifadelerinin ve zor cümlelerin nasıl karşılandığını görür.
+- Esas her zaman Türkçe kaynaktır: talimatlar, referans kaynaktan farklıysa, bir pasajı eksikse veya hatalıysa kaynağa uyulmasını söyler.
+- Her referansı diliyle birlikte yükleyin. Uygulama dosyayı hemen kontrol eder ve şu durumlarda uyarır: dosya Türkçe görünüyorsa, harfleri seçilen dile uymuyorsa, Arapça ibareleri ve numaraları Türkçe kaynakta yoksa (büyük ihtimalle başka bir kitap), veya kaynaktan çok kısa ya da çok uzunsa. Uyarı referansın altında ve kapalı "Referans tercümeler" adımında görünür; referans yine de kullanılabilir.
+- Hizalamanın bir referansta bulamadığı bölümler o referansın altında listelenir; bu bölümler o referans olmadan çevrilir.
 
 ## İş akışı sekmesi: hangi model hangi adımı yapar
 
@@ -47,9 +57,10 @@ Arayüz kitabı `./translate run` komutuyla çalıştırır. Arayüz kapansa da 
 - Adım ekleme: soldan bir okun üzerine sürükleyin veya oktaki + düğmesine basın. Karta tıklarsanız sona eklenir.
 - Sırayı değiştirme: kutuyu başka bir okun üzerine sürükleyin. Hazırlık ve ilk tercüme başta kalır; modelleri değiştirilebilir.
 - Bir kutuya tıklayınca ayarlarını ve modellerini altta seçersiniz. Bulgu yazan adım en çok 4 model alır (açılıp kapatılır); diğerleri tek model alır. Soldaki model kartını kutudaki role de bırakabilirsiniz. Panelde "Öne al", "Sonraya al" ve "Adımı sil" düğmeleri de vardır.
+- Kutunun modellerinin altında her modelin **düşünme seviyesini** seçin (düşük … en yüksek; Claude Code ve Codex en yükseğe kadar, Antigravity yükseğe kadar; Gemini CLI'da seviye seçeneği yoktur). "Varsayılan seviye" seçimi araca bırakır. Yüksek seviye daha dikkatli ama daha yavaş çalışır ve kotayı daha çok harcar. `config.toml` dosyasında seviye adın sonuna yazılır: `claude/opus@high`.
 - Kontrol noktasının yayı bölümleri nereye geri gönderdiğini gösterir. Kontrol noktaları iç içe geçemez: bir kontrol noktası, kendinden önceki kontrol noktasını aşarak geri gönderemez. Her geri gönderme aradaki adımları o bölüm için yeniden çalıştırır; kota ve süre harcar.
 - Kırmızı işaretli kutu çalışamaz; örneğin hiçbir "Uygula" adımının kullanmadığı bulgular veya hedefi seçilmemiş kontrol noktası. Düzeltilene kadar iş akışı kaydedilmez. Kutudaki "!" yalnızca uyarıdır; örneğin bir model kendi yazdığı metni tashih ediyorsa.
-- Model listeleri araçların kendisinden okunur (Claude'un model adları, Codex'in tuttuğu liste, `gemini --list-models`). Başka bir modeli aracının altına adıyla ekleyin; "Dene" kısa bir istek göndererek aracın yanıt verdiğini denetler.
+- Model listeleri araçların kendisinden okunur (Claude'un model adları, Codex'in tuttuğu liste, `agy models`, `gemini --list-models`). Başka bir modeli aracının altına adıyla ekleyin; "Dene" kısa bir istek göndererek aracın yanıt verdiğini denetler.
 - Her değişiklik hemen `config.toml` dosyasına (`[stages]` ve `[nodes]`; özel adımların talimatları `prompts/custom/` altına) kaydedilir ve sonra başlatılan çalıştırmalarda geçerli olur. "Şemadaki dağılım" "Tercüme ve Tashih İş Akışı" şemasındaki akışı geri getirir. Sıra değişince bitmiş bölümler kendiliğinden yeniden yapılmaz; Kitaplar ekranı yeniden üretilmesi gereken bölümleri gösterir. Durdurulan çalıştırma, döngünün içindeyken bile kaldığı yerden sürer.
 
 ## Dışa aktarma
@@ -120,13 +131,13 @@ Her bölüm şu adımlardan sırayla geçer. Numaralar "Tercüme ve Tashih İş 
 | Adım | Aşama | Ne yapar | Varsayılan araç |
 |---|---|---|---|
 | hazırlık | `prepare` | Kaynağı ve referansları metne çevirir. Kaynağı yaklaşık 6000 karakterlik bölümlere ayırır. | yok |
-| hazırlık | `align` | Her Türkçe bölümün referans tercümedeki karşılığını bulur. | Gemini |
+| hazırlık | `align` | Her Türkçe bölümün referans tercümedeki karşılığını bulur. | Antigravity (Gemini) |
 | hazırlık | `glossary` | Dinî terimleri ve özel adları çıkarır, `glossary/<dil>.tsv` dosyasına yalnızca yeni terimleri ekler. | Claude |
 | 1 | `translate` | İlk tercüme: Türkçe kaynak, referans pasajlar ve sözlükle çevirir. | ChatGPT |
-| 2 | `review1` | Tashih: tercümeyi Türkçe kaynakla cümle cümle karşılaştırır ve bulguları yazar. | Gemini |
+| 2 | `review1` | Tashih: tercümeyi Türkçe kaynakla cümle cümle karşılaştırır ve bulguları yazar. | Antigravity (Gemini) |
 | 3 | `revise1` | Her bulguyu Türkçe kaynağa göre tartar. Haklı bulguları uygular, diğerlerini gerekçesiyle reddeder. | ChatGPT |
 | 4 | `source_check` | Önceki adımlara güvenmeden metni Türkçe kaynakla baştan karşılaştırır ve bulduğu hataları düzeltir. | Claude |
-| 5a, 5b | `review2` | İkinci bağımsız tashih: iki model birbirinden habersiz, paralel olarak bulgu raporu yazar. | ChatGPT ve Gemini |
+| 5a, 5b | `review2` | İkinci bağımsız tashih: iki model birbirinden habersiz, paralel olarak bulgu raporu yazar. | ChatGPT ve Antigravity (Gemini) |
 | 6 | `reconcile` | İki raporu Türkçe kaynağa göre uzlaştırır ve son metni üretir. | Claude |
 | teslim | `assemble` | Bölümleri birleştirir, mekanik denetimleri yapar ve raporu yazar. | yok |
 | 7 | | İnsan tercüman kitabı ve raporu teslim alır. Ardından insan editör okur. | insan |
@@ -163,7 +174,7 @@ books/<kitap>/
 pipeline/               kod (pipeline/i18n.py: mesajlar; pipeline/ui/: web arayüzü)
 ```
 
-Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse `.docx` veya `.epub` verin: bunlardan başlıklar (yayınevinin kendi başlık biçimleri dahil), dipnotlar, italik, kalın ve numaralı maddeler eksiksiz okunur. PDF, kelimelerin sayfadaki yeri ve punto büyüklüğüyle okunur: sayfa başlıkları ve numaraları atılır; sayfa altındaki küçük puntolu dipnotlar ve metindeki üst simge dipnot numaraları dipnota çevrilir; paragraflar girinti ve satır aralığından, başlıklar puntodan tanınır; sayfadan taşan paragraf birleştirilir. Arapça ve Farsça metin, PDF'in kendi gliflerinden harekeleriyle birlikte okuma sırasına konur; tekrar eden Besmele sayfa başlığı sanılmaz. PDF'in hangi harfler olduğunu bildirmediği bir glif (bazı fontlar bir bitişiğin harflerini yazmaz) pdftotext'in okuduğu gibi kalır; âyet ve hadîsleri önizlemede kontrol edin. Taranmış (resim) PDF okunmaz; önce OCR gerekir. Çeviriden önce Kitaplar ekranındaki "Metni böl ve önizle" düğmesiyle metnin nasıl okunduğunu kontrol edin; PDF okumak için `pdftotext` programı (Poppler veya Xpdf) gerekir, arayüz bunu yükleme sırasında denetler.
+Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse `.docx` veya `.epub` verin: bunlardan başlıklar (yayınevinin kendi başlık biçimleri dahil), dipnotlar, italik, kalın ve numaralı maddeler eksiksiz okunur. PDF, kelimelerin sayfadaki yeri ve punto büyüklüğüyle okunur: sayfa başlıkları ve numaraları atılır; sayfa altındaki küçük puntolu dipnotlar ve metindeki üst simge dipnot numaraları dipnota çevrilir; paragraflar girinti ve satır aralığından, başlıklar puntodan tanınır; sayfadan taşan paragraf birleştirilir. Arapça ve Farsça metin, PDF'in kendi gliflerinden harekeleriyle birlikte okuma sırasına konur; tekrar eden Besmele sayfa başlığı sanılmaz. PDF'in hangi harfler olduğunu bildirmediği bir glif (bazı fontlar bir bitişiğin harflerini yazmaz) pdftotext'in okuduğu gibi kalır; âyet ve hadîsleri önizlemede kontrol edin. Taranmış (resim) PDF okunmaz; önce OCR gerekir. Çeviriden önce Kitaplar ekranındaki "Metni böl ve önizle" düğmesiyle metnin nasıl okunduğunu kontrol edin; PDF okumak için PDF okuyucu (Poppler'ın `pdftotext` programı) gerekir; Kurulum sekmesi bunu `.runtime/poppler` klasörüne kurar (komut satırında: `./translate install pdf`).
 
 ## Ayarlar
 

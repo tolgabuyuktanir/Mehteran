@@ -42,10 +42,19 @@ def write_text(path: Path, text: str) -> None:
             time.sleep(0.05)
 
 
+EFFORTS = ("low", "medium", "high", "xhigh", "max")
+
+
 def split_name(name: str) -> tuple[str, str]:
-    """A stage assignment is "provider" or "provider/model". Returns (provider, model or "")."""
-    provider, _, model = name.partition("/")
+    """A stage assignment is "provider" or "provider/model", optionally with "@effort" (the thinking level, for
+    example "claude/opus@high"). Returns (provider, model or "")."""
+    provider, _, model = name.partition("@")[0].partition("/")
     return provider, model
+
+
+def effort_of(name: str) -> str:
+    """The thinking level of an assignment ("" = the tool's default)."""
+    return name.partition("@")[2]
 
 
 def slug(name: str) -> str:

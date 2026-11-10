@@ -1,6 +1,8 @@
 """Run from the project root: python3 -m unittest discover -s tests -v"""
 
+import hashlib
 import io
+import json
 import os
 import re
 import shutil
@@ -12,6 +14,7 @@ import zipfile
 from collections import Counter
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -607,8 +610,52 @@ class PlatformTests(unittest.TestCase):
     def test_each_npm_tool_has_its_own_folder_on_path(self):
         root = Path("/app")
         dirs = runtime.bin_dirs(root)
-        self.assertEqual(len({str(d) for d in dirs}), 3)  # codex, gemini, node
+        self.assertEqual(len({str(d) for d in dirs}), 4)  # codex, gemini, node, the PDF reader
         self.assertTrue(all(str(d).startswith(str(root / ".runtime")) for d in dirs))
+
+    def test_pdf_reader_install_checks_the_download_and_installs_poppler(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        payload = b"micromamba binary"
+        sums = {"sha": hashlib.sha256(payload).hexdigest()}
+
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        def fake_urlopen(request, timeout=60):
+            return Response((sums["sha"] + "  micromamba\n").encode())
+
+        def fake_download(url, dest):
+            self.assertIn("micromamba-", url)
+            dest.write_bytes(payload)
+
+        calls = []
+
+        def fake_run(argv, env=None):
+            calls.append(argv)
+            if argv[1] == "create":  # what micromamba does: the environment with pdftotext
+                bin_dir = runtime.poppler_bin_dir(root)
+                bin_dir.mkdir(parents=True)
+                (bin_dir / ("pdftotext.exe" if system.IS_WINDOWS else "pdftotext")).write_text("x")
+                self.assertEqual(env["MAMBA_ROOT_PREFIX"], str(root / ".runtime" / "mamba"))
+
+        with mock.patch.object(runtime.urllib.request, "urlopen", fake_urlopen), \
+                mock.patch.object(runtime, "_download", fake_download), mock.patch.object(runtime, "_run_streaming", fake_run):
+            sums["sha"] = "0" * 64  # a download that does not match its published sum is not used
+            with self.assertRaises(PipelineError):
+                runtime.install_tool("pdf", root)
+            self.assertFalse(any((root / ".runtime" / "micromamba").glob("micromamba*")))
+            self.assertEqual(calls, [])
+            sums["sha"] = hashlib.sha256(payload).hexdigest()
+            runtime.install_tool("pdf", root)
+        self.assertEqual(calls[0][1:], ["create", "--root-prefix", str(root / ".runtime" / "mamba"), "--yes", "--prefix",
+                                        str(root / ".runtime" / "poppler"), "--channel", "conda-forge", "--override-channels", "poppler"])
+        self.assertEqual(calls[1][1], "clean")
+        self.assertIn(runtime.poppler_bin_dir(root), runtime.bin_dirs(root))
 
     def test_codex_models_are_read_from_its_own_list(self):
         from pipeline import tools
@@ -647,6 +694,89 @@ class PlatformTests(unittest.TestCase):
         with redirect_stdout(out):
             web.serve(Project.load(root), sock.getsockname()[1], open_browser=False)  # returns instead of raising
         self.assertIn("is in use; the interface is probably already open", out.getvalue())
+
+
+FAKE_AGY = r"""
+import json, os, sys
+message = json.loads(sys.stdin.readline())["message"]["content"]
+conversation = "0f0e0d0c-1111-2222-3333-444455556666"
+home = os.environ["FAKE_AGY_DIR"]
+os.makedirs(os.path.join(home, "conversations"), exist_ok=True)
+os.makedirs(os.path.join(home, "brain", conversation), exist_ok=True)
+for suffix in (".db", ".db-wal"):
+    open(os.path.join(home, "conversations", conversation + suffix), "w").close()
+open(os.path.join(home, "conversations", "keep.db"), "w").close()  # a conversation of the user
+print(json.dumps({"event": "init", "init": {"cwd": os.getcwd(), "tools": []}}))
+if "use a tool" in message:
+    result = {"conversation_id": conversation, "status": "SUCCESS", "response": "",
+              "denied_actions": [{"action": "command", "display_name": "RunCommand"}]}
+else:
+    print(json.dumps({"event": "step_update", "step_update": {"step_type": "agent_response", "text_delta": "Hal"}}))
+    result = {"conversation_id": conversation, "status": "SUCCESS", "response": "Hallo «" + message[-8:] + "»\n"}
+print(json.dumps({"event": "result", "result": result}))
+"""
+
+
+class StreamJsonProviderTests(unittest.TestCase):
+    def test_prompt_goes_as_one_message_and_the_stored_conversation_is_removed(self):
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        (tmp / "agy.py").write_text(FAKE_AGY, encoding="utf-8")
+        make_project(tmp)
+        cfg = (tmp / "config.toml").read_text(encoding="utf-8")
+        (tmp / "config.toml").write_text(cfg + f"""
+[providers.agy]
+command = [{json.dumps(sys.executable)}, {json.dumps(str(tmp / "agy.py"))}]
+input = "stream-json"
+model = ""
+""", encoding="utf-8")
+        proj = Project.load(tmp)
+        store = tmp / "agy-home"
+        with mock.patch.dict(os.environ, {"FAKE_AGY_DIR": str(store)}), mock.patch.object(providers, "AGY_DIR", store):
+            # A prompt with quotes, new lines and Arabic arrives whole.
+            answer = providers.run(proj, "agy", 'Say "hi"\nبسم الله', wait_for_quota=False, attempts=1)
+            self.assertEqual(answer, "Hallo «بسم الله»")
+            self.assertEqual(sorted(p.name for p in (store / "conversations").iterdir()), ["keep.db"])
+            self.assertFalse((store / "brain" / "0f0e0d0c-1111-2222-3333-444455556666").exists())
+            # A model that tries a tool instead of answering: a failed call that says why.
+            with self.assertRaises(providers.LLMError) as caught:
+                providers.run(proj, "agy", "use a tool", wait_for_quota=False, attempts=1)
+            self.assertIn(i18n.t("tool_use_denied"), str(caught.exception))
+
+
+class ReferenceCheckTests(unittest.TestCase):
+    # A Turkish source with the signals that survive translation: Arabic phrases and numbers.
+    SOURCE = ("# Namaz\n\nNamaz dînin direğidir. Bu hadîs Beyhakî'de 2807 numara ile bildirilmiştir. Bekara sûresinin 43. "
+              "âyetinde: وَأَقِيمُوا الصَّلَاةَ وَآتُوا الزَّكَاةَ\n\n# Abdest\n\nAbdestin farzı dörttür ve bunlar Mâide sûresinin 6. "
+              "âyetinde bildirilir: يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا قُمْتُمْ إِلَى الصَّلَاةِ. Tirmizî 3, Ebû Dâvûd 61.\n\n"
+              "# Vakitler\n\nNisâ 103: إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا. Bu bölüm 1250 yılında yazıldı.\n")
+    DANISH = ("# Bøn\n\nBønnen er religionens søjle. Denne hadith er overleveret hos Bayhaqi under nummer 2807. I Surah "
+              "al-Baqarah vers 43: وَأَقِيمُوا الصَّلَاةَ وَآتُوا الزَّكَاةَ\n\n# Afvaskning\n\nAfvaskningens pligter er fire, og "
+              "de nævnes i Surah al-Ma'idah vers 6: يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا قُمْتُمْ إِلَى الصَّلَاةِ. Tirmidhi 3, Abu Dawud 61."
+              "\n\n# Tider\n\nAn-Nisa 103: إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا. Dette kapitel blev skrevet i år 1250.\n")
+
+    def test_a_translation_of_the_book_and_a_part_of_it_pass(self):
+        from pipeline import refcheck
+        self.assertEqual(refcheck.problems(self.SOURCE, self.DANISH, "da"), [])
+        half = self.DANISH[:len(self.DANISH) // 2]
+        self.assertEqual(refcheck.problems(self.SOURCE, half, "da"), [])
+        self.assertEqual(refcheck.problems("", self.DANISH, "da"), [])  # no source yet: only the language checks
+
+    def test_wrong_files_are_named(self):
+        from pipeline import refcheck
+        self.assertEqual(refcheck.problems(self.SOURCE, self.SOURCE, "da"), [("ref_looks_turkish", {})])
+        self.assertEqual(refcheck.problems(self.SOURCE, self.DANISH, "ru"),
+                         [("ref_wrong_script", {"found": "latin", "expected": "cyrillic"})])
+        self.assertEqual(refcheck.problems(self.SOURCE, self.DANISH, "ur")[0][0], "ref_wrong_script")
+        other = ("Ramadan er fastens måned, og den troende afholder sig fra mad og drikke fra daggry til solnedgang i hele "
+                 "måneden. Surah al-Baqarah 183 og 185: شَهْرُ رَمَضَانَ الَّذِي أُنْزِلَ فِيهِ الْقُرْآنُ هُدًى لِلنَّاسِ. "
+                 "Profeten sagde om fasten mange vigtige ting, som er overleveret hos Bukhari 1891 og Muslim 1151, og "
+                 "de lærde har skrevet om dem siden år 1987 i mange bøger og artikler. ") * 3
+        self.assertEqual(refcheck.problems(self.SOURCE, other, "da")[0][0], "ref_not_same_book")
+        self.assertEqual(refcheck.problems(self.SOURCE, self.DANISH[:120], "da")[0][0], "ref_too_short")
+        # A translation that leaves the Arabic out is judged by its numbers only.
+        no_arabic = refcheck._ARABIC_WORD.sub("", refcheck._ARABIC_MARKS.sub("", self.DANISH))
+        self.assertEqual(refcheck.problems(self.SOURCE, no_arabic, "da"), [])
 
 
 class QuotaMessageTests(unittest.TestCase):
@@ -864,18 +994,22 @@ class EndToEndTests(unittest.TestCase):
     def test_models_are_passed_to_the_tools_and_names_are_file_safe(self):
         cfg = (self.root / "config.toml").read_text(encoding="utf-8")
         cfg = cfg.replace('translate = "fake"', 'translate = "fake/model-a"')
-        cfg = cfg.replace('review2 = ["fake", "fake2"]', 'review2 = ["fake/model:b", "fake2"]')
+        cfg = cfg.replace('review2 = ["fake", "fake2"]', 'review2 = ["fake/model:b@high", "fake2"]')
+        # The thinking level goes to the tool with its own option; a tool without that option gets nothing.
+        cfg = cfg.replace('[providers.fake2]', 'effort = ["--effort", "{effort}"]\n[providers.fake2]')
+        cfg = cfg.replace('revise1 = "fake"', 'revise1 = "fake2@low"')
         (self.root / "config.toml").write_text(cfg, encoding="utf-8")
         os.environ["FAKE_LLM_ARGS_LOG"] = str(self.root / "models.log")
         self.addCleanup(os.environ.pop, "FAKE_LLM_ARGS_LOG")
 
         self.run_cli("run", "sample", "no", "--segments", "1")
         models = Counter((self.root / "models.log").read_text().split())
-        self.assertEqual((models["model-a"], models["model:b"]), (1, 1))
+        self.assertEqual((models["model-a"], models["model:b@high"]), (1, 1))
+        self.assertEqual(models["-@low"], 0)  # fake2 has no effort option: the level is not passed
         files = sorted(p.name for p in (self.book / "work" / "no" / "review2").glob("*.json"))
-        self.assertEqual(files, ["0001.fake2.json", "0001.fake_model_b.json"])
+        self.assertEqual(files, ["0001.fake2.json", "0001.fake_model_b_high.json"])
         reviewers = [i["reviewer"] for i in read_json(self.book / "work" / "no" / "reconcile" / "0001.json")]
-        self.assertEqual(reviewers, ["fake/model:b", "fake2"])
+        self.assertEqual(reviewers, ["fake/model:b@high", "fake2"])
 
     def test_incomplete_translation_is_rejected_and_retried(self):
         os.environ["FAKE_LLM_TRUNCATE"] = f"{self.root / 'trunc.count'}:1"

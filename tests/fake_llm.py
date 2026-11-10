@@ -6,8 +6,10 @@ import re
 import sys
 
 prompt = sys.stdin.read()
-if os.environ.get("FAKE_LLM_ARGS_LOG"):  # records the --model argument of each call
+if os.environ.get("FAKE_LLM_ARGS_LOG"):  # records the --model and --effort arguments of each call
     model = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else "-"
+    if "--effort" in sys.argv:
+        model += "@" + sys.argv[sys.argv.index("--effort") + 1]
     with open(os.environ["FAKE_LLM_ARGS_LOG"], "a", encoding="utf-8") as log:
         log.write(model + "\n")
 # FAKE_LLM_QUOTA_ONCE=<file>: the first call reports a usage limit (and creates the file), later calls answer.

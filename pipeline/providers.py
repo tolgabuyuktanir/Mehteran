@@ -1,16 +1,17 @@
-"""Runs the LLM command-line tools (claude, gemini, codex)."""
+"""Runs the LLM command-line tools (claude, codex, agy, gemini)."""
 
 from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import threading
 import time
 from pathlib import Path
 
-from .core import PipelineError, Project, say, split_name
+from .core import PipelineError, Project, effort_of, say, split_name
 from .i18n import t
 from .runstatus import STATUS
 from .system import hidden_window, resolve
@@ -93,8 +94,42 @@ def _wait_while_blocked(name: str, max_until: float) -> None:
 ACCOUNT_REFUSED = re.compile(r"This client is no longer supported[^\n']*|IneligibleTierError[^\n']*")
 
 
-def _call(proj: Project, spec: dict, model: str, prompt: str, timeout: int) -> tuple[int, str, str]:
-    """One call of the tool, in an empty folder: it sees neither the project files nor any instruction files."""
+# Antigravity CLI keeps each conversation in its own folder; the pipeline removes the ones it made.
+AGY_DIR = Path.home() / ".gemini" / "antigravity-cli"
+_CONVERSATION_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def _stream_json_answer(stdout: str) -> tuple[str, str]:
+    """(answer, error) of a stream-json run (Antigravity CLI): the "result" event carries both. A conversation that
+    the run stored is deleted: a book makes thousands of calls, and each stored conversation takes about 0.5 MB."""
+    result = None
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(event, dict) and event.get("event") == "result" and isinstance(event.get("result"), dict):
+            result = event["result"]
+    if result is None:
+        return "", ""
+    conversation = str(result.get("conversation_id", ""))
+    if _CONVERSATION_ID.match(conversation):
+        for path in AGY_DIR.joinpath("conversations").glob(f"{conversation}.db*"):
+            path.unlink(missing_ok=True)
+        shutil.rmtree(AGY_DIR / "brain" / conversation, ignore_errors=True)
+    answer = result.get("response") if result.get("status") == "SUCCESS" else ""
+    error = str(result.get("error") or "")
+    if result.get("denied_actions") and not answer:
+        error = (error + " " + t("tool_use_denied")).strip()
+    return (answer if isinstance(answer, str) else ""), error
+
+
+def _call(proj: Project, spec: dict, model: str, prompt: str, timeout: int, effort: str = "") -> tuple[int, str, str]:
+    """One call of the tool, in an empty folder: it sees neither the project files nor any instruction files.
+
+    input = "stream-json" in the provider's settings: the prompt goes to stdin as one stream-json message and the
+    answer is read from the result event (Antigravity CLI takes plain prompts only as an argument, which is too
+    short for a book segment on Windows)."""
     with tempfile.TemporaryDirectory(prefix="tp-") as tmp:
         out_file = Path(tmp) / "output.txt"
         cwd = Path(tmp) / "empty"
@@ -102,12 +137,19 @@ def _call(proj: Project, spec: dict, model: str, prompt: str, timeout: int) -> t
         argv = [arg.replace("{output}", str(out_file)) for arg in spec["command"]]
         if model or spec.get("model"):
             argv += ["--model", model or spec["model"]]
+        if effort and spec.get("effort"):  # the tool's thinking-level option, for example ["--effort", "{effort}"]
+            argv += [arg.replace("{effort}", effort) for arg in spec["effort"]]
         argv = resolve(argv)
+        stream = spec.get("input") == "stream-json"
+        stdin = json.dumps({"event": "user", "message": {"content": prompt}}, ensure_ascii=False) + "\n" if stream else prompt
         try:
-            proc = subprocess.run(argv, input=prompt, capture_output=True, text=True, encoding="utf-8",
+            proc = subprocess.run(argv, input=stdin, capture_output=True, text=True, encoding="utf-8",
                                   errors="replace", timeout=timeout, cwd=cwd, **hidden_window())
         except FileNotFoundError:
             raise PipelineError(t("command_not_found", command=argv[0])) from None
+        if stream:
+            answer, error = _stream_json_answer(proc.stdout)
+            return (proc.returncode or (0 if answer else 1)), answer, (proc.stderr + "\n" + error).strip()
         text = out_file.read_text(encoding="utf-8") if out_file.exists() else proc.stdout
         return proc.returncode, text, proc.stderr
 
@@ -138,7 +180,7 @@ def run(proj: Project, name: str, prompt: str, wait_for_quota: bool = True, atte
             raise LLMError(t("stopped"))
         started = time.time()
         try:
-            code, text, stderr = _call(proj, spec, model, prompt, timeout)
+            code, text, stderr = _call(proj, spec, model, prompt, timeout, effort_of(full_name))
         except subprocess.TimeoutExpired:
             error = t("no_answer_in_time", seconds=timeout)
             attempt += 1

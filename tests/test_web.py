@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from pipeline import system  # noqa: E402
+from pipeline import system, tools  # noqa: E402
 from pipeline.core import Project  # noqa: E402
 from pipeline.web import App, make_handler  # noqa: E402
 from test_pipeline import REFERENCE, SOURCE, make_project, make_template  # noqa: E402
@@ -101,7 +101,7 @@ class WebTests(unittest.TestCase):
 
         status, books = self.json("GET", "/api/books")
         self.assertEqual(books[0]["source"], ["tr.md"])
-        self.assertEqual(books[0]["references"], [{"lang": "da", "file": "da.md"}])
+        self.assertEqual(books[0]["references"], [{"lang": "da", "file": "da.md", "warnings": []}])
 
         self.assertEqual(self.json("DELETE", f"{base}/references/da")[0], 200)
         self.assertFalse((self.root / "books" / "buyuk-ilmihal" / "references" / "da.md").exists())
@@ -168,6 +168,17 @@ class WebTests(unittest.TestCase):
         self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
         bad = dict(board, review1=[])                                       # empty step
         self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
+        bad = dict(board, translate=["fake/some-model@high"])              # the tool has no thinking levels
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
+        bad = dict(board, translate=["fake@turbo"])                         # not a level
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
+        cfg = (self.root / "config.toml").read_text(encoding="utf-8")
+        (self.root / "config.toml").write_text(cfg.replace("[providers.fake2]", 'efforts = ["low", "high"]\n[providers.fake2]'), encoding="utf-8")
+        good = dict(board, translate=["fake/some-model@high"])
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": good, "flow": settings["flow"]})[0], 200)
+        settings = self.json("GET", "/api/settings")[1]
+        self.assertEqual(settings["stages"]["translate"], ["fake/some-model@high"])
+        self.assertEqual(settings["providers"]["fake"]["efforts"], ["low", "high"])
         self.assertEqual(self.json("POST", "/api/models/test", {"name": "fake2/some-model"})[0], 200)
 
     def test_export_formats(self):
@@ -191,6 +202,40 @@ class WebTests(unittest.TestCase):
         self.assertIn(b"<li>one</li>", data)
         self.assertEqual(self.call("GET", f"{base}/translation/exe")[0], 404)
         self.assertEqual(self.call("GET", "/api/books/sample/export/da/translation/md")[0], 404)
+
+    def test_reference_upload_warns_about_a_turkish_file(self):
+        self.json("POST", "/api/books", {"name": "sample"})
+        self.call("PUT", "/api/books/sample/source?file=tr.md", raw=SOURCE.encode())
+        status, data = self.json("PUT", "/api/books/sample/references/da?file=da.md", raw=SOURCE.encode())
+        self.assertEqual(status, 200)
+        self.assertIn("Turkish", data["message"])  # said at once, and kept in the list of references
+        book = next(b for b in self.json("GET", "/api/books")[1] if b["name"] == "sample")
+        self.assertEqual(len(book["references"][0]["warnings"]), 1)
+        status, data = self.json("PUT", "/api/books/sample/references/da?file=da.md", raw=REFERENCE.encode())
+        book = next(b for b in self.json("GET", "/api/books")[1] if b["name"] == "sample")
+        self.assertEqual(book["references"][0]["warnings"], [])
+
+    def test_install_missing_takes_the_workflow_tools_and_the_pdf_reader(self):
+        # The test workflow uses only the "fake" providers: Claude Code ("claude") is not needed, the PDF reader is.
+        cfg = (self.root / "config.toml").read_text(encoding="utf-8")
+        (self.root / "config.toml").write_text(cfg.replace('translate = "fake"', 'translate = "chatgpt"') + """
+[providers.chatgpt]
+command = ["codex"]
+""", encoding="utf-8")
+        started = {}
+        with mock.patch("shutil.which", return_value=None), \
+                mock.patch.object(App, "install", lambda app, names, key: started.update(names=names) or {"message": "ok"}):
+            self.assertEqual(self.json("POST", "/api/tools/install-missing")[0], 200)
+        self.assertEqual(started["names"], ["codex", "pdf"])
+        with mock.patch("pipeline.tools.status", lambda tool: {"id": tool, "name": tool, "provider": tools.TOOLS[tool]["provider"],
+                                                               "installed": False, "signed_in": False}):
+            listed = {item["id"]: item for item in self.json("GET", "/api/tools")[1]["tools"]}
+        self.assertTrue(listed["pdf"]["required"] and listed["codex"]["required"])
+        self.assertFalse(listed["antigravity"]["required"] or listed["claude"]["required"])
+        self.assertEqual(listed["pdf"]["name"], "PDF reader (Poppler)")
+        # The PDF reader has no sign-in, test or model list.
+        self.assertEqual(self.json("POST", "/api/tools/pdf/test")[0], 404)
+        self.assertEqual(self.json("POST", "/api/tools/pdf/login", {"method": "terminal"})[0], 404)
 
     def test_export_layout_and_word_template(self):
         import tomllib

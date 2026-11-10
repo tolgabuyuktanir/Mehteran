@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -138,25 +140,29 @@ def _linux_terminal() -> list[str] | None:
     return None
 
 
-def terminal_command(command: str, path_dirs: list[str]) -> str:
+def terminal_command(command: str, path_dirs: list[str], note: str = "") -> str:
     """The command line for a new terminal: the given folders are put in front of PATH first, because a new
-    terminal does not know the tools that the application installed into its own folder."""
+    terminal does not know the tools that the application installed into its own folder. note: a line shown
+    first, telling the user what to do in the window (a fixed message of the application)."""
     if IS_WINDOWS:
-        return f'set "PATH={os.pathsep.join(path_dirs)};%PATH%" && {command}' if path_dirs else command
+        note = re.sub(r'[&|<>^%"]', "", note)  # characters that cmd would read as commands
+        line = f"echo {note} && {command}" if note else command
+        return f'set "PATH={os.pathsep.join(path_dirs)};%PATH%" && {line}' if path_dirs else line
+    line = f"printf '%s\\n\\n' {shlex.quote(note)}; {command}" if note else command
     quoted = ":".join("'" + d.replace("'", "'\\''") + "'" for d in path_dirs)
-    return f'export PATH={quoted}:"$PATH"; {command}' if path_dirs else command
+    return f'export PATH={quoted}:"$PATH"; {line}' if path_dirs else line
 
 
 def can_open_terminal() -> bool:
     return IS_MAC or IS_WINDOWS or _linux_terminal() is not None
 
 
-def open_terminal(command: str, path_dirs: list[str] | None = None) -> bool:
+def open_terminal(command: str, path_dirs: list[str] | None = None, note: str = "") -> bool:
     """Runs a fixed command in a new terminal window. Returns False when no terminal can be opened.
 
     Only fixed commands from tools.TOOLS and the application's own folders arrive here; user input never does.
     """
-    command = terminal_command(command, path_dirs or [])
+    command = terminal_command(command, path_dirs or [], note)
     if IS_MAC:
         applescript = command.replace("\\", "\\\\").replace('"', '\\"')
         script = f'tell application "Terminal"\nactivate\ndo script "{applescript}"\nend tell'

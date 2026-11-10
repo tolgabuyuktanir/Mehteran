@@ -17,17 +17,17 @@ You do not need to install anything first. An internet connection is enough.
    - **Windows:** double-click `Open Interface.bat`. If "Windows protected your PC" appears, click **More info**, then **Run anyway**.
    - **Linux:** run `./translate ui` in a terminal.
 3. On the first start, if the computer has no suitable Python, the application installs a private Python for itself (a minute or two). Then the interface opens in the browser at `http://127.0.0.1:8765/`. The interface runs while its terminal window stays open.
-4. Follow the **Getting started** list on the **Setup** tab. Everything else is done in the interface: it installs the AI tools (Claude Code, Codex, Gemini CLI), signs in to them, and adds your first book.
+4. Follow the **Getting started** list on the **Setup** tab. Everything else is done in the interface: it installs the AI tools (Claude Code, Codex, Antigravity CLI) and the PDF reader, signs in to the tools, and adds your first book.
 
 Next time, start the interface the same way (double-click is enough after the first time).
 
 ## What you need
 
-- **Accounts:** the interface signs in, but you need the subscriptions: a Claude Pro/Max subscription (or Anthropic Console), a paid ChatGPT plan (or an OpenAI API key), and, if you use Gemini, a Google account that Gemini CLI accepts (or a Gemini API key). Google no longer accepts free personal accounts in Gemini CLI. The default workflow uses all three tools; without an account for one of them, assign another model to its steps on the **Workflow** tab.
-- **Books as PDF:** reading a PDF source needs the `pdftotext` program (Poppler), which the interface does not install. The interface tells you when it is missing and how to install it. A `.docx` or `.epub` source needs nothing extra and is read more completely.
+- **Accounts:** the interface signs in, but you need the subscriptions: a Claude Pro/Max subscription (or Anthropic Console), a paid ChatGPT plan (or an OpenAI API key), and a Google account for Antigravity CLI, which runs the Gemini models (a Google AI Pro or Ultra subscription gives higher usage limits). Since 18 June 2026 Google does not accept personal accounts in Gemini CLI any more; Antigravity CLI replaces it. The default workflow uses all three tools; without an account for one of them, assign another model to its steps on the **Workflow** tab.
+- **Books as PDF:** the interface installs the PDF reader (Poppler) with the other tools, into the application's own folder. A `.docx` or `.epub` source is read more completely.
 - **Exporting to PDF:** needs Chrome or Edge (Windows always has Edge). Without them, a print-ready page opens; choose "Save as PDF" in the print dialog.
 
-Everything the application installs stays in its own folder (`.runtime/`, about 0.7 GB). To remove the application, delete the folder. Claude Code and the private Python (uv) go into your user folder (`~/.local/bin`).
+Codex, Node.js and the PDF reader go into the application's own folder (`.runtime/`). Claude Code, Antigravity CLI and the private Python (uv) go into your user folder (`~/.local/bin`; Windows: under `%LOCALAPPDATA%`). To remove the application, delete its folder.
 
 ## More
 

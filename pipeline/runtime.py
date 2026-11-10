@@ -5,7 +5,9 @@ is downloaded from nodejs.org into <root>/.runtime/node and checked against the 
 Each npm package is installed into its own folder, <root>/.runtime/tools/<tool>: no administrator rights are
 needed, the system's npm permissions do not matter, and installing one tool cannot change another (npm
 rebuilds the whole tree of a shared folder and can drop another package's platform binary).
-Claude Code uses its official installer.
+Claude Code and Antigravity CLI use their official installers.
+The PDF reader (pdftotext of Poppler) comes from conda-forge: micromamba (one file, checked against its published
+SHA-256 sum) installs it into <root>/.runtime/poppler, on macOS, Windows and Linux alike.
 """
 
 from __future__ import annotations
@@ -31,10 +33,17 @@ from .i18n import t
 NODE_DIST = "https://nodejs.org/dist"
 MIN_NODE = 20  # Gemini CLI needs Node.js 20 or later
 NPM_PACKAGES = {"codex": "@openai/codex", "gemini": "@google/gemini-cli"}
-CLAUDE_INSTALL = {
-    "posix": ["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"],
-    "windows": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://claude.ai/install.ps1 | iex"],
+OFFICIAL_INSTALL = {
+    "claude": {
+        "posix": ["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"],
+        "windows": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://claude.ai/install.ps1 | iex"],
+    },
+    "antigravity": {  # installs to ~/.local/bin (Windows: %LOCALAPPDATA%\\agy\\bin)
+        "posix": ["bash", "-c", "curl -fsSL https://antigravity.google/cli/install.sh | bash"],
+        "windows": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://antigravity.google/cli/install.ps1 | iex"],
+    },
 }
+MICROMAMBA = "https://github.com/mamba-org/micromamba-releases/releases/latest/download"
 
 
 def runtime_dir(root: Path) -> Path:
@@ -55,9 +64,14 @@ def tool_bin_dir(root: Path, tool: str) -> Path:
     return prefix if system.IS_WINDOWS else prefix / "bin"
 
 
+def poppler_bin_dir(root: Path) -> Path:
+    prefix = runtime_dir(root) / "poppler"
+    return prefix / "Library" / "bin" if system.IS_WINDOWS else prefix / "bin"
+
+
 def bin_dirs(root: Path) -> list[Path]:
     """Folders with the tools that this module installed; they go to the front of PATH."""
-    return [tool_bin_dir(root, tool) for tool in NPM_PACKAGES] + [node_bin_dir(root)]
+    return [tool_bin_dir(root, tool) for tool in NPM_PACKAGES] + [node_bin_dir(root), poppler_bin_dir(root)]
 
 
 # --- Node.js ------------------------------------------------------------------
@@ -177,13 +191,60 @@ def _run_streaming(argv: list[str], env: dict | None = None) -> None:
         raise PipelineError(t("install_step_failed", code=proc.returncode))
 
 
+def _micromamba_platform() -> str:
+    machine = platform.machine().lower()
+    arm = machine in ("arm64", "aarch64")
+    if not arm and machine not in ("x86_64", "amd64"):
+        raise PipelineError(t("pdf_tool_unsupported", machine=machine))
+    if system.IS_WINDOWS:
+        if arm:
+            raise PipelineError(t("pdf_tool_unsupported", machine=machine))
+        return "win-64"
+    if system.IS_MAC:
+        return "osx-arm64" if arm else "osx-64"
+    return "linux-aarch64" if arm else "linux-64"
+
+
+def install_poppler(root: Path) -> None:
+    """Installs pdftotext (Poppler, from conda-forge) into <root>/.runtime/poppler."""
+    name = f"micromamba-{_micromamba_platform()}"
+    runtime = runtime_dir(root)
+    folder = runtime / "micromamba"
+    folder.mkdir(parents=True, exist_ok=True)
+    exe = folder / ("micromamba.exe" if system.IS_WINDOWS else "micromamba")
+    if not exe.exists():
+        say(t("pdf_tool_downloading"))
+        with urllib.request.urlopen(urllib.request.Request(f"{MICROMAMBA}/{name}.sha256",
+                                                           headers={"User-Agent": "translation-pipeline"}), timeout=60) as response:
+            expected = response.read().decode("utf-8").split()[0].strip().lower()
+        with tempfile.TemporaryDirectory(dir=folder) as tmp:
+            download = Path(tmp) / exe.name
+            _download(f"{MICROMAMBA}/{name}", download)
+            if not re.fullmatch(r"[0-9a-f]{64}", expected) or hashlib.sha256(download.read_bytes()).hexdigest() != expected:
+                raise PipelineError(t("pdf_tool_checksum_mismatch"))
+            download.chmod(0o755)
+            os.replace(download, exe)
+    prefix = runtime / "poppler"
+    # Everything stays in the application's folder, the package cache too (micromamba would use ~/.mamba).
+    env = {**os.environ, "MAMBA_ROOT_PREFIX": str(runtime / "mamba"), "CONDA_PKGS_DIRS": str(runtime / "mamba" / "pkgs")}
+    root_prefix = ["--root-prefix", str(runtime / "mamba")]
+    _run_streaming([str(exe), "create", *root_prefix, "--yes", "--prefix", str(prefix), "--channel", "conda-forge",
+                    "--override-channels", "poppler"], env)
+    _run_streaming([str(exe), "clean", "--all", "--yes"], env)  # the downloaded packages are no longer needed
+    if not (poppler_bin_dir(root) / ("pdftotext.exe" if system.IS_WINDOWS else "pdftotext")).exists():
+        raise PipelineError(t("pdf_tool_install_failed"))
+
+
 def install_tool(tool: str, root: Path) -> None:
     """Installs one tool. Output goes to stdout (the web interface shows it as the install log)."""
-    if tool == "claude":
-        argv = CLAUDE_INSTALL["windows" if system.IS_WINDOWS else "posix"]
+    if tool in OFFICIAL_INSTALL:
+        argv = OFFICIAL_INSTALL[tool]["windows" if system.IS_WINDOWS else "posix"]
         if not system.IS_WINDOWS and not shutil.which("curl"):
             raise PipelineError(t("need_curl"))
         _run_streaming(argv)
+        return
+    if tool == "pdf":
+        install_poppler(root)
         return
     if tool not in NPM_PACKAGES:
         raise PipelineError(t("not_found"))

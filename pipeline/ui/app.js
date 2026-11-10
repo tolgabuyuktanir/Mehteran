@@ -7,7 +7,7 @@ const I18N = {
     app_subtitle: "Tercüme ve tashih iş akışı",
     tab_setup: "Kurulum", tab_books: "Kitaplar", tab_prompts: "Talimatlar",
     setup_title: "Kurulum ve oturum",
-    setup_intro: "Üç araç da kurulur. Oturum açmak, iş akışında kullanılan araçlar için gerekir. Bu işlem her bilgisayarda bir kez yapılır.",
+    setup_intro: "Bu sayfada iki şey yapılır, her bilgisayarda bir kez: \"Eksikleri kur\" iş akışının kullandığı araçları ve PDF okuyucuyu kurar; sonra her araçta kendi hesabınızla oturum açarsınız. Kullanılmayan araçlar gerekmez.",
     refresh_status: "Durumu yenile",
     flow_title: "Hangi adımı hangi araç yapar",
     loading: "Yükleniyor…",
@@ -27,7 +27,10 @@ const I18N = {
     prepared: "Hazırlandı · {count} bölüm", not_prepared: "Henüz hazırlanmadı",
     reset_hint: "Kaynağı değiştirmek için çalışmayı sıfırlayın. Bütün dillerdeki ara çıktılar silinir.",
     reset_work: "Çalışmayı sıfırla",
-    refs_intro: "Aynı kitabın yakın dillerdeki mevcut tercümeleri. Örnek: Norveççe için Danca ve İsveççe.",
+    refs_intro: "Referans, bu kitabın başka bir dile daha önce yapılmış, yayımlanmış tercümesidir. Zorunlu değildir; yoksa \"Referanssız devam et\" ile geçin.",
+    refs_how: "Ne işe yarar: uygulama her Türkçe bölümün referanstaki karşılığını bulur ve modellere yardımcı metin olarak verir. Modeller oradan terimlerin, özel adların ve zor cümlelerin nasıl karşılandığını görür. Esas her zaman Türkçe kaynaktır: referanstaki bir fark, eksik veya hata çeviriye geçmez.",
+    refs_which: "Hangi tercümeler: hedef dile yakın dillerdeki tercümeler en çok yardım eder (Norveççe için Danca ve İsveççe). Dosyayı yüklerken dilini seçin. Türkçe kitabı veya başka bir kitabı yüklemeyin; uygulama yüklenen dosyayı kontrol eder ve şüpheli bir şey görürse uyarır.",
+    refs_more: "Referans ne işe yarar, hangisini yüklemeliyim?",
     no_refs: "Referans yok. Referans olmadan da çeviri yapılır, ama yakın dillerdeki tercümeler doğruluğu artırır.",
     aligned: "Hizalanan: {done}/{total}", delete: "Sil",
     add_language: "Listede olmayan bir dil ekle",
@@ -137,6 +140,9 @@ const I18N = {
     reviewers_label: "Tashihçiler", applier_label: "Bulguları uygulayan", max_steps: "En çok {count} adım eklenebilir.",
     flow_changed_note: "Adım ekleyip çıkarmak daha önce çevrilmiş bölümleri değiştirmez. Kitap ekranı, yeni sıraya göre yeniden üretilmesi gereken bölümleri gösterir.",
     unsaved: "Kaydedilmedi", preset: "Şemadaki dağılım",
+    effort_title: "Düşünme seviyesi: yüksek seviye daha dikkatli ama daha yavaş çalışır ve kotayı daha çok harcar.",
+    effort_default: "Varsayılan seviye", effort_low: "düşük", effort_medium: "orta", effort_high: "yüksek",
+    effort_xhigh: "çok yüksek", effort_max: "en yüksek", effort_none: "bu araçta seviye seçilemez",
     default_model: "varsayılan model", add_model_placeholder: "model adı (örnek: opus)", add_other_model: "Listede olmayan bir model ekle",
     models_loading: "Model listesi okunuyor…", models_none: "Model listesi okunamadı. Araç kurulu olmalı ve en az bir kez çalışmış olmalı.",
     remove: "Kaldır", parallel_tag: "paralel · en çok 4 model",
@@ -175,7 +181,8 @@ const I18N = {
     page_A4: "A4 (21 × 29,7 cm)", page_A5: "A5 (14,8 × 21 cm)", page_B5: "B5 (17,6 × 25 cm)", "page_13.5x21": "13,5 × 21 cm",
     page_16x24: "16 × 24 cm", page_Letter: "Letter (21,6 × 27,9 cm)",
     pdf_hint: "PDF: açılan sayfada yazdırma penceresinden \"PDF olarak kaydet\" seçin.",
-    step_install_hint: "Claude Code, Codex ve Gemini bu bilgisayara kurulur. Gerekirse Node.js de uygulamanın klasörüne indirilir. Yönetici izni gerekmez.",
+    step_install_hint: "İş akışının kullandığı araçlar (Claude Code, Codex, Antigravity) ve PDF okuyucu bu bilgisayara kurulur. Gerekirse Node.js de uygulamanın klasörüne indirilir. Yönetici izni gerekmez.",
+    pdf_uses: "PDF kitapları okur. .docx ve .epub kitaplar için gerekmez.",
     first_book_title: "İlk kitabınızı ekleyin",
     first_book_intro: "Kitaba kısa bir ad verin. Sonra Türkçe kaynağı ve varsa yakın dillerdeki tercümeleri yükleyeceksiniz.",
     create_book: "Kitabı oluştur",
@@ -183,7 +190,7 @@ const I18N = {
     locked_refs: "Önce Türkçe kaynağı yükleyin.", locked_run: "Önce kaynak ve referans adımlarını tamamlayın.",
     locked_result: "Çeviri bitince burada okuyup indirebilirsiniz.",
     summary_source_empty: "Kaynak dosyayı yükleyin", summary_source: "{file} · {count} bölüm",
-    summary_refs_none: "Referans kullanılmıyor", summary_refs_optional: "İsteğe bağlı, doğruluğu artırır",
+    summary_refs_check: "kontrol edin: {languages}", summary_refs_none: "Referans kullanılmıyor", summary_refs_optional: "İsteğe bağlı, doğruluğu artırır",
     summary_running: "{language} · {stage} · {done}/{total}",
     summary_run_more: "Başka bir dile çevirmek için açın", summary_run_ready: "Hedef dili seçip başlatın",
     continue: "Devam et", skip_refs: "Referanssız devam et",
@@ -234,7 +241,7 @@ const I18N = {
     app_subtitle: "Translation and review workflow",
     tab_setup: "Setup", tab_books: "Books", tab_prompts: "Instructions",
     setup_title: "Setup and sign-in",
-    setup_intro: "All three tools are installed. You must sign in to the tools that the workflow uses. You do this once on each computer.",
+    setup_intro: "Two things are done here, once on each computer: \"Install missing tools\" installs the tools of the workflow and the PDF reader; then you sign in to each tool with your own account. Tools that the workflow does not use are not needed.",
     refresh_status: "Refresh status",
     flow_title: "Which tool does which step",
     loading: "Loading…",
@@ -254,7 +261,10 @@ const I18N = {
     prepared: "Prepared · {count} segments", not_prepared: "Not prepared yet",
     reset_hint: "To change the source, reset the work. The intermediate output of all languages is deleted.",
     reset_work: "Reset work",
-    refs_intro: "Existing translations of the same book in related languages. Example: Danish and Swedish for Norwegian.",
+    refs_intro: "A reference is an earlier, published translation of this book into another language. It is optional; without one, click \"Continue without references\".",
+    refs_how: "What it does: the application finds the match of each Turkish segment in the reference and gives it to the models as a help text. From it the models see how terms, names and difficult sentences were handled. The Turkish source always decides: a difference, a gap or an error in the reference does not pass into the translation.",
+    refs_which: "Which translations: translations into languages close to the target language help most (Danish and Swedish for Norwegian). Select the language of the file when you upload it. Do not upload the Turkish book or another book; the application checks the uploaded file and warns when something looks wrong.",
+    refs_more: "What does a reference do, which one should I upload?",
     no_refs: "No references. The translation works without them, but translations in related languages improve accuracy.",
     aligned: "Aligned: {done}/{total}", delete: "Delete",
     add_language: "Add a language that is not in the list",
@@ -364,6 +374,9 @@ const I18N = {
     reviewers_label: "Reviewers", applier_label: "Applies the findings", max_steps: "At most {count} steps can be added.",
     flow_changed_note: "Adding or removing steps does not change segments translated earlier. The book screen shows the segments to produce again for the new order.",
     unsaved: "Not saved", preset: "Diagram assignment",
+    effort_title: "Thinking level: a higher level works more carefully but more slowly, and uses more of the quota.",
+    effort_default: "Default level", effort_low: "low", effort_medium: "medium", effort_high: "high",
+    effort_xhigh: "extra high", effort_max: "maximum", effort_none: "this tool has no level option",
     default_model: "default model", add_model_placeholder: "model name (for example: opus)", add_other_model: "Add a model that is not in the list",
     models_loading: "Reading the model list…", models_none: "Cannot read the model list. The tool must be installed and must have run at least once.",
     remove: "Remove", parallel_tag: "parallel · up to 4 models",
@@ -402,7 +415,8 @@ const I18N = {
     page_A4: "A4 (21 × 29.7 cm)", page_A5: "A5 (14.8 × 21 cm)", page_B5: "B5 (17.6 × 25 cm)", "page_13.5x21": "13.5 × 21 cm",
     page_16x24: "16 × 24 cm", page_Letter: "Letter (21.6 × 27.9 cm)",
     pdf_hint: "PDF: in the page that opens, choose \"Save as PDF\" in the print dialog.",
-    step_install_hint: "Claude Code, Codex and Gemini are installed on this computer. If needed, Node.js is downloaded into the application's folder. No administrator rights are needed.",
+    step_install_hint: "The tools of the workflow (Claude Code, Codex, Antigravity) and the PDF reader are installed on this computer. If needed, Node.js is downloaded into the application's folder. No administrator rights are needed.",
+    pdf_uses: "Reads PDF books. Not needed for .docx and .epub books.",
     first_book_title: "Add your first book",
     first_book_intro: "Give the book a short name. Then you upload the Turkish source and, if you have them, translations in related languages.",
     create_book: "Create book",
@@ -410,7 +424,7 @@ const I18N = {
     locked_refs: "Upload the Turkish source first.", locked_run: "Complete the source and reference steps first.",
     locked_result: "When the translation is finished, you read and download it here.",
     summary_source_empty: "Upload the source file", summary_source: "{file} · {count} segments",
-    summary_refs_none: "No references used", summary_refs_optional: "Optional, improves accuracy",
+    summary_refs_check: "please check: {languages}", summary_refs_none: "No references used", summary_refs_optional: "Optional, improves accuracy",
     summary_running: "{language} · {stage} · {done}/{total}",
     summary_run_more: "Open to translate into another language", summary_run_ready: "Choose the target language and start",
     continue: "Continue", skip_refs: "Continue without references",
@@ -536,14 +550,25 @@ async function act(button, fn) {
   }
 }
 
-const PROVIDER_NAMES = { claude: "Claude", chatgpt: "ChatGPT", gemini: "Gemini" };
+const PROVIDER_NAMES = { claude: "Claude", chatgpt: "ChatGPT", antigravity: "Antigravity", gemini: "Gemini" };
 const providerName = (p) => PROVIDER_NAMES[p] || p;
-const providerOf = (name) => String(name).split("/")[0];
-const modelOf = (name) => String(name).split("/").slice(1).join("/");
+// An assignment is "provider", "provider/model", either with "@effort" (the thinking level: "claude/opus@high").
+const baseOf = (name) => String(name).split("@")[0];
+const effortOf = (name) => String(name).split("@")[1] || "";
+const providerOf = (name) => baseOf(name).split("/")[0];
+const modelOf = (name) => baseOf(name).split("/").slice(1).join("/");
+const providerEfforts = (provider) => state.settings?.providers?.[provider]?.efforts || [];
+// The company that made a model: Antigravity runs Gemini models by default, and some Claude and GPT models.
+function makerOf(name) {
+  const provider = providerOf(name), model = modelOf(name);
+  if (provider === "antigravity") return model.startsWith("claude") ? "claude" : model.startsWith("gpt") ? "chatgpt" : "gemini";
+  return provider;
+}
 function modelLabel(name) {
   const provider = providerOf(name);
   const fallback = state.settings?.providers?.[provider]?.default_model;
-  return `${providerName(provider)} · ${modelOf(name) || fallback || L("default_model")}`;
+  const effort = effortOf(name);
+  return `${providerName(provider)} · ${modelOf(name) || fallback || L("default_model")}${effort ? ` · ${L("effort_" + effort)}` : ""}`;
 }
 
 function fmtTime(epoch) {
@@ -658,8 +683,9 @@ async function loadTools() {
 }
 
 function onboardingHtml(data) {
-  const total = data.tools.length;
-  const installed = data.tools.filter((tool) => tool.installed).length;
+  const required = data.tools.filter((tool) => tool.required);  // the workflow's tools and the PDF reader
+  const total = required.length;
+  const installed = required.filter((tool) => tool.installed).length;
   const needed = neededTools(data);
   const signedIn = needed.filter((tool) => tool.signed_in).length;
   const job = data.all_job;
@@ -703,7 +729,7 @@ function toolCard(tool, terminal) {
   const installed = tool.installed
     ? `<span class="badge good">${esc(L("installed"))}</span>`
     : `<span class="badge bad">${esc(L("not_installed"))}</span>`;
-  const signIn = !tool.installed ? "" : tool.signed_in
+  const signIn = !tool.installed || !tool.provider ? "" : tool.signed_in
     ? `<span class="badge good">${esc(L("signed_in"))}${tool.sign_in_info ? " · " + esc(tool.sign_in_info) : ""}</span>`
     : `<span class="badge warn">${esc(L("not_signed_in"))}</span>`;
   const job = tool.job;
@@ -712,25 +738,25 @@ function toolCard(tool, terminal) {
   if (!tool.installed || (job && !running && job.code !== 0)) {
     actions.push(`<button type="button" class="btn primary" data-act="install" data-id="${esc(tool.id)}" ${running ? "disabled" : ""}>${esc(L(running ? "installing" : "install"))}</button>`);
   }
-  if (tool.installed) {
+  if (tool.installed && tool.provider) {
     const main = tool.signed_in ? "" : "primary";
     if (tool.id === "gemini") {
       actions.push(`<button type="button" class="btn ${main}" data-act="login" data-method="google" data-id="${esc(tool.id)}">${esc(L("with_google"))}</button>`);
     } else {
-      const label = tool.id === "codex" ? "with_chatgpt" : "with_claude";
+      const label = { codex: "with_chatgpt", antigravity: "with_google" }[tool.id] || "with_claude";
       actions.push(`<button type="button" class="btn ${main}" data-act="login" data-method="terminal" data-id="${esc(tool.id)}" ${terminal ? "" : "disabled"}>${esc(L(label))}</button>`);
     }
-    if (tool.id !== "claude") actions.push(`<button type="button" class="btn" data-act="key" data-id="${esc(tool.id)}">${esc(L("with_key"))}</button>`);
+    if (["codex", "gemini"].includes(tool.id)) actions.push(`<button type="button" class="btn" data-act="key" data-id="${esc(tool.id)}">${esc(L("with_key"))}</button>`);
     if (tool.signed_in) actions.push(`<button type="button" class="btn" data-act="test" data-id="${esc(tool.id)}">${esc(L("test"))}</button>`);
   }
-  const uses = tool.stages.length ? L("used_in", { stages: tool.stages.map((s) => stageName(s)).join(", ") }) : L("not_used");
+  const uses = !tool.provider ? L("pdf_uses") : tool.stages.length ? L("used_in", { stages: tool.stages.map((s) => stageName(s)).join(", ") }) : L("not_used");
   return `
     <article class="card tool" data-id="${esc(tool.id)}">
       <div class="tool-head"><h3>${esc(tool.name)}</h3><span class="muted small">${esc(tool.version)}</span></div>
       <div class="badges">${installed}${signIn}</div>
       <div class="uses">${esc(uses)}</div>
       <div class="small muted">${esc(tool.requirements)}</div>
-      ${tool.installed && !tool.signed_in ? `<div class="small">${esc(tool.sign_in_help)}</div>` : ""}
+      ${tool.installed && !tool.signed_in && tool.sign_in_help ? `<div class="small">${esc(tool.sign_in_help)}</div>` : ""}
       ${quotaLine(tool.quota)}
       ${!terminal && tool.installed && !tool.signed_in ? `<p class="small muted">${esc(L("run_command", { command: tool.login_command }))}</p>` : ""}
       <form class="keyform" data-id="${esc(tool.id)}" hidden>
@@ -794,7 +820,7 @@ function renderFlow() {
 
 // All tools are installed. A sign-in is required only for the tools that the workflow uses.
 const neededTools = (data) => data.tools.filter((tool) => tool.stages.length);
-const toolsReady = (data) => data.tools.every((tool) => tool.installed) && neededTools(data).every((tool) => tool.signed_in);
+const toolsReady = (data) => data.tools.every((tool) => !tool.required || tool.installed) && neededTools(data).every((tool) => tool.signed_in);
 
 function setToolsReady(ready) {
   state.toolsReady = ready;
@@ -906,9 +932,11 @@ function renderBook(keepOpen = false) {
     </div>
     <ol class="journey">${steps.map((s, i) => {
       const isOpen = s.id === open && !s.locked;
-      const cls = [s.done ? "done" : "", s.id === current ? "current" : "", s.locked ? "locked" : "", isOpen ? "open" : ""].join(" ");
+      const doubtful = s.id === "refs" && book.references.some((r) => r.warnings?.length);
+      const cls = [s.done ? "done" : "", s.id === current ? "current" : "", s.locked ? "locked" : "", isOpen ? "open" : "",
+        doubtful ? "doubtful" : ""].join(" ");
       return `<li class="jstep ${cls}" data-step="${s.id}">
-          <span class="jnode" aria-hidden="true">${s.done ? "✓" : i + 1}</span>
+          <span class="jnode" aria-hidden="true">${doubtful ? "!" : s.done ? "✓" : i + 1}</span>
           <div class="jcard">
             <button type="button" class="jhead" data-act="open-step" data-step="${s.id}" ${s.locked ? "disabled" : ""} aria-expanded="${isOpen}">
               <span class="jtitle">${esc(L("step_" + s.id))}</span>
@@ -944,8 +972,12 @@ function stepSummary(book, step) {
     case "source":
       if (!book.source.length) return L("summary_source_empty");
       return book.prepared ? L("summary_source", { file: book.source[0], count: status.segments }) : book.source[0];
-    case "refs":
-      return book.references.length ? book.references.map((r) => languageName(r.lang)).join(", ") : L(step.done ? "summary_refs_none" : "summary_refs_optional");
+    case "refs": {
+      if (!book.references.length) return L(step.done ? "summary_refs_none" : "summary_refs_optional");
+      const doubtful = book.references.filter((r) => r.warnings?.length).map((r) => languageName(r.lang));
+      const names = book.references.map((r) => languageName(r.lang)).join(", ");
+      return doubtful.length ? `${names} · ⚠ ${L("summary_refs_check", { languages: doubtful.join(", ") })}` : names;
+    }
     case "run":
       if (book.running && book.run) {
         const st = book.run.stages?.[book.run.stage];
@@ -976,7 +1008,9 @@ function sourceStepHtml(book) {
 }
 
 function refsStepHtml(book) {
-  return `<p class="muted">${esc(L("refs_intro"))}</p>
+  return `<p>${esc(L("refs_intro"))}</p>
+    <details class="refs-help"><summary>${esc(L("refs_more"))}</summary>
+      <p class="small">${esc(L("refs_how"))}</p><p class="small">${esc(L("refs_which"))}</p></details>
     <div data-role="refs">${refsHtml(book)}</div>
     ${uploader("references", `<select data-role="ref-lang" aria-label="${esc(L("reference_language"))}">${langOptions(["tr"])}</select>`)}
     <details>
@@ -1003,6 +1037,7 @@ function refsHtml(book) {
             <button type="button" class="btn small danger" data-act="delete-ref" data-lang="${esc(r.lang)}" ${book.running ? "disabled" : ""}>${esc(L("delete"))}</button>
           </span>
         </div>
+        ${(r.warnings || []).map((w) => `<div class="notice warn small">${esc(w)}</div>`).join("")}
         ${status.alignment[r.lang]?.missing?.length
           ? `<div class="notice warn small">${esc(L("unaligned", { segments: status.alignment[r.lang].missing.map(Number).join(", ") }))}</div>` : ""}`).join("")
     : `<p class="muted small">${esc(L("no_refs"))}</p>`;
@@ -1542,8 +1577,8 @@ $("#reader-close").addEventListener("click", () => $("#reader").close());
 
 // ---------- workflow board ----------
 const PRESET_FLOW = ["review1", "revise1", "source_check", "review2", "reconcile"];
-const PRESET = { align: ["gemini"], glossary: ["claude"], translate: ["chatgpt"], review1: ["gemini"], revise1: ["chatgpt"],
-                 source_check: ["claude"], review2: ["chatgpt", "gemini"], reconcile: ["claude"] };
+const PRESET = { align: ["antigravity"], glossary: ["claude"], translate: ["chatgpt"], review1: ["antigravity"], revise1: ["chatgpt"],
+                 source_check: ["claude"], review2: ["chatgpt", "antigravity"], reconcile: ["claude"] };
 const MODEL_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/;
 
 async function loadBoard() {
@@ -1593,9 +1628,9 @@ function boardWarnings(b) {
     if (!writer || !b[step] || stageKind(step) === "apply") continue;
     const name = stageName(step);
     if (nodeRole(step) === "report") {
-      if (b[step].includes(writer)) out.push(["warn", L("warn_self_review", { step: name, model: modelLabel(writer) }), step]);
-      else if (b[step].every((n) => providerOf(n) === providerOf(writer))) out.push(["", L("info_same_provider", { step: name }), step]);
-    } else if (b[step][0] === writer) {
+      if (b[step].some((n) => baseOf(n) === baseOf(writer))) out.push(["warn", L("warn_self_review", { step: name, model: modelLabel(writer) }), step]);
+      else if (b[step].every((n) => makerOf(n) === makerOf(writer))) out.push(["", L("info_same_provider", { step: name }), step]);
+    } else if (baseOf(b[step][0]) === baseOf(writer)) {
       out.push(["warn", L("warn_self_check", { step: name, model: modelLabel(writer) }), step]);
     }
   }
@@ -1749,12 +1784,21 @@ function rolePicker(stage) {
     const fallback = state.settings.providers[provider]?.default_model;
     const names = [provider, ...providerModels(provider).map((m) => `${provider}/${m}`)];
     const buttons = names.map((n) => `<button type="button" class="pick" data-act="pick" data-stage="${stage}" data-name="${esc(n)}"
-        aria-pressed="${chosen.includes(n)}">${esc(modelOf(n) || (fallback ? `${L("default_model")} (${fallback})` : L("default_model")))}</button>`).join("");
+        aria-pressed="${chosen.some((c) => baseOf(c) === n)}">${esc(modelOf(n) || (fallback ? `${L("default_model")} (${fallback})` : L("default_model")))}</button>`).join("");
     return `<div class="pick-row"><span class="pick-provider ${esc(provider)}">${esc(providerName(provider))}</span>
         <div class="pick-chips">${buttons}</div></div>`;
   }).join("");
+  // The thinking level of each chosen model; a tool without such an option says so.
+  const levels = chosen.map((c) => {
+    const efforts = providerEfforts(providerOf(c));
+    const label = esc(modelLabel(baseOf(c)));
+    if (!efforts.length) return `<div class="effort-row"><span>${label}</span><span class="muted small">${esc(L("effort_none"))}</span></div>`;
+    const options = ["", ...efforts].map((e) => `<option value="${e}" ${e === effortOf(c) ? "selected" : ""}>${esc(L(e ? "effort_" + e : "effort_default"))}</option>`).join("");
+    return `<label class="effort-row"><span>${label}</span><select data-act="effort" data-stage="${stage}" data-name="${esc(c)}">${options}</select></label>`;
+  }).join("");
   return `<fieldset class="role-pick"><legend>${esc(roleLabel(stage))}
-      <span class="parallel-tag">${esc(L(many ? "parallel_tag" : "pick_one"))}</span></legend>${rows}</fieldset>`;
+      <span class="parallel-tag">${esc(L(many ? "parallel_tag" : "pick_one"))}</span></legend>${rows}
+      <div class="efforts"><p class="muted small">${esc(L("effort_title"))}</p>${levels}</div></fieldset>`;
 }
 
 // The settings of a custom node (name, what it does, its instructions) and of a checkpoint (where it sends back).
@@ -1901,10 +1945,11 @@ function selectNode(node) {
 function assign(stage, name) {
   const current = state.board[stage] || [];
   if (isReporting(stage)) {
-    if (current.includes(name)) return;
+    if (current.some((n) => baseOf(n) === baseOf(name))) return;
     if (current.length >= state.settings.max_reporters) return toast(L("max_reviewers"), true);
     state.board[stage] = [...current, name];
   } else {
+    if (current.length === 1 && baseOf(current[0]) === baseOf(name)) return;  // the same model keeps its level
     state.board[stage] = [name];
   }
   changed();
@@ -1913,9 +1958,17 @@ function assign(stage, name) {
 // A model button in the inspector: a model of a reporting node is switched on or off, any other role takes it.
 function pick(stage, name) {
   const current = state.board[stage] || [];
-  if (!isReporting(stage) || !current.includes(name)) return assign(stage, name);
+  const on = current.find((n) => baseOf(n) === name);
+  if (!isReporting(stage) || !on) return assign(stage, name);
   if (current.length === 1) return toast(L("min_one_model"), true);
-  state.board[stage] = current.filter((n) => n !== name);
+  state.board[stage] = current.filter((n) => n !== on);
+  changed();
+}
+
+// The thinking level of a chosen model: "" = the tool's default.
+function setEffort(stage, name, effort) {
+  const next = baseOf(name) + (effort ? "@" + effort : "");
+  state.board[stage] = (state.board[stage] || []).map((n) => (n === name ? next : n));
   changed();
 }
 
@@ -1951,7 +2004,7 @@ function addStep(kind, at = state.flow.length) {
   }
   for (const id of ids) {
     const writer = writerOf(id) || Object.keys(state.palette)[0];
-    const other = Object.keys(state.palette).find((p) => p !== providerOf(writer)) || writer;
+    const other = Object.keys(state.palette).find((p) => makerOf(p) !== makerOf(writer)) || writer;
     state.board[id] = [stageKind(id) === "apply" ? writer : other];
   }
   state.selected = ids[0];
@@ -2142,6 +2195,7 @@ $("#inspector").addEventListener("input", (ev) => {
   typing = setTimeout(() => changed(true), 600);
 });
 $("#inspector").addEventListener("change", (ev) => {
+  if (ev.target.dataset?.act === "effort") return setEffort(ev.target.dataset.stage, ev.target.dataset.name, ev.target.value);
   const field = ev.target.dataset?.field;
   const node = state.selected;
   if (!field || !state.flow.includes(node) || field === "instructions" || field === "title") return;

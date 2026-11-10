@@ -17,7 +17,8 @@ STAGE_COMMENTS = {
     "custom": "custom step (see [nodes] and prompts/custom/)",
     "gate": "checkpoint: sends a segment with serious problems back (see [nodes])",
 }
-NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}(/[A-Za-z0-9][A-Za-z0-9._:-]{0,79})?$")  # never starts with "-"
+# "provider", "provider/model", either with "@effort"; never starts with "-"
+NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}(/[A-Za-z0-9][A-Za-z0-9._:-]{0,79})?(@(low|medium|high|xhigh|max))?$")
 MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$")
 
 
