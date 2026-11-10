@@ -10,6 +10,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import webbrowser
@@ -32,7 +33,8 @@ UPLOAD_LIMIT = 300 * 1024 * 1024
 JSON_LIMIT = 2 * 1024 * 1024
 BOOK_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 LANG_RE = re.compile(r"^[a-z]{2,3}(-[a-z0-9]{2,8})?$")
-PROMPTS = ["translate", "review", "revise", "source_check", "glossary", "align"]  # display order
+PROMPTS = ["rules", "translate", "review", "revise", "source_check", "custom_report", "custom_rewrite", "gate",
+           "glossary", "align"]  # display order
 TR_ASCII = str.maketrans("çğıİöşüâîûÇĞÖŞÜÂÎÛ", "cgiiosuaiucgosuaiu")
 
 
@@ -117,6 +119,7 @@ class App:
         self.proj = proj
         self.root = proj.root
         self.jobs = Jobs()
+        self.model_lists: dict[str, tuple[float, list[str]]] = {}
         self.token = secrets.token_urlsafe(32)
         self.run_lock = threading.Lock()
 
@@ -147,7 +150,7 @@ class App:
         proj = self.reload()
         tools.extend_path(self.root)  # a tool installed a moment ago may have created a new folder on PATH
         used: dict[str, list[str]] = {}
-        for stage in stages.LLM_STAGES:
+        for stage in stages.llm_stages(proj):
             for name in proj.providers_for(stage):
                 used.setdefault(split_name(name)[0], []).append(stage)
         lang = i18n.current()
@@ -195,8 +198,13 @@ class App:
         return self.install(missing, "all")
 
     def models(self, tool: str) -> dict:
+        """The model list of a tool. Reading it can start the tool, so the answer is kept for ten minutes."""
         self.tool(tool)
-        return {"models": tools.list_models(tool)}
+        tools.extend_path(self.root)
+        known = self.model_lists.get(tool)
+        if not known or time.time() - known[0] > 600 or not known[1]:
+            known = self.model_lists[tool] = (time.time(), tools.list_models(tool))
+        return {"models": known[1]}
 
     def login(self, tool: str, body: dict) -> dict:
         self.tool(tool)
@@ -244,37 +252,61 @@ class App:
         proj = self.reload()
         tool_of = {spec["provider"]: tool for tool, spec in tools.TOOLS.items()}
         return {
-            "stages": {stage: proj.providers_for(stage) for stage in stages.LLM_STAGES},
-            "review_stages": list(stages.REVIEW_STAGES),
+            "stages": {stage: proj.providers_for(stage) for stage in stages.llm_stages(proj)},
+            "flow": (flow := stages.flow(proj)),
+            "nodes": {node: stages.node_options(proj.cfg, node) for node in flow
+                      if stages.kind(node) in ("custom", "gate")},
+            "instructions": {node: stages.instructions(proj, node) for node in flow if stages.kind(node) == "custom"},
+            "default_flow": stages.DEFAULT_FLOW,
+            "max_flow_steps": stages.MAX_FLOW_STEPS,
+            "max_loops": stages.MAX_LOOPS,
+            "max_reporters": stages.MAX_REPORTERS,
             "languages": proj.cfg.get("languages", {}),
-            "stage_order": stages.STAGES,
+            "stage_order": stages.all_stages(proj),
             "providers": {
                 name: {"default_model": spec.get("model", ""), "models": list(spec.get("models", [])),
-                       "tool": tool_of.get(name),
-                       "suggestions": tools.TOOLS[tool_of[name]].get("models", []) if name in tool_of else []}
+                       "tool": tool_of.get(name)}
                 for name, spec in proj.cfg["providers"].items()
             },
             "keep_awake": proj.cfg["general"].get("keep_awake", True) and system.can_keep_awake(),
         }
 
     def save_stages(self, body: dict) -> dict:
-        """Saves the workflow board: which provider/model does each stage, and each provider's model list."""
+        """Saves the workflow canvas: the nodes in order, their options, which provider/model does each stage,
+        the instructions of custom nodes and each provider's model list."""
         proj = self.reload()
+        flow = body.get("flow")
+        nodes = self._node_options(flow, body.get("nodes"))
+        error = stages.flow_error(flow, {"nodes": nodes})
+        if error:
+            raise HTTPError(400, error)
+        cfg = {"nodes": nodes}
         assignment = body.get("stages")
-        if not isinstance(assignment, dict) or set(assignment) != set(stages.LLM_STAGES):
+        order = stages.PREP_STAGES + ["translate"] + flow
+        if not isinstance(assignment, dict) or set(assignment) != set(order):
             raise HTTPError(400, t("bad_request"))
         for stage, names in assignment.items():
             if not isinstance(names, list) or not names or len(set(names)) != len(names):
                 raise HTTPError(400, t("stage_needs_model", stage=stage))
-            if stage not in stages.REVIEW_STAGES and len(names) != 1:
+            reporting = stage in flow and stages.role(cfg, stage) == "report"
+            if not reporting and len(names) != 1:
                 raise HTTPError(400, t("stage_one_model", stage=stage))
-            if len(names) > 4:
+            if len(names) > stages.MAX_REPORTERS:
                 raise HTTPError(400, t("stage_too_many", stage=stage))
             for name in names:
                 if not isinstance(name, str) or not configfile.NAME_RE.match(name) or split_name(name)[0] not in proj.cfg["providers"]:
                     raise HTTPError(400, t("model_invalid", name=name))
+        texts = body.get("instructions") or {}
+        if not isinstance(texts, dict):
+            raise HTTPError(400, t("bad_request"))
+        for node in flow:
+            if stages.kind(node) == "custom":
+                text = str(texts.get(node, "")).replace("\r\n", "\n").strip()
+                if len(text) > stages.INSTRUCTIONS_LIMIT:
+                    raise HTTPError(400, t("instructions_too_long"))
+                write_text(stages.instructions_path(self.root, node), text + "\n")
         path = self.root / "config.toml"
-        text = configfile.set_stages(path.read_text(encoding="utf-8"), assignment)
+        text = configfile.set_stages(path.read_text(encoding="utf-8"), assignment, flow, nodes)
         for provider, models in (body.get("models") or {}).items():
             if provider in proj.cfg["providers"] and isinstance(models, list):
                 clean = [m for m in dict.fromkeys(str(m) for m in models) if configfile.MODEL_RE.match(m)][:30]
@@ -282,6 +314,23 @@ class App:
         write_text(path, text)
         self.reload()
         return {"message": t("stages_saved")}
+
+    @staticmethod
+    def _node_options(flow, given) -> dict:
+        """The options of the custom nodes and checkpoints of a flow, keeping only known keys of the right type."""
+        if not isinstance(flow, list) or not isinstance(given or {}, dict):
+            raise HTTPError(400, t("bad_request"))
+        out = {}
+        for node in flow:
+            options = (given or {}).get(node) if isinstance(node, str) else None
+            options = options if isinstance(options, dict) else {}
+            if stages.kind(str(node)) == "custom":
+                out[node] = {"title": str(options.get("title", ""))[:stages.TITLE_LIMIT], "mode": options.get("mode")}
+            elif stages.kind(str(node)) == "gate":
+                loops = options.get("max")
+                out[node] = {"back_to": options.get("back_to"),
+                             "max": loops if isinstance(loops, int) and not isinstance(loops, bool) else None}
+        return out
 
     # books
     def books(self) -> list[dict]:
@@ -325,7 +374,10 @@ class App:
         segments = str(body.get("segments") or "").replace(" ", "")
         if segments and not re.fullmatch(r"\d+(-\d+)?(,\d+(-\d+)?)*", segments):
             raise HTTPError(400, t("segments_format"))
-        return stages.estimate(self.reload(), book_dir.name, target, refs, segments)
+        proj = self.reload()
+        plan = stages.estimate(proj, book_dir.name, target, refs, segments)
+        plan["stale"] = stages.stale_for(proj, book_dir.name, target, refs, segments)
+        return plan
 
     def create_book(self, body: dict) -> dict:
         name = str(body.get("name", "")).strip().translate(TR_ASCII).lower()
@@ -403,6 +455,17 @@ class App:
         shutil.rmtree(book_dir / "work", ignore_errors=True)
         return {"message": t("book_reset")}
 
+    def preview(self, book: str) -> dict:
+        """The source as the pipeline reads it, split into segments. Prepares the source first if needed (no model calls)."""
+        book_dir = self.book_dir(book)
+        work = book_dir / "work"
+        if "source" not in read_json(work / "prep.json", {}):
+            self.ensure_idle(book_dir)
+            stages.prepare(self.reload(), book_dir.name, [])
+        files = sorted((work / "segments").glob("*.md"))
+        parts = [f"──────── {t('report_segment', id=int(f.stem))} ────────\n\n{f.read_text(encoding='utf-8').strip()}" for f in files]
+        return {"segments": len(files), "text": "\n\n".join(parts)}
+
     def run_book(self, book: str, body: dict) -> dict:
         book_dir = self.book_dir(book)
         target = self.lang(str(body.get("lang", "")))
@@ -416,11 +479,11 @@ class App:
                 raise HTTPError(400, t("segments_format"))
             argv += ["--segments", segments]
         if body.get("until"):
-            if body["until"] not in stages.STAGES:
+            if body["until"] not in stages.all_stages(self.reload()):
                 raise HTTPError(400, t("stage_invalid"))
             argv += ["--until", body["until"]]
         if body.get("redo"):
-            if body["redo"] not in stages.LLM_STAGES:
+            if body["redo"] not in stages.llm_stages(self.reload()):
                 raise HTTPError(400, t("stage_invalid"))
             argv += ["--redo", body["redo"]]
 
@@ -488,8 +551,19 @@ class App:
         if fmt == "docx":
             mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             return export.to_docx(text, title, doc_lang, lists=kind == "report"), mime, f"{name}.docx"
-        if fmt in ("html", "pdf"):
-            page = export.to_html(text, title, doc_lang, print_on_load=fmt == "pdf", lists=kind == "report")
+        if fmt == "pdf":
+            # A real PDF from the browser installed on the computer (Chrome or Edge, without its window). Without
+            # one, the page opens with the print dialog, where "Save as PDF" makes the file.
+            page = export.to_html(text, title, doc_lang, lists=kind == "report")
+            with tempfile.TemporaryDirectory() as tmp:
+                source, pdf = Path(tmp) / f"{name}.html", Path(tmp) / f"{name}.pdf"
+                source.write_text(page, encoding="utf-8")
+                if system.print_pdf(source, pdf):
+                    return pdf.read_bytes(), "application/pdf", f"{name}.pdf"
+            page = export.to_html(text, title, doc_lang, print_on_load=True, lists=kind == "report")
+            return page.encode("utf-8"), "text/html", f"{name}.html"
+        if fmt == "html":
+            page = export.to_html(text, title, doc_lang, lists=kind == "report")
             return page.encode("utf-8"), "text/html", f"{name}.html"
         raise HTTPError(404, t("not_found"))
 
@@ -508,11 +582,17 @@ class App:
         return set(re.findall(r"\{\{(\w+)\}\}", reference.read_text(encoding="utf-8")))
 
     def prompts(self) -> list[dict]:
+        proj = self.reload()
+        order = stages.llm_stages(proj)
+        # The steps that use each instruction file; "rules" goes to every step that has {{rules}}.
+        named = {s: stages.template(proj.cfg, s) if s in stages.flow(proj) or s == "translate" else s for s in order}
+        users = {name: [s for s in order if named[s] == name] for name in PROMPTS}
+        users["rules"] = [s for s in order if s != "align"]
         out = []
         for name in PROMPTS:
             text = (self.root / "prompts" / f"{name}.md").read_text(encoding="utf-8")
             default = self.root / "prompts" / "defaults" / f"{name}.md"
-            out.append({"name": name, "description": t(f"prompt_{name}"), "text": text,
+            out.append({"name": name, "description": t(f"prompt_{name}"), "text": text, "steps": users[name],
                         "required": sorted(self._required(name)), "has_default": default.exists(),
                         "changed": default.exists() and text != default.read_text(encoding="utf-8")})
         return out
@@ -580,6 +660,7 @@ ROUTES = [
     ("POST", r"/api/books", lambda a, m, b: a.create_book(b)),
     ("DELETE", r"/api/books/([\w-]+)/references/([\w-]+)", lambda a, m, b: a.delete_reference(m[1], m[2])),
     ("POST", r"/api/books/([\w-]+)/reset", lambda a, m, b: a.reset_book(m[1])),
+    ("POST", r"/api/books/([\w-]+)/preview", lambda a, m, b: a.preview(m[1])),
     ("POST", r"/api/books/([\w-]+)/run", lambda a, m, b: a.run_book(m[1], b)),
     ("POST", r"/api/books/([\w-]+)/estimate", lambda a, m, b: a.estimate(m[1], b)),
     ("POST", r"/api/books/([\w-]+)/stop", lambda a, m, b: a.stop_book(m[1])),
@@ -647,7 +728,8 @@ def make_handler(app: App, port: int):
                 m = EXPORT_RE.fullmatch(path)
                 if method == "GET" and m:
                     data, mime, filename = app.export(m[1], m[2], m[3], m[4])
-                    extra = {} if m[4] == "pdf" else {"Content-Disposition": f'attachment; filename="{filename}"'}
+                    # A PDF opens in a new tab (the browser's PDF viewer has a save button); the others download.
+                    extra = {"Content-Disposition": f'{"inline" if m[4] == "pdf" else "attachment"}; filename="{filename}"'}
                     return self.send(200, data, mime, extra)
 
                 route = next(((fn, m) for route_method, pattern, fn in ROUTES

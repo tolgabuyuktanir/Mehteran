@@ -145,15 +145,29 @@ def install_command(tools: list[str]) -> list[str]:
     return [sys.executable, "-m", "pipeline", "install", *tools]
 
 
+MODEL_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$")
+
+
 def list_models(tool: str) -> list[str]:
-    """Model names to suggest in the interface. Any other name can still be typed."""
-    if tool == "gemini" and shutil.which("gemini"):
-        try:
+    """The models that the tool offers, read from the tool itself. Empty when the list cannot be read.
+
+    claude: the aliases that the CLI resolves to its latest models. codex: the model list that Codex keeps in its
+    own folder after it ran once. gemini: the output of "gemini --list-models".
+    """
+    names: list[str] = []
+    try:
+        if tool == "codex":
+            home = Path(os.environ.get("CODEX_HOME") or HOME / ".codex")
+            data = json.loads((home / "models_cache.json").read_text(encoding="utf-8"))
+            names = [str(m.get("slug", "")) for m in data.get("models", []) if isinstance(m, dict) and m.get("visibility") == "list"]
+        elif tool == "gemini" and shutil.which("gemini"):
             out = _run(["gemini", "--list-models"], timeout=60).stdout
-            return sorted(set(re.findall(r"\b(gemini-[a-z0-9.\-]+)\b", out)))
-        except (OSError, subprocess.TimeoutExpired):
-            return []
-    return list(TOOLS[tool].get("models", []))
+            names = [name for name in re.findall(r"^(\S+) \(", out, re.M) if name != "auto"]  # "auto" is the default
+        else:
+            names = list(TOOLS[tool].get("models", []))
+    except (OSError, ValueError, AttributeError, subprocess.TimeoutExpired):
+        return []
+    return [name for name in dict.fromkeys(names) if MODEL_NAME.match(name)]
 
 
 def open_terminal(command: str, root: Path = ROOT) -> str:

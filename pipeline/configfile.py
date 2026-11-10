@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 from . import stages
@@ -9,12 +10,12 @@ from . import stages
 STAGE_COMMENTS = {
     "align": "preparation: finds each Turkish segment in the reference translations",
     "glossary": "preparation: extracts the terminology glossary",
-    "translate": "1  first translation",
-    "review1": "2  review: compares the translation with the Turkish source, reports issues",
-    "revise1": "3  applies the review findings",
-    "source_check": "4  checks the text against the Turkish source from the start, and corrects it",
-    "review2": "5a, 5b  second independent review (in parallel)",
-    "reconcile": "6  reconciles the two reviews, produces the final text",
+    "translate": "first translation",
+    "review": "reviewers report findings (in parallel); the text is unchanged",
+    "apply": "applies the findings reported since the last text",
+    "source_check": "checks the text against the Turkish source from the start, and corrects it",
+    "custom": "custom step (see [nodes] and prompts/custom/)",
+    "gate": "checkpoint: sends a segment with serious problems back (see [nodes])",
 }
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}(/[A-Za-z0-9][A-Za-z0-9._:-]{0,79})?$")  # never starts with "-"
 MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$")
@@ -33,15 +34,47 @@ def _section_span(text: str, section: str) -> tuple[int, int]:
     return m.end(), nxt.start() if nxt else len(text)
 
 
-def set_stages(text: str, assignment: dict[str, list[str]]) -> str:
-    """Replaces the body of [stages]. assignment: {stage: [names]}; names are validated by the caller."""
+def set_stages(text: str, assignment: dict[str, list[str]], flow: list[str], nodes: dict | None = None) -> str:
+    """Replaces the body of [stages] and of [nodes]. flow: the nodes after the first translation, in order.
+    assignment: {stage: [names]} for every stage; nodes: the options of custom nodes and checkpoints.
+    All are validated by the caller."""
+    nodes = nodes or {}
     start, end = _section_span(text, "stages")
-    width = max(len(s) for s in stages.LLM_STAGES)
-    lines = []
-    for stage in stages.LLM_STAGES:
+    order = stages.PREP_STAGES + ["translate"] + flow
+    width = max(len(s) for s in order + ["flow"])
+    lines = [
+        "# The nodes after the first translation, in order: review<n> (findings), revise<n>/reconcile/apply<n> (applies",
+        "# them), source_check[<n>], custom<n> and gate<n> (checkpoint). Each node works on the latest text.",
+        f"{'flow'.ljust(width)} = {_toml_list(flow)}",
+    ]
+    cfg = {"nodes": nodes}
+    for stage in order:
         names = assignment[stage]
-        value = f'"{names[0]}"' if stage not in stages.REVIEW_STAGES and len(names) == 1 else _toml_list(names)
-        lines.append(f"{stage.ljust(width)} = {value.ljust(24)} # {STAGE_COMMENTS[stage]}")
+        many = stages.role(cfg, stage) == "report" and stage not in ("align", "glossary", "translate")
+        value = _toml_list(names) if many or len(names) > 1 else f'"{names[0]}"'
+        lines.append(f"{stage.ljust(width)} = {value.ljust(24)} # {STAGE_COMMENTS[stages.kind(stage)]}")
+    text = text[:start] + "\n".join(lines) + "\n\n" + text[end:].lstrip("\n")
+    return set_nodes(text, {node: nodes[node] for node in flow if node in nodes})
+
+
+def _toml_value(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    return json.dumps(str(value), ensure_ascii=False)  # a JSON string is also a TOML basic string
+
+
+def set_nodes(text: str, nodes: dict[str, dict]) -> str:
+    """Replaces the body of [nodes] (added after [stages] when missing): one inline table per node."""
+    if not re.search(r"^\[nodes\][ \t]*$", text, re.M):
+        _, end = _section_span(text, "stages")
+        text = text[:end] + "[nodes]\n\n" + text[end:]
+    start, end = _section_span(text, "nodes")
+    lines = ["# Options of custom steps (title, mode: report or rewrite) and checkpoints (back_to, max)."]
+    for node, options in nodes.items():
+        body = ", ".join(f"{key} = {_toml_value(value)}" for key, value in options.items())
+        lines.append(f"{node} = {{ {body} }}")
     return text[:start] + "\n".join(lines) + "\n\n" + text[end:].lstrip("\n")
 
 

@@ -59,17 +59,16 @@
         <p class="muted" data-i18n="workflow_intro"></p>
       </div>
       <div class="row">
-        <span class="badge warn" id="board-dirty" hidden data-i18n="unsaved"></span>
+        <span id="board-status" class="muted small" role="status" aria-live="polite"></span>
         <button type="button" class="btn" id="board-preset" data-i18n="preset"></button>
-        <button type="button" class="btn" id="board-revert" data-i18n="revert"></button>
-        <button type="button" class="btn primary" id="board-save" data-i18n="save"></button>
       </div>
     </div>
     <div class="board">
       <aside class="palette" id="palette"></aside>
-      <div>
+      <div class="board-main">
+        <div class="canvas" id="canvas" role="group"></div>
         <div id="board-warnings"></div>
-        <ol class="steps" id="steps"></ol>
+        <section class="card inspector" id="inspector" aria-live="polite"></section>
       </div>
     </div>
   </section>

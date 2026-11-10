@@ -173,3 +173,36 @@ def open_terminal(command: str, path_dirs: list[str] | None = None) -> bool:
         subprocess.Popen([*terminal, "sh", "-c", f"{command}; exec sh"])
         return True
     return False
+
+
+# --- PDF ----------------------------------------------------------------------
+
+def find_browser() -> str | None:
+    """A Chromium browser (Chrome, Edge, Chromium) that can print a page to PDF. Windows always has Edge."""
+    if IS_MAC:
+        candidates = [f"/Applications/{app}.app/Contents/MacOS/{app}" for app in ("Google Chrome", "Microsoft Edge", "Chromium", "Brave Browser")]
+        candidates += [str(Path.home() / c.lstrip("/")) for c in candidates]
+    elif IS_WINDOWS:
+        roots = [os.environ.get(k, "") for k in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA")]
+        candidates = [str(Path(root) / sub) for root in roots if root for sub in (
+            r"Google\Chrome\Application\chrome.exe", r"Microsoft\Edge\Application\msedge.exe", r"Chromium\Application\chrome.exe")]
+    else:
+        candidates = [shutil.which(n) or "" for n in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge")]
+    return next((c for c in candidates if c and Path(c).is_file()), None)
+
+
+def print_pdf(html_path: Path, pdf_path: Path, timeout: int = 120) -> bool:
+    """Prints an HTML file to PDF with a headless browser. False when no browser is found or printing fails.
+
+    The browser gets its own empty profile, so that a browser window the user has open is not involved."""
+    browser = find_browser()
+    if not browser:
+        return False
+    profile = pdf_path.parent / "browser-profile"
+    argv = [browser, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+            "--no-pdf-header-footer", f"--user-data-dir={profile}", f"--print-to-pdf={pdf_path}", html_path.as_uri()]
+    try:
+        subprocess.run(argv, capture_output=True, timeout=timeout, **hidden_window())
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    return pdf_path.is_file() and pdf_path.stat().st_size > 0

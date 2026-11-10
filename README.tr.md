@@ -38,7 +38,7 @@ Tarayıcıda `http://127.0.0.1:8765/` açılır. Terminal penceresi açık kald�
 | Sekme | Ne yapılır |
 |---|---|
 | Kurulum | Claude Code, Codex ve Gemini CLI'ı kurar. Her birinde oturum açar. "Dene" düğmesi aracın yanıt verdiğini denetler. Hangi adımı hangi aracın yaptığını gösterir. |
-| İş akışı | Her adıma sürükle-bırakla araç ve model atar (aşağıya bakın). |
+| İş akışı | İş akışının adımlarını ve modellerini sürükle-bırakla kurar (aşağıya bakın). |
 | Kitaplar | Kitap ekler. Türkçe kaynağı ve referans tercümeleri yükler. Hedef dili seçip çeviriyi başlatır veya durdurur. İlerlemeyi ve günlüğü gösterir. Çeviriyi ve raporu okur; Markdown, Word, PDF veya HTML olarak dışa aktarır. |
 | Talimatlar | Modellere verilen talimatları düzenler. Değiştirilmiş bir talimatı varsayılana döndürür. |
 
@@ -56,23 +56,32 @@ Arayüz kitabı `./translate run` komutuyla çalıştırır. Arayüz kapansa da 
 
 ## İş akışı sekmesi: hangi model hangi adımı yapar
 
-Adımlar sabittir; her adım bir öncekinin sonucunu kullanır. Her adımı hangi aracın ve modelin yapacağını siz seçersiniz:
+İş akışı soldan sağa oklarla bağlanmış kutular olarak çizilir: hazırlık, ilk tercüme, ondan sonraki adımlar ve insan editör. Her adım en son metin üzerinde çalışır. İstediğiniz kadar adımı istediğiniz sırayla ekleyebilirsiniz:
 
-- Soldaki model kartını adımın üzerine sürükleyip bırakın veya adımdaki listeden seçin.
-- İki tashih adımına en çok 4 model atanabilir; bu modeller paralel ve birbirinden bağımsız çalışır.
-- Bir aracın altına adını yazarak model ekleyin (örnek: `opus`; Gemini için "Model listesini getir"). "Dene" kısa bir istek gönderir; model adının geçerli olduğunu ve aracın yanıt verdiğini denetler.
-- Bir model kendi işini denetleyecek şekilde atanırsa sayfa uyarır; örneğin tercümeyi yapan model tashihi de yapıyorsa. Bunlar uyarıdır; yine de kaydedebilirsiniz.
-- "Şemadaki dağılım" düğmesi "Tercüme ve Tashih İş Akışı" şemasındaki dağılımı geri getirir. "Kaydet", `config.toml` dosyasındaki `[stages]` bölümüne yazar; sonra başlatılan çalıştırmalarda geçerli olur.
+| Adım | Ne yapar |
+|---|---|
+| Tashih | En çok 4 model metni kaynakla paralel karşılaştırır ve bulgu yazar. Metin değişmez. |
+| Uygula | Son metinden bu yana yazılan bütün bulguları (tashih, rapor yazan özel adım, kontrol noktası) kaynağa göre tartar, haklı olanları uygular. |
+| Kaynak kontrolü | Metni kaynakla baştan karşılaştırır ve düzeltir. |
+| Özel adım | Talimatını sizin yazdığınız adım (adımın panelinde; Türkçe yazılabilir). Ya bulgu yazar (tashih gibi) ya da metni düzeltir (kaynak kontrolü gibi). |
+| Kontrol noktası | Bir model metinde kalan ciddi (kritik veya önemli) sorunları arar. Böyle sorunu olan bölüm, seçtiğiniz önceki adıma, belirlediğiniz sayıda (1–5) kereye kadar geri gönderilir; kontrol noktasının bulguları sonraki "Uygula"da işlenir. Sınır dolunca bölüm rapora işaretlenip devam eder. |
+| Tashih turu | Kısayol: Tashih ve Uygula adımlarını birlikte ekler. |
 
-Adım eklemek, silmek veya sırasını değiştirmek bilerek kapalıdır: adımlar birbirine bağlıdır (uzlaştırma iki tashih raporu ister) ve sonucun güvenilirliği, her değişikliği başka bir modelin denetlemesine dayanır.
+- Adım ekleme: soldan bir okun üzerine sürükleyin veya oktaki + düğmesine basın. Karta tıklarsanız sona eklenir.
+- Sırayı değiştirme: kutuyu başka bir okun üzerine sürükleyin. Hazırlık ve ilk tercüme başta kalır; modelleri değiştirilebilir.
+- Bir kutuya tıklayınca ayarlarını ve modellerini altta seçersiniz. Bulgu yazan adım en çok 4 model alır (açılıp kapatılır); diğerleri tek model alır. Soldaki model kartını kutudaki role de bırakabilirsiniz. Panelde "Öne al", "Sonraya al" ve "Adımı sil" düğmeleri de vardır.
+- Kontrol noktasının yayı bölümleri nereye geri gönderdiğini gösterir. Kontrol noktaları iç içe geçemez: bir kontrol noktası, kendinden önceki kontrol noktasını aşarak geri gönderemez. Her geri gönderme aradaki adımları o bölüm için yeniden çalıştırır; kota ve süre harcar.
+- Kırmızı işaretli kutu çalışamaz; örneğin hiçbir "Uygula" adımının kullanmadığı bulgular veya hedefi seçilmemiş kontrol noktası. Düzeltilene kadar iş akışı kaydedilmez. Kutudaki "!" yalnızca uyarıdır; örneğin bir model kendi yazdığı metni tashih ediyorsa.
+- Model listeleri araçların kendisinden okunur (Claude'un model adları, Codex'in tuttuğu liste, `gemini --list-models`). Başka bir modeli aracının altına adıyla ekleyin; "Dene" kısa bir istek göndererek aracın yanıt verdiğini denetler.
+- Her değişiklik hemen `config.toml` dosyasına (`[stages]` ve `[nodes]`; özel adımların talimatları `prompts/custom/` altına) kaydedilir ve sonra başlatılan çalıştırmalarda geçerli olur. "Şemadaki dağılım" "Tercüme ve Tashih İş Akışı" şemasındaki akışı geri getirir. Sıra değişince bitmiş bölümler kendiliğinden yeniden yapılmaz; Kitaplar ekranı yeniden üretilmesi gereken bölümleri gösterir. Durdurulan çalıştırma, döngünün içindeyken bile kaldığı yerden sürer.
 
 ## Dışa aktarma
 
 Pipeline Markdown yazar (`output/<dil>.md`, `output/<dil>.report.md`). Kitaplar sekmesinden her birini dışa aktarabilirsiniz:
 
-- Word (.docx): başlıklar Word başlığı, dipnotlar gerçek Word dipnotu olur; Arapça, Farsça, Urduca gibi dillerde sağdan sola düzen kullanılır.
-- PDF: yazdırmaya hazır bir sayfa açılır; yazdırma penceresinde "PDF olarak kaydet" seçin. Tarayıcının yazı tipleri kullanıldığı için her alfabe doğru basılır.
-- HTML ve Markdown.
+- Word (.docx): başlıklar Word başlığı, dipnotlar gerçek Word dipnotu olur. Metin iki yana yaslanır ve otomatik hecelenir; her ana bölüm yeni sayfada başlar; altbilgide sayfa numarası vardır. Metin içindeki Arapça parçalar sağdan sola yazılır, yalnızca Arapçadan oluşan paragraflar (âyet, hadîs) ortalanır. Arapça, Farsça, Urduca gibi hedef dillerde bütün belge sağdan soladır.
+- PDF: bilgisayarda Chrome veya Edge varsa doğrudan PDF dosyası üretilir (Windows'ta Edge her zaman vardır). Kitap dizgisiyle basılır: iki yana yaslı ve hecelenmiş metin, paragraf girintisi, sayfa numarası, her ana bölüm yeni sayfada, dipnotlar bölüm sonunda. Tarayıcı bulunamazsa yazdırmaya hazır bir sayfa açılır; yazdırma penceresinde "PDF olarak kaydet" seçin.
+- HTML ve Markdown. İtalik ve kalın yazı bütün biçimlerde korunur.
 
 ## Uzun kitaplar, kullanım sınırları ve uyku
 
@@ -91,7 +100,10 @@ Windows'ta `./translate` yerine `translate` yazın.
 ./translate run <kitap> <dil>           # çevirir
 ./translate status [kitap]              # ilerlemeyi gösterir
 ./translate ui                          # web arayüzünü başlatır
+./translate package                     # paylaşmak için dist/translation-pipeline.zip dosyasını yazar
 ```
+
+`package` yalnızca uygulamayı paketler. Kitaplar, çeviriler, kurulu araçlar (`.runtime`) ve günlükler zip'e girmez. Klasörü elle sıkıştırmak yerine bu komutu kullanın.
 
 `run` seçenekleri:
 
@@ -139,6 +151,10 @@ Bu sıranın gerekçesi: metni değiştiren her adımı, o değişikliği yapmam
 
 Bir modelin döndürdüğü her metin (1., 3., 4. ve 6. adım), sonraki adım kullanmadan önce bir tamlık kapısından geçer: kaynakla aynı paragrafları ve dipnot işaretlerini içermelidir; bir düzeltme metni belirgin kısaltmamalıdır; uzun bir paragraf metninin büyük bölümünü kaybetmemelidir. Reddedilen cevap yeniden istenir (en çok 3 kez); yine eksikse bölüm hata olarak işaretlenir ve sonraki adıma geçmez. Tamamlanmamış bölümler çıktıda görünür bir `[[EKSİK BÖLÜM …]]` satırıyla yer alır ve raporda listelenir.
 
+Tashihçiler (2. ve 5. adım) okuma kanıtı vermek zorundadır: her paragrafın son üç kelimesini geri yazarlar. Kanıt metinle uyuşmazsa cevap reddedilir ve yeniden istenir. Böylece "sorun yok" cevabı, metne bakılmadığını gizleyemez. Tashihleri uygulayan model (3. ve 6. adım) her bulgu için karar vermek zorundadır. Rapordaki "Tashihçi denetimi" bölümü her tashihçinin kaç bölümde bulgu yazmadığını ve bulgu yazmadığı hâlde sonradan ciddi hata çıkan bölümleri gösterir.
+
+Bir bölüm üretildikten sonra sözlük, referanslar veya talimatlar değişirse pipeline bunu fark eder. Bölüm kendiliğinden yeniden üretilmez; rapor ve arayüz hangi bölümlerin hangi adımdan itibaren eski girdilerle durduğunu söyler. Arayüzdeki "Yeniden üretmeye hazırla" düğmesi formu doldurur; komut satırında `--redo <adım> --segments <bölümler>` kullanın.
+
 Mekanik denetimler yapay zekâ kullanmaz. Şunları kaynakla karşılaştırır: Arap harfli ibareler, sayılar, dipnot işaretleri ve metinleri, paragraf ve başlık sayısı, paragraf başına cümle sayısı, çeviri uzunluğu.
 
 Rapor şunları listeler: mekanik uyarılar, bütün kritik bulgular, kabul edilmeyen önemli bulgular ve referansı bulunamayan bölümler. Modeller açıklamalarını, çalıştırmanın arayüz dilinde yazar. Bütün bulgular ve kararlar `work/<dil>/` altındaki `revise1`, `source_check` ve `reconcile` klasörlerinde, bölüm başına bir `.json` dosyasındadır. Her adımın metni de aynı klasörlerde durur; bir cümlenin hangi adımda değiştiğini buradan izleyebilirsiniz.
@@ -162,7 +178,7 @@ books/<kitap>/
 pipeline/               kod (pipeline/i18n.py: mesajlar; pipeline/ui/: web arayüzü)
 ```
 
-Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse `.docx` veya `.epub` verin. PDF'ten paragraf sınırları ve dipnotlar güvenilir biçimde çıkmaz; PDF okumak için `pdftotext` programı (Poppler veya Xpdf) gerekir, arayüz bunu yükleme sırasında denetler.
+Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse `.docx` veya `.epub` verin: bunlardan başlıklar (yayınevinin kendi başlık biçimleri dahil), dipnotlar, italik, kalın ve numaralı maddeler eksiksiz okunur. PDF, kelimelerin sayfadaki yeri ve punto büyüklüğüyle okunur: sayfa başlıkları ve numaraları atılır; sayfa altındaki küçük puntolu dipnotlar ve metindeki üst simge dipnot numaraları dipnota çevrilir; paragraflar girinti ve satır aralığından, başlıklar puntodan tanınır; sayfadan taşan paragraf birleştirilir. Arapça ve Farsça metin, PDF'in kendi gliflerinden harekeleriyle birlikte okuma sırasına konur; tekrar eden Besmele sayfa başlığı sanılmaz. PDF'in hangi harfler olduğunu bildirmediği bir glif (bazı fontlar bir bitişiğin harflerini yazmaz) pdftotext'in okuduğu gibi kalır; âyet ve hadîsleri önizlemede kontrol edin. Taranmış (resim) PDF okunmaz; önce OCR gerekir. Çeviriden önce Kitaplar ekranındaki "Metni böl ve önizle" düğmesiyle metnin nasıl okunduğunu kontrol edin; PDF okumak için `pdftotext` programı (Poppler veya Xpdf) gerekir, arayüz bunu yükleme sırasında denetler.
 
 ## Ayarlar
 
@@ -173,11 +189,11 @@ Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse 
 - `[languages]`: dil kodları. Yeni bir dil için bir satır ekleyin, örnek: `tg = "Tajik"`. Modeller İngilizce adı görür.
 - `[general]`: arayüz dili, bölüm boyutu, paralel istek sayısı, zaman aşımı, kullanım sınırı beklemesi, uyanık tutma.
 
-Çeviri kuralları `prompts/translate.md` dosyasındadır. Örnek: âyet ve hadislerin çevrilme biçimi, Arapça ibarelerin korunması, açıklama eklenmemesi. Yayın ilkeleriniz farklıysa bu dosyayı düzenleyin. Diğer talimatlar: `review.md` (2. ve 5. adım), `revise.md` (3. ve 6. adım), `source_check.md` (4. adım).
+Çeviri kuralları `prompts/translate.md` dosyasındadır. Örnek: âyet ve hadislerin çevrilme biçimi, Arapça ibarelerin korunması, açıklama eklenmemesi. Yayın ilkeleriniz farklıysa bu dosyayı düzenleyin. Diğer talimatlar: `review.md` (Tashih), `revise.md` (Uygula), `source_check.md` (Kaynak kontrolü), `custom_report.md` ve `custom_rewrite.md` (özel adımlar; adımın kendi talimatı `{{instructions}}` yerine konur), `gate.md` (Kontrol noktası).
 
 ## Sınırlar
 
-- Çıktı Markdown'dır; dışa aktarma Word, PDF ve HTML verir. Başlıklar ve dipnotlar korunur. Kaynaktaki kalın, italik ve tablo gibi biçimler korunmaz. Dizgi ayrıca yapılır.
+- Çıktı Markdown'dır; dışa aktarma Word, PDF ve HTML verir. Başlıklar, dipnotlar, italik, kalın ve numaralı maddeler korunur. Kaynaktaki tablolar, resimler ve renkler korunmaz. Matbaa dizgisi ayrıca yapılır.
 - Windows desteği yazıldı ama yalnızca macOS'ta denendi; henüz bir Windows bilgisayarda çalıştırılmadı.
 - Kaynak dosya ilk çalıştırmadan sonra değişirse pipeline durur. Yeni kaynakla başlamak için arayüzde "Çalışmayı sıfırla" düğmesine basın veya `books/<kitap>/work/` klasörünü silin.
 - Referans tercüme Türkçe kitaptan çok farklı düzenlenmişse bazı bölümlerin referansı bulunamaz. Bu bölümler referanssız çevrilir ve raporda listelenir.

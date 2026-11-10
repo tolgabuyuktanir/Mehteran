@@ -56,7 +56,7 @@ if "<window>" in prompt:
     numbers = [int(n) for n in re.findall(r"^\[(\d+)\] ", between("window"), re.M)]
     reply = json.dumps({"start": numbers[0], "end": numbers[0]})
 elif "<changes>" in prompt:
-    kind = "source_check"
+    kind = "source_check" if "<task>" not in prompt else "custom-rewrite"
     changes = {"issues": [{
         "type": "omission", "severity": "critical", "source": "terk etmez", "translation": "",
         "explanation": note, "suggestion": "added",
@@ -70,8 +70,28 @@ elif "<issues>" in prompt:
         decisions, kind = decisions[1:], "revise-undecided"
     reply = (f"<translation>\n{marked('current_translation', '+u')}\n</translation>\n"
              f"<decisions>\n{json.dumps({'decisions': decisions})}\n</decisions>")
+elif "You are the checkpoint" in prompt:
+    kind = "gate"
+    checked = [" ".join(block.split()[-3:]) for block in between("translation").strip().split("\n\n")]
+    issues = []
+    # FAKE_LLM_GATE_FAILS=<file>:<n>: the first n checkpoint calls find a major problem, later ones nothing.
+    if os.environ.get("FAKE_LLM_GATE_FAILS"):
+        path, limit = os.environ["FAKE_LLM_GATE_FAILS"].rsplit(":", 1)
+        claimed = False
+        for n in range(int(limit)):  # one marker file per failing call: creating it is atomic across processes
+            try:
+                os.close(os.open(f"{path}.{n}", os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+                claimed = True
+                break
+            except FileExistsError:
+                continue
+        if claimed:
+            issues = [{"type": "mistranslation", "severity": "major", "source": "namaz", "translation": "bønn",
+                       "explanation": "Still wrong.", "suggestion": "namaz"}]
+            kind = "gate-fail"
+    reply = json.dumps({"checked": checked, "issues": issues})
 elif '"issues"' in prompt:
-    kind = "review"
+    kind = "review" if "<task>" not in prompt else "custom-report"
     # The reading proof: the last three words of each translation paragraph.
     checked = [" ".join(block.split()[-3:]) for block in between("translation").strip().split("\n\n")]
     issues = [{

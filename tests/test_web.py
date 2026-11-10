@@ -12,6 +12,7 @@ import unittest
 import urllib.error
 import urllib.request
 import zipfile
+from unittest import mock
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
+from pipeline import system  # noqa: E402
 from pipeline.core import Project  # noqa: E402
 from pipeline.web import App, make_handler  # noqa: E402
 from test_pipeline import REFERENCE, SOURCE, make_project  # noqa: E402
@@ -73,7 +75,8 @@ class WebTests(unittest.TestCase):
         self.assertEqual(self.json("GET", "/api/books", token=False, lang="tr")[1]["error"],
                          "Oturum anahtarı geçersiz. Sayfayı yenileyin.")
         prompts = self.json("GET", "/api/prompts", lang="tr")[1]
-        self.assertEqual(prompts[0]["description"], "1. adım: ilk tercüme")
+        self.assertEqual(prompts[0]["description"], "Yayın ilkeleri: bütün adımlarda geçerli kurallar")
+        self.assertEqual(prompts[1]["description"], "1. adım: ilk tercüme")
 
     def test_book_upload_and_validation(self):
         status, data = self.json("POST", "/api/books", {"name": "Büyük İlmihal"})
@@ -131,6 +134,18 @@ class WebTests(unittest.TestCase):
         self.assertGreater(plan["total_calls"], 0)
         self.assertNotIn("fake", [p for p, n in plan["calls"].items() if n == 0])
 
+    def test_source_preview_prepares_the_book_without_model_calls(self):
+        self.json("POST", "/api/books", {"name": "kitap"})
+        self.call("PUT", "/api/books/kitap/source?file=tr.md", raw=SOURCE.encode("utf-8"))
+        status, data = self.json("POST", "/api/books/kitap/preview", {})
+        self.assertEqual(status, 200)
+        self.assertEqual(data["segments"], 3)
+        self.assertIn("Segment 1", data["text"])
+        self.assertIn("Namaz dinin direğidir", data["text"])
+        self.assertFalse((self.root / "calls.log").exists())
+        _, books = self.json("GET", "/api/books")
+        self.assertTrue(books[0]["prepared"])
+
     def test_workflow_board_save_and_validation(self):
         settings = self.json("GET", "/api/settings")[1]
         board = settings["stages"]
@@ -139,7 +154,8 @@ class WebTests(unittest.TestCase):
 
         board["translate"] = ["fake2/some-model"]
         board["review2"] = ["fake", "fake2/other:model"]
-        status, data = self.json("PUT", "/api/stages", {"stages": board, "models": {"fake2": ["some-model", "bad model!"]}})
+        status, data = self.json("PUT", "/api/stages", {"stages": board, "flow": settings["flow"],
+                                                       "models": {"fake2": ["some-model", "bad model!"]}})
         self.assertEqual(status, 200, data)
         settings = self.json("GET", "/api/settings")[1]
         self.assertEqual(settings["stages"]["translate"], ["fake2/some-model"])
@@ -147,11 +163,11 @@ class WebTests(unittest.TestCase):
         self.assertEqual(settings["providers"]["fake2"]["models"], ["some-model"])
 
         bad = dict(board, translate=["fake", "fake2"])                     # one model only
-        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad})[0], 400)
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
         bad = dict(board, translate=["unknown/x"])                          # unknown tool
-        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad})[0], 400)
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
         bad = dict(board, review1=[])                                       # empty step
-        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad})[0], 400)
+        self.assertEqual(self.call("PUT", "/api/stages", {"stages": bad, "flow": settings["flow"]})[0], 400)
         self.assertEqual(self.json("POST", "/api/models/test", {"name": "fake2/some-model"})[0], 200)
 
     def test_export_formats(self):
@@ -164,8 +180,13 @@ class WebTests(unittest.TestCase):
         status, data = self.call("GET", f"{base}/translation/docx")
         self.assertEqual(status, 200)
         self.assertIn("word/footnotes.xml", zipfile.ZipFile(io.BytesIO(data)).namelist())
-        status, data = self.call("GET", f"{base}/translation/pdf")
+        # Without a browser the page opens with the print dialog; with one, the answer is a PDF file.
+        with mock.patch.object(system, "find_browser", return_value=None):
+            status, data = self.call("GET", f"{base}/translation/pdf")
         self.assertIn(b"window.print", data)
+        if system.find_browser():
+            status, data = self.call("GET", f"{base}/translation/pdf")
+            self.assertTrue(data.startswith(b"%PDF"), data[:100])
         status, data = self.call("GET", f"{base}/report/html")
         self.assertIn(b"<li>one</li>", data)
         self.assertEqual(self.call("GET", f"{base}/translation/exe")[0], 404)

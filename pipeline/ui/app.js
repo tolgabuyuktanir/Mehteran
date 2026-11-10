@@ -19,7 +19,7 @@ const I18N = {
     test: "Dene", testing: "Deneniyor…",
     used_in: "Kullanıldığı adımlar: {stages}", not_used: "Şu anki iş akışında kullanılmıyor; oturum açmak gerekmez.",
     run_command: "Oturum açmak için bir terminalde şunu çalıştırın: {command}",
-    human_step: "7 · Teslim", human_who: "İnsan tercüman, insan editör",
+    human_step: "Teslim", human_who: "İnsan tercüman, insan editör",
     new_book: "Yeni kitap", new_book_placeholder: "örnek: ilmihal", add: "Ekle",
     no_books: "Henüz kitap yok.", running: "Çalışıyor",
     pick_book: "Soldan bir kitap seçin veya yeni bir kitap ekleyin.",
@@ -47,19 +47,19 @@ const I18N = {
     confirm_delete_ref: "Bu referans tercüme ve hizalaması silinsin mi?",
     confirm_reset: "Bu kitabın bütün ara çıktıları (bütün dillerde) silinecek. Çıktı klasöründeki son kitaplar kalır. Devam edilsin mi?",
     confirm_redo: "Seçili bölümlerde \"{stage}\" ve sonraki adımların çıktısı silinip yeniden üretilecek. Devam edilsin mi?",
-    prompts_intro: "Modellere verilen yönergeler. Değişiklik, kaydedildikten sonra işlenen bölümlerde geçerli olur. Önceden işlenmiş bölümlere uygulamak için kitap ekranında \"Yeniden üret\" seçeneğini kullanın.",
+    prompts_intro: "Modellere verilen yönergeler. Kendi kurallarınızı \"Yayın ilkeleri\" belgesine yazın; o belge bütün adımlarda geçerlidir. Adım talimatlarını yalnızca bir adımın işleyişini değiştirmek istediğinizde düzenleyin.",
     changed: "değiştirildi", restore_default: "Varsayılana dön",
-    required_placeholders: "Metinde bulunması zorunlu yer tutucular (pipeline buralara kaynak metni, çeviriyi, sözlüğü vb. koyar):",
-    prompts_note: "Talimatlar İngilizce yazılmıştır; modeller İngilizce talimatı daha tutarlı uygular. Türkçe ekleme yapabilirsiniz. Yayın ilkelerinize özel kuralları (örneğin âyet meallerinin biçimi, saygı ifadeleri) buraya ekleyin. Modellerin yazdığı açıklamalar, çalıştırmayı başlattığınız arayüz dilinde olur.",
+    required_placeholders: "Zorunlu yer tutucular: pipeline buralara kaynak metni, çeviriyi, sözlüğü ve diğer girdileri koyar",
+    prompts_note: "Adım talimatları İngilizcedir, çünkü modeller İngilizce talimatı daha tutarlı uygular. Cevap biçimini (JSON, etiketler) değiştirmeyin; pipeline cevabı bu biçimle okur. Yayın kurallarınızı buraya değil \"Yayın ilkeleri\" belgesine yazın.",
     confirm_discard: "Kaydedilmemiş değişiklikler kaybolacak. Devam edilsin mi?",
     confirm_restore: "Yaptığınız değişiklikler silinip varsayılan talimat geri yüklenecek. Devam edilsin mi?",
     request_failed: "İstek başarısız ({status})",
-    stage_prepare: "Hazırlık", stage_align: "Hizalama", stage_glossary: "Sözlük", stage_translate: "1 · İlk tercüme",
-    stage_review1: "2 · Tashih", stage_revise1: "3 · Tashihleri uygula", stage_source_check: "4 · Kaynak kontrolü",
-    stage_review2: "5 · İkinci tashih", stage_reconcile: "6 · Uzlaştırma", stage_assemble: "Birleştirme",
-    flow_align: "Hazırlık · hizalama", flow_glossary: "Hazırlık · sözlük", flow_translate: "1 · İlk tercüme",
-    flow_review1: "2 · Tashih", flow_revise1: "3 · Tashihleri uygula", flow_source_check: "4 · Baştan kaynak kontrolü",
-    flow_review2: "5 · İkinci bağımsız tashih", flow_reconcile: "6 · İki raporu uzlaştır",
+    stage_prepare: "Hazırlık", stage_align: "Hizalama", stage_glossary: "Sözlük", stage_translate: "İlk tercüme",
+    stage_review: "Tashih", stage_apply: "Tashihleri uygula", stage_source_check: "Kaynak kontrolü",
+    stage_assemble: "Birleştirme",
+    flow_align: "Hazırlık · hizalama", flow_glossary: "Hazırlık · sözlük", flow_translate: "İlk tercüme",
+    flow_review: "Tashih turu", flow_apply: "Bulguları uygula",
+    flow_source_check: "Baştan kaynak kontrolü",
     quota_now: "Kullanım sınırında · {time} saatinde kendiliğinden yeniden denenecek",
     quota_last: "Son kullanım sınırı uyarısı: {time}",
     unaligned: "Referansta bulunamayan bölümler: {segments}. Bu bölümler bu referans olmadan çevrilir.",
@@ -69,6 +69,7 @@ const I18N = {
     estimate_calls: "Gereken model çağrısı: {calls}",
     estimate_time: "Tahmini süre: {time}. Gerçek süre modellerin hızına ve kullanım sınırlarına göre değişir.",
     estimate_nothing: "Seçilen bölümlerde yapılacak iş kalmadı.",
+    estimate_redo: "Seçilen bölümlerde seçili adım ve sonrası yeniden üretilecek. Bu çağrılar burada sayılmaz.",
     quota_note: "Uzun kitaplarda aboneliklerin kullanım sınırları (kota) dolabilir. Sınır dolunca çeviri durmaz: o araca giden istekler bekletilir ve sınır açılınca kendiliğinden devam eder. Bu durum aşağıda ve Kurulum sekmesinde gösterilir.",
     awake_note: "Çeviri sürerken bilgisayar uyanık tutulur. Dizüstü bilgisayarda kapağı kapatmayın ve bilgisayarı prize takılı tutun; kapak kapanınca bilgisayar yine uyur ve çeviri durur.",
     awake_off: "Uyanık tutma kapalı (config.toml: keep_awake) veya bu bilgisayarda desteklenmiyor. Çeviri sürerken bilgisayarın uykuya geçmemesini siz sağlayın.",
@@ -81,7 +82,6 @@ const I18N = {
     stage_failures: "{count} hata",
     elapsed: "Geçen süre: {time}",
     remaining: "Kalan: {calls} model çağrısı · tahmini {time}",
-    quota_waiting_line: "{provider} kullanım sınırına ulaştı. {time} saatinde kendiliğinden devam edecek.",
     quota_history: "Bu çalıştırmada kullanım sınırına {count} kez ulaşıldı.",
     awake_on: "Bilgisayar uyanık tutuluyor.",
     failures_title: "Hata alan işler (son {count})",
@@ -98,30 +98,64 @@ const I18N = {
     watching_signin: "Oturum açmanız bekleniyor; durum birkaç saniyede bir kendiliğinden yenileniyor.",
     tab_workflow: "İş akışı", edit_workflow: "İş akışını düzenle",
     workflow_title: "İş akışı",
-    workflow_intro: "Model kartlarını soldan sürükleyip adımların üzerine bırakın veya adımdaki listeden seçin. Adımların sırası sabittir: her adım bir öncekinin sonucunu kullanır. Metni değiştiren her adımı, o değişikliği yapmamış bir modelin denetlemesi önerilir.",
-    unsaved: "Kaydedilmedi", preset: "Şemadaki dağılım", revert: "Geri al",
-    default_model: "varsayılan model", add_model_placeholder: "model adı (örnek: opus)", fetch_models: "Model listesini getir",
-    remove: "Kaldır", choose_model: "Model seç…", add_reviewer: "Tashihçi ekle…", parallel_tag: "paralel · en çok 4 model",
+    workflow_intro: "Adımlar soldan sağa birbirine bağlı kutulardır; her adım bir öncekinin metni üzerinde çalışır. Soldaki adım türlerini iki kutu arasındaki oka sürükleyin veya oktaki + düğmesine basın; istediğiniz kadar adım ekleyebilirsiniz. Tashih ve rapor yazan özel adımlar bulgu yazar, \u201cUygula\u201d bulguları metne işler. \u201cKontrol noktası\u201d ciddi sorun kalan bölümü seçtiğiniz önceki adıma geri gönderir. Kutuları sürükleyerek sırayı değiştirin; bir kutuya tıklayınca ayarlarını ve modellerini altta seçersiniz. Değişiklikler kendiliğinden kaydedilir.",
+    canvas_label: "İş akışı şeması", node_prep: "Hazırlık", prep_mark: "H",
+    role_align: "Hizalama", role_glossary: "Sözlük", role_translate: "Tercüme eden", role_check: "Kontrol eden",
+    insert_here: "Buraya adım ekle", drag_to_move: "Sırayı değiştirmek için sürükleyin",
+    move_earlier: "Öne al", move_later: "Sonraya al", pick_one: "bir model",
+    min_one_model: "Bu rolde en az bir model kalmalı.",
+    node_locked: "Her çeviri hazırlık ve ilk tercümeyle başlar; bu adımların yeri sabittir, modelleri değiştirilebilir.",
+    palette_steps: "Adımlar", palette_steps_hint: "Sürükleyip iki kutu arasındaki oka bırakın; tıklarsanız sona eklenir.",
+   
+    palette_models: "Modeller", palette_models_hint: "Bir model kartını kutudaki role sürükleyebilirsiniz. \u201cTest\u201d modelin cevap verdiğini dener.",
+    visit_n: "{n}. geçiş", flow_custom: "Özel adım", flow_gate: "Kontrol noktası", stage_custom: "Özel adım", stage_gate: "Kontrol noktası",
+    node_review: "Tashih", role_gate: "Kontrol eden", role_editor: "Düzelten",
+    step_desc_node_review: "Tashihçiler metni Türkçe kaynakla cümle cümle karşılaştırır ve birbirinden habersiz bulgu raporu yazar. Metin değişmez; bulguları sonraki \u201cUygula\u201d adımı işler.",
+    step_desc_node_apply: "Son metinden bu yana yazılan bütün bulguları (tashih, özel adım ve kontrol noktası raporları) kaynağa göre tartar, haklı olanları metne uygular.",
+    step_desc_node_source_check: "Önceki adımlara güvenmeden metni kaynakla baştan karşılaştırır ve düzeltir.",
+    step_desc_node_gate: "Metinde kalan ciddi (kritik veya önemli) sorunları arar. Sorun bulursa o bölümü seçtiğiniz önceki adıma geri gönderir; bulguları sonraki \u201cUygula\u201d adımında işlenir. Sınır dolunca bölüm rapora işaretlenip devam eder.",
+    step_desc_custom_report: "Sizin yazdığınız talimata göre metni inceler ve bulgu raporu yazar; bulguları sonraki \u201cUygula\u201d adımı işler.",
+    step_desc_custom_rewrite: "Sizin yazdığınız talimata göre metni düzeltir ve yaptığı değişiklikleri kaydeder.",
+    problem_custom_title: "Bu özel adımın bir adı olmalı.",
+    problem_unapplied: "Bu adımın bulguları uygulanmıyor: ondan sonra, metni değiştiren başka bir adımdan önce bir \u201cUygula\u201d adımı koyun.",
+    problem_gate_target: "Bu kontrol noktasının geri göndereceği adımı seçin (kendinden önceki ve önceki kontrol noktasından sonraki bir adım).",
+    flow_has_problems: "İş akışında düzeltilmesi gereken {count} sorun var (kırmızı işaretli kutular). Düzeltilene kadar değişiklikler kaydedilmez.",
+    not_saved_problems: "Kaydedilmedi: kırmızı işaretli kutuları düzeltin",
+    gate_note: "↺ {step} adımına, en çok {max} kez", loop_label: "↺ en çok {max} kez",
+    type_round: "Tashih turu", type_review: "Tashih", type_apply: "Uygula", type_source_check: "Kaynak kontrolü", type_custom: "Özel adım", type_gate: "Kontrol noktası",
+    type_hint_round: "Tashih ve onu uygulayan adım birlikte.", type_hint_review: "Tashihçiler bulgu yazar, metin değişmez.",
+    type_hint_apply: "Önceki bulguları metne işler.", type_hint_source_check: "Metni kaynakla baştan karşılaştırıp düzeltir.",
+    type_hint_custom: "Talimatını sizin yazdığınız adım.", type_hint_gate: "Ciddi sorun kalan bölümü geri gönderir.",
+    mode_report: "Rapor yazar", mode_rewrite: "Metni düzeltir", custom_title: "Adımın adı", custom_mode: "Ne yapar",
+    custom_instructions: "Talimat", custom_instructions_hint: " — Türkçe yazabilirsiniz. Örnek: \u201cHadis kaynak gösterimlerini (Buhârî, Müslim…) kontrol et.\u201d",
+    custom_default_title: "Özel adım",
+    gate_back_to: "Sorun bulursa şu adıma geri gönder", gate_choose: "Adım seçin…", gate_max: "En çok kaç kez geri göndersin",
+    gate_help: "Her geri gönderme o bölüm için aradaki adımları yeniden çalıştırır (kota ve süre harcar). Kontrol noktaları iç içe geçemez: geri gönderme önceki kontrol noktasını aşamaz.",
+   
+    remove_step: "Adımı sil",
+    confirm_remove_step: "\"{step}\" adımı iş akışından çıkarılsın mı? Daha önce çevrilmiş kitaplardaki çıktısı silinmez.",
+    reviewers_label: "Tashihçiler", applier_label: "Bulguları uygulayan", max_steps: "En çok {count} adım eklenebilir.",
+    flow_changed_note: "Adım ekleyip çıkarmak daha önce çevrilmiş bölümleri değiştirmez. Kitap ekranı, yeni sıraya göre yeniden üretilmesi gereken bölümleri gösterir.",
+    unsaved: "Kaydedilmedi", preset: "Şemadaki dağılım",
+    default_model: "varsayılan model", add_model_placeholder: "model adı (örnek: opus)", add_other_model: "Listede olmayan bir model ekle",
+    models_loading: "Model listesi okunuyor…", models_none: "Model listesi okunamadı. Araç kurulu olmalı ve en az bir kez çalışmış olmalı.",
+    remove: "Kaldır", parallel_tag: "paralel · en çok 4 model",
     step_desc_align: "Her Türkçe bölümün referans tercümedeki karşılığını bulur. Referans yoksa atlanır.",
     step_desc_glossary: "Dinî terimleri ve özel adları çıkarır; dil başına ortak sözlüğe yeni terimleri ekler.",
     step_desc_translate: "Türkçe kaynak, referans pasajlar ve sözlükle ilk tercümeyi yapar.",
-    step_desc_review1: "Tercümeyi Türkçe kaynakla cümle cümle karşılaştırır ve bulgu raporu yazar.",
-    step_desc_revise1: "Tashih bulgularını Türkçe kaynağa göre tartar; haklı olanları uygular.",
+    step_desc_review: "Tashihçiler metni Türkçe kaynakla cümle cümle karşılaştırır ve birbirinden habersiz bulgu raporu yazar. Ardından bir model bulguları kaynağa göre tartar ve haklı olanları uygular.",
     step_desc_source_check: "Önceki adımlara güvenmeden metni kaynakla baştan karşılaştırır ve düzeltir.",
-    step_desc_review2: "İkinci bağımsız tashih: modeller birbirinden habersiz bulgu raporu yazar.",
-    step_desc_reconcile: "Tashih raporlarını kaynağa göre uzlaştırır ve son metni üretir.",
     step_desc_human: "Çeviri ve rapor insan tercümana teslim edilir; ardından insan editör okur.",
-    warn_self_review1: "{model} hem tercüme ediyor hem kendi tercümesini tashih ediyor. Tashihe başka bir model koyun.",
-    warn_self_review2: "{model} 4. adımda metni düzeltiyor ve 5. adımda kendi düzeltmesini denetliyor.",
-    warn_source_check: "{model} baştan kaynak kontrolünü, metni daha önce yazdığı hâlde yapıyor. Bağımsız bir model daha güvenilir olur.",
-    info_same_provider: "\"{step}\" adımındaki bütün modeller tercümeyi yapan modelle aynı şirketin. Farklı bir şirketin modeli hataları daha iyi yakalar.",
-    info_one_reviewer: "İkinci tashihte tek model var. Şemada iki bağımsız model öngörülüyor.",
+    warn_self_review: "{step}: {model} kendi yazdığı metni tashih ediyor. Tashihe başka bir model koyun.",
+    warn_self_check: "{step}: {model} metni bir önceki adımda kendisi yazdı. Bağımsız bir model daha güvenilir olur.",
+    info_same_provider: "{step}: bütün tashihçiler metni yazan modelle aynı şirketin. Farklı bir şirketin modeli hataları daha iyi yakalar.",
+    warn_no_check: "Tercümeden sonra hiçbir denetim adımı yok. Çeviri tashih edilmeden teslim edilecek.",
     cannot_remove_used: "Bu model bir adımda kullanılıyor; önce adımdan kaldırın.",
     model_name_invalid: "Model adı harf veya rakamla başlamalı; yalnızca harf, rakam ve . _ : - içerebilir.",
     upload_bad_type: "Bu dosya türü desteklenmiyor. Desteklenenler: .docx, .epub, .md, .txt, .pdf",
     upload_bad_size: "Dosya boş veya çok büyük (en çok 300 MB).",
-    models_found: "{count} model bulundu.", max_reviewers: "Bu adıma en çok 4 model atanabilir.",
-    confirm_leave_board: "İş akışında kaydedilmemiş değişiklikler var. Sayfadan çıkılsın mı?",
+    max_reviewers: "Bu adıma en çok 4 model atanabilir.",
+   
     export_label: "Dışa aktar", fmt_md: "Markdown", fmt_docx: "Word", fmt_pdf: "PDF", fmt_html: "HTML",
     pdf_hint: "PDF: açılan sayfada yazdırma penceresinden \"PDF olarak kaydet\" seçin.",
     step_install_hint: "Claude Code, Codex ve Gemini bu bilgisayara kurulur. Gerekirse Node.js de uygulamanın klasörüne indirilir. Yönetici izni gerekmez.",
@@ -141,6 +175,39 @@ const I18N = {
     review_quiet: "Çoğu bölümde hiç bulgu yazmadı. Birkaç bölümü elle kontrol edin.",
     review_missed: "{count} bölümde bulgu yazmadı ama sonradan bu bölümlerde ciddi hata bulundu: {segments}",
     review_attention: "Tashihçi uyarısı",
+    stale_title: "Girdileri değişen bölümler",
+    stale_intro: "Bu bölümler üretildikten sonra sözlük, referans veya talimat değişti. Eski girdilerle duruyorlar; siz istemeden yeniden üretilmezler.",
+    stale_row: "{stage} adımından itibaren: bölüm {segments}", stale_fill: "Yeniden üretmeye hazırla",
+    stale_filled: "Form dolduruldu. Yeniden üretmek için Başlat'a basın.",
+    preview_hint: "Çeviriden önce metnin doğru okunduğunu kontrol edin. PDF'te özellikle dipnotlara, başlıklara ve Arapça âyetlere bakın.",
+    preview_prepare: "Metni böl ve önizle", preview_open: "Bölünmüş metni gör", preview_title: "kaynak önizleme · {count} bölüm",
+    saving: "Kaydediliyor…", saved_now: "Kaydedildi ✓",
+    confirm_preset: "Adımlar ve modeller şemadaki hâline (Gemini, ChatGPT, Claude) döndürülecek. Devam edilsin mi?",
+    recover_title: "{model} hata verdi ({stages})",
+    recover_account: "{model} bu hesapla kullanılamıyor.",
+    recover_intro: "Çeviri durdu. Başka bir modelle devam edilsin mi? Seçtiğiniz model, iş akışında {model} kullanan bütün adımlara konur. Tamamlanan bölümler korunur.",
+    recover_with: "Yerine", recover_go: "Bu modelle devam et", recover_retry: "Aynı modelle tekrar dene",
+    decide_quota_title: "{model} kullanım sınırına ulaştı",
+    decide_quota_body: "Çeviri bekliyor; {time} saatinde {tool} ile kendiliğinden devam edecek. Beklemek istemiyorsanız başka bir modelle devam edin ya da çeviriyi durdurun.",
+    decide_error_running: "Diğer bölümler sürüyor, ama bu bölümler tamamlanmayacak. Başka bir modelle devam edebilir, böyle sürdürebilir ya da çeviriyi durdurabilirsiniz.",
+    decide_wait: "Beklesin", decide_keep: "Böyle devam etsin", decide_stop: "Durdur",
+    recover_switching: "Çeviri durduruluyor, ardından yeni modelle başlayacak…",
+    stop_timeout: "Çeviri durdurulamadı. Biraz sonra tekrar deneyin.",
+    recover_done: "İş akışı güncellendi: {from} yerine {to}. Çeviri kaldığı yerden devam ediyor.",
+    prompt_title_rules: "Yayın ilkeleri", prompt_title_translate: "İlk tercüme", prompt_title_review: "Tashih raporu",
+    prompt_title_revise: "Tashihleri uygulama ve uzlaştırma", prompt_title_source_check: "Baştan kaynak kontrolü", prompt_title_custom_report: "Özel adım: rapor yazan", prompt_title_custom_rewrite: "Özel adım: metni düzelten", prompt_title_gate: "Kontrol noktası",
+    prompt_title_glossary: "Terim sözlüğü", prompt_title_align: "Referans hizalama",
+    all_steps: "Bütün adımlar",
+    step_prompts: "Adım talimatları", step_prompts_hint: "İleri düzey. Her adımın görevini ve cevap biçimini tanımlar.",
+    rules_intro: "Yayınevinizin kuralları. Bu belgenin tamamı bütün adımlarda modellere verilir ve önceliklidir. Türkçe yazabilirsiniz. Kuralları kısa ve kesin yazın: her madde tek bir şey söylesin; \"genellikle\", \"mümkünse\" gibi belirsiz sözlerden kaçının.",
+    prompt_used_in: "Kullanıldığı adımlar: {steps}",
+    prompts_apply: "Değişiklik, kaydettikten sonra işlenen bölümlerde geçerli olur. Daha önce işlenen bölümler, Kitaplar ekranında \"girdileri değişen bölümler\" olarak gösterilir ve oradan yeniden üretilebilir.",
+    ph_target_lang: "hedef dilin adı", ph_source: "Türkçe kaynak bölüm", ph_translation: "denetlenen veya düzeltilen çeviri",
+    ph_glossary: "bu bölümde geçen sözlük terimleri", ph_references: "referans tercümelerdeki karşılık pasajlar",
+    ph_ref_langs: "referans dillerin adları", ph_context: "önceki bölümün sonu (yalnızca bağlam için)",
+    ph_issues: "tashih bulguları (JSON)", ph_note_lang: "modelin açıklamaları yazacağı dil (arayüz dili)",
+    ph_rules: "Yayın ilkeleri belgesi", ph_segment: "hizalanacak Türkçe bölüm", ph_window: "referanstan numaralı paragraflar",
+    ph_ref_lang: "referansın dili",
     setup_banner: "Araçlar henüz hazır değil. Çeviri başlatmadan önce kurulumu tamamlayın.", go_setup: "Kuruluma git",
   },
   en: {
@@ -160,7 +227,7 @@ const I18N = {
     test: "Test", testing: "Testing…",
     used_in: "Used in: {stages}", not_used: "Not used in the current workflow; no sign-in is needed.",
     run_command: "To sign in, run this in a terminal: {command}",
-    human_step: "7 · Delivery", human_who: "Human translator, human editor",
+    human_step: "Delivery", human_who: "Human translator, human editor",
     new_book: "New book", new_book_placeholder: "for example: ilmihal", add: "Add",
     no_books: "No books yet.", running: "Running",
     pick_book: "Select a book on the left, or add a new book.",
@@ -188,19 +255,19 @@ const I18N = {
     confirm_delete_ref: "Delete this reference translation and its alignment?",
     confirm_reset: "All intermediate output of this book (in all languages) will be deleted. The final books in the output folder stay. Continue?",
     confirm_redo: "For the selected segments, the output of \"{stage}\" and of the later steps will be deleted and produced again. Continue?",
-    prompts_intro: "The instructions given to the models. A change applies to the segments processed after you save it. To apply it to segments already processed, use the \"Produce again\" option on the book screen.",
+    prompts_intro: "The instructions given to the models. Write your own rules in the \"Publishing rules\" document; it applies to every step. Edit a step instruction only when you want to change how that step works.",
     changed: "changed", restore_default: "Restore default",
-    required_placeholders: "Placeholders that the text must contain (the pipeline inserts the source text, the translation, the glossary, etc. there):",
-    prompts_note: "The instructions are in English, because the models follow English instructions more consistently. You can add text in Turkish. Add the rules specific to your publishing policy here (for example, the form of Qur'an translations or honorific formulas). The explanations that the models write are in the interface language in which you start the run.",
+    required_placeholders: "Required placeholders: the pipeline puts the source text, the translation, the glossary and the other inputs there",
+    prompts_note: "The step instructions are in English, because the models follow English instructions more consistently. Do not change the answer format (JSON, tags); the pipeline reads the answer in this format. Write your publishing rules in the \"Publishing rules\" document, not here.",
     confirm_discard: "Unsaved changes will be lost. Continue?",
     confirm_restore: "Your changes will be deleted and the default instructions restored. Continue?",
     request_failed: "Request failed ({status})",
-    stage_prepare: "Preparation", stage_align: "Alignment", stage_glossary: "Glossary", stage_translate: "1 · First translation",
-    stage_review1: "2 · Review", stage_revise1: "3 · Apply review", stage_source_check: "4 · Source check",
-    stage_review2: "5 · Second review", stage_reconcile: "6 · Reconcile", stage_assemble: "Assembly",
-    flow_align: "Preparation · alignment", flow_glossary: "Preparation · glossary", flow_translate: "1 · First translation",
-    flow_review1: "2 · Review", flow_revise1: "3 · Apply the review", flow_source_check: "4 · Source check from the start",
-    flow_review2: "5 · Second independent review", flow_reconcile: "6 · Reconcile the two reports",
+    stage_prepare: "Preparation", stage_align: "Alignment", stage_glossary: "Glossary", stage_translate: "First translation",
+    stage_review: "Review", stage_apply: "Apply review", stage_source_check: "Source check",
+    stage_assemble: "Assembly",
+    flow_align: "Preparation · alignment", flow_glossary: "Preparation · glossary", flow_translate: "First translation",
+    flow_review: "Review round", flow_apply: "Apply the findings",
+    flow_source_check: "Source check from the start",
     quota_now: "At its usage limit · tries again by itself at {time}",
     quota_last: "Last usage-limit warning: {time}",
     unaligned: "Segments not found in the reference: {segments}. These segments are translated without this reference.",
@@ -210,6 +277,7 @@ const I18N = {
     estimate_calls: "Model calls needed: {calls}",
     estimate_time: "Estimated time: {time}. The real time depends on the speed of the models and on the usage limits.",
     estimate_nothing: "Nothing is left to do for the selected segments.",
+    estimate_redo: "For the selected segments, the chosen step and the later ones will be produced again. These calls are not counted here.",
     quota_note: "For long books, the usage limits (quotas) of the subscriptions can run out. The translation does not stop then: requests to that tool wait, and continue by themselves when the limit resets. You see this below and on the Setup tab.",
     awake_note: "The computer is kept awake while the translation runs. On a laptop, keep the lid open and the computer plugged in; when the lid closes, the computer still sleeps and the translation stops.",
     awake_off: "Keeping awake is turned off (config.toml: keep_awake) or not supported on this computer. Make sure the computer does not sleep while the translation runs.",
@@ -222,7 +290,6 @@ const I18N = {
     stage_failures: "{count} errors",
     elapsed: "Elapsed: {time}",
     remaining: "Remaining: {calls} model calls · about {time}",
-    quota_waiting_line: "{provider} reached its usage limit. It continues by itself at {time}.",
     quota_history: "The usage limit was reached {count} times in this run.",
     awake_on: "The computer is kept awake.",
     failures_title: "Failed tasks (last {count})",
@@ -239,30 +306,64 @@ const I18N = {
     watching_signin: "Waiting for you to sign in; the status refreshes by itself every few seconds.",
     tab_workflow: "Workflow", edit_workflow: "Edit workflow",
     workflow_title: "Workflow",
-    workflow_intro: "Drag model cards from the left onto the steps, or choose from the list in a step. The order of the steps is fixed: each step uses the result of the one before. Each step that changes the text should be checked by a model that did not make the change.",
-    unsaved: "Not saved", preset: "Diagram assignment", revert: "Revert",
-    default_model: "default model", add_model_placeholder: "model name (for example: opus)", fetch_models: "Fetch model list",
-    remove: "Remove", choose_model: "Choose a model…", add_reviewer: "Add a reviewer…", parallel_tag: "parallel · up to 4 models",
+    workflow_intro: "The steps are boxes joined from left to right; each step works on the text of the step before it. Drag a step type from the left onto an arrow between two boxes, or press the + on an arrow; add as many steps as you like. Reviews and reporting custom steps write findings; \u201cApply\u201d puts the findings into the text. A \u201cCheckpoint\u201d sends a segment with serious problems back to an earlier step you choose. Drag the boxes to change the order; click a box to set its options and models below. Changes are saved automatically.",
+    canvas_label: "Workflow diagram", node_prep: "Preparation", prep_mark: "P",
+    role_align: "Alignment", role_glossary: "Glossary", role_translate: "Translator", role_check: "Checker",
+    insert_here: "Add a step here", drag_to_move: "Drag to change the order",
+    move_earlier: "Move earlier", move_later: "Move later", pick_one: "one model",
+    min_one_model: "This role needs at least one model.",
+    node_locked: "Every translation starts with preparation and the first translation; these steps stay in place, their models can be changed.",
+    palette_steps: "Steps", palette_steps_hint: "Drag onto the arrow between two boxes; a click adds it at the end.",
+   
+    palette_models: "Models", palette_models_hint: "You can drag a model card onto a role in a box. \u201cTest\u201d checks that the model answers.",
+    visit_n: "visit {n}", flow_custom: "Custom step", flow_gate: "Checkpoint", stage_custom: "Custom step", stage_gate: "Checkpoint",
+    node_review: "Review", role_gate: "Checker", role_editor: "Editor",
+    step_desc_node_review: "The reviewers compare the text with the Turkish source sentence by sentence and write findings reports without seeing each other's. The text is unchanged; the next \u201cApply\u201d step works on the findings.",
+    step_desc_node_apply: "Weighs all findings written since the last text (reviews, custom steps and checkpoints) against the source and applies the correct ones.",
+    step_desc_node_source_check: "Compares the text with the source again from the start, without relying on the steps before, and corrects it.",
+    step_desc_node_gate: "Looks for serious (critical or major) problems that remain. When it finds one, it sends the segment back to the earlier step you choose; its findings are applied in the next \u201cApply\u201d step. At the limit, the segment is marked in the report and goes on.",
+    step_desc_custom_report: "Examines the text by your instructions and writes a findings report; the next \u201cApply\u201d step works on the findings.",
+    step_desc_custom_rewrite: "Corrects the text by your instructions and records its changes.",
+    problem_custom_title: "This custom step needs a name.",
+    problem_unapplied: "The findings of this step are not applied: put an \u201cApply\u201d step after it, before any other step that changes the text.",
+    problem_gate_target: "Choose the step this checkpoint sends back to (one before it, after the checkpoint before it).",
+    flow_has_problems: "The workflow has {count} problems to fix (boxes marked red). Changes are not saved until they are fixed.",
+    not_saved_problems: "Not saved: fix the boxes marked red",
+    gate_note: "↺ to {step}, at most {max} times", loop_label: "↺ at most {max} times",
+    type_round: "Review round", type_review: "Review", type_apply: "Apply", type_source_check: "Source check", type_custom: "Custom step", type_gate: "Checkpoint",
+    type_hint_round: "A review and the step that applies it.", type_hint_review: "Reviewers report findings; the text is unchanged.",
+    type_hint_apply: "Applies the findings before it.", type_hint_source_check: "Compares with the source again and corrects.",
+    type_hint_custom: "A step with your own instructions.", type_hint_gate: "Sends a segment with serious problems back.",
+    mode_report: "Reports findings", mode_rewrite: "Corrects the text", custom_title: "Name of the step", custom_mode: "What it does",
+    custom_instructions: "Instructions", custom_instructions_hint: " — you can write in Turkish. Example: \u201cCheck the hadith references (Bukhari, Muslim…).\u201d",
+    custom_default_title: "Custom step",
+    gate_back_to: "When it finds problems, send back to", gate_choose: "Choose a step…", gate_max: "At most how many times",
+    gate_help: "Each time it sends back, the steps in between run again for that segment (this uses quota and time). Checkpoints cannot overlap: sending back cannot go past the checkpoint before.",
+   
+    remove_step: "Remove step",
+    confirm_remove_step: "Remove the step \"{step}\" from the workflow? Its output in books translated earlier is not deleted.",
+    reviewers_label: "Reviewers", applier_label: "Applies the findings", max_steps: "At most {count} steps can be added.",
+    flow_changed_note: "Adding or removing steps does not change segments translated earlier. The book screen shows the segments to produce again for the new order.",
+    unsaved: "Not saved", preset: "Diagram assignment",
+    default_model: "default model", add_model_placeholder: "model name (for example: opus)", add_other_model: "Add a model that is not in the list",
+    models_loading: "Reading the model list…", models_none: "Cannot read the model list. The tool must be installed and must have run at least once.",
+    remove: "Remove", parallel_tag: "parallel · up to 4 models",
     step_desc_align: "Finds each Turkish segment in the reference translations. Skipped when there is no reference.",
     step_desc_glossary: "Extracts religious terms and proper names; adds new terms to the shared glossary of the language.",
     step_desc_translate: "Makes the first translation with the Turkish source, the reference passages and the glossary.",
-    step_desc_review1: "Compares the translation with the Turkish source sentence by sentence and writes a findings report.",
-    step_desc_revise1: "Weighs the review findings against the Turkish source and applies the correct ones.",
+    step_desc_review: "The reviewers compare the text with the Turkish source sentence by sentence and write findings reports without seeing each other. Then one model weighs the findings against the source and applies the correct ones.",
     step_desc_source_check: "Compares the text with the source from the start, without relying on earlier steps, and corrects it.",
-    step_desc_review2: "Second independent review: the models write findings reports without seeing each other.",
-    step_desc_reconcile: "Reconciles the review reports against the source and produces the final text.",
     step_desc_human: "The translation and the report go to the human translator; then a human editor reads it.",
-    warn_self_review1: "{model} translates and also reviews its own translation. Put a different model on the review.",
-    warn_self_review2: "{model} corrects the text in step 4 and checks its own correction in step 5.",
-    warn_source_check: "{model} does the source check although it wrote the text earlier. An independent model is more reliable.",
-    info_same_provider: "All models in \"{step}\" are from the same company as the translating model. A model from a different company catches errors better.",
-    info_one_reviewer: "The second review has one model. The diagram calls for two independent models.",
+    warn_self_review: "{step}: {model} reviews a text that it wrote. Put a different model on the review.",
+    warn_self_check: "{step}: {model} wrote the text in the step before. An independent model is more reliable.",
+    info_same_provider: "{step}: all reviewers are from the same company as the model that wrote the text. A model from a different company catches errors better.",
+    warn_no_check: "There is no checking step after the translation. The translation will be delivered without review.",
     cannot_remove_used: "This model is used in a step; remove it from the step first.",
     model_name_invalid: "A model name must start with a letter or digit and can contain only letters, digits and . _ : -",
     upload_bad_type: "This file type is not supported. Supported: .docx, .epub, .md, .txt, .pdf",
     upload_bad_size: "The file is empty or too large (at most 300 MB).",
-    models_found: "{count} models found.", max_reviewers: "This step takes at most 4 models.",
-    confirm_leave_board: "The workflow has unsaved changes. Leave the page?",
+    max_reviewers: "This step takes at most 4 models.",
+   
     export_label: "Export", fmt_md: "Markdown", fmt_docx: "Word", fmt_pdf: "PDF", fmt_html: "HTML",
     pdf_hint: "PDF: in the page that opens, choose \"Save as PDF\" in the print dialog.",
     step_install_hint: "Claude Code, Codex and Gemini are installed on this computer. If needed, Node.js is downloaded into the application's folder. No administrator rights are needed.",
@@ -282,6 +383,39 @@ const I18N = {
     review_quiet: "Wrote no findings in most segments. Check a few segments by hand.",
     review_missed: "Wrote no findings in {count} segments, but serious errors were found in them later: {segments}",
     review_attention: "Reviewer warning",
+    stale_title: "Segments with changed inputs",
+    stale_intro: "The glossary, the references or the instructions changed after these segments were produced. They still use the old inputs; they are produced again only when you ask for it.",
+    stale_row: "From the {stage} step: segments {segments}", stale_fill: "Prepare to produce again",
+    stale_filled: "The form is filled. Click Start to produce the segments again.",
+    preview_hint: "Before you translate, check that the text is read correctly. In a PDF, look in particular at the footnotes, the headings and the Arabic âyat.",
+    preview_prepare: "Split the text and preview", preview_open: "Show the split text", preview_title: "source preview · {count} segments",
+    saving: "Saving…", saved_now: "Saved ✓",
+    confirm_preset: "The steps and the models will go back to the diagram (Gemini, ChatGPT, Claude). Continue?",
+    recover_title: "{model} failed ({stages})",
+    recover_account: "{model} cannot be used with this account.",
+    recover_intro: "The translation stopped. Continue with another model? The model you choose replaces {model} in every step of the workflow. Finished segments are kept.",
+    recover_with: "Instead", recover_go: "Continue with this model", recover_retry: "Try the same model again",
+    decide_quota_title: "{model} reached its usage limit",
+    decide_quota_body: "The translation is waiting; it continues with {tool} by itself at {time}. If you do not want to wait, continue with another model or stop the translation.",
+    decide_error_running: "The other segments go on, but these segments will not be finished. You can continue with another model, let it go on, or stop the translation.",
+    decide_wait: "Let it wait", decide_keep: "Let it go on", decide_stop: "Stop",
+    recover_switching: "Stopping the translation; it then starts with the new model…",
+    stop_timeout: "The translation could not be stopped. Try again in a moment.",
+    recover_done: "Workflow updated: {to} instead of {from}. The translation continues where it stopped.",
+    prompt_title_rules: "Publishing rules", prompt_title_translate: "First translation", prompt_title_review: "Review report",
+    prompt_title_revise: "Applying and reconciling reviews", prompt_title_source_check: "Source check from the start", prompt_title_custom_report: "Custom step: reporting", prompt_title_custom_rewrite: "Custom step: correcting", prompt_title_gate: "Checkpoint",
+    prompt_title_glossary: "Terminology glossary", prompt_title_align: "Reference alignment",
+    all_steps: "All steps",
+    step_prompts: "Step instructions", step_prompts_hint: "Advanced. They define the task and the answer format of each step.",
+    rules_intro: "The rules of your publishing house. This whole document is given to the models in every step and takes priority. You can write it in Turkish. Write short, exact rules: each item says one thing; avoid vague words such as \"usually\" or \"if possible\".",
+    prompt_used_in: "Used in: {steps}",
+    prompts_apply: "A change applies to the segments processed after you save it. Segments processed earlier are shown on the Books screen as \"segments with changed inputs\", and you can produce them again from there.",
+    ph_target_lang: "name of the target language", ph_source: "the Turkish source segment", ph_translation: "the translation that is checked or corrected",
+    ph_glossary: "the glossary terms that occur in this segment", ph_references: "the matching passages of the reference translations",
+    ph_ref_langs: "names of the reference languages", ph_context: "end of the previous segment (context only)",
+    ph_issues: "the review findings (JSON)", ph_note_lang: "language of the model's explanations (the interface language)",
+    ph_rules: "the Publishing rules document", ph_segment: "the Turkish segment to align", ph_window: "numbered paragraphs from the reference",
+    ph_ref_lang: "language of the reference",
     setup_banner: "The tools are not ready yet. Complete the setup before you start a translation.", go_setup: "Go to Setup",
   },
 };
@@ -318,11 +452,27 @@ async function api(method, path, body) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
   }
-  const res = await fetch(path, opts);
+  let res = await fetch(path, opts);
+  if (res.status === 403 && await refreshToken()) {
+    opts.headers["X-Token"] = window.TOKEN;
+    res = await fetch(path, opts);
+  }
   let data = {};
   try { data = await res.json(); } catch { /* empty answer */ }
   if (!res.ok) throw new Error(data.error || L("request_failed", { status: res.status }));
   return data;
+}
+
+// After the interface was restarted, the page of the earlier start has an old session key. The page reads the
+// new key from its own address (the same origin), so that the work on the page goes on without a reload.
+async function refreshToken() {
+  try {
+    const html = await (await fetch("/", { cache: "no-store" })).text();
+    const m = html.match(/window\.TOKEN = "([^"]+)"/);
+    if (!m || m[1] === window.TOKEN) return false;
+    window.TOKEN = m[1];
+    return true;
+  } catch { return false; }
 }
 
 let toastTimer;
@@ -373,9 +523,42 @@ function fmtDuration(seconds) {
 
 const callsText = (calls) => Object.entries(calls).filter(([, n]) => n)
   .map(([name, n]) => `${modelLabel(name)}: ${n.toLocaleString(uiLang)}`).join(" · ");
-const stageName = (stage) => L("stage_" + stage);
+// The nodes of the workflow: the first translation, then the nodes of the flow, which the Workflow tab edits.
+// A node can run again for a segment that a checkpoint sent back; that visit has a folder like "review1.2".
+const nodeOf = (stage) => String(stage).split(".")[0];
+function stageKind(stage) {
+  const s = nodeOf(stage);
+  if (s.startsWith("review")) return "review";
+  if (s.startsWith("revise") || s.startsWith("apply") || s === "reconcile") return "apply";
+  return ["source_check", "custom", "gate"].find((k) => s.startsWith(k)) || s;
+}
+const currentFlow = () => state.flow || state.settings?.flow || [];
+const assignments = () => state.board || state.settings?.stages || {};
+const nodeOptions = () => state.nodes || state.settings?.nodes || {};
+// "report" (writes findings), "text" (writes a new text) or "gate" (a checkpoint).
+function nodeRole(stage) {
+  const k = stageKind(stage);
+  if (k === "review") return "report";
+  if (k === "custom") return nodeOptions()[nodeOf(stage)]?.mode === "report" ? "report" : "text";
+  return k === "gate" ? "gate" : "text";
+}
+// The numbered steps: 1 is the first translation, then the nodes of the flow in order.
+const numberedSteps = () => ["translate", ...currentFlow()];
+function stageName(stage, long = false) {
+  const node = nodeOf(stage);
+  const visit = String(stage).includes(".") ? Number(String(stage).split(".")[1]) : 0;
+  const kind = stageKind(stage);
+  const n = numberedSteps().indexOf(node);
+  const label = kind === "custom" ? nodeOptions()[node]?.title || L("flow_custom") : L((long ? "flow_" : "stage_") + kind);
+  return (n >= 0 ? `${n + 1} · ` : "") + label + (visit ? ` (${L("visit_n", { n: visit })})` : "");
+}
+// The text that a node works on: the text of the last node before it that writes a text.
+function textInput(stage) {
+  const order = numberedSteps();
+  return order.slice(0, order.indexOf(nodeOf(stage))).filter((s) => s === "translate" || nodeRole(s) === "text").pop();
+}
 const state = { settings: null, books: [], current: null, poll: null, prompts: [], prompt: null, toolPoll: null, tab: "setup",
-  openStep: {}, skipRefs: new Set(), toolsReady: null };
+  openStep: {}, skipRefs: new Set(), toolsReady: null, dismissed: new Set(), recoverChoice: {} };
 
 // ---------- language and tabs ----------
 function applyStaticTexts() {
@@ -391,12 +574,13 @@ document.querySelectorAll("[data-ui-lang]").forEach((b) => b.addEventListener("c
   uiLang = b.dataset.uiLang;
   try { localStorage.setItem("ui-lang", uiLang); } catch { /* storage unavailable */ }
   applyStaticTexts();
-  if (state.tab === "workflow" && state.board) return renderBoard();  // keep unsaved board changes
+  if (state.tab === "workflow" && state.board) return renderBoard();
+  if (state.tab === "prompts" && promptDirty()) return;  // keep the text that is being edited
   showTab(state.tab);
 }));
 
 function showTab(name) {
-  if (state.tab === "workflow" && name !== "workflow" && state.board && boardDirty() && !confirm(L("confirm_leave_board"))) return;
+  if (state.tab === "prompts" && name !== "prompts" && promptDirty() && !confirm(L("confirm_discard"))) return;
   state.tab = name;
   document.querySelectorAll(".tab").forEach((t) => {
     t.classList.toggle("active", t.dataset.tab === name);
@@ -564,10 +748,10 @@ function renderFlow() {
   const stages = state.settings.stages;
   const step = (stage) => {
     const providers = stages[stage] || [];
-    return `<div class="step ${providers.length === 1 ? esc(providerOf(providers[0])) : ""}"><b>${esc(L("flow_" + stage))}</b>${providers.map((p) => esc(modelLabel(p))).join(" + ")}</div>`;
+    return `<div class="step ${providers.length === 1 ? esc(providerOf(providers[0])) : ""}"><b>${esc(stageName(stage, true))}</b>${providers.map((p) => esc(modelLabel(p))).join(" + ")}</div>`;
   };
-  $("#flow").innerHTML = ["align", "glossary", "translate", "review1", "revise1", "source_check", "review2", "reconcile"].map(step).join("")
-    + `<div class="step human"><b>${esc(L("human_step"))}</b>${esc(L("human_who"))}</div>`;
+  $("#flow").innerHTML = ["align", "glossary", ...numberedSteps()].map(step).join("")
+    + `<div class="step human"><b>${numberedSteps().length + 1} · ${esc(L("human_step"))}</b>${esc(L("human_who"))}</div>`;
 }
 
 // All tools are installed. A sign-in is required only for the tools that the workflow uses.
@@ -600,7 +784,8 @@ async function loadBooks(soft = false) {
     const parts = { refs: refsHtml, live: liveHtml, results: resultsHtml };
     for (const [role, html] of Object.entries(parts)) {
       const el = $(`[data-role="${role}"]`, root);
-      if (el) el.innerHTML = html(book);
+      // A drop-down that the user is choosing from is not replaced under the pointer.
+      if (el && !(el.contains(document.activeElement) && document.activeElement.tagName === "SELECT")) el.innerHTML = html(book);
     }
     return loadLog(book);
   }
@@ -654,7 +839,8 @@ function bookSteps(book) {
     { id: "run", done: hasOutput && !book.running, locked: !refsDone },
     { id: "result", done: false, locked: !hasOutput },
   ];
-  const current = book.running ? "run" : (steps.find((s) => !s.done && !s.locked) || steps[3]).id;
+  // A failed run stays open: it shows what went wrong and how to continue.
+  const current = book.running || book.run?.state === "failed" ? "run" : (steps.find((s) => !s.done && !s.locked) || steps[3]).id;
   return { steps, current };
 }
 
@@ -745,7 +931,9 @@ function sourceStepHtml(book) {
     ? `<div class="row"><span class="muted small">${esc(L("reset_hint"))}</span>
         <button type="button" class="btn small danger" data-act="reset" ${book.running ? "disabled" : ""}>${esc(L("reset_work"))}</button></div>`
     : uploader("source");
-  return `<p class="muted">${esc(L("source_intro"))}</p>${file}${action}
+  const preview = book.source.length ? `<div class="row preview-row"><span class="muted small">${esc(L("preview_hint"))}</span>
+      <button type="button" class="btn small" data-act="preview">${esc(L(book.prepared ? "preview_open" : "preview_prepare"))}</button></div>` : "";
+  return `<p class="muted">${esc(L("source_intro"))}</p>${file}${preview}${action}
     ${book.source.length && !book.prepared ? `<div class="row next"><button type="button" class="btn primary" data-act="open-step" data-step="refs">${esc(L("continue"))}</button></div>` : ""}`;
 }
 
@@ -891,12 +1079,10 @@ function runPanel(book) {
     lines.push(`<div>${esc(L("remaining", { calls: run.remaining.total_calls.toLocaleString(uiLang), time: fmtDuration(run.remaining.seconds) }))}</div>`);
     if (run.remaining.total_calls) lines.push(`<div class="muted small">${esc(callsText(run.remaining.calls))}</div>`);
   }
-  for (const [provider, q] of Object.entries(run.quota || {})) {
-    lines.push(`<div class="notice warn">${esc(L("quota_waiting_line", { provider: providerName(provider), time: fmtTime(q.until) }))}${q.message ? `<br><span class="small">${esc(q.message)}</span>` : ""}</div>`);
-  }
   if ((run.quota_events || []).length) lines.push(`<div class="muted small">${esc(L("quota_history", { count: run.quota_events.length }))}</div>`);
   if (book.running) lines.push(`<div class="small ${run.awake ? "muted" : "warn-text"}">${esc(L(run.awake ? "awake_on" : "awake_off"))}</div>`);
   if (run.error) lines.push(`<div class="notice bad">${esc(run.error)}</div>`);
+  lines.push(decisionHtml(book));
   if (!book.running && ["failed", "stopped", "interrupted"].includes(runState)) lines.push(`<p class="small">${esc(L("hint_" + runState))}</p>`);
   const failures = run.failures || [];
   if (failures.length) {
@@ -910,6 +1096,99 @@ function runPanel(book) {
         <span class="badge ${tone}">${esc(L("state_" + runState))}</span>
       </div>
       <div class="stack">${lines.join("")}</div>
+    </div>`;
+}
+
+// The models whose calls failed in a run, with their steps. A review task is named "<segment> (<model>)".
+function failedModels(run) {
+  const out = new Map();
+  for (const f of run.failures || []) {
+    const m = nodeRole(f.stage) !== "text" ? /\(([^()]+)\)\s*$/.exec(f.task) : null;
+    const name = m ? m[1] : (state.settings?.stages[f.stage] || [])[0];
+    if (!name) continue;
+    const item = out.get(name) || { name, stages: new Set(), account: false };
+    item.stages.add(f.stage);
+    item.account ||= /IneligibleTierError|no longer supported/i.test(f.error);
+    out.set(name, item);
+  }
+  return [...out.values()];
+}
+
+// A model reached its usage limit or failed: the user decides whether the translation goes on, and how.
+//   while it runs: continue with another model, let it go on (wait for the limit / leave the failed segments), or stop;
+//   after it failed: continue with another model, or try the same model again.
+function decisionHtml(book) {
+  const run = book.run;
+  const running = book.running;
+  if (!running && run.state !== "failed") return "";
+  const used = new Set(Object.values(state.settings?.stages || {}).flat());
+  const items = Object.entries(running ? run.quota || {} : {}).map(([name, q]) => ({ name, quota: q, whole: true, stages: new Set() }));
+  for (const f of failedModels(run)) {
+    if (!items.some((i) => i.name === f.name)) items.push({ ...f, whole: f.account });
+  }
+  return items.filter((f) => used.has(f.name) && !state.dismissed.has(`${book.name}:${run.started}:${f.name}`)).map((f) => {
+    const provider = providerOf(f.name);
+    // A usage limit or a refused account applies to the whole tool: none of its models can be used.
+    const skip = f.whole ? [provider, ...providerModels(provider).map((m) => `${provider}/${m}`)] : [f.name];
+    const chosen = state.recoverChoice[f.name];
+    const choice = chosen && !skip.includes(chosen) ? chosen : Object.keys(state.settings.providers).find((p) => p !== provider) || "";
+    const model = modelLabel(f.name), tool = providerName(provider);
+    const title = f.quota ? L("decide_quota_title", { model })
+      : L("recover_title", { model, stages: [...f.stages].map((s) => stageName(s)).join(", ") });
+    const body = f.quota ? L("decide_quota_body", { time: fmtTime(f.quota.until), tool })
+      : (f.account ? `${L("recover_account", { model: tool })} ` : "") + L(running ? "decide_error_running" : "recover_intro", { model: f.whole ? tool : model });
+    const keep = running
+      ? `<button type="button" class="btn small" data-act="keep" data-name="${esc(f.name)}">${esc(L(f.quota ? "decide_wait" : "decide_keep"))}</button>
+         <button type="button" class="btn small danger" data-act="stop">${esc(L("decide_stop"))}</button>`
+      : f.account ? "" : `<button type="button" class="btn small" data-act="retry">${esc(L("recover_retry"))}</button>`;
+    return `<div class="notice warn recover" data-from="${esc(f.name)}" data-whole="${f.whole ? 1 : 0}">
+        <b>${esc(title)}</b>
+        <div>${esc(body)}</div>
+        ${f.quota?.message ? `<div class="small muted">${esc(f.quota.message)}</div>` : ""}
+        <div class="row recover-actions">
+          <label class="small">${esc(L("recover_with"))} <select data-role="recover-to">${modelOptions(choice, skip)}</select></label>
+          <button type="button" class="btn primary small" data-act="recover">${esc(L("recover_go"))}</button>
+          ${keep}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// Waits until a stopped run has ended (its lock is free), so that it can be started again.
+async function waitStopped(book) {
+  for (let i = 0; i < 120; i++) {
+    if (!(await api("GET", `/api/books/${encodeURIComponent(book)}/log`)).running) return;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(L("stop_timeout"));
+}
+
+// Starts the book again with the settings of its last run; finished segments are kept.
+function restartRun(book) {
+  const run = state.books.find((x) => x.name === book).run;
+  return api("POST", `/api/books/${encodeURIComponent(book)}/run`,
+    { lang: run.target, references: run.refs, segments: run.segments || "",
+      until: state.settings.stage_order.includes(run.until) ? run.until : "assemble" });
+}
+
+// "0001", "0002", "0003", "0007" → "1-3,7" (the form of the segments field)
+function segmentRanges(ids) {
+  const out = [];
+  for (const n of ids.map(Number)) {
+    const last = out[out.length - 1];
+    if (last && n === last[1] + 1) last[1] = n; else out.push([n, n]);
+  }
+  return out.map(([a, b]) => (a === b ? `${a}` : `${a}-${b}`)).join(",");
+}
+
+// Finished segments whose glossary rows, references or instructions changed after they were produced.
+function staleHtml(stale) {
+  const rows = Object.entries(stale || {});
+  if (!rows.length) return "";
+  return `<div class="notice warn small"><b>${esc(L("stale_title"))}</b>
+      <div>${esc(L("stale_intro"))}</div>
+      ${rows.map(([stage, ids]) => `<div class="row stale-row"><span>${esc(L("stale_row", { stage: stageName(stage), segments: segmentRanges(ids) }))}</span>
+        <button type="button" class="btn small" data-act="fill-redo" data-stage="${esc(stage)}" data-segments="${esc(segmentRanges(ids))}">${esc(L("stale_fill"))}</button></div>`).join("")}
     </div>`;
 }
 
@@ -933,8 +1212,8 @@ function loadEstimate(book) {
           <div>${esc(L("estimate_calls", { calls: callsText(plan.calls) }))}</div>
           <div>${esc(L("estimate_time", { time: fmtDuration(plan.seconds) }))}</div>
           <div class="small">${esc(L("quota_note"))}</div>
-          <div class="small">${esc(L(state.settings.keep_awake ? "awake_note" : "awake_off"))}</div>` : `<div>${esc(L("estimate_nothing"))}</div>`}
-      </div>`;
+          <div class="small">${esc(L(state.settings.keep_awake ? "awake_note" : "awake_off"))}</div>` : `<div>${esc(L(form.redo ? "estimate_redo" : "estimate_nothing"))}</div>`}
+      </div>${staleHtml(plan.stale)}`;
   }, 300);
 }
 
@@ -997,7 +1276,7 @@ async function loadLog(book) {
   }
 }
 
-function upload(container, book) {
+async function upload(container, book) {
   const file = $('input[type="file"]', container).files[0];
   if (!file) return toast(L("pick_file"), true);
   const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
@@ -1013,6 +1292,7 @@ function upload(container, book) {
   const bar = $("progress", container);
   const button = $('[data-act="upload"]', container);
   const xhr = new XMLHttpRequest();
+  await refreshToken();  // the interface may have been restarted since the page was opened
   xhr.open("PUT", `${path}?file=${encodeURIComponent(file.name)}`);
   xhr.setRequestHeader("X-Token", window.TOKEN);
   xhr.setRequestHeader("X-Lang", uiLang);
@@ -1050,18 +1330,59 @@ $("#book").addEventListener("click", async (ev) => {
       return setTimeout(loadBooks, 800);
     case "read":
       return openOutput(book, b.dataset.lang, b.dataset.kind);
+    case "preview":
+      return openPreview(b, book);
     case "open-step": {
       const open = state.openStep[book] || bookSteps(state.books.find((x) => x.name === book)).current;
       state.openStep[book] = b.dataset.step === open && b.classList.contains("jhead") ? "none" : b.dataset.step;
       return renderBook(true);
     }
+    case "fill-redo": {
+      // Fills the form; nothing is deleted until the user clicks Start and confirms.
+      const f = $('form[data-form="run"]');
+      f.elements.segments.value = b.dataset.segments;
+      f.elements.redo.value = b.dataset.stage;
+      $('[data-role="advanced"]', f).open = true;
+      loadEstimate(state.books.find((x) => x.name === book));
+      return toast(L("stale_filled"));
+    }
     case "refs-done":
       state.skipRefs.add(book);
       return renderBook();
+    case "recover": {
+      // Replaces the failed model in every step of the workflow (all models of the tool when it refused the account).
+      const box = b.closest(".recover");
+      const from = box.dataset.from, to = $("select", box).value, whole = box.dataset.whole === "1";
+      const replace = (n) => (whole ? providerOf(n) === providerOf(from) : n === from);
+      const r = await act(b, async () => {
+        if (state.books.find((x) => x.name === book)?.running) {
+          // The run is stopped first; finished segments are kept, the calls in progress are made again.
+          toast(L("recover_switching"));
+          await api("POST", `${base}/stop`);
+          await waitStopped(book);
+        }
+        const s = await api("GET", "/api/settings");
+        const stages = Object.fromEntries(Object.entries(s.stages).map(([st, names]) => [st, [...new Set(names.map((n) => (replace(n) ? to : n)))]]));
+        await api("PUT", "/api/stages", { stages, flow: s.flow });
+        state.settings = await api("GET", "/api/settings");
+        state.board = state.flow = null;  // the Workflow tab reads the new assignment when it opens
+        await restartRun(book);
+        return { message: L("recover_done", { from: modelLabel(from), to: modelLabel(to) }) };
+      });
+      if (r) loadBooks();
+      return;
+    }
+    case "retry":
+      if (await act(b, () => restartRun(book))) loadBooks();
+      return;
+    case "keep":
+      state.dismissed.add(`${book}:${state.books.find((x) => x.name === book).run.started}:${b.dataset.name}`);
+      return renderBook(true);
   }
 });
 
 $("#book").addEventListener("change", (ev) => {
+  if (ev.target.dataset.role === "recover-to") state.recoverChoice[ev.target.closest(".recover").dataset.from] = ev.target.value;
   if (!ev.target.closest('form[data-form="run"]')) return;
   const book = state.books.find((b) => b.name === state.current);
   if (book && !book.running) loadEstimate(book);
@@ -1102,26 +1423,36 @@ async function openOutput(book, lang, kind) {
     $("#reader-title").textContent = `${book} · ${languageName(lang)} · ${L(kind)}`;
     $("#reader-text").textContent = await res.text();
     $("#reader-download").href = exportUrl(book, lang, kind, "md");
+    $("#reader-download").hidden = false;
     $("#reader").showModal();
   } catch (e) { toast(e.message, true); }
+}
+// The source as the pipeline reads it. The first call prepares the book (it splits the text; no model is called).
+async function openPreview(button, book) {
+  const r = await act(button, () => api("POST", `/api/books/${encodeURIComponent(book)}/preview`));
+  if (!r) return;
+  $("#reader-title").textContent = `${book} · ${L("preview_title", { count: r.segments })}`;
+  $("#reader-text").textContent = r.text;
+  $("#reader-download").hidden = true;
+  $("#reader").showModal();
+  loadBooks(true);
 }
 $("#reader-close").addEventListener("click", () => $("#reader").close());
 
 // ---------- workflow board ----------
-const BOARD_STAGES = ["align", "glossary", "translate", "review1", "revise1", "source_check", "review2", "reconcile"];
-const STEP_NUMBERS = { align: "H", glossary: "H", translate: "1", review1: "2", revise1: "3", source_check: "4", review2: "5", reconcile: "6" };
+const PRESET_FLOW = ["review1", "revise1", "source_check", "review2", "reconcile"];
 const PRESET = { align: ["gemini"], glossary: ["claude"], translate: ["chatgpt"], review1: ["gemini"], revise1: ["chatgpt"],
                  source_check: ["claude"], review2: ["chatgpt", "gemini"], reconcile: ["claude"] };
 const MODEL_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/;
-const isReview = (stage) => (state.settings?.review_stages || []).includes(stage);
-const boardSnapshot = () => JSON.stringify({ board: state.board, palette: state.palette });
-const boardDirty = () => boardSnapshot() !== state.boardSaved;
 
 async function loadBoard() {
   try { state.settings = await api("GET", "/api/settings"); } catch (e) { return toast(e.message, true); }
   state.board = JSON.parse(JSON.stringify(state.settings.stages));
+  state.flow = [...state.settings.flow];
+  state.nodes = JSON.parse(JSON.stringify(state.settings.nodes || {}));
+  state.instructions = { ...(state.settings.instructions || {}) };
   state.palette = {};
-  state.suggestions = state.suggestions || {};
+  state.auto = state.auto || {};  // the models that each tool offers, read from the tool
   for (const [provider, info] of Object.entries(state.settings.providers)) state.palette[provider] = [...info.models];
   for (const names of Object.values(state.board)) {
     for (const name of names) {
@@ -1129,32 +1460,269 @@ async function loadBoard() {
       if (model && state.palette[provider] && !state.palette[provider].includes(model)) state.palette[provider].push(model);
     }
   }
-  state.boardSaved = boardSnapshot();
   renderBoard();
+  loadModels();
 }
 
-function allNames() {
-  return Object.entries(state.palette).flatMap(([provider, models]) => [provider, ...models.map((m) => `${provider}/${m}`)]);
+// The model lists come from the tools themselves. The board works before they arrive.
+async function loadModels() {
+  await Promise.all(Object.entries(state.settings.providers).map(async ([provider, info]) => {
+    if (!info.tool) return;
+    try { state.auto[provider] = (await api("GET", `/api/tools/${encodeURIComponent(info.tool)}/models`)).models; } catch { /* keeps the last list */ }
+  }));
+  state.modelsLoaded = true;
+  if (state.tab === "workflow" && state.board) renderBoard();
 }
+
+// The tool's own models first, then the models that the user added by name.
+const providerModels = (provider) => [...new Set([...(state.auto?.[provider] || []),
+  ...(state.palette?.[provider] || state.settings?.providers[provider]?.models || [])])];
+
+function allNames() {
+  return Object.keys(state.palette).flatMap((provider) => [provider, ...providerModels(provider).map((m) => `${provider}/${m}`)]);
+}
+
+// Who wrote the text that a step works on.
+const writerOf = (stage) => (state.board[textInput(stage)] || [])[0];
 
 function boardWarnings(b) {
   const out = [];
-  const translator = b.translate[0], reviser = b.revise1[0], checker = b.source_check[0];
-  if (b.review1.includes(translator)) out.push(["warn", L("warn_self_review1", { model: modelLabel(translator) })]);
-  if (b.review2.includes(checker)) out.push(["warn", L("warn_self_review2", { model: modelLabel(checker) })]);
-  if (checker === translator || checker === reviser) out.push(["warn", L("warn_source_check", { model: modelLabel(checker) })]);
-  if (!b.review1.includes(translator) && b.review1.every((n) => providerOf(n) === providerOf(translator))) {
-    out.push(["", L("info_same_provider", { step: L("flow_review1") })]);
+  for (const step of state.flow) {
+    const writer = writerOf(step);
+    if (!writer || !b[step] || stageKind(step) === "apply") continue;
+    const name = stageName(step);
+    if (nodeRole(step) === "report") {
+      if (b[step].includes(writer)) out.push(["warn", L("warn_self_review", { step: name, model: modelLabel(writer) }), step]);
+      else if (b[step].every((n) => providerOf(n) === providerOf(writer))) out.push(["", L("info_same_provider", { step: name }), step]);
+    } else if (b[step][0] === writer) {
+      out.push(["warn", L("warn_self_check", { step: name, model: modelLabel(writer) }), step]);
+    }
   }
-  if (b.review2.length < 2) out.push(["", L("info_one_reviewer")]);
+  if (!state.flow.length) out.push(["warn", L("warn_no_check")]);
   return out;
 }
 
-function renderBoard() {
+// One group per tool; each lists the tool's default and its models.
+function modelOptions(selected, skip = []) {
+  return Object.keys(state.palette || state.settings.providers).map((provider) => {
+    const items = [provider, ...providerModels(provider).map((m) => `${provider}/${m}`)].filter((n) => !skip.includes(n))
+      .map((n) => `<option value="${esc(n)}" ${n === selected ? "selected" : ""}>${esc(modelLabel(n))}</option>`).join("");
+    return items ? `<optgroup label="${esc(providerName(provider))}">${items}</optgroup>` : "";
+  }).join("");
+}
+
+// ---------- the canvas: the steps as nodes from left to right ----------
+// Preparation and the first translation start every workflow; any number of nodes follows them. A reporting node
+// writes findings, an apply node applies the findings reported since the last text, a checkpoint can send a
+// segment back to an earlier node (drawn as an arc above the nodes).
+const FIXED_NODES = ["prep", "translate", "human"];
+const STEP_TYPES = [  // the palette: kind, mark
+  ["round", "✎"], ["review", "?"], ["apply", "✓"], ["source_check", "⇆"], ["custom", "★"], ["gate", "↺"]];
+const ROLE_KEYS = { align: "role_align", glossary: "role_glossary", translate: "role_translate", source_check: "role_check",
+                    review: "reviewers_label", apply: "applier_label", gate: "role_gate" };
+const isReporting = (stage) => nodeRole(stage) === "report";
+const roleLabel = (stage) => (stageKind(stage) === "custom" ? L(isReporting(stage) ? "reviewers_label" : "role_editor")
+  : L(ROLE_KEYS[stageKind(stage)]));
+const nodeKind = (node) => (node === "prep" || node === "human" ? node : stageKind(node));
+const KIND_MARK = Object.fromEntries(STEP_TYPES);
+
+function nodeRoles(node) {
+  if (node === "prep") return ["align", "glossary"];
+  return node === "human" ? [] : [node];
+}
+
+function nodeTitle(node) {
+  if (node === "prep") return L("node_prep");
+  if (node === "human") return L("human_step");
+  if (node === "translate") return L("flow_translate");
+  const kind = stageKind(node);
+  if (kind === "custom") return state.nodes[node]?.title || L("flow_custom");
+  return L(kind === "review" ? "node_review" : "flow_" + kind);
+}
+
+// The mark in the node: its step number, a letter for preparation.
+function nodeMark(node) {
+  if (node === "prep") return L("prep_mark");
+  if (node === "human") return "✓";
+  return String(numberedSteps().indexOf(node) + 1);
+}
+
+function nodeDescription(node) {
+  if (node === "prep") return `${L("step_desc_align")} ${L("step_desc_glossary")}`;
+  if (node === "human" || node === "translate") return L("step_desc_" + node);
+  const kind = stageKind(node);
+  if (kind === "custom") return L(isReporting(node) ? "step_desc_custom_report" : "step_desc_custom_rewrite");
+  return L("step_desc_node_" + kind);
+}
+
+// The problems that keep a flow from running (the server checks the same): {node: message}.
+function flowProblems() {
+  const out = {};
+  let pending = null;
+  let lastGate = -1;
+  state.flow.forEach((node, i) => {
+    const kind = stageKind(node);
+    const role = nodeRole(node);
+    if (kind === "custom" && !(state.nodes[node]?.title || "").trim()) out[node] = L("problem_custom_title");
+    if (role === "report") pending = pending || node;
+    else if (role === "text") {
+      if (pending && kind !== "apply") out[pending] = L("problem_unapplied");
+      pending = null;
+    } else {
+      const back = state.nodes[node]?.back_to;
+      if (!state.flow.slice(lastGate + 1, i).includes(back)) out[node] = L("problem_gate_target");
+      lastGate = i;
+    }
+  });
+  if (pending) out[pending] = L("problem_unapplied");
+  return out;
+}
+
+const chipsHtml = (stage) => (state.board[stage] || [])
+  .map((n) => `<span class="mchip ${esc(providerOf(n))}" title="${esc(modelLabel(n))}">${esc(modelLabel(n))}</span>`).join("");
+
+function nodeHtml(node, index) {
+  const problem = state.problems[node];
+  const warns = state.warn[node] || [];
+  const selected = state.selected === node;
+  const movable = index !== undefined;
+  const kind = nodeKind(node);
+  const roles = nodeRoles(node).map((stage) => `
+      <div class="node-role" data-stage="${stage}"><span class="role">${esc(roleLabel(stage))}</span>${chipsHtml(stage)}</div>`).join("");
+  const extra = kind === "gate" && state.nodes[node]?.back_to
+    ? `<div class="node-note">${esc(L("gate_note", { step: stageName(state.nodes[node].back_to), max: state.nodes[node].max }))}</div>`
+    : kind === "custom" ? `<div class="node-note">${esc(L(isReporting(node) ? "mode_report" : "mode_rewrite"))}</div>` : "";
+  const flag = problem ? `<span class="node-warn bad" title="${esc(problem)}" aria-label="${esc(problem)}">!</span>`
+    : warns.length ? `<span class="node-warn" title="${esc(warns.join(" "))}" aria-label="${esc(warns.join(" "))}">!</span>` : "";
+  return `<div class="node kind-${kind}${selected ? " selected" : ""}${problem ? " invalid" : ""}" data-node="${node}" tabindex="0"
+      role="button" aria-pressed="${selected}" ${movable ? `data-index="${index}" draggable="true" title="${esc(L("drag_to_move"))}"` : ""}>
+      <div class="node-head">
+        <span class="node-glyph">${esc(nodeMark(node))}</span>
+        <b><span class="node-kind">${esc(KIND_MARK[kind] || "")}</span> ${esc(nodeTitle(node))}</b>${flag}
+      </div>${extra}${roles}
+    </div>`;
+}
+
+// An arrow between two nodes. After the first translation each arrow is a place where a node can be put.
+function edgeHtml(at) {
+  if (at === null) return `<div class="edge" aria-hidden="true"></div>`;
+  const full = state.flow.length >= state.settings.max_flow_steps;
+  const open = state.addAt === at;
+  const menu = open ? `<div class="edge-menu" role="menu">${STEP_TYPES.map(([kind, mark]) =>
+    `<button type="button" role="menuitem" data-act="insert" data-kind="${kind}" data-at="${at}"><span aria-hidden="true">${mark}</span> ${esc(L("type_" + kind))}</button>`).join("")}
+    </div>` : "";
+  return `<div class="edge slot" data-at="${at}">${full ? "" : `<button type="button" class="edge-add" data-act="edge-add"
+      data-at="${at}" aria-label="${esc(L("insert_here"))}" title="${esc(L("insert_here"))}" aria-expanded="${open}">+</button>`}${menu}</div>`;
+}
+
+// The arcs of the checkpoints: from the checkpoint back to the node it sends segments to.
+function drawLoops(track) {
+  track.querySelector(".loops")?.remove();
+  const gates = state.flow.filter((n) => stageKind(n) === "gate" && state.flow.includes(state.nodes[n]?.back_to));
+  track.classList.toggle("has-loops", gates.length > 0);
+  if (!gates.length) return;
+  const box = track.getBoundingClientRect();
+  const zoom = Number(track.style.zoom) || 1;
+  const at = (node) => {
+    const r = track.querySelector(`.node[data-node="${node}"]`).getBoundingClientRect();
+    return { x: (r.left + r.width / 2 - box.left) / zoom, top: (r.top - box.top) / zoom };
+  };
+  const paths = gates.map((gate, i) => {
+    const from = at(gate), to = at(state.nodes[gate].back_to);
+    const lift = 16 + 10 * (i % 3);
+    const y = Math.min(from.top, to.top);
+    return `<path d="M ${from.x} ${from.top} C ${from.x} ${y - lift}, ${to.x} ${y - lift}, ${to.x} ${to.top}" marker-end="url(#loop-arrow)"/>
+      <text x="${(from.x + to.x) / 2}" y="${y - lift + 1}">${esc(L("loop_label", { max: state.nodes[gate].max }))}</text>`;
+  }).join("");
+  track.insertAdjacentHTML("afterbegin", `<svg class="loops" aria-hidden="true" width="${box.width / zoom}" height="${box.height / zoom}">
+    <defs><marker id="loop-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z"/></marker></defs>${paths}</svg>`);
+}
+
+// The models a role can take: one row of buttons per tool. A reporting node takes up to 4 models; the
+// other roles take one.
+function rolePicker(stage) {
+  const many = isReporting(stage);
+  const chosen = state.board[stage] || [];
+  const rows = Object.keys(state.palette).map((provider) => {
+    const fallback = state.settings.providers[provider]?.default_model;
+    const names = [provider, ...providerModels(provider).map((m) => `${provider}/${m}`)];
+    const buttons = names.map((n) => `<button type="button" class="pick" data-act="pick" data-stage="${stage}" data-name="${esc(n)}"
+        aria-pressed="${chosen.includes(n)}">${esc(modelOf(n) || (fallback ? `${L("default_model")} (${fallback})` : L("default_model")))}</button>`).join("");
+    return `<div class="pick-row"><span class="pick-provider ${esc(provider)}">${esc(providerName(provider))}</span>
+        <div class="pick-chips">${buttons}</div></div>`;
+  }).join("");
+  return `<fieldset class="role-pick"><legend>${esc(roleLabel(stage))}
+      <span class="parallel-tag">${esc(L(many ? "parallel_tag" : "pick_one"))}</span></legend>${rows}</fieldset>`;
+}
+
+// The settings of a custom node (name, what it does, its instructions) and of a checkpoint (where it sends back).
+function nodeSettings(node) {
+  const kind = stageKind(node);
+  const opts = state.nodes[node] || {};
+  if (kind === "custom") {
+    return `<div class="node-settings">
+        <label>${esc(L("custom_title"))}<input data-field="title" maxlength="60" value="${esc(opts.title || "")}"></label>
+        <fieldset class="plain"><legend>${esc(L("custom_mode"))}</legend><div class="row">
+          <label class="radio"><input type="radio" name="mode" data-field="mode" value="report" ${opts.mode === "report" ? "checked" : ""}> ${esc(L("mode_report"))}</label>
+          <label class="radio"><input type="radio" name="mode" data-field="mode" value="rewrite" ${opts.mode !== "report" ? "checked" : ""}> ${esc(L("mode_rewrite"))}</label>
+        </div></fieldset>
+        <label>${esc(L("custom_instructions"))}<span class="muted small">${esc(L("custom_instructions_hint"))}</span>
+          <textarea data-field="instructions" rows="7" maxlength="20000">${esc(state.instructions[node] || "")}</textarea></label>
+      </div>`;
+  }
+  if (kind === "gate") {
+    const i = state.flow.indexOf(node);
+    const lastGate = state.flow.slice(0, i).map((n, k) => (stageKind(n) === "gate" ? k : -1)).reduce((a, b) => Math.max(a, b), -1);
+    const targets = state.flow.slice(lastGate + 1, i);
+    const options = targets.map((n) => `<option value="${n}" ${n === opts.back_to ? "selected" : ""}>${esc(stageName(n))}</option>`).join("");
+    return `<div class="node-settings">
+        <label>${esc(L("gate_back_to"))}<select data-field="back_to">
+          ${opts.back_to && targets.includes(opts.back_to) ? "" : `<option value="">${esc(L("gate_choose"))}</option>`}${options}</select></label>
+        <label>${esc(L("gate_max"))}<select data-field="max">${Array.from({ length: state.settings.max_loops }, (_, k) => k + 1)
+          .map((n) => `<option value="${n}" ${n === opts.max ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        <p class="muted small">${esc(L("gate_help"))}</p>
+      </div>`;
+  }
+  return "";
+}
+
+function renderInspector() {
+  const node = state.selected;
+  const i = state.flow.indexOf(node);
+  const tools = i >= 0 ? `<div class="row">
+      <button type="button" class="btn small" data-act="move" data-dir="-1" ${i === 0 ? "disabled" : ""}>← ${esc(L("move_earlier"))}</button>
+      <button type="button" class="btn small" data-act="move" data-dir="1" ${i === state.flow.length - 1 ? "disabled" : ""}>${esc(L("move_later"))} →</button>
+      <button type="button" class="btn small danger" data-act="remove-step">${esc(L("remove_step"))}</button>
+    </div>` : "";
+  const notes = [state.problems[node] && `<div class="notice bad">${esc(state.problems[node])}</div>`,
+    ...(state.warn[node] || []).map((text) => `<div class="notice warn">${esc(text)}</div>`)].filter(Boolean).join("");
+  const fixed = node === "prep" || node === "translate" ? `<p class="muted small">${esc(L("node_locked"))}</p>` : "";
+  $("#inspector").innerHTML = `
+    <div class="inspector-head">
+      <div><h3>${esc(node === "human" ? nodeTitle(node) : `${nodeMark(node)} · ${nodeTitle(node)}`)}</h3>
+        <p class="muted small">${esc(nodeDescription(node))}</p>${fixed}</div>
+      ${tools}
+    </div>${notes}${i >= 0 ? nodeSettings(node) : ""}${nodeRoles(node).map(rolePicker).join("")}`;
+}
+
+function renderPalette() {
   const used = new Set(Object.values(state.board).flat());
-  $("#palette").innerHTML = Object.entries(state.palette).map(([provider, models]) => {
-    const tool = state.settings.providers[provider]?.tool;
-    const suggestions = [...new Set([...(state.settings.providers[provider]?.suggestions || []), ...(state.suggestions[provider] || [])])];
+  const stepType = ([kind, mark]) => `
+    <div class="step-type ${kind}" role="button" tabindex="0" draggable="true" data-kind="${kind}" title="${esc(L("palette_steps_hint"))}">
+      <span class="glyph" aria-hidden="true">${mark}</span>
+      <span><b>${esc(L("type_" + kind))}</b><span class="small">${esc(L("type_hint_" + kind))}</span></span>
+    </div>`;
+  const full = state.flow.length >= state.settings.max_flow_steps;
+  const steps = `<section class="card palette-group steps-group">
+      <h3>${esc(L("palette_steps"))}</h3>
+      ${STEP_TYPES.map(stepType).join("")}
+      <p class="muted small">${esc(full ? L("max_steps", { count: state.settings.max_flow_steps }) : L("palette_steps_hint"))}</p>
+      <p class="muted small">${esc(L("flow_changed_note"))}</p>
+    </section>
+    <div><h3 class="palette-title">${esc(L("palette_models"))}</h3><p class="muted small">${esc(L("palette_models_hint"))}</p></div>`;
+  $("#palette").innerHTML = steps + Object.keys(state.palette).map((provider) => {
+    const auto = state.auto[provider] || [];
     const card = (name, custom) => `
       <div class="model-card ${esc(provider)}" draggable="true" data-name="${esc(name)}">
         <span>${esc(modelOf(name) || L("default_model"))}${!modelOf(name) && state.settings.providers[provider]?.default_model ? ` <span class="muted small">(${esc(state.settings.providers[provider].default_model)})</span>` : ""}</span>
@@ -1166,89 +1734,328 @@ function renderBoard() {
     return `<section class="card palette-group ${esc(provider)}">
         <h3>${esc(providerName(provider))}</h3>
         ${card(provider, false)}
-        ${models.map((m) => card(`${provider}/${m}`, true)).join("")}
-        <form class="add-model" data-provider="${esc(provider)}">
-          <input list="dl-${esc(provider)}" placeholder="${esc(L("add_model_placeholder"))}" aria-label="${esc(L("add_model_placeholder"))}">
-          <button type="submit" class="btn small">${esc(L("add"))}</button>
-        </form>
-        <datalist id="dl-${esc(provider)}">${suggestions.map((m) => `<option value="${esc(m)}">`).join("")}</datalist>
-        ${tool === "gemini" ? `<button type="button" class="icon-btn" data-act="fetch-models" data-tool="${esc(tool)}" data-provider="${esc(provider)}">${esc(L("fetch_models"))}</button>` : ""}
+        ${providerModels(provider).map((m) => card(`${provider}/${m}`, !auto.includes(m))).join("")}
+        ${auto.length ? "" : `<p class="muted small">${esc(L(state.modelsLoaded ? "models_none" : "models_loading"))}</p>`}
+        <details>
+          <summary>${esc(L("add_other_model"))}</summary>
+          <form class="add-model" data-provider="${esc(provider)}">
+            <input placeholder="${esc(L("add_model_placeholder"))}" aria-label="${esc(L("add_model_placeholder"))}">
+            <button type="submit" class="btn small">${esc(L("add"))}</button>
+          </form>
+        </details>
       </section>`;
   }).join("");
-
-  const names = allNames();
-  const steps = BOARD_STAGES.map((stage) => {
-    const assigned = state.board[stage] || [];
-    const review = isReview(stage);
-    const chips = assigned.map((name) => `
-      <span class="chip-model ${esc(providerOf(name))}">${esc(modelLabel(name))}
-        ${review && assigned.length > 1 ? `<button type="button" class="icon-btn" data-act="unassign" data-stage="${stage}" data-name="${esc(name)}" aria-label="${esc(L("remove"))}">×</button>` : ""}
-      </span>`).join("");
-    const options = names.filter((n) => !assigned.includes(n)).map((n) => `<option value="${esc(n)}">${esc(modelLabel(n))}</option>`).join("");
-    return `<li class="step-row" data-stage="${stage}">
-        <div class="step-no">${STEP_NUMBERS[stage]}</div>
-        <div>
-          <div class="row" style="justify-content:space-between"><b>${esc(L("flow_" + stage))}</b>${review ? `<span class="parallel-tag">${esc(L("parallel_tag"))}</span>` : ""}</div>
-          <div class="desc">${esc(L("step_desc_" + stage))}</div>
-          <div class="dropzone" data-stage="${stage}">
-            ${chips}
-            <select data-act="assign" data-stage="${stage}" aria-label="${esc(L(review ? "add_reviewer" : "choose_model"))}">
-              <option value="">${esc(L(review ? "add_reviewer" : "choose_model"))}</option>${options}
-            </select>
-          </div>
-        </div>
-      </li>`;
-  });
-  steps.push(`<li class="step-row step-human"><div class="step-no">7</div><div><b>${esc(L("human_step"))}</b><div class="desc">${esc(L("step_desc_human"))}</div></div></li>`);
-  $("#steps").innerHTML = steps.join("");
-
-  $("#board-warnings").innerHTML = boardWarnings(state.board)
-    .map(([tone, text]) => `<div class="notice ${tone}">${esc(text)}</div>`).join("");
-  $("#board-dirty").hidden = !boardDirty();
 }
 
+// The element that has the focus, found again after the board is drawn anew.
+function focusKey(el) {
+  if (!el?.dataset || !el.closest?.("#workflow")) return null;
+  if (el.dataset.node) return `.node[data-node="${el.dataset.node}"]`;
+  if (el.dataset.field) return `[data-field="${el.dataset.field}"]${el.type === "radio" ? `[value="${CSS.escape(el.value)}"]` : ""}`;
+  if (!el.dataset.act && !el.dataset.kind) return null;
+  return ["act", "stage", "name", "at", "kind", "dir"].filter((k) => el.dataset[k] !== undefined)
+    .map((k) => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join("");
+}
+
+// keepPanel: the panel below stays as it is (the user is typing in it).
+function renderBoard(keepPanel = false) {
+  const focus = keepPanel ? null : focusKey(document.activeElement);
+  if (!state.selected || !(FIXED_NODES.includes(state.selected) || state.flow.includes(state.selected))) state.selected = "translate";
+  state.problems = flowProblems();
+  state.warn = {};
+  for (const [, text, step] of boardWarnings(state.board)) if (step) (state.warn[step] ||= []).push(text);
+  renderPalette();
+  const canvas = $("#canvas");
+  const scroll = canvas.scrollLeft;
+  canvas.setAttribute("aria-label", L("canvas_label"));
+  canvas.innerHTML = `<div class="canvas-track">${[nodeHtml("prep"), edgeHtml(null), nodeHtml("translate"), edgeHtml(0),
+    ...state.flow.flatMap((step, i) => [nodeHtml(step, i), edgeHtml(i + 1)]), nodeHtml("human")].join("")}</div>`;
+  // A long workflow is drawn smaller to fit (down to 80 %); beyond that the canvas scrolls sideways.
+  const track = $(".canvas-track", canvas);
+  track.classList.toggle("has-loops", state.flow.some((n) => stageKind(n) === "gate"));
+  track.style.zoom = Math.max(0.8, Math.min(1, (canvas.clientWidth - 40) / track.scrollWidth));
+  drawLoops(track);
+  canvas.scrollLeft = scroll;
+  if (state.reveal) {
+    state.reveal = false;
+    $(`.node[data-node="${state.selected}"]`, canvas)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+  // A step's warnings are on its node and in the panel below; here only those of the whole workflow.
+  const problems = Object.keys(state.problems).length;
+  $("#board-warnings").innerHTML = (problems ? `<div class="notice bad">${esc(L("flow_has_problems", { count: problems }))}</div>` : "")
+    + boardWarnings(state.board).filter(([, , step]) => !step).map(([tone, text]) => `<div class="notice ${tone}">${esc(text)}</div>`).join("");
+  if (keepPanel) return;
+  renderInspector();
+  if (focus) document.querySelector(`#workflow ${focus}`)?.focus({ preventScroll: true });
+}
+
+function selectNode(node) {
+  state.selected = node;
+  state.reveal = true;
+  state.addAt = null;
+  renderBoard();
+}
+
+// A model dropped on a role: a reporting node takes it as one more model, any other role is replaced.
 function assign(stage, name) {
-  const current = state.board[stage];
-  if (isReview(stage)) {
+  const current = state.board[stage] || [];
+  if (isReporting(stage)) {
     if (current.includes(name)) return;
-    if (current.length >= 4) return toast(L("max_reviewers"), true);
-    current.push(name);
+    if (current.length >= state.settings.max_reporters) return toast(L("max_reviewers"), true);
+    state.board[stage] = [...current, name];
   } else {
     state.board[stage] = [name];
   }
-  renderBoard();
+  changed();
+}
+
+// A model button in the inspector: a model of a reporting node is switched on or off, any other role takes it.
+function pick(stage, name) {
+  const current = state.board[stage] || [];
+  if (!isReporting(stage) || !current.includes(name)) return assign(stage, name);
+  if (current.length === 1) return toast(L("min_one_model"), true);
+  state.board[stage] = current.filter((n) => n !== name);
+  changed();
+}
+
+function newId(prefix) {
+  const taken = new Set(state.flow);
+  for (let n = 1; ; n++) {
+    const id = prefix === "source_check" && n === 1 ? "source_check" : `${prefix}${n}`;
+    // An apply node never takes the old folder names of the first two review rounds.
+    if (!taken.has(id) && !(prefix === "apply" && (taken.has(`revise${n}`)))) return id;
+  }
+}
+
+// A new node. Its model: a reporting or checking node gets a model of another company than the one that wrote
+// the text; an apply node gets the model that wrote the text. A review round puts in a review and an apply node.
+function addStep(kind, at = state.flow.length) {
+  const count = kind === "round" ? 2 : 1;
+  if (state.flow.length + count > state.settings.max_flow_steps) return toast(L("max_steps", { count: state.settings.max_flow_steps }), true);
+  const ids = kind === "round" ? [newId("review")] : [newId(kind)];
+  state.flow.splice(at, 0, ids[0]);
+  if (kind === "round") {
+    ids.push(newId("apply"));
+    state.flow.splice(at + 1, 0, ids[1]);
+  }
+  if (kind === "custom") {
+    state.nodes[ids[0]] = { title: L("custom_default_title"), mode: "report" };
+    state.instructions[ids[0]] = "";
+  }
+  if (kind === "gate") {
+    const i = state.flow.indexOf(ids[0]);
+    const lastGate = state.flow.slice(0, i).map((n, k) => (stageKind(n) === "gate" ? k : -1)).reduce((a, b) => Math.max(a, b), -1);
+    state.nodes[ids[0]] = { back_to: state.flow.slice(lastGate + 1, i).find((n) => nodeRole(n) === "report") || state.flow[lastGate + 1] || null, max: 2 };
+    if (state.nodes[ids[0]].back_to === ids[0]) state.nodes[ids[0]].back_to = null;
+  }
+  for (const id of ids) {
+    const writer = writerOf(id) || Object.keys(state.palette)[0];
+    const other = Object.keys(state.palette).find((p) => p !== providerOf(writer)) || writer;
+    state.board[id] = [stageKind(id) === "apply" ? writer : other];
+  }
+  state.selected = ids[0];
+  state.reveal = true;
+  state.addAt = null;
+  changed();
+}
+
+function removeStep(index) {
+  const step = state.flow[index];
+  if (!confirm(L("confirm_remove_step", { step: nodeTitle(step) }))) return;
+  state.flow.splice(index, 1);
+  delete state.board[step];
+  delete state.nodes[step];
+  delete state.instructions[step];
+  for (const options of Object.values(state.nodes)) if (options.back_to === step) options.back_to = null;
+  state.selected = state.flow[Math.min(index, state.flow.length - 1)] || "translate";
+  changed();
+}
+
+// Moves a node to a place between the nodes: place 0 is right after the first translation.
+function moveStep(from, at) {
+  if (from < 0 || at < 0 || at > state.flow.length || at === from || at === from + 1) return;  // same place
+  const [step] = state.flow.splice(from, 1);
+  state.flow.splice(at > from ? at - 1 : at, 0, step);
+  changed();
+}
+
+// Every change on the board is saved at once; there is no separate save step.
+let saveTimer;
+function changed(keepPanel = false) {
+  renderBoard(keepPanel);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveBoard, 250);
+}
+async function saveBoard() {
+  const status = $("#board-status");
+  status.textContent = L("saving");
+  status.className = "muted small";
+  if (Object.keys(state.problems || {}).length) {
+    status.textContent = L("not_saved_problems");
+    status.className = "warn-text small";
+    return;
+  }
+  const stages = Object.fromEntries(["align", "glossary", ...numberedSteps()].map((s) => [s, state.board[s]]));
+  const nodes = Object.fromEntries(state.flow.filter((n) => state.nodes[n]).map((n) => [n, state.nodes[n]]));
+  const instructions = Object.fromEntries(state.flow.filter((n) => stageKind(n) === "custom").map((n) => [n, state.instructions[n] || ""]));
+  try {
+    await api("PUT", "/api/stages", { stages, flow: state.flow, nodes, instructions, models: customModels() });
+    status.textContent = L("saved_now");
+    status.className = "good-text small";
+    state.settings = await api("GET", "/api/settings");
+  } catch (e) {
+    status.textContent = e.message;
+    status.className = "warn-text small";
+    toast(e.message, true);
+  }
+}
+
+// Drag and drop: a step node is moved, a step type from the palette is put in, a model card is dropped on a role.
+let dragging = null;  // { index } | { kind } | { model }
+
+function endDrag() {
+  dragging = null;
+  const canvas = $("#canvas");
+  canvas.classList.remove("dragging-step");
+  canvas.querySelectorAll(".over, .dragging").forEach((el) => el.classList.remove("over", "dragging"));
+}
+
+// The place between the nodes under the pointer: on an arrow, or on the near half of a node.
+function dropPlace(ev) {
+  const edge = ev.target.closest(".edge.slot");
+  if (edge) return Number(edge.dataset.at);
+  const node = ev.target.closest(".node");
+  if (!node) return null;
+  const box = node.getBoundingClientRect();
+  const after = ev.clientX > box.left + box.width / 2;
+  if (node.dataset.index !== undefined) return Number(node.dataset.index) + (after ? 1 : 0);
+  return node.dataset.node === "human" ? state.flow.length : 0;
 }
 
 $("#palette").addEventListener("dragstart", (ev) => {
+  const type = ev.target.closest(".step-type");
   const card = ev.target.closest(".model-card");
-  if (card) ev.dataTransfer.setData("text/plain", card.dataset.name);
+  if (type) {
+    if (state.flow.length >= state.settings.max_flow_steps) return ev.preventDefault();
+    dragging = { kind: type.dataset.kind };
+    ev.dataTransfer.effectAllowed = "copy";
+    ev.dataTransfer.setData("text/plain", type.dataset.kind);
+    $("#canvas").classList.add("dragging-step");
+  } else if (card) {
+    dragging = { model: card.dataset.name };
+    ev.dataTransfer.effectAllowed = "copy";
+    ev.dataTransfer.setData("text/plain", card.dataset.name);
+  }
 });
-$("#steps").addEventListener("dragover", (ev) => {
-  const zone = ev.target.closest(".dropzone");
-  if (!zone) return;
+$("#canvas").addEventListener("dragstart", (ev) => {
+  const node = ev.target.closest(".node[data-index]");
+  if (!node) return;
+  dragging = { index: Number(node.dataset.index) };
+  ev.dataTransfer.effectAllowed = "move";
+  ev.dataTransfer.setData("text/plain", node.dataset.node);
+  node.classList.add("dragging");
+  $("#canvas").classList.add("dragging-step");
+});
+document.addEventListener("dragend", endDrag);
+$("#canvas").addEventListener("dragover", (ev) => {
+  if (!dragging) return;
+  const canvas = $("#canvas");
+  canvas.querySelectorAll(".over").forEach((el) => el.classList.remove("over"));
+  if (dragging.model) {
+    const role = ev.target.closest(".node-role");
+    if (!role) return;
+    ev.preventDefault();
+    role.classList.add("over");
+    return;
+  }
+  const at = dropPlace(ev);
+  if (at === null) return;
   ev.preventDefault();
-  zone.classList.add("over");
+  ev.dataTransfer.dropEffect = dragging.kind ? "copy" : "move";
+  canvas.querySelector(`.edge.slot[data-at="${at}"]`)?.classList.add("over");
 });
-$("#steps").addEventListener("dragleave", (ev) => {
-  const zone = ev.target.closest(".dropzone");
-  if (zone && !zone.contains(ev.relatedTarget)) zone.classList.remove("over");
-});
-$("#steps").addEventListener("drop", (ev) => {
-  const zone = ev.target.closest(".dropzone");
-  if (!zone) return;
+$("#canvas").addEventListener("drop", (ev) => {
+  if (!dragging) return;
   ev.preventDefault();
-  const name = ev.dataTransfer.getData("text/plain");
-  if (name && allNames().includes(name)) assign(zone.dataset.stage, name);
+  const drag = dragging;
+  const role = ev.target.closest(".node-role");
+  const at = dropPlace(ev);
+  endDrag();
+  if (drag.model) {
+    if (role && allNames().includes(drag.model)) assign(role.dataset.stage, drag.model);
+  } else if (at !== null) {
+    if (drag.kind) addStep(drag.kind, at);
+    else moveStep(drag.index, at);
+  }
 });
-$("#steps").addEventListener("change", (ev) => {
-  const select = ev.target.closest('select[data-act="assign"]');
-  if (select && select.value) assign(select.dataset.stage, select.value);
+
+$("#canvas").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-act]");
+  if (b?.dataset.act === "edge-add") {
+    const at = Number(b.dataset.at);
+    state.addAt = state.addAt === at ? null : at;
+    renderBoard();
+    if (state.addAt !== null) $(`#canvas .edge-menu button`)?.focus();
+    return;
+  }
+  if (b?.dataset.act === "insert") return addStep(b.dataset.kind, Number(b.dataset.at));
+  const node = ev.target.closest(".node");
+  if (node) return selectNode(node.dataset.node);
+  if (state.addAt !== null && state.addAt !== undefined) {
+    state.addAt = null;
+    renderBoard();
+  }
 });
-$("#steps").addEventListener("click", (ev) => {
-  const b = ev.target.closest('button[data-act="unassign"]');
+$("#canvas").addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && state.addAt !== null && state.addAt !== undefined) {
+    const at = state.addAt;
+    state.addAt = null;
+    renderBoard();
+    $(`#canvas .edge-add[data-at="${at}"]`)?.focus();
+    return;
+  }
+  const node = ev.target.closest(".node");
+  if (node && ev.target === node && (ev.key === "Enter" || ev.key === " ")) {
+    ev.preventDefault();
+    selectNode(node.dataset.node);
+  }
+});
+$("#inspector").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-act]");
   if (!b) return;
-  state.board[b.dataset.stage] = state.board[b.dataset.stage].filter((n) => n !== b.dataset.name);
-  renderBoard();
+  const index = state.flow.indexOf(state.selected);
+  if (b.dataset.act === "pick") pick(b.dataset.stage, b.dataset.name);
+  else if (b.dataset.act === "move") moveStep(index, Number(b.dataset.dir) < 0 ? index - 1 : index + 2);
+  else if (b.dataset.act === "remove-step") removeStep(index);
+});
+// The fields of a custom node or a checkpoint. Text is saved after a pause in typing, without drawing the panel anew.
+let typing;
+$("#inspector").addEventListener("input", (ev) => {
+  const field = ev.target.dataset?.field;
+  const node = state.selected;
+  if (!field || !state.flow.includes(node)) return;
+  if (field === "instructions") state.instructions[node] = ev.target.value;
+  else if (field === "title") state.nodes[node].title = ev.target.value;
+  else return;
+  clearTimeout(typing);
+  typing = setTimeout(() => changed(true), 600);
+});
+$("#inspector").addEventListener("change", (ev) => {
+  const field = ev.target.dataset?.field;
+  const node = state.selected;
+  if (!field || !state.flow.includes(node) || field === "instructions" || field === "title") return;
+  const value = ev.target.value;
+  state.nodes[node][field] = field === "max" ? Number(value) : value || null;
+  changed();
+});
+
+// A step type from the palette can also be clicked (or chosen with the keyboard): it is put at the end.
+$("#palette").addEventListener("keydown", (ev) => {
+  const type = ev.target.closest(".step-type");
+  if (type && (ev.key === "Enter" || ev.key === " ")) {
+    ev.preventDefault();
+    addStep(type.dataset.kind);
+  }
 });
 $("#palette").addEventListener("submit", (ev) => {
   ev.preventDefault();
@@ -1259,9 +2066,11 @@ $("#palette").addEventListener("submit", (ev) => {
   const list = state.palette[form.dataset.provider];
   if (!list.includes(model)) list.push(model);
   input.value = "";
-  renderBoard();
+  changed();
 });
 $("#palette").addEventListener("click", async (ev) => {
+  const type = ev.target.closest(".step-type");
+  if (type) return addStep(type.dataset.kind);
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   if (b.dataset.act === "remove-model") {
@@ -1269,86 +2078,109 @@ $("#palette").addEventListener("click", async (ev) => {
     if (Object.values(state.board).flat().includes(name)) return toast(L("cannot_remove_used"), true);
     const provider = providerOf(name);
     state.palette[provider] = state.palette[provider].filter((m) => m !== modelOf(name));
-    renderBoard();
+    changed();
   } else if (b.dataset.act === "test-model") {
     b.textContent = L("testing");
     await act(b, () => api("POST", "/api/models/test", { name: b.dataset.name }));
     b.textContent = L("test");
-  } else if (b.dataset.act === "fetch-models") {
-    const r = await act(b, () => api("GET", `/api/tools/${encodeURIComponent(b.dataset.tool)}/models`));
-    if (r) {
-      state.suggestions[b.dataset.provider] = r.models;
-      toast(L("models_found", { count: r.models.length }));
-      renderBoard();
-    }
   }
 });
-$("#board-save").addEventListener("click", async (ev) => {
-  const r = await act(ev.target, () => api("PUT", "/api/stages", { stages: state.board, models: state.palette }));
-  if (r) loadBoard();
-});
-$("#board-revert").addEventListener("click", loadBoard);
+// Only the models that the user added by name are saved; the tools list the others themselves.
+const customModels = () => Object.fromEntries(Object.entries(state.palette)
+  .map(([provider, models]) => [provider, models.filter((m) => !(state.auto[provider] || []).includes(m))]));
 $("#board-preset").addEventListener("click", () => {
+  if (!confirm(L("confirm_preset"))) return;
+  state.flow = [...PRESET_FLOW];
+  state.nodes = {};
   for (const [stage, names] of Object.entries(PRESET)) {
     const available = names.filter((n) => state.palette[n]);
-    if (available.length) state.board[stage] = [...available];
+    state.board[stage] = available.length ? [...available] : state.board[stage] || [Object.keys(state.palette)[0]];
   }
-  renderBoard();
+  changed();
 });
 window.addEventListener("beforeunload", (ev) => {
-  if (state.tab === "workflow" && state.board && boardDirty()) ev.preventDefault();
+  if (state.tab === "prompts" && promptDirty()) ev.preventDefault();
 });
 
 // ---------- prompts ----------
+// The publishing rules come first: they are the instructions that users write. The step instructions are technical.
+const PLACEHOLDERS = ["target_lang", "source", "translation", "glossary", "references", "ref_langs", "context", "issues",
+  "note_lang", "rules", "segment", "window", "ref_lang"];
+
 async function loadPrompts() {
   try { state.prompts = await api("GET", "/api/prompts"); } catch (e) { return toast(e.message, true); }
-  if (!state.prompt) state.prompt = state.prompts[0].name;
+  if (!state.prompt || !state.prompts.some((p) => p.name === state.prompt)) state.prompt = state.prompts[0].name;
   renderPrompts();
 }
 
-function renderPrompts() {
-  $("#prompt-list").innerHTML = state.prompts.map((p) => `
-    <li><button type="button" data-name="${esc(p.name)}" class="${p.name === state.prompt ? "active" : ""}">
-      ${esc(p.name)}${p.changed ? ` <span class="badge warn" style="display:inline-flex">${esc(L("changed"))}</span>` : ""}
-      <span>${esc(p.description)}</span></button></li>`).join("");
+const promptDirty = () => {
   const p = state.prompts.find((x) => x.name === state.prompt);
+  const text = $("#prompt textarea");
+  return Boolean(p && text && text.value !== p.text);
+};
+
+function renderPrompts() {
+  const item = (p) => `
+    <li><button type="button" data-name="${esc(p.name)}" class="${p.name === state.prompt ? "active" : ""}">
+      <span class="pl-title">${esc(L("prompt_title_" + p.name))}${p.changed ? ` <span class="badge warn">${esc(L("changed"))}</span>` : ""}</span>
+      <span class="pl-steps">${esc(p.name === "rules" ? L("all_steps") : p.steps.map(stageName).join(", "))}</span></button></li>`;
+  const rules = state.prompts.filter((p) => p.name === "rules");
+  const steps = state.prompts.filter((p) => p.name !== "rules");
+  $("#prompt-list").innerHTML = `${rules.map(item).join("")}
+    <li class="pl-group">${esc(L("step_prompts"))}<span>${esc(L("step_prompts_hint"))}</span></li>
+    ${steps.map(item).join("")}`;
+
+  const p = state.prompts.find((x) => x.name === state.prompt);
+  const isRules = p.name === "rules";
   $("#prompt").className = "card prompt-editor";
   $("#prompt").innerHTML = `
-    <div class="row" style="justify-content:space-between">
-      <div><h3>${esc(p.name)}</h3><p class="muted small">${esc(p.description)}</p></div>
+    <div class="row prompt-head">
+      <div>
+        <h3>${esc(L("prompt_title_" + p.name))}</h3>
+        <p class="muted small">${esc(L(isRules ? "rules_intro" : "prompt_used_in", { steps: p.steps.map(stageName).join(", ") }))}</p>
+      </div>
       <div class="row">
+        <span class="badge warn" data-role="prompt-dirty" hidden>${esc(L("unsaved"))}</span>
         ${p.has_default && p.changed ? `<button type="button" class="btn" data-act="restore">${esc(L("restore_default"))}</button>` : ""}
-        <button type="button" class="btn primary" data-act="save">${esc(L("save"))}</button>
+        <button type="button" class="btn primary" data-act="save" title="Ctrl+S / ⌘S">${esc(L("save"))}</button>
       </div>
     </div>
-    <div class="stack">
-      <span class="small muted">${esc(L("required_placeholders"))}</span>
-      <div class="chips">${p.required.map((r) => `<span class="chip">{{${esc(r)}}}</span>`).join("")}</div>
-    </div>
-    <textarea spellcheck="false">${esc(p.text)}</textarea>
-    <p class="small muted">${esc(L("prompts_note"))}</p>`;
+    ${isRules ? "" : `<div class="notice small">${esc(L("prompts_note"))}</div>
+      <details class="placeholders"><summary>${esc(L("required_placeholders"))}</summary>
+        <dl>${p.required.map((r) => `<dt><code>{{${esc(r)}}}</code></dt><dd>${esc(PLACEHOLDERS.includes(r) ? L("ph_" + r) : "")}</dd>`).join("")}</dl>
+      </details>`}
+    <textarea spellcheck="${isRules ? "true" : "false"}" class="${isRules ? "rules-text" : ""}" aria-label="${esc(L("prompt_title_" + p.name))}">${esc(p.text)}</textarea>
+    <p class="small muted">${esc(L("prompts_apply"))}</p>`;
 }
 
 $("#prompt-list").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-name]");
   if (!b) return;
-  const current = state.prompts.find((x) => x.name === state.prompt);
-  const text = $("#prompt textarea");
-  if (current && text && text.value !== current.text && !confirm(L("confirm_discard"))) return;
+  if (promptDirty() && !confirm(L("confirm_discard"))) return;
   state.prompt = b.dataset.name;
   renderPrompts();
 });
+$("#prompt").addEventListener("input", (ev) => {
+  if (ev.target.matches("textarea")) $('[data-role="prompt-dirty"]').hidden = !promptDirty();
+});
+async function savePrompt(button) {
+  const r = await act(button, () => api("PUT", `/api/prompts/${encodeURIComponent(state.prompt)}`, { text: $("#prompt textarea").value }));
+  if (r) loadPrompts();
+}
 $("#prompt").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
-  const name = encodeURIComponent(state.prompt);
-  if (b.dataset.act === "save") {
-    const r = await act(b, () => api("PUT", `/api/prompts/${name}`, { text: $("#prompt textarea").value }));
-    if (r) loadPrompts();
-  } else if (b.dataset.act === "restore") {
+  if (b.dataset.act === "save") return savePrompt(b);
+  if (b.dataset.act === "restore") {
     if (!confirm(L("confirm_restore"))) return;
-    const r = await act(b, () => api("POST", `/api/prompts/${name}/restore`));
+    const r = await act(b, () => api("POST", `/api/prompts/${encodeURIComponent(state.prompt)}/restore`));
     if (r) loadPrompts();
+  }
+});
+document.addEventListener("keydown", (ev) => {
+  if (state.tab === "prompts" && (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") {
+    ev.preventDefault();
+    savePrompt($('#prompt [data-act="save"]'));
   }
 });
 

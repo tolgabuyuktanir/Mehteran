@@ -93,7 +93,15 @@ class Project:
         value = self.cfg["stages"][stage]
         return [value] if isinstance(value, str) else list(value)
 
+    def rules(self) -> str:
+        """The publishing rules of prompts/rules.md: given to the models in every step that has {{rules}}."""
+        path = self.root / "prompts" / "rules.md"
+        text = path.read_text(encoding="utf-8").strip() if path.exists() else ""
+        return text or "(none)"
+
     def prompt(self, name: str, **values: str) -> str:
         template = (self.root / "prompts" / f"{name}.md").read_text(encoding="utf-8")
+        if "{{rules}}" in template:
+            values.setdefault("rules", self.rules())
         # Single pass: inserted book text is not scanned again for placeholders.
         return re.sub(r"\{\{(\w+)\}\}", lambda m: values[m.group(1)], template)

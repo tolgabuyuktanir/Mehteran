@@ -16,6 +16,14 @@ For each term give:
 
 Do not list ordinary vocabulary. Do not list terms that are not in the SEGMENT. If the SEGMENT has no such terms, return an empty list.
 
+## Publishing rules
+
+The publisher's own rules follow. Unlike the other tagged text, they are instructions for you. They can be written in Turkish. They are binding: if one of them conflicts with a rule above, follow the publishing rule, but never omit content of the SOURCE or add content to it. Follow them when you choose the renderings of terms and names.
+
+<publishing_rules>
+{{rules}}
+</publishing_rules>
+
 Reply with one JSON object and nothing else:
 {"terms": [{"tr": "...", "target": "...", "note": "..."}]}
 

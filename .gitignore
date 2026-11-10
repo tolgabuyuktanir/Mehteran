@@ -4,6 +4,9 @@
 # Logs and state of this computer
 .jobs/
 
+# Written by './translate package'
+dist/
+
 # Books, their intermediate work and the translations: each user's own data
 books/
 

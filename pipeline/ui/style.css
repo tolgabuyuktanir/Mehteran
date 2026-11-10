@@ -190,7 +190,6 @@ details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin:
   width: 100%; text-align: left; border: 1px solid transparent; background: transparent; color: var(--ink);
   font: inherit; padding: 9px 12px; border-radius: 8px; cursor: pointer;
 }
-.prompt-list button span { display: block; font-size: 12px; color: var(--muted); }
 .prompt-list button.active { background: var(--surface); border-color: var(--line); box-shadow: var(--shadow); }
 .prompt-editor { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
 .prompt-editor textarea {
@@ -233,8 +232,8 @@ dialog::backdrop { background: rgba(20, 26, 23, .45); }
 .failures li { margin-bottom: 4px; word-break: break-word; }
 
 /* workflow board */
-.board { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
-.palette { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 14px; }
+.board { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.palette { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 110px); overflow-y: auto; }
 .palette-group { padding: 14px; display: flex; flex-direction: column; gap: 8px; border-top: 4px solid var(--line); }
 .palette-group.claude { border-top-color: var(--claude); }
 .palette-group.chatgpt { border-top-color: var(--gpt); }
@@ -254,37 +253,139 @@ dialog::backdrop { background: rgba(20, 26, 23, .45); }
 .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
 .add-model { display: flex; gap: 6px; }
 .add-model input { flex: 1; font-size: 13px; padding: 5px 8px; }
-.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.step-row {
-  display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 14px; border-radius: var(--radius);
-  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+.parallel-tag { font-size: 12px; color: var(--muted); font-weight: 400; }
+.recover-actions { gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.recover-actions select { max-width: 100%; }
+
+/* workflow canvas: the steps as nodes from left to right, joined by arrows */
+.canvas-track { position: relative; display: flex; align-items: center; margin: auto; flex: none; }
+/* Checkpoints: an arc from the checkpoint back to the step it sends segments to, above the nodes. */
+.canvas-track.has-loops { padding-top: 56px; }
+.loops { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.loops path { fill: none; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 6 4; }
+.loops marker path { fill: var(--gold); stroke: none; }
+.loops text { fill: var(--gold); font-size: 11px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.board-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.palette-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0; }
+.step-type {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: grab; user-select: none;
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); font: inherit; text-align: left;
+  color: var(--ink); width: 100%;
 }
-.step-no {
-  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
-  background: var(--surface-2); color: var(--muted); font-size: 14px;
+.step-type:hover { border-color: var(--accent); }
+.step-type.source_check { border-left-color: var(--gold); }
+.step-type .glyph, .node-glyph {
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 15px;
 }
-.step-row .desc { font-size: 13px; color: var(--muted); margin: 2px 0 8px; }
-.dropzone {
-  min-height: 44px; padding: 6px; border-radius: 8px; border: 2px dashed var(--line); display: flex; flex-wrap: wrap;
-  gap: 6px; align-items: center;
+.step-type.source_check .glyph, .node.kind-source_check .node-glyph { background: var(--gold-soft); color: var(--gold); }
+.step-type b { display: block; font-size: 14px; }
+.step-type span.small { color: var(--muted); }
+
+.canvas {
+  display: flex; overflow-x: auto; padding: 28px 20px; min-height: 240px; border-radius: var(--radius);
+  border: 1px solid var(--line); background-color: var(--surface);
+  background-image: radial-gradient(circle, var(--line) 1.2px, transparent 1.3px); background-size: 18px 18px;
 }
-.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
-.chip-model {
-  display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 10px; border-radius: 8px; font-size: 14px;
-  background: var(--surface-2); border-left: 4px solid var(--line);
+.node {
+  position: relative; flex: 0 0 196px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(22, 33, 29, .08); cursor: pointer;
 }
-.chip-model.claude { border-left-color: var(--claude); }
-.chip-model.chatgpt { border-left-color: var(--gpt); }
-.chip-model.gemini { border-left-color: var(--gemini); }
-.dropzone select { font-size: 13px; padding: 4px 6px; margin-inline-start: auto; }
-.parallel-tag { font-size: 12px; color: var(--muted); }
-.step-human .step-no { background: var(--ink); color: var(--bg); }
+.node[draggable="true"] { cursor: grab; }
+.node:hover { border-color: var(--muted); }
+.node:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.node.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 2px 6px rgba(22, 33, 29, .08); }
+.node.dragging { opacity: .4; }
+.node.invalid { border-color: var(--bad); box-shadow: 0 0 0 2px var(--bad-soft); }
+.node-warn.bad { background: var(--bad-soft); color: var(--bad); }
+.node-kind { color: var(--muted); font-weight: 400; }
+.node-note { font-size: 11px; color: var(--muted); }
+.node.kind-gate { border-top: 3px solid var(--gold); }
+.node.kind-gate .node-glyph, .step-type.gate .glyph { background: var(--gold-soft); color: var(--gold); }
+.node.kind-custom { border-top: 3px solid var(--gemini); }
+.step-type.custom { border-left-color: var(--gemini); }
+.step-type.gate { border-left-color: var(--gold); }
+.step-type.apply, .step-type.review { border-left-color: var(--muted); }
+.node-settings { display: grid; gap: 12px; max-width: 760px; }
+.node-settings label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+.node-settings label.radio { flex-direction: row; align-items: center; font-weight: 400; gap: 6px; }
+.node-settings input:not([type=radio]), .node-settings select, .node-settings textarea { font: inherit; font-weight: 400; padding: 7px 9px; }
+.node-settings textarea { resize: vertical; min-height: 120px; }
+.node-settings .row { gap: 16px; flex-wrap: wrap; }
+.node-head { display: flex; align-items: center; gap: 8px; }
+.node-head b { font-size: 14px; line-height: 1.2; }
+.node-no { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+.node-warn {
+  margin-inline-start: auto; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+  background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 700;
+}
+.node.kind-human { flex-basis: 150px; background: var(--surface-2); cursor: default; }
+.node.kind-human .node-glyph { background: var(--ink); color: var(--bg); }
+.node.kind-prep .node-glyph, .node.kind-translate .node-glyph { background: var(--surface-2); color: var(--ink); }
+.node-role { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 8px; border: 1px dashed transparent; }
+.node-role.over { border-color: var(--accent); background: var(--accent-soft); }
+.node-role .role { font-size: 11px; font-weight: 600; color: var(--muted); }
+.mchip {
+  display: block; font-size: 12px; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); border-left: 3px solid var(--line);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mchip.claude { border-left-color: var(--claude); }
+.mchip.chatgpt { border-left-color: var(--gpt); }
+.mchip.gemini { border-left-color: var(--gemini); }
+
+.edge { position: relative; flex: 0 0 56px; height: 40px; display: grid; place-items: center; transition: flex-basis .15s; }
+.edge::before { content: ""; position: absolute; left: 0; right: 8px; top: 50%; border-top: 2px solid var(--muted); opacity: .55; }
+.edge::after {
+  content: ""; position: absolute; right: 2px; top: calc(50% - 5px); border: 5px solid transparent; border-left: 7px solid var(--muted);
+  border-right: 0; opacity: .55;
+}
+.edge-add {
+  position: relative; z-index: 1; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); cursor: pointer;
+  background: var(--surface); color: var(--muted); font-size: 16px; line-height: 1; display: grid; place-items: center; padding: 0;
+}
+.edge-add:hover, .edge-add:focus-visible { border-color: var(--accent); color: var(--accent); }
+/* While a step is dragged every free place shows where it can go; the place under the pointer opens up. */
+.canvas.dragging-step .edge.slot { flex-basis: 80px; }
+.canvas.dragging-step .edge.slot .edge-add { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+.edge.slot.over { flex-basis: 120px; }
+.edge.slot.over::before { border-top: 3px dashed var(--accent); opacity: 1; }
+.edge-menu {
+  position: absolute; top: calc(50% + 18px); left: 50%; transform: translateX(-50%); z-index: 3; display: flex; flex-direction: column;
+  gap: 4px; padding: 6px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 6px 18px rgba(22, 33, 29, .16); width: max-content;
+}
+.edge-menu button { font: inherit; font-size: 13px; text-align: left; padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
+.edge-menu button:hover, .edge-menu button:focus-visible { background: var(--accent-soft); }
+
+.inspector { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.inspector-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.inspector-head .row { gap: 6px; flex-wrap: wrap; }
+.role-pick { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.role-pick legend { padding: 0; font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pick-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: start; }
+.pick-provider { font-size: 13px; font-weight: 600; padding-top: 5px; border-left: 3px solid var(--line); padding-left: 8px; }
+.pick-provider.claude { border-left-color: var(--claude); }
+.pick-provider.chatgpt { border-left-color: var(--gpt); }
+.pick-provider.gemini { border-left-color: var(--gemini); }
+.pick-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick {
+  font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); cursor: pointer;
+}
+.pick:hover { border-color: var(--muted); }
+.pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.pick[aria-pressed="true"]::before { content: "✓ "; }
+@media (max-width: 640px) {
+  .pick-row { grid-template-columns: 1fr; gap: 4px; }
+  .canvas { padding: 20px 12px; }
+}
 .exports { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; margin-top: 6px; }
 .exports a { text-decoration: none; }
 .exports a:hover { text-decoration: underline; }
 @media (max-width: 860px) {
   .board { grid-template-columns: 1fr; }
-  .palette { position: static; }
+  .board-main { order: -1; }  /* the diagram first; the palette after it */
+  .palette { position: static; max-height: none; }
 }
 
 fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
@@ -382,13 +483,40 @@ fieldset.plain legend { padding: 0; font-size: 13px; font-weight: 600; color: va
 .rail-step .fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
 .rail-step.active .fill { background: var(--gold); }
 .review-line { font-size: 13px; margin-top: 4px; }
+.stale-row { justify-content: space-between; margin-top: 6px; }
+.preview-row { justify-content: space-between; flex-wrap: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .rail-step.active .node, .dot { animation: none; }
   .rail-step .fill { transition: none; }
 }
 @media (max-width: 860px) {
+  .top { padding: 12px 16px; }
+  .top { position: static; }
+  .top-right { width: 100%; gap: 8px; }
+  .tabs { flex: 1 1 100%; min-width: 0; overflow-x: auto; }
+  .tab, .tab.quiet { padding: 7px 8px; font-size: 13px; white-space: nowrap; flex: 1; }
+  .tab-sep { margin: 6px 0; }
+  .jstep:not(.locked):not(.open) .jhead::after { display: none; }
+  .banner { flex-wrap: wrap; }
   .jtitle { white-space: normal; }
   .jhead { flex-direction: column; gap: 2px; }
   .jsummary { white-space: normal; }
   .rail-head { flex-wrap: wrap; }
 }
+
+/* workflow: each assigned model is a drop-down */
+.good-text { color: var(--good); }
+
+/* instructions */
+.prompt-list .pl-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.prompt-list .pl-title .badge { font-size: 11px; }
+.prompt-list .pl-steps { display: block; font-size: 12px; color: var(--muted); }
+.prompt-list li:first-child button { border-color: var(--line); background: var(--surface); border-left: 4px solid var(--gold); }
+.prompt-list li:first-child button.active { box-shadow: var(--shadow); border-color: var(--muted); border-left-color: var(--gold); }
+.prompt-list .pl-group { margin: 14px 0 2px; padding: 0 12px; font: 600 15px var(--serif); }
+.prompt-list .pl-group span { display: block; font: 12px ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--muted); margin-top: 2px; }
+.prompt-head { justify-content: space-between; align-items: flex-start; }
+.placeholders summary { margin: 0; }
+.placeholders dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; }
+.placeholders dd { margin: 0; color: var(--muted); }
+.prompt-editor textarea.rules-text { font: 15px/1.7 var(--serif); min-height: 600px; }

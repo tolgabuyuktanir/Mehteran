@@ -55,8 +55,17 @@ MESSAGES = {
     "unsupported_file": {"tr": "Desteklenmeyen dosya türü: {name} (desteklenen: {supported})",
                          "en": "Unsupported file type: {name} (supported: {supported})"},
     "pdftotext_missing": {
-        "tr": "{name}: PDF okumak için 'pdftotext' gerekli (brew install poppler). Mümkünse kitabı .docx veya .epub olarak verin.",
-        "en": "{name}: reading a PDF needs 'pdftotext' (brew install poppler). If possible, supply the book as .docx or .epub."},
+        "tr": "{name}: PDF okumak için 'pdftotext' programı (Poppler) gerekli. macOS: brew install poppler · Linux: sudo apt install "
+              "poppler-utils · Windows: https://github.com/oschwartz10612/poppler-windows/releases adresinden indirip 'bin' klasörünü "
+              "PATH'e ekleyin. Mümkünse kitabı .docx veya .epub olarak verin.",
+        "en": "{name}: reading a PDF needs the 'pdftotext' program (Poppler). macOS: brew install poppler · Linux: sudo apt install "
+              "poppler-utils · Windows: download it from https://github.com/oschwartz10612/poppler-windows/releases and add its 'bin' "
+              "folder to PATH. If possible, supply the book as .docx or .epub."},
+    "pdf_no_text": {
+        "tr": "{name} dosyasında metin yok; büyük olasılıkla taranmış (resim olarak kaydedilmiş) bir PDF. Önce bir OCR programıyla "
+              "metne çevirin (örneğin Adobe Acrobat veya ABBYY FineReader) ya da kitabın .docx veya .epub hâlini verin.",
+        "en": "{name} contains no text; it is probably a scanned PDF (saved as images). Convert it to text with an OCR program first "
+              "(for example Adobe Acrobat or ABBYY FineReader), or supply the book as .docx or .epub."},
     "xml_entity": {"tr": "Dosyadaki XML varlık (ENTITY) tanımı içeriyor; güvenlik nedeniyle okunmadı.",
                    "en": "The XML in the file contains an entity (ENTITY) declaration; it was not read for security reasons."},
     "epub_missing_part": {"tr": "EPUB dosyası eksik: içindeki {name} bulunamadı.", "en": "The EPUB file is incomplete: {name} is missing inside it."},
@@ -163,9 +172,12 @@ MESSAGES = {
                           "en": "INCOMPLETE OUTPUT: {done} of {total} segments finished."},
     "report_segments": {"tr": "Tamamlanan bölüm: {done}/{total}", "en": "Finished segments: {done}/{total}"},
     "report_references": {"tr": "Referans diller: {refs}", "en": "Reference languages: {refs}"},
-    "report_review1": {"tr": "Birinci tashih (review1)", "en": "First review (review1)"},
-    "report_source_check": {"tr": "Baştan kaynak kontrolü (source_check)", "en": "Source check from the start (source_check)"},
-    "report_review2": {"tr": "İkinci bağımsız tashih (review2)", "en": "Second independent review (review2)"},
+    "report_review": {"tr": "Tashih ({stage})", "en": "Review ({stage})"},
+    "report_source_check": {"tr": "Baştan kaynak kontrolü ({stage})", "en": "Source check from the start ({stage})"},
+    "report_custom": {"tr": "Özel adım: {title} ({stage})", "en": "Custom step: {title} ({stage})"},
+    "report_gate": {"tr": "Kontrol noktası ({stage})", "en": "Checkpoint ({stage})"},
+    "report_gate_summary": {"tr": "{sent} kez geri gönderdi; ciddi sorunu kalan bölüm: {left}",
+                            "en": "sent back {sent} times; segments with serious problems left: {left}"},
     "report_summary": {
         "tr": "{total} bulgu (kritik {critical}, önemli {major}, küçük {minor}); kabul {accepted}, ret {rejected}",
         "en": "{total} findings (critical {critical}, major {major}, minor {minor}); accepted {accepted}, rejected {rejected}"},
@@ -175,9 +187,9 @@ MESSAGES = {
     "report_attention": {"tr": "İnsan tercümanın bakması gerekenler", "en": "For the human translator to check"},
     "report_attention_intro": {
         "tr": "Aşağıda mekanik uyarılar, kritik bulgular ve kabul edilmeyen önemli bulgular yer alır. Bütün bulgular ve kararlar "
-              "`work/{lang}/` altındaki `revise1`, `source_check` ve `reconcile` klasörlerinde, bölüm başına bir `.json` dosyasındadır.",
+              "`work/{lang}/` altında, tashihleri uygulayan adımların ve kaynak kontrollerinin klasörlerinde, bölüm başına bir `.json` dosyasındadır.",
         "en": "Below are the mechanical warnings, the critical findings and the major findings that were not accepted. All findings "
-              "and decisions are in the `revise1`, `source_check` and `reconcile` folders under `work/{lang}/`, one `.json` file per segment."},
+              "and decisions are under `work/{lang}/`, in the folders of the steps that apply reviews and of the source checks, one `.json` file per segment."},
     "report_segment": {"tr": "Bölüm {id}", "en": "Segment {id}"},
     "report_warning": {"tr": "UYARI", "en": "WARNING"},
     "report_source": {"tr": "Kaynak", "en": "Source"},
@@ -185,6 +197,11 @@ MESSAGES = {
     "report_suggestion": {"tr": "Öneri", "en": "Suggestion"},
     "report_reason": {"tr": "Karar gerekçesi", "en": "Reason for the decision"},
     "report_nothing": {"tr": "Bakılması gereken bir kayıt yok.", "en": "Nothing needs checking."},
+    "report_stale": {
+        "tr": "DİKKAT: şu bölümler üretildikten sonra sözlük, referans veya talimat değişti; eski girdilerle duruyorlar. "
+              "Yenilemek için bu bölümleri '{stage}' adımından yeniden üretin: {segments}",
+        "en": "ATTENTION: the glossary, the references or the instructions changed after these segments were produced; they "
+              "still use the old inputs. To renew them, produce these segments again from the '{stage}' step: {segments}"},
     "report_audit": {"tr": "Tashihçi denetimi", "en": "Reviewer audit"},
     "report_audit_intro": {
         "tr": "Her tashihçi her paragrafı okuduğunu kanıtlamak zorundadır; kanıtsız cevap reddedilir. Yine de bulgu yazmamak "
@@ -203,7 +220,7 @@ MESSAGES = {
         "tr": "DİKKAT: {reviewer} şu bölümlerde bulgu yazmadı, ama {by} aynı bölümlerde kritik veya önemli hata buldu: {segments}",
         "en": "ATTENTION: {reviewer} wrote no findings in these segments, but {by} found critical or major errors in them: {segments}"},
     "report_audit_by_source_check": {"tr": "baştan kaynak kontrolü", "en": "the source check"},
-    "report_audit_by_other": {"tr": "diğer tashihçi", "en": "the other reviewer"},
+    "report_audit_by_other": {"tr": "aynı turdaki başka bir tashihçi", "en": "another reviewer of the same round"},
     "decision_accepted": {"tr": "kabul edildi", "en": "accepted"},
     "decision_rejected": {"tr": "REDDEDİLDİ", "en": "REJECTED"},
     "decision_none": {"tr": "karar yok", "en": "no decision"},
@@ -316,6 +333,11 @@ MESSAGES = {
                                  "en": "This sign-in method is not available for this tool."},
 
     # --- installation ---
+    "cli_package": {"tr": "paylaşmak için uygulamanın zip dosyasını yazar (kitaplar, kurulu araçlar ve günlükler girmez)",
+                    "en": "writes a zip of the application for sharing (without books, installed tools and logs)"},
+    "cli_package_out": {"tr": "zip dosyasının yolu (varsayılan: dist/translation-pipeline.zip)",
+                        "en": "path of the zip file (default: dist/translation-pipeline.zip)"},
+    "package_done": {"tr": "Paket yazıldı ({count} dosya): {path}", "en": "Package written ({count} files): {path}"},
     "cli_install": {"tr": "araçları kurar (gerekirse taşınabilir Node.js'i de); yönetici izni gerekmez",
                     "en": "installs the tools (and a portable Node.js when needed); no administrator rights needed"},
     "tool_installed": {"tr": "{name} kuruldu.", "en": "{name} is installed."},
@@ -400,6 +422,24 @@ MESSAGES = {
     "target_not_turkish": {"tr": "Hedef dil Türkçe olamaz.", "en": "The target language cannot be Turkish."},
     "segments_format": {"tr": "Bölüm biçimi: 1-3 veya 1-5,9", "en": "Segment format: 1-3 or 1-5,9"},
     "stage_invalid": {"tr": "Geçersiz aşama.", "en": "Invalid stage."},
+    "stage_not_in_flow": {"tr": "'{stage}' bu iş akışında bir aşama değil. Aşamalar: {stages}",
+                          "en": "'{stage}' is not a stage of this workflow. Stages: {stages}"},
+    "flow_invalid": {"tr": "config.toml'daki iş akışı (flow) geçersiz. İş akışı sekmesinde \"Şemadaki dağılım\" ile düzeltin.",
+                     "en": "The workflow (flow) in config.toml is invalid. Fix it with \"Diagram assignment\" in the Workflow tab."},
+    "flow_unapplied": {"tr": "'{node}' adımının bulguları hiçbir yerde uygulanmıyor. Ondan sonra, metni değiştiren başka bir adımdan önce bir \"Uygula\" adımı koyun.",
+                       "en": "The findings of the step '{node}' are not applied anywhere. Put an \"Apply\" step after it, before any other step that changes the text."},
+    "flow_gate_invalid": {"tr": "'{node}' kontrol noktası geçersiz: daha önceki bir adıma (önceki kontrol noktasından sonraki bir adıma) geri göndermeli ve en çok 1-5 kez göndermeli.",
+                          "en": "The checkpoint '{node}' is invalid: it must send back to an earlier step (after the checkpoint before it), at most 1 to 5 times."},
+    "flow_custom_invalid": {"tr": "Özel adımın adı en çok 60 karakter olabilir ve \"rapor yazar\" veya \"metni düzeltir\" seçilmelidir.",
+                            "en": "A custom step's name can have at most 60 characters, and it must either report findings or correct the text."},
+    "instructions_too_long": {"tr": "Özel adımın talimatı çok uzun (en çok 20000 karakter).",
+                              "en": "The custom step's instructions are too long (at most 20000 characters)."},
+    "gate_sent_back": {"tr": "{id}: ciddi sorun bulundu, '{node}' adımına geri gönderildi.",
+                       "en": "{id}: serious problems found; sent back to the step '{node}'."},
+    "gate_limit": {"tr": "{id}: ciddi sorun kaldı ama geri gönderme sınırı doldu; raporda işaretlendi.",
+                   "en": "{id}: serious problems remain, but the limit of sending back is reached; marked in the report."},
+    "stage_not_assigned": {"tr": "Şu adımlara model atanmamış: {stages}. İş akışı sekmesinde model seçin.",
+                           "en": "No model is assigned to these steps: {stages}. Choose a model in the Workflow tab."},
     "run_started": {"tr": "Çalıştırma başladı.", "en": "The run started."},
     "nothing_running": {"tr": "Çalışan bir iş yok.", "en": "Nothing is running."},
     "run_stopped": {"tr": "Durduruldu. Aynı ayarlarla yeniden başlatınca kaldığı yerden devam eder.",
@@ -413,11 +453,17 @@ MESSAGES = {
     "stages_saved": {"tr": "İş akışı kaydedildi. Bundan sonra başlatılan çalıştırmalarda kullanılır.",
                      "en": "The workflow is saved. It applies to runs started from now on."},
     "report_word": {"tr": "Rapor", "en": "Report"},
+    "prompt_rules": {"tr": "Yayın ilkeleri: bütün adımlarda geçerli kurallar", "en": "Publishing rules: rules for every step"},
     "prompt_translate": {"tr": "1. adım: ilk tercüme", "en": "Step 1: first translation"},
-    "prompt_review": {"tr": "2. ve 5. adım: tashih raporu", "en": "Steps 2 and 5: review report"},
-    "prompt_revise": {"tr": "3. ve 6. adım: tashihleri uygulama ve iki raporu uzlaştırma",
-                      "en": "Steps 3 and 6: applying the review and reconciling the two reports"},
-    "prompt_source_check": {"tr": "4. adım: baştan kaynak kontrolü", "en": "Step 4: source check from the start"},
+    "prompt_review": {"tr": "Tashih turları: tashih raporu", "en": "Review rounds: review report"},
+    "prompt_revise": {"tr": "Tashih turları: tashihleri uygulama ve raporları uzlaştırma",
+                      "en": "Review rounds: applying the review and reconciling the reports"},
+    "prompt_source_check": {"tr": "Baştan kaynak kontrolü", "en": "Source check from the start"},
+    "prompt_custom_report": {"tr": "Özel adım (rapor yazar): adımın talimatını {{instructions}} yerine koyar",
+                             "en": "Custom step (reports findings): puts the step's instructions at {{instructions}}"},
+    "prompt_custom_rewrite": {"tr": "Özel adım (metni düzeltir): adımın talimatını {{instructions}} yerine koyar",
+                              "en": "Custom step (corrects the text): puts the step's instructions at {{instructions}}"},
+    "prompt_gate": {"tr": "Kontrol noktası: kalan ciddi sorunları arar", "en": "Checkpoint: looks for serious problems that remain"},
     "prompt_glossary": {"tr": "Hazırlık: terim sözlüğü", "en": "Preparation: terminology glossary"},
     "prompt_align": {"tr": "Hazırlık: referans tercümede karşılığı bulma", "en": "Preparation: finding the passage in the reference translation"},
     "placeholders_missing": {"tr": "eksik yer tutucular: {names}", "en": "missing placeholders: {names}"},

@@ -38,7 +38,7 @@ Nothing needs to be installed in advance (see "Getting started" above). The inte
 | Tab | What you do there |
 |---|---|
 | Setup | Installs Claude Code, Codex and Gemini CLI. Signs in to each of them. "Test" checks that a tool answers. Shows which tool does which step. |
-| Workflow | Assigns a tool and model to each step by drag and drop (see below). |
+| Workflow | Builds the steps of the workflow and their models by drag and drop (see below). |
 | Books | Adds books. Uploads the Turkish source and the reference translations. Selects the target language and starts or stops the translation. Shows the progress and the log. Reads the translation and the report, and exports them as Markdown, Word, PDF or HTML. |
 | Instructions | Edits the instructions given to the models. Restores changed instructions to the default. |
 
@@ -56,23 +56,32 @@ The interface runs a book with the `./translate run` command. A started translat
 
 ## Workflow tab: which model does which step
 
-The steps are fixed; each step uses the result of the one before. You choose which tool and model does each step:
+The workflow is drawn as boxes joined by arrows, from left to right: preparation, the first translation, the steps after it, and the human editor. Each step works on the latest text. Add as many steps as you like, in any order:
 
-- Drag a model card from the left onto a step, or choose it from the list in the step.
-- The two review steps take up to 4 models; they run in parallel and independently.
-- Add a model under a tool by typing its name (for example `opus`, or a Gemini model from "Fetch model list"). "Test" sends a short request, to check that the name is valid and the tool answers.
-- The page warns when a model checks its own work, for example when the translating model is also the reviewer. These are warnings; you can still save.
-- "Diagram assignment" restores the assignment of the "Translation and Review Workflow" diagram. Save writes the `[stages]` section of `config.toml`; it applies to runs started afterwards.
+| Step | What it does |
+|---|---|
+| Review | Up to 4 models compare the text with the source in parallel and write findings. The text does not change. |
+| Apply | Weighs all findings written since the last text (reviews, reporting custom steps, checkpoints) against the source and applies the correct ones. |
+| Source check | Compares the text with the source again from the start and corrects it. |
+| Custom step | Your own instructions (written in the step's panel; Turkish is fine). It either reports findings (like a review) or corrects the text (like a source check). |
+| Checkpoint | A model looks for serious (critical or major) problems that remain. A segment with such problems is sent back to an earlier step that you choose, at most as many times as you set (1–5); the checkpoint's findings go to the next "Apply". At the limit, the segment is marked in the report and goes on. |
+| Review round | A shortcut: puts in a Review and an Apply step together. |
 
-Adding, removing or reordering steps is deliberately not possible: the steps depend on each other (the reconciliation needs two reviews), and the reliability of the result depends on each change being checked by a different model.
+- Add a step: drag it from the left onto an arrow, or press the + on an arrow. A click on the card adds it at the end.
+- Change the order: drag a box onto another arrow. Preparation and the first translation stay at the start; their models can be changed.
+- Click a box to set its options and models below. A reporting step takes up to 4 models (switched on and off); the other steps take one. You can also drop a model card from the left on a role in a box. The panel also has "Move earlier", "Move later" and "Remove step".
+- A checkpoint's arc shows where it sends segments back. Checkpoints cannot overlap: a checkpoint cannot send back past the checkpoint before it. Each sending back runs the steps in between again for that segment, which uses quota and time.
+- A box marked red cannot run, for example findings that no "Apply" step uses, or a checkpoint without a target. The workflow is not saved until it is fixed. A "!" on a box is a warning only, for example a model that reviews the text it wrote itself.
+- The model lists are read from the tools themselves (Claude's model names, the list that Codex keeps, `gemini --list-models`). Add another model by name under its tool; "Test" sends a short request to check that the tool answers.
+- Every change is saved at once in `config.toml` (`[stages]` and `[nodes]`; the instructions of custom steps in `prompts/custom/`) and applies to runs started afterwards. "Diagram assignment" restores the workflow of the "Translation and Review Workflow" diagram. A changed order does not redo finished segments; the Books screen shows which segments need to be made again. A stopped run continues where it stopped, also inside a loop.
 
 ## Export
 
 The pipeline writes Markdown (`output/<lang>.md`, `output/<lang>.report.md`). In the Books tab you can export each of them:
 
-- Word (.docx): headings as Word headings, footnotes as real Word footnotes, right-to-left layout for Arabic, Persian, Urdu and similar languages.
-- PDF: opens a print-ready page; choose "Save as PDF" in the print dialog. The browser's fonts are used, so every script prints correctly.
-- HTML and Markdown.
+- Word (.docx): headings as Word headings, footnotes as real Word footnotes. The text is justified and hyphenated automatically; each main chapter starts on a new page; the footer has the page number. Arabic passages inside the text run right to left, and paragraphs made only of Arabic (âyat, hadîth) are centred. For target languages such as Arabic, Persian and Urdu the whole document is right to left.
+- PDF: when Chrome or Edge is on the computer, a PDF file is made directly (Windows always has Edge). It is set as a book: justified and hyphenated text, indented paragraphs, page numbers, each main chapter on a new page, footnotes at the end of their chapter. Without such a browser, a print-ready page opens; choose "Save as PDF" in the print dialog.
+- HTML and Markdown. Italics and bold are kept in every format.
 
 ## Long books, usage limits and sleep
 
@@ -91,7 +100,10 @@ On Windows, write `translate` instead of `./translate`.
 ./translate run <book> <lang>           # translates
 ./translate status [book]               # shows the progress
 ./translate ui                          # starts the web interface
+./translate package                     # writes dist/translation-pipeline.zip for sharing
 ```
+
+`package` packs only the application. Books, translations, installed tools (`.runtime`) and logs do not go into the zip. Use this command; do not compress the folder by hand.
 
 `run` options:
 
@@ -139,6 +151,10 @@ The reason for this order: each step that changes the text is checked by a model
 
 Every text a model returns (steps 1, 3, 4 and 6) passes a completeness gate before the next step uses it: it must have the same paragraphs and footnote marks as the source, a correction must not make the text noticeably shorter, and no long paragraph may lose a large part of its text. A rejected answer is requested again (up to 3 times); if it is still incomplete, the segment is marked as failed and is not passed on. Segments that are not finished appear in the output as a visible `[[MISSING SEGMENT …]]` line and are listed in the report.
 
+The reviewers (steps 2 and 5) must give a reading proof: they write back the last three words of every paragraph. If the proof does not match the text, the answer is rejected and requested again. Thus the answer "no problems" cannot hide that the text was not read. The model that applies the reviews (steps 3 and 6) must give a decision for every finding. The "Reviewer audit" section of the report shows in how many segments each reviewer wrote no findings, and the segments where a reviewer wrote nothing but serious errors were found later.
+
+If the glossary, the references or the instructions change after a segment was produced, the pipeline detects it. The segment is not produced again by itself; the report and the interface tell you which segments still use old inputs, and from which step. The "Prepare to produce again" button in the interface fills the form; on the command line, use `--redo <step> --segments <segments>`.
+
 The mechanical checks use no AI. They compare the translation with the source: Arabic-script passages, numbers, footnote marks and their texts, number of paragraphs, headings and sentences per paragraph, length of the translation.
 
 The report lists: the mechanical warnings, all critical findings, the major findings that were not accepted, and the segments without a reference passage. The models write their explanations in the interface language of the run. All findings and decisions are in the `revise1`, `source_check` and `reconcile` folders under `work/<lang>/`, one `.json` file per segment. The text of each step is in the same folders, so you can see in which step a sentence changed.
@@ -162,7 +178,7 @@ books/<book>/
 pipeline/               the code (pipeline/i18n.py: messages; pipeline/ui/: web interface)
 ```
 
-Supported file types: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. If possible, supply `.docx` or `.epub`. From a PDF, paragraph breaks and footnotes do not come out reliably, and reading a PDF needs the `pdftotext` program (Poppler or Xpdf); the interface checks this when you upload.
+Supported file types: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. If possible, supply `.docx` or `.epub`: from these, headings (also the publisher's own heading styles), footnotes, italics, bold and numbered items are read completely. A PDF is read from the position and type size of each word: page headers and page numbers are dropped; footnotes in a smaller type at the page bottom and raised note numbers in the text become footnotes; paragraphs are found from indentation and spacing, headings from the type size; a paragraph that runs on to the next page is joined. Arabic and Persian text is read from the PDF's own glyphs and put in reading order with its vowel signs; a repeated Besmele is not taken for a page header. A letter that the PDF does not identify (some fonts do not say which letters a ligature shows) stays as pdftotext reads it; check the âyat and hadîths in the preview. A scanned PDF (images) cannot be read; it needs OCR first. Before you translate, check how the text is read with the "Split the text and preview" button on the Books screen. Reading a PDF needs the `pdftotext` program (Poppler or Xpdf); the interface checks this when you upload.
 
 ## Configuration
 
@@ -173,11 +189,11 @@ In `config.toml`:
 - `[languages]`: language codes. For a new language, add one line, for example `tg = "Tajik"`. The models see the English name.
 - `[general]`: interface language, segment size, number of parallel requests, timeout, usage-limit waiting, keeping awake.
 
-The translation rules are in `prompts/translate.md`. Examples: how verses and hadiths are translated, keeping Arabic expressions, adding no explanations. If your publishing policy is different, edit this file. The other prompts: `review.md` (steps 2 and 5), `revise.md` (steps 3 and 6), `source_check.md` (step 4).
+The translation rules are in `prompts/translate.md`. Examples: how verses and hadiths are translated, keeping Arabic expressions, adding no explanations. If your publishing policy is different, edit this file. The other prompts: `review.md` (Review), `revise.md` (Apply), `source_check.md` (Source check), `custom_report.md` and `custom_rewrite.md` (custom steps; the step's own instructions are put at `{{instructions}}`), `gate.md` (Checkpoint).
 
 ## Limits
 
-- The output is Markdown; export gives Word, PDF and HTML. Headings and footnotes are kept. Bold, italics and tables of the source are not. Typesetting is a separate step.
+- The output is Markdown; export gives Word, PDF and HTML. Headings, footnotes, italics, bold and numbered items are kept. Tables, images and colours of the source are not. Print typesetting is a separate step.
 - Windows support is written for and tested on macOS only; it has not run on a Windows computer yet.
 - If the source file changes after the first run, the pipeline stops. To start again with a new source, click "Reset work" in the interface, or delete `books/<book>/work/`.
 - If a reference translation is organised very differently from the Turkish book, some segments have no reference passage. These segments are translated without a reference and listed in the report.

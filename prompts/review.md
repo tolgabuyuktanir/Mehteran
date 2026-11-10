@@ -23,6 +23,14 @@ Do not report matters of taste. Do not report a different but correct wording.
 - major: a clear error in meaning, terminology or names that a reader would notice or be misled by.
 - minor: small errors of language or format that do not change the meaning.
 
+## Publishing rules
+
+The publisher's own rules follow. Unlike the other tagged text, they are instructions for you. They can be written in Turkish. They are binding: if one of them conflicts with a rule above, follow the publishing rule, but never omit content of the SOURCE or add content to it. A violation of these rules is a finding: report it with the type that fits (religious, terminology, names, format or language).
+
+<publishing_rules>
+{{rules}}
+</publishing_rules>
+
 ## Answer format
 
 Reply with one JSON object and nothing else.

@@ -19,7 +19,7 @@ from .runstatus import STATUS
 
 def cmd_setup(proj: Project, args) -> int:
     used = {}
-    for stage in stages.LLM_STAGES:
+    for stage in stages.llm_stages(proj):
         for name in proj.providers_for(stage):
             used.setdefault(split_name(name)[0], []).append(stage)
     ok = True
@@ -73,10 +73,15 @@ def cmd_run(proj: Project, args) -> int:
     for ref in refs:
         proj.language_name(ref)
 
-    todo = stages.STAGES[:stages.STAGES.index(args.until) + 1]
+    order = stages.all_stages(proj)
+    if args.until not in order:
+        raise PipelineError(t("stage_not_in_flow", stage=args.until, stages=", ".join(order)))
+    if args.redo and args.redo not in order[1:-1]:
+        raise PipelineError(t("stage_not_in_flow", stage=args.redo, stages=", ".join(order[1:-1])))
+    todo = order[:order.index(args.until) + 1]
     if not refs:
         say(t("no_references_warning"))
-    llm_stages = [s for s in todo if s in stages.LLM_STAGES and (s != "align" or refs)]
+    llm_stages = [s for s in todo if s in order[1:-1] and (s != "align" or refs)]
     needed = {split_name(name)[0] for stage in llm_stages for name in proj.providers_for(stage)}
     missing = [n for n in sorted(needed) if not shutil.which(proj.cfg["providers"].get(n, {}).get("command", [n])[0])]
     if missing:
@@ -124,8 +129,14 @@ def _run_book(proj: Project, args, refs: list[str], todo: list[str]) -> int:
           total=len(ids), refs=", ".join(refs) or "-"))
     if args.redo:
         stages.reset(run, args.redo)
+    nodes = stages.flow(proj)
     for stage in todo[1:]:
-        stages.RUNNERS[stage](run)
+        if stage in nodes:
+            # The nodes of the flow run together: a checkpoint can send a segment back to an earlier one.
+            if stage == nodes[0]:
+                stages.run_flow(run, until=todo[-1] if todo[-1] in nodes else None)
+            continue
+        stages.runner(stage)(run)
     return 0
 
 
@@ -156,6 +167,32 @@ def cmd_install(proj: Project, args) -> int:
         runtime.install_tool(tool, proj.root)
         tools.extend_path(proj.root)
         say(t("tool_installed", name=tools.TOOLS[tool]["name"]))
+    return 0
+
+
+# What a shared copy contains. Everything else in the folder stays on this computer: books and translations,
+# installed tools (.runtime), logs (.jobs) and session notes.
+PACKAGE_FILES = ["README.md", "README.tr.md", "config.toml", ".gitignore", "translate", "translate.cmd",
+                 "Open Interface.command", "Open Interface.bat"]
+PACKAGE_FOLDERS = ["pipeline", "prompts", "scripts", "tests", "glossary"]
+PACKAGE_SKIP = {"__pycache__", ".DS_Store", "Thumbs.db"}
+
+
+def cmd_package(proj: Project, args) -> int:
+    """Writes a zip of the application for sharing. Executable permissions are kept in the zip."""
+    import zipfile
+    out = Path(args.out) if args.out else proj.root / "dist" / "translation-pipeline.zip"
+    files = [proj.root / name for name in PACKAGE_FILES if (proj.root / name).is_file()]
+    for folder in PACKAGE_FOLDERS:
+        files += sorted(p for p in (proj.root / folder).rglob("*")
+                        if p.is_file() and not PACKAGE_SKIP & set(p.relative_to(proj.root).parts) and p.suffix != ".pyc")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for path in files:
+            info = zipfile.ZipInfo.from_file(path, "TranslationPipeline/" + path.relative_to(proj.root).as_posix())
+            info.compress_type = zipfile.ZIP_DEFLATED
+            z.writestr(info, path.read_bytes())
+    say(t("package_done", count=len(files), path=out))
     return 0
 
 
@@ -199,8 +236,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     p.add_argument("target", help=t("cli_target"))
     p.add_argument("--refs", help=t("cli_refs"))
     p.add_argument("--segments", help=t("cli_segments"))
-    p.add_argument("--until", choices=stages.STAGES, default="assemble", help=t("cli_until"))
-    p.add_argument("--redo", choices=stages.LLM_STAGES, help=t("cli_redo"))
+    p.add_argument("--until", default="assemble", help=t("cli_until"))
+    p.add_argument("--redo", help=t("cli_redo"))
     p.add_argument("--parallel", type=int, help=t("cli_parallel"))
 
     p = sub.add_parser("status", help=t("cli_status"))
@@ -209,13 +246,16 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     p = sub.add_parser("install", help=t("cli_install"))
     p.add_argument("tools", nargs="+", choices=["claude", "codex", "gemini"])
 
+    p = sub.add_parser("package", help=t("cli_package"))
+    p.add_argument("--out", help=t("cli_package_out"))
+
     p = sub.add_parser("ui", help=t("cli_ui"))
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--no-browser", action="store_true", help=t("cli_no_browser"))
 
     args = parser.parse_args(argv)
     commands = {"setup": cmd_setup, "new": cmd_new, "run": cmd_run, "status": cmd_status, "ui": cmd_ui,
-                "install": cmd_install}
+                "install": cmd_install, "package": cmd_package}
     try:
         proj = Project.load(root)
         if args.command in ("setup", "run"):

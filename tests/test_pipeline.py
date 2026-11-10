@@ -55,9 +55,77 @@ def make_epub(path: Path) -> None:
         z.writestr("OEBPS/text/b.xhtml", "<html><body><p>Andet afsnit.</p></body></html>")
 
 
+def make_arabic_pdf(path: Path) -> None:
+    """Two lines of Arabic written the way PDF makers write them (glyphs in visual order, left to right).
+
+    Line 1, as a browser writes it: every letter cluster in an /ActualText span; "لْمُ" is one ligature glyph.
+    Line 2, as macOS writes it: each vowel sign right before its letter, the ligature لم mapped to two letters
+    in a ToUnicode entry with spaces ("<0644 0645>"), no ActualText."""
+    letters = {1: "0644", 2: "0645", 3: "0627", 4: "0648", 5: "0646", 6: "0643", 7: "0631",
+               8: "064E", 9: "0652", 10: "064F", 11: "0650", 12: "0020", 13: "0644 0645"}
+    cmap = "".join(f"<{code:04X}> <{text}>\n" for code, text in letters.items())
+    tounicode = (b"/CIDInit /ProcSet findresource begin 12 dict begin begincmap\n1 begincodespacerange\n<0000> <FFFF>\n"
+                 b"endcodespacerange\n13 beginbfchar\n" + cmap.encode() + b"endbfchar\nendcmap end end\n")
+
+    def span(text: str, *codes: int) -> str:  # one cluster: a letter (width 10 at size 20) and its signs (no width)
+        utf16 = "FEFF" + "".join(f"{ord(c):04X}" for c in text)
+        return f"/Span <</ActualText <{utf16}> >> BDC " + " ".join(f"<{c:04X}> Tj" for c in codes) + " EMC "
+
+    line1 = ("BT /F1 20 Tf 1 0 0 1 100 250 Tm " + span("رِ", 7, 11) + span("كَ", 6, 8) + span("نْ", 5, 9)
+             + span("لْمُ", 13, 9, 10) + span("ا", 3) + span("وَ", 4, 8) + "ET\n")
+    line2 = ("BT /F1 20 Tf 1 0 0 1 100 180 Tm <0009> Tj 1 0 0 1 106 180 Tm <0008> Tj 1 0 0 1 100 180 Tm <000D> Tj "
+             "1 0 0 1 112 180 Tm <0008> Tj 1 0 0 1 110 180 Tm <0004> Tj ET\n")
+    content = (line1 + line2).encode()
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 420 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type0 /BaseFont /ArialMT /Encoding /Identity-H /DescendantFonts [6 0 R] /ToUnicode 7 0 R >>",
+        b"<< /Length %d >>\nstream\n" % len(content) + content + b"endstream",
+        b"<< /Type /Font /Subtype /CIDFontType2 /BaseFont /ArialMT /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) "
+        b"/Supplement 0 >> /DW 500 /W [8 [0 0 0 0]] /FontDescriptor 8 0 R >>",
+        b"<< /Length %d >>\nstream\n" % len(tounicode) + tounicode + b"endstream",
+        b"<< /Type /FontDescriptor /FontName /ArialMT /Flags 32 /FontBBox [0 -200 1000 900] /ItalicAngle 0 "
+        b"/Ascent 900 /Descent -200 /CapHeight 700 /StemV 80 >>",
+    ]
+    out, offsets = bytearray(b"%PDF-1.4\n"), []
+    for n, body in enumerate(objects, 1):
+        offsets.append(len(out))
+        out += b"%d 0 obj\n" % n + body + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1)
+    out += b"".join(b"%010d 00000 n \n" % o for o in offsets)
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objects) + 1, xref)
+    path.write_bytes(bytes(out))
+
+
 class DocumentTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
+
+    def test_pdf_glyphs_give_text_and_position_of_each_glyph(self):
+        from pipeline import pdfglyphs
+        make_arabic_pdf(self.tmp / "ar.pdf")
+        glyphs = pdfglyphs.read((self.tmp / "ar.pdf").read_bytes(), [0])[0]
+        line1 = [g for g in glyphs if g.y < 100]  # from the top of the page
+        self.assertEqual([g.text for g in line1], ["رِ", "كَ", "نْ", "لْمُ", "ا", "وَ"])  # one glyph per span
+        self.assertEqual([round(g.x0) for g in line1], [100, 110, 120, 130, 140, 150])
+        line2 = sorted((g for g in glyphs if g.y > 100), key=lambda g: g.order)
+        self.assertEqual([g.text for g in line2], ["ْ", "َ", "لم", "َ", "و"])
+
+    def test_right_to_left_glyphs_keep_numbers_and_mirror_brackets(self):
+        from pipeline.pdfglyphs import Glyph
+        # "آية (٢٥)" as drawn, left to right: the number keeps its order, the brackets are drawn mirrored.
+        drawn = ["(", "٢", "٥", ")", " ", "ة", "ي", "آ"]
+        glyphs = [Glyph(text, 10 * i, 10 * i + 8, 50, 20, i) for i, text in enumerate(drawn)]
+        words = documents._glyph_words(glyphs, True)
+        self.assertEqual(" ".join(w.text for w in reversed(words)), "آية (٢٥)")
+
+    @unittest.skipUnless(shutil.which("pdftotext"), "pdftotext is not installed")
+    def test_pdf_arabic_is_read_in_reading_order(self):
+        make_arabic_pdf(self.tmp / "ar.pdf")
+        blocks = [__import__("unicodedata").normalize("NFC", b) for b in documents.read_blocks(self.tmp / "ar.pdf")]
+        self.assertEqual(blocks, ["وَالْمُنْكَرِ", "وَلَمْ"])
         self.addCleanup(shutil.rmtree, self.tmp)
 
     def test_docx_keeps_headings_and_footnotes(self):
@@ -68,10 +136,109 @@ class DocumentTests(unittest.TestCase):
             "İkinci paragraf.",
         ])
 
+    def test_pdf_text_loses_headers_and_page_numbers_and_keeps_paragraphs(self):
+        bodies = ["Birinci paragraf burada baş-\nlar ve sonraki say-\nfada devam eder",
+                  "ve burada biter. Yeni cümle.\n\nİkinci Bölüm\n\nBaşka bir paragraf.",
+                  "Üçüncü sayfanın metni.", "Dördüncü sayfanın metni."]
+        pages = [f"İslam İlmihali\n\n{body}\n\n{n}\n" for n, body in enumerate(bodies, 1)]
+        blocks = documents._pdf_text_blocks("\f".join(pages))
+        self.assertEqual(blocks[0], "Birinci paragraf burada başlar ve sonraki sayfada devam eder ve burada biter. Yeni cümle.")
+        self.assertEqual(blocks[1:3], ["İkinci Bölüm", "Başka bir paragraf."])
+        self.assertFalse([b for b in blocks if "İslam İlmihali" in b or b.isdigit()])
+        # No empty lines between paragraphs: a short line that ends a sentence ends the paragraph; a short line
+        # without sentence punctuation after it is a heading.
+        full = "Bu satır sayfanın bütün genişliğini dolduran uzun bir satırdır"
+        text = "\n".join(["Namaz Bahsi", full, full + ".", full, "ve kısa biter.", "Oruç Bahsi", full, "son satır."])
+        self.assertEqual([b[:14] for b in documents._pdf_text_blocks(text)],
+                         ["Namaz Bahsi", "Bu satır sayfa", "Oruç Bahsi", "Bu satır sayfa"])
+
+    def test_epub_footnote_number_is_not_glued_to_the_word(self):
+        parser = documents._HTMLBlocks()
+        parser.feed("<p>Namaz dinin direğidir<sup>3</sup>. 10<sup>2</sup> ve x<sup>n</sup></p>")
+        parser.close()
+        parser.flush()
+        self.assertEqual(parser.blocks, ["Namaz dinin direğidir[3]. 10[2] ve xn"])
+
     def test_epub_follows_spine_order(self):
         make_epub(self.tmp / "da.epub")
         self.assertEqual(documents.read_blocks(self.tmp / "da.epub"),
-                         ["## Kapitel 1", "Første avsnitt.", "Andet afsnit."])
+                         ["## Kapitel 1", "Første *avsnitt*.", "Andet afsnit."])
+
+    def test_epub_note_references_become_footnotes(self):
+        with zipfile.ZipFile(self.tmp / "n.epub", "w") as z:
+            z.writestr("META-INF/container.xml", '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+                       '<rootfiles><rootfile full-path="c.opf"/></rootfiles></container>')
+            z.writestr("c.opf", '<package xmlns="http://www.idpf.org/2007/opf"><manifest><item id="a" href="a.xhtml"/>'
+                       '<item id="n" href="notes.xhtml"/></manifest><spine><itemref idref="a"/><itemref idref="n"/></spine></package>')
+            z.writestr("a.xhtml", '<html xmlns:epub="http://www.idpf.org/2007/ops"><body>'
+                       '<p>Namaz dinin direğidir.<a epub:type="noteref" href="#f1"><sup>1</sup></a> Oruç da farzdır.'
+                       '<a href="notes.xhtml#e1">2</a></p>'
+                       '<aside epub:type="footnote" id="f1"><p><a href="#r1">1</a> Tirmizî, <i>Îmân</i>, 8.</p></aside></body></html>')
+            z.writestr("notes.xhtml", '<html><body><section role="doc-endnotes"><ol>'
+                       '<li id="e1"><p>Bakara sûresi, 183. <a href="a.xhtml#r2">↩</a></p></li></ol></section></body></html>')
+        self.assertEqual(documents.read_blocks(self.tmp / "n.epub"), [
+            "Namaz dinin direğidir.[^1] Oruç da farzdır.[^2]\n[^1]: Tirmizî, *Îmân*, 8.\n[^2]: Bakara sûresi, 183."])
+
+    def test_docx_numbering_inherited_headings_and_emphasis(self):
+        doc = f"""<w:document {W_NS}><w:body>
+<w:p><w:pPr><w:pStyle w:val="Bolum"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Namaz</w:t></w:r></w:p>
+<w:p><w:pPr><w:outlineLvl w:val="2"/></w:pPr><w:r><w:t>Alt başlık</w:t></w:r></w:p>
+<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="5"/></w:numPr></w:pPr><w:r><w:t>Abdest.</w:t></w:r></w:p>
+<w:p><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="5"/></w:numPr></w:pPr><w:r><w:t>Niyet.</w:t></w:r></w:p>
+<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="5"/></w:numPr></w:pPr><w:r><w:t>Kıble.</w:t></w:r></w:p>
+<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="6"/></w:numPr></w:pPr><w:r><w:t>Madde.</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">Kitabın adı </w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Mektûbât </w:t></w:r><w:r><w:rPr><w:i w:val="0"/></w:rPr><w:t>dır.</w:t></w:r></w:p>
+</w:body></w:document>"""
+        styles = f"""<w:styles {W_NS}><w:style w:styleId="Baslik2"><w:name w:val="heading 2"/></w:style>
+<w:style w:styleId="Bolum"><w:name w:val="Bölüm Başlığı"/><w:basedOn w:val="Baslik2"/></w:style></w:styles>"""
+        numbering = f"""<w:numbering {W_NS}>
+<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>
+<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%2)"/></w:lvl></w:abstractNum>
+<w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/></w:lvl></w:abstractNum>
+<w:num w:numId="5"><w:abstractNumId w:val="1"/></w:num><w:num w:numId="6"><w:abstractNumId w:val="2"/></w:num></w:numbering>"""
+        with zipfile.ZipFile(self.tmp / "n.docx", "w") as z:
+            z.writestr("word/document.xml", doc)
+            z.writestr("word/styles.xml", styles)
+            z.writestr("word/numbering.xml", numbering)
+        self.assertEqual(documents.read_blocks(self.tmp / "n.docx"), [
+            "## Namaz", "### Alt başlık", "1. Abdest.", "a) Niyet.", "2. Kıble.", "• Madde.", "Kitabın adı *Mektûbât* dır."])
+
+    def test_pdf_layout_footnotes_headers_headings_and_page_breaks(self):
+        def line(x, y, text, h=12.0, sup=()):
+            words, out = text.split(), []
+            for i, w in enumerate(words):
+                x1 = x + 6 * len(w)
+                if i in sup:  # a raised note number in a smaller type
+                    out.append(f'<word xMin="{x}" yMin="{y - 1}" xMax="{x + 4}" yMax="{y + 0.6 * h - 1}">{w}</word>')
+                else:
+                    out.append(f'<word xMin="{x}" yMin="{y}" xMax="{x1}" yMax="{y + h}">{w}</word>')
+                x = x1 + 3
+            return f"<line>{''.join(out)}</line>"
+
+        def page(lines):
+            return f'<page width="420" height="600"><flow><block>{"".join(lines)}</block></flow></page>'
+
+        full = "a" * 50  # a line that reaches the right edge
+        pages = [
+            page([line(180, 20, "İLMİHAL", 9), line(150, 50, "BİRİNCİ BÖLÜM", 16), line(40, 80, "Namazın Önemi", 13),
+                  line(57, 100, f"Namaz dinin direğidir. 1 {full}", sup=(3,)), line(40, 115, "kılınır."),
+                  line(57, 130, f"İkinci paragraf {full}"), line(40, 145, f"devam {full}"),
+                  line(40, 530, "1", 6), line(46, 531, "Tirmizî, Îmân, 8;", 9), line(46, 541, "ilk satır", 9),
+                  line(205, 570, "7", 10)]),
+            page([line(185, 20, "Namaz", 9), line(40, 50, "eden kimse kurtulur."),
+                  line(46, 531, "devam eden dipnot.", 9), line(205, 570, "8", 10)]),
+            page([line(180, 20, "İLMİHAL", 9), line(57, 50, "Son paragraf."), line(205, 570, "9", 10)]),
+        ]
+        xhtml = ('<html xmlns="http://www.w3.org/1999/xhtml"><body><doc>' + "".join(pages) + "</doc></body></html>").encode()
+        blocks = documents._pdf_layout_blocks(documents._pdf_pages(xhtml))
+        self.assertEqual(blocks[:3], ["# BİRİNCİ BÖLÜM", "## Namazın Önemi",
+                                      f"Namaz dinin direğidir.[^1] {full} kılınır.\n[^1]: Tirmizî, Îmân, 8; ilk satır devam eden dipnot."])
+        self.assertEqual(blocks[3], f"İkinci paragraf {full} devam {full} eden kimse kurtulur.")
+        self.assertEqual(blocks[4:], ["Son paragraf."])
+
+    def test_pdf_hyphenation_keeps_turkish_suffixes(self):
+        self.assertEqual(documents._join_lines("namaz kı-\nlınır, Kur’ân-\nı kerîm, ehl-\ni sünnet"),
+                         "namaz kılınır, Kur’ân-ı kerîm, ehl-i sünnet")
 
     def test_docx_text_box_is_read_once_and_endnotes_are_kept(self):
         mc = 'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'
@@ -215,13 +382,13 @@ class ExportTests(unittest.TestCase):
         path.write_bytes(data)
         blocks = documents.read_blocks(path)
         self.assertEqual(blocks[0], "# Başlık")
-        self.assertEqual(blocks[1], "Birinci kalın ve eğik paragraf.[^1]\n[^1]: Dipnot metni.")
+        self.assertEqual(blocks[1], "Birinci **kalın** ve *eğik* paragraf.[^1]\n[^1]: Dipnot metni.")
 
     def test_moved_footnote_line_and_dialogue_dash_are_kept(self):
         md = "Birinci paragraf.[^1]\n\nİkinci paragraf.\n[^1]: Kaymış dipnot.\n\n- Diyalog satırı."
         page = export.to_html(md, "K", "tr", lists=False)
         self.assertIn('<li id="fn1">Kaymış dipnot.', page)
-        self.assertIn("<p>- Diyalog satırı.</p>", page)
+        self.assertIn("<p class=\"item\">- Diyalog satırı.</p>", page)
         self.assertNotIn("[^1]", page)
 
     def test_html_and_right_to_left(self):
@@ -240,18 +407,26 @@ class ConfigFileTests(unittest.TestCase):
     def test_stage_board_is_saved_and_comments_are_kept(self):
         import tomllib
         text = (ROOT / "config.toml").read_text(encoding="utf-8")
-        assignment = {stage: ["claude"] for stage in stages.LLM_STAGES}
+        flow = ["review1", "revise1", "source_check", "custom1", "review2", "reconcile", "gate1"]
+        nodes = {"custom1": {"title": 'Üslup "sade"', "mode": "rewrite"}, "gate1": {"back_to": "review2", "max": 2}}
+        assignment = {stage: ["claude"] for stage in stages.PREP_STAGES + ["translate"] + flow}
         assignment["translate"] = ["chatgpt/gpt-x.1"]
         assignment["review2"] = ["gemini/gemini-pro", "claude/opus"]
-        new = configfile.set_models(configfile.set_stages(text, assignment), "claude", ["opus", "sonnet"])
+        new = configfile.set_models(configfile.set_stages(text, assignment, flow, nodes), "claude", ["opus", "sonnet"])
         cfg = tomllib.loads(new)
+        self.assertEqual(cfg["stages"]["flow"], flow)
+        self.assertEqual(cfg["nodes"], nodes)
+        self.assertIsNone(stages.flow_problem(flow, cfg))
+        # Saved again with fewer nodes: the options of the removed nodes go, and [nodes] stays a single section.
+        again = tomllib.loads(configfile.set_stages(new, assignment, flow[:3], nodes))
+        self.assertEqual(again["nodes"], {})
         self.assertEqual(cfg["stages"]["translate"], "chatgpt/gpt-x.1")
         self.assertEqual(cfg["stages"]["review2"], ["gemini/gemini-pro", "claude/opus"])
         self.assertEqual(cfg["stages"]["review1"], ["claude"])
         self.assertEqual(cfg["providers"]["claude"]["models"], ["opus", "sonnet"])
         self.assertEqual(cfg["languages"], tomllib.loads(text)["languages"])
         self.assertIn("# interface language", new)
-        self.assertIn("# 1  first translation", new)
+        self.assertIn("# first translation", new)
 
 
 class PlatformTests(unittest.TestCase):
@@ -290,6 +465,19 @@ class PlatformTests(unittest.TestCase):
         dirs = runtime.bin_dirs(root)
         self.assertEqual(len({str(d) for d in dirs}), 3)  # codex, gemini, node
         self.assertTrue(all(str(d).startswith(str(root / ".runtime")) for d in dirs))
+
+    def test_codex_models_are_read_from_its_own_list(self):
+        from pipeline import tools
+        home = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, home)
+        (home / "models_cache.json").write_text('{"models": [{"slug": "gpt-a", "visibility": "list"}, '
+                                               '{"slug": "hidden", "visibility": "hide"}, {"slug": "-x", "visibility": "list"}]}')
+        os.environ["CODEX_HOME"] = str(home)
+        self.addCleanup(os.environ.pop, "CODEX_HOME")
+        self.assertEqual(tools.list_models("codex"), ["gpt-a"])
+        (home / "models_cache.json").write_text("not json")
+        self.assertEqual(tools.list_models("codex"), [])
+        self.assertIn("opus", tools.list_models("claude"))
 
     def test_multiline_models_array_is_replaced_whole(self):
         import tomllib
@@ -456,9 +644,9 @@ class EndToEndTests(unittest.TestCase):
         report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
         self.assertIn("# Translation report: sample → Norwegian (no)", report)
         self.assertIn("Finished segments: 3/3", report)
-        self.assertIn("First review (review1): 3 findings (critical 0, major 3, minor 0); accepted 3, rejected 0", report)
+        self.assertIn("Review (review1): 3 findings (critical 0, major 3, minor 0); accepted 3, rejected 0", report)
         self.assertIn("Source check from the start (source_check): 3 findings (critical 3", report)
-        self.assertIn("Second independent review (review2): 6 findings (critical 0, major 6, minor 0); accepted 3, rejected 3", report)
+        self.assertIn("Review (review2): 6 findings (critical 0, major 6, minor 0); accepted 3, rejected 3", report)
         self.assertIn("major · terminology · review2/fake2 · REJECTED", report)               # rejected major finding is listed
         self.assertIn("critical · omission · source_check/fake · accepted] Missing sentence.", report)  # critical always listed
         self.assertNotIn("review1/fake · accepted", report)                                  # accepted major finding is not
@@ -540,7 +728,7 @@ class EndToEndTests(unittest.TestCase):
         self.run_cli("run", "sample", "no", "--segments", "1")
         models = Counter((self.root / "models.log").read_text().split())
         self.assertEqual((models["model-a"], models["model:b"]), (1, 1))
-        files = sorted(p.name for p in (self.book / "work" / "no" / "review2").iterdir())
+        files = sorted(p.name for p in (self.book / "work" / "no" / "review2").glob("*.json"))
         self.assertEqual(files, ["0001.fake2.json", "0001.fake_model_b.json"])
         reviewers = [i["reviewer"] for i in read_json(self.book / "work" / "no" / "reconcile" / "0001.json")]
         self.assertEqual(reviewers, ["fake/model:b", "fake2"])
@@ -594,7 +782,7 @@ class EndToEndTests(unittest.TestCase):
         report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
         self.assertIn("review2 · fake2: 3 segments, no findings in 3, 0 findings in total", report)
         self.assertIn("review2 · fake: 3 segments, no findings in 0, 3 findings in total", report)
-        self.assertIn("ATTENTION: fake2 wrote no findings in these segments, but the other reviewer found critical or major "
+        self.assertIn("ATTENTION: fake2 wrote no findings in these segments, but another reviewer of the same round found critical or major "
                       "errors in them: 0001, 0002, 0003", report)
         rows = stages.book_status(Project.load(self.root), "sample")["languages"]["no"]["reviews"]
         self.assertEqual([(r["stage"], r["reviewer"], r["empty"], len(r["missed"])) for r in rows],
@@ -608,6 +796,162 @@ class EndToEndTests(unittest.TestCase):
             providers.run(Project.load(self.root), "fake", "prompt")
         self.assertIn("does not accept this account (IneligibleTierError: This client is no longer supported", str(caught.exception))
         self.assertEqual(self.calls(), Counter({"refused": 1}))  # no retries
+
+    def test_package_holds_the_application_and_no_user_data(self):
+        (self.root / ".runtime").mkdir()
+        (self.root / ".runtime" / "big").write_text("x", encoding="utf-8")
+        (self.root / "translate").write_text("#!/bin/sh\n", encoding="utf-8")
+        (self.root / "translate").chmod(0o755)
+        out = self.root / "share.zip"
+        self.run_cli("package", "--out", str(out))
+        with zipfile.ZipFile(out) as z:
+            names = z.namelist()
+            mode = z.getinfo("TranslationPipeline/translate").external_attr >> 16
+        self.assertIn("TranslationPipeline/config.toml", names)
+        self.assertIn("TranslationPipeline/prompts/review.md", names)
+        self.assertFalse([n for n in names if "books/" in n or ".runtime" in n or "calls.log" in n])
+        if not system.IS_WINDOWS:
+            self.assertTrue(mode & 0o100)  # the launcher stays executable
+
+    def test_changed_glossary_or_instructions_are_reported_for_finished_segments(self):
+        self.run_cli("--lang", "en", "run", "sample", "no")
+        proj = Project.load(self.root)
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"]), {})
+        # A glossary row changes: only the segment that contains the term is old ("namaz" is in segment 1).
+        (self.root / "glossary" / "no.tsv").write_text("tr\tno\tnote\nnamaz\tsalah\tedited by hand\n", encoding="utf-8")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"]), {"translate": ["0001"]})
+        out = self.run_cli("--lang", "en", "run", "sample", "no")
+        self.assertIn("produce these segments again from the 'translate' step: 0001", out)
+        self.assertIn("from the 'translate' step: 0001", (self.book / "output" / "no.report.md").read_text(encoding="utf-8"))
+        # Producing the segment again clears the report.
+        self.run_cli("run", "sample", "no", "--segments", "1", "--redo", "translate")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"]), {})
+        # Changed review instructions: every segment is old from the first review on. Another set of references: from the translation on.
+        review = self.root / "prompts" / "review.md"
+        review.write_text(review.read_text(encoding="utf-8") + "\nBe strict.\n", encoding="utf-8")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"]), {"review1": ["0001", "0002", "0003"]})
+        self.assertEqual(stages.stale_for(proj, "sample", "no", []), {"translate": ["0001", "0002", "0003"]})
+
+    def set_flow(self, flow: str, extra: str = "") -> Project:
+        path = self.root / "config.toml"
+        path.write_text(path.read_text(encoding="utf-8").replace("[stages]\n", f"[stages]\nflow = {flow}\n{extra}", 1),
+                        encoding="utf-8")
+        return Project.load(self.root)
+
+    def test_edited_flow_runs_its_own_steps_in_order(self):
+        proj = self.set_flow('["source_check", "review3"]', 'review3 = ["fake2"]\nrevise3 = "fake"\n')
+        self.assertEqual(stages.all_stages(proj), ["prepare", "align", "glossary", "translate", "source_check",
+                                                   "review3", "revise3", "assemble"])
+        self.run_cli("--lang", "en", "run", "sample", "no")
+        work = self.book / "work" / "no"
+        self.assertFalse((work / "review1").exists())
+        self.assertIn("from translate", (work / "source_check" / "0001.in").read_text(encoding="utf-8"))
+        self.assertIn("from source_check", (work / "review3" / "0001.fake2.in").read_text(encoding="utf-8"))
+        final = (work / "revise3" / "0001.md").read_text(encoding="utf-8").strip()
+        self.assertTrue((self.book / "output" / "no.md").read_text(encoding="utf-8").startswith(final))
+        report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
+        self.assertIn("- Review (review3):", report)
+        self.assertNotIn("(review1)", report)
+        self.run_cli("run", "sample", "no", "--until", "review1", code=1)  # not a stage of this flow
+
+    def test_changed_flow_marks_segments_that_worked_on_another_text(self):
+        self.run_cli("--lang", "en", "run", "sample", "no")
+        work = self.book / "work" / "no"
+        # Fingerprints written before the flow was editable have no "from" line: the diagram order is assumed.
+        for f in work.glob("*/*.in"):
+            f.write_text(f.read_text(encoding="utf-8").split("\n")[0] + "\n", encoding="utf-8")
+        self.assertEqual(stages.stale_for(Project.load(self.root), "sample", "no", ["da"]), {})
+        # Without the source check, the second review works on the text of revise1, not of source_check.
+        proj = self.set_flow('["review1", "review2"]')
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"]), {"review2": ["0001", "0002", "0003"]})
+
+    def set_nodes(self, flow: str, stages_extra: str, nodes: str) -> Project:
+        path = self.root / "config.toml"
+        text = path.read_text(encoding="utf-8").replace("[general]\n", f"[nodes]\n{nodes}\n[general]\n", 1)
+        path.write_text(text, encoding="utf-8")
+        return self.set_flow(flow, stages_extra)
+
+    def test_flow_rules(self):
+        cfg = {"nodes": {"gate1": {"back_to": "review1", "max": 2}, "gate2": {"back_to": "review1", "max": 1},
+                         "custom1": {"title": "Üslup", "mode": "report"}}}
+        self.assertIsNone(stages.flow_problem(["review1", "revise1", "gate1"], cfg))
+        self.assertIsNone(stages.flow_problem(["custom1", "review1", "apply1"], cfg))  # two reports, one apply
+        self.assertEqual(stages.flow_problem(["review1", "source_check", "revise1"], cfg), "flow_unapplied:review1")
+        self.assertEqual(stages.flow_problem(["revise1", "custom1"], cfg), "flow_unapplied:custom1")
+        self.assertEqual(stages.flow_problem(["gate1", "review1", "revise1"], cfg), "flow_gate_invalid:gate1")  # forward
+        # Loops do not overlap: gate2 cannot send back past gate1.
+        self.assertEqual(stages.flow_problem(["review1", "revise1", "gate1", "source_check", "gate2"], cfg),
+                         "flow_gate_invalid:gate2")
+        self.assertEqual(stages.flow_problem(["custom2"], cfg), "flow_custom_invalid")
+        self.assertEqual(stages.flow_problem(["review1", "revise1"] * 2, cfg), "flow_invalid")  # a node twice
+
+    def test_checkpoint_sends_a_segment_back_and_its_findings_are_applied(self):
+        self.set_nodes('["review1", "revise1", "gate1"]', 'gate1 = "fake2"\n', 'gate1 = { back_to = "review1", max = 2 }')
+        os.environ["FAKE_LLM_GATE_FAILS"] = f"{self.root / 'gate.count'}:1"  # only the first check finds a problem
+        self.addCleanup(os.environ.pop, "FAKE_LLM_GATE_FAILS")
+        self.run_cli("--lang", "en", "run", "sample", "no")
+        self.assertEqual(self.calls()["gate"], 3)          # 3 segments pass in the end
+        self.assertEqual(self.calls()["gate-fail"], 1)     # one was sent back once
+        work = self.book / "work" / "no"
+        again = [p.name for p in (work / "gate1.2").glob("*.json")]
+        self.assertEqual(len(again), 1)                    # only that segment was checked again
+        sid = again[0][:4]
+        self.assertEqual(sorted(p.name for p in (work / "review1.2").glob("*.json")), [f"{sid}.fake.json"])
+        applied = read_json(work / "revise1.2" / f"{sid}.json")
+        self.assertIn("gate1", {i["stage"] for i in applied})           # the checkpoint's findings were applied
+        self.assertIn("from revise1", (work / "review1.2" / f"{sid}.fake.in").read_text(encoding="utf-8"))
+        out = (self.book / "output" / "no.md").read_text(encoding="utf-8")
+        self.assertIn((work / "revise1.2" / f"{sid}.md").read_text(encoding="utf-8").strip(), out)
+        report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
+        self.assertIn("- Checkpoint (gate1): sent back 1 times; segments with serious problems left: 0", report)
+        before = self.calls()
+        self.run_cli("run", "sample", "no")                # everything is done: no call is made again
+        self.assertEqual(self.calls(), before)
+        self.assertEqual(stages.stale_for(Project.load(self.root), "sample", "no", ["da"]), {})
+
+    def test_checkpoint_stops_sending_back_at_its_limit(self):
+        self.set_nodes('["review1", "revise1", "gate1"]', 'gate1 = "fake"\n', 'gate1 = { back_to = "revise1", max = 1 }')
+        os.environ["FAKE_LLM_GATE_FAILS"] = f"{self.root / 'gate.count'}:99"  # every check finds a problem
+        self.addCleanup(os.environ.pop, "FAKE_LLM_GATE_FAILS")
+        self.run_cli("--lang", "en", "run", "sample", "no")
+        self.assertEqual(self.calls()["gate-fail"], 6)     # each segment: checked, sent back once, checked again
+        self.assertEqual(self.calls()["revise"], 6)
+        report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
+        self.assertIn("segments with serious problems left: 3", report)
+        self.assertIn("major · mistranslation · gate1.2/fake · no decision] Still wrong.", report)
+
+    def test_custom_steps_follow_their_instructions(self):
+        self.set_nodes('["custom1", "review1", "apply1", "custom2"]', 'custom1 = ["fake2"]\napply1 = "fake"\ncustom2 = "fake"\n',
+                       'custom1 = { title = "Terimler", mode = "report" }\ncustom2 = { title = "Üslup", mode = "rewrite" }')
+        custom = self.root / "prompts" / "custom"
+        custom.mkdir()
+        (custom / "custom1.md").write_text("Terimleri sözlükle karşılaştır.\n", encoding="utf-8")
+        (custom / "custom2.md").write_text("Üslubu sadeleştir.\n", encoding="utf-8")
+        self.run_cli("--lang", "en", "run", "sample", "no", "--segments", "1")
+        self.assertEqual(self.calls()["custom-report"], 1)
+        self.assertEqual(self.calls()["custom-rewrite"], 1)
+        work = self.book / "work" / "no"
+        self.assertEqual({i["stage"] for i in read_json(work / "apply1" / "0001.json")}, {"custom1", "review1"})
+        out = (self.book / "output" / "no.md").read_text(encoding="utf-8")
+        self.assertIn((work / "custom2" / "0001.md").read_text(encoding="utf-8").strip(), out)
+        report = (self.book / "output" / "no.report.md").read_text(encoding="utf-8")
+        self.assertIn("- Custom step: Üslup (custom2):", report)
+        proj = Project.load(self.root)
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"], "1"), {})
+        (custom / "custom2.md").write_text("Başka bir talimat.\n", encoding="utf-8")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"], "1"), {"custom2": ["0001"]})
+
+    def test_publishing_rules_reach_every_text_step_and_mark_old_segments(self):
+        proj = Project.load(self.root)
+        (self.root / "prompts" / "rules.md").write_text("Kural: Allah ismi çevrilmez.\n", encoding="utf-8")
+        for name in ("translate", "review", "revise", "source_check", "glossary"):
+            text = proj.prompt(name, **{k: "x" for k in ("target_lang", "ref_langs", "context", "glossary", "references",
+                                                        "source", "translation", "issues", "note_lang")})
+            self.assertIn("<publishing_rules>\nKural: Allah ismi çevrilmez.\n</publishing_rules>", text, name)
+        self.run_cli("run", "sample", "no", "--segments", "1")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"], "1"), {})
+        (self.root / "prompts" / "rules.md").write_text("Kural: değişti.\n", encoding="utf-8")
+        self.assertEqual(stages.stale_for(proj, "sample", "no", ["da"], "1"), {"translate": ["0001"]})
 
     def test_missing_segments_are_marked_in_the_output(self):
         self.run_cli("--lang", "en", "run", "sample", "no", "--segments", "2")

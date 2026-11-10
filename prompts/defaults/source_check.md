@@ -35,6 +35,14 @@ Reply in exactly this form and nothing else. List every change that you made. If
 {"issues": [{"type": "omission|addition|mistranslation|religious|terminology|names|format|language", "severity": "critical|major|minor", "source": "<the exact Turkish words concerned>", "translation": "<the wording before your change, or empty if it was missing>", "explanation": "<what was wrong, written in {{note_lang}}>", "suggestion": "<your corrected {{target_lang}} wording>"}]}
 </changes>
 
+## Publishing rules
+
+The publisher's own rules follow. Unlike the other tagged text, they are instructions for you. They can be written in Turkish. They are binding: if one of them conflicts with a rule above, follow the publishing rule, but never omit content of the SOURCE or add content to it. Check the text against them too, and correct every violation.
+
+<publishing_rules>
+{{rules}}
+</publishing_rules>
+
 ## Material
 
 <glossary>

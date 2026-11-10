@@ -22,6 +22,14 @@ Reply in exactly this form and nothing else. Give one decision for every issue i
 {"decisions": [{"id": 1, "decision": "accepted", "reason": "..."}, {"id": 2, "decision": "rejected", "reason": "..."}]}
 </decisions>
 
+## Publishing rules
+
+The publisher's own rules follow. Unlike the other tagged text, they are instructions for you. They can be written in Turkish. They are binding: if one of them conflicts with a rule above, follow the publishing rule, but never omit content of the SOURCE or add content to it. Apply them when you weigh the findings and correct the text.
+
+<publishing_rules>
+{{rules}}
+</publishing_rules>
+
 ## Material
 
 <glossary>
