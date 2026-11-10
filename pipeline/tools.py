@@ -106,6 +106,15 @@ def _gemini_has_key() -> bool:
     return env.exists() and re.search(r"^GEMINI_API_KEY=\S", env.read_text(encoding="utf-8"), re.M) is not None
 
 
+def codex_has_credentials() -> bool:
+    """Only checks that Codex stored a sign-in (the file is never read)."""
+    home = Path(os.environ.get("CODEX_HOME") or HOME / ".codex")
+    try:
+        return (home / "auth.json").stat().st_size > 2
+    except OSError:
+        return False
+
+
 def login_status(tool: str) -> tuple[bool, str]:
     """Returns (signed in, description)."""
     exe = TOOLS[tool]["command"]
@@ -123,6 +132,8 @@ def login_status(tool: str) -> tuple[bool, str]:
         if tool == "codex":
             proc = _run([exe, "login", "status"])
             text = (proc.stdout + proc.stderr).strip().splitlines()
+            if proc.returncode != 0 and codex_has_credentials():
+                return True, t("stored_sign_in")  # the status command failed (seen on Windows), but a sign-in is stored
             return proc.returncode == 0, (text[-1] if text else "")
     except (OSError, subprocess.TimeoutExpired):
         return False, t("status_unreadable")

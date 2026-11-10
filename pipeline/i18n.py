@@ -321,6 +321,7 @@ MESSAGES = {
     "claude_subscription": {"tr": "Claude aboneliği", "en": "Claude subscription"},
     "not_signed_in": {"tr": "Oturum açılmamış.", "en": "Not signed in."},
     "google_account": {"tr": "Google hesabı", "en": "Google account"},
+    "stored_sign_in": {"tr": "Oturum kayıtlı", "en": "Sign-in stored"},
     "api_key": {"tr": "API anahtarı", "en": "API key"},
     "google_not_selected": {"tr": "Google oturumu var ama seçili değil. 'Google hesabıyla' düğmesine basın.",
                             "en": "A Google sign-in exists but is not selected. Click 'With Google account'."},
