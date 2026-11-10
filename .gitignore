@@ -27,3 +27,12 @@ __pycache__/
 .venv/
 .DS_Store
 Thumbs.db
+
+# The user's own settings and instructions: made from config.default.toml and prompts/defaults/ at the first start,
+# never changed by an update ("git pull"). See pipeline/userfiles.py.
+/config.toml
+/prompts/*.md
+/prompts/custom/
+/prompts/.defaults.json
+# The publisher's Word template (uploaded in the interface)
+/export/

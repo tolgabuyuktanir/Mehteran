@@ -23,10 +23,10 @@ if not exist "%UV%" (
   exit /b 1
 )
 
+rem "ui" first brings a git copy up to date. The update and the start stand on one line: cmd reads a batch file line
+rem by line while it runs, and the update can change this file.
 :run_uv
-"%UV%" run --no-project --python 3.12 python -m pipeline %*
-exit /b
+if /i "%~1"=="ui" ("%UV%" run --no-project --python 3.12 python -m pipeline update & "%UV%" run --no-project --python 3.12 python -m pipeline %* & exit /b) else ("%UV%" run --no-project --python 3.12 python -m pipeline %* & exit /b)
 
 :run_python
-%PY% -m pipeline %*
-exit /b
+if /i "%~1"=="ui" (%PY% -m pipeline update & %PY% -m pipeline %* & exit /b) else (%PY% -m pipeline %* & exit /b)

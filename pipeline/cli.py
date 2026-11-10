@@ -159,6 +159,11 @@ def cmd_status(proj: Project, args) -> int:
     return 0
 
 
+def cmd_update(proj: Project, args) -> int:
+    from . import update
+    return update.update(proj.root)
+
+
 def cmd_install(proj: Project, args) -> int:
     from . import runtime, tools
     tools.extend_path(proj.root)
@@ -173,7 +178,7 @@ def cmd_install(proj: Project, args) -> int:
 
 # What a shared copy contains. Everything else in the folder stays on this computer: books and translations,
 # installed tools (.runtime), logs (.jobs) and session notes.
-PACKAGE_FILES = ["README.md", "README.tr.md", "config.toml", ".gitignore", "translate", "translate.cmd",
+PACKAGE_FILES = ["README.md", "README.tr.md", "config.default.toml", "config.toml", ".gitignore", "translate", "translate.cmd",
                  "Open Interface.command", "Open Interface.bat"]
 PACKAGE_FOLDERS = ["docs", "pipeline", "prompts", "scripts", "tests", "glossary"]
 PACKAGE_SKIP = {"__pycache__", ".DS_Store", "Thumbs.db"}
@@ -247,6 +252,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     p = sub.add_parser("install", help=t("cli_install"))
     p.add_argument("tools", nargs="+", choices=list(tools.TOOLS))
 
+    sub.add_parser("update", help=t("cli_update"))
+
     p = sub.add_parser("package", help=t("cli_package"))
     p.add_argument("--out", help=t("cli_package_out"))
 
@@ -256,7 +263,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
 
     args = parser.parse_args(argv)
     commands = {"setup": cmd_setup, "new": cmd_new, "run": cmd_run, "status": cmd_status, "ui": cmd_ui,
-                "install": cmd_install, "package": cmd_package}
+                "install": cmd_install, "package": cmd_package, "update": cmd_update}
     try:
         proj = Project.load(root)
         if args.command in ("setup", "run"):

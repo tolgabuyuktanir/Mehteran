@@ -1,4 +1,7 @@
-# Translation pipeline configuration
+# Translation pipeline configuration: the defaults.
+# Your own settings are in config.toml, which is made from this file at the first start and which an update never
+# changes (the interface edits config.toml). New settings of an update are added to config.toml; the workflow
+# ([stages], [nodes]) and your values stay as they are.
 
 # Which AI tool and model does each stage. Write "provider" for the tool's default model, or "provider/model",
 # for example "claude/opus" or "antigravity/gemini-4-argon@high". Providers are the [providers.*] sections below.

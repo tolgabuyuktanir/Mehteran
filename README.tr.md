@@ -29,6 +29,12 @@ Sonraki seferlerde arayüzü aynı şekilde başlatın (ilk seferden sonra çift
 
 Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurulur. Claude Code, Antigravity CLI ve ayrı Python (uv) kullanıcı klasörünüze (`~/.local/bin`; Windows'ta `%LOCALAPPDATA%` altına) kurulur. Uygulamayı silmek için klasörünü silmeniz yeterlidir.
 
+## Güncellemeler
+
+Uygulamayı git ile aldıysanız (`git clone` veya `gh repo clone`), arayüz her açılışta GitHub'dan kendini günceller. Talimatlarınız, yayın ilkeleriniz, iş akışınız ve ayarlarınız hiç değişmez: bunlar sizin dosyalarınızdır (`config.toml`, `prompts/`); güncelleme yalnızca onlarda olmayan yeni ayarları ekler. İnternet veya GitHub girişi yoksa arayüz olduğu gibi açılır.
+
+Zip dosyası indirdiyseniz yeni zip'i indirin ve eski klasördeki şunları yenisine taşıyın: `books/`, `glossary/`, `config.toml` ve `prompts/` klasörünün içindeki `.md` dosyaları (ve `prompts/custom/`).
+
 ## Daha fazlası
 
 [Kullanım kılavuzu](docs/guide.tr.md); arayüzü ayrıntılı olarak, iş akışını, dışa aktarma biçimini, komut satırını, klasörleri, ayarları, sınırları ve geliştirmeyi anlatır.

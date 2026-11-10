@@ -29,6 +29,12 @@ Next time, start the interface the same way (double-click is enough after the fi
 
 Codex, Node.js and the PDF reader go into the application's own folder (`.runtime/`). Claude Code, Antigravity CLI and the private Python (uv) go into your user folder (`~/.local/bin`; Windows: under `%LOCALAPPDATA%`). To remove the application, delete its folder.
 
+## Updates
+
+If you got the application with git (`git clone` or `gh repo clone`), the interface updates itself from GitHub each time it starts. Your instructions, your publishing rules, your workflow and your settings never change: they are your own files (`config.toml`, `prompts/`), and an update only adds new settings that they lack. Without internet or without a GitHub sign-in, the interface starts as it is.
+
+If you downloaded a zip file, download the new zip and move these from the old folder into the new one: `books/`, `glossary/`, `config.toml` and the `.md` files directly in `prompts/` (and `prompts/custom/`).
+
 ## More
 
 The [user guide](docs/guide.md) describes the interface in detail, the workflow, the export layout, the command line, the folders, the settings, the limits and the development.

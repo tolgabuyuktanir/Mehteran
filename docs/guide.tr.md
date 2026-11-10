@@ -160,8 +160,9 @@ Rapor şunları listeler: mekanik uyarılar, bütün kritik bulgular, kabul edil
 Open Interface.command  web arayüzünü başlatır (macOS, çift tıklama)
 Open Interface.bat      web arayüzünü başlatır (Windows, çift tıklama)
 translate, translate.cmd  komut satırı başlatıcısı (macOS/Linux, Windows)
-config.toml             hangi aşamayı hangi araç ve model yapar, dil kodları
-prompts/                modellere verilen talimatlar (çeviri kuralları buradadır)
+config.toml             sizin ayarlarınız: hangi aşamayı hangi araç ve model yapar, dil kodları (git'te değil; güncelleme hiç değiştirmez)
+config.default.toml     varsayılanlar; config.toml bundan oluşturulur, güncellemenin yeni ayarları buradan gelir
+prompts/                modellere verilen talimatlarınız (git'te değil; güncelleme yalnızca hiç düzenlemediklerinizi değiştirir)
 prompts/defaults/       talimatların ilk hâli; "Varsayılana dön" bunu kullanır
 export/word-template.docx  yayınevinin Word şablonu (yüklendiyse)
 glossary/<dil>.tsv      dil başına terim sözlüğü; elle düzenlenir, bütün kitaplarda ortaktır

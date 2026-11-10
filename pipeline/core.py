@@ -72,6 +72,9 @@ def write_json(path: Path, data) -> None:
     write_text(path, json.dumps(data, ensure_ascii=False, indent=1) + "\n")
 
 
+_PREPARED: set[Path] = set()
+
+
 @dataclass
 class Project:
     root: Path
@@ -79,6 +82,10 @@ class Project:
 
     @classmethod
     def load(cls, root: Path = ROOT) -> "Project":
+        if root not in _PREPARED:  # once per process: the user's files from the defaults (see userfiles.py)
+            from . import userfiles  # imported here: userfiles needs configfile, which needs this module
+            userfiles.ensure(root)
+            _PREPARED.add(root)
         path = root / "config.toml"
         if not path.exists():
             raise PipelineError(t("config_missing", path=path))

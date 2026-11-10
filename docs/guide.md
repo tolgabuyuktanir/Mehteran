@@ -160,8 +160,9 @@ The report lists: the mechanical warnings, all critical findings, the major find
 Open Interface.command  starts the web interface (macOS, double-click)
 Open Interface.bat      starts the web interface (Windows, double-click)
 translate, translate.cmd  command-line launcher (macOS/Linux, Windows)
-config.toml             which tool and model does which stage, language codes
-prompts/                instructions for the models (the translation rules are here)
+config.toml             your settings: which tool and model does which stage, language codes (not in git; an update never changes it)
+config.default.toml     the defaults; config.toml is made from it, and new settings of an update come from it
+prompts/                your instructions for the models (not in git; an update changes only the ones you never edited)
 prompts/defaults/       the original instructions; "Restore default" uses them
 export/word-template.docx  the Word template of the publishing house (when one is uploaded)
 glossary/<lang>.tsv     one glossary per language; edited by hand; shared by all books

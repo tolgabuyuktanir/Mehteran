@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import string
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -538,7 +539,7 @@ class ExportLayoutTests(unittest.TestCase):
 class ConfigFileTests(unittest.TestCase):
     def test_export_section_is_added_once_and_keeps_the_comments_around_it(self):
         import tomllib
-        text = (ROOT / "config.toml").read_text(encoding="utf-8")
+        text = (ROOT / "config.default.toml").read_text(encoding="utf-8")
         without = re.sub(r"\[export\]\n.*?\n\n", "", text, flags=re.S)
         self.assertNotIn("[export]", without)
         values = {**export.DEFAULT_LAYOUT, "font": 'Minion "Pro"', "font_size": 11.0, "word_template": "Yayınevi.docx"}
@@ -553,7 +554,7 @@ class ConfigFileTests(unittest.TestCase):
 
     def test_stage_board_is_saved_and_comments_are_kept(self):
         import tomllib
-        text = (ROOT / "config.toml").read_text(encoding="utf-8")
+        text = (ROOT / "config.default.toml").read_text(encoding="utf-8")
         flow = ["review1", "revise1", "source_check", "custom1", "review2", "reconcile", "gate1"]
         nodes = {"custom1": {"title": 'Üslup "sade"', "mode": "rewrite"}, "gate1": {"back_to": "review2", "max": 2}}
         assignment = {stage: ["claude"] for stage in stages.PREP_STAGES + ["translate"] + flow}
@@ -777,6 +778,128 @@ class ReferenceCheckTests(unittest.TestCase):
         # A translation that leaves the Arabic out is judged by its numbers only.
         no_arabic = refcheck._ARABIC_WORD.sub("", refcheck._ARABIC_MARKS.sub("", self.DANISH))
         self.assertEqual(refcheck.problems(self.SOURCE, no_arabic, "da"), [])
+
+
+class UserFilesTests(unittest.TestCase):
+    DEFAULT = """[stages]
+flow = ["review1", "revise1"]
+translate = "claude"
+
+[general]
+language = "tr"
+
+[providers.claude]
+command = ["claude"]
+
+# Language codes.
+[languages]
+tr = "Turkish"
+"""
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.root)
+        (self.root / "prompts" / "defaults").mkdir(parents=True)
+        (self.root / "config.default.toml").write_text(self.DEFAULT, encoding="utf-8")
+        for name in ("review", "rules"):
+            (self.root / "prompts" / "defaults" / f"{name}.md").write_text(f"{name} v1\n", encoding="utf-8")
+
+    def test_first_start_makes_the_users_files(self):
+        from pipeline import userfiles
+        userfiles.ensure(self.root)
+        self.assertEqual((self.root / "config.toml").read_text(encoding="utf-8"), self.DEFAULT)
+        self.assertEqual((self.root / "prompts" / "review.md").read_text(encoding="utf-8"), "review v1\n")
+
+    def test_new_defaults_add_settings_but_never_change_the_workflow_or_edited_instructions(self):
+        import tomllib
+        from pipeline import userfiles
+        userfiles.ensure(self.root)
+        config = self.root / "config.toml"
+        mine = config.read_text(encoding="utf-8").replace('translate = "claude"', 'translate = "chatgpt@high"')
+        config.write_text(mine.replace('language = "tr"', 'language = "en"'), encoding="utf-8")
+        (self.root / "prompts" / "rules.md").write_text("our own rules\n", encoding="utf-8")
+        # An update: a new tool, a new setting, another workflow, new instructions.
+        new = self.DEFAULT.replace('flow = ["review1", "revise1"]', 'flow = ["review1", "revise1", "gate1"]')
+        new = new.replace('language = "tr"', 'language = "tr"\nparallel = 3')
+        new = new.replace("# Language codes.", '[providers.agy]\ncommand = ["agy"]\nefforts = ["low", "high"]\n\n# Language codes.')
+        (self.root / "config.default.toml").write_text(new, encoding="utf-8")
+        for name in ("review", "rules"):
+            (self.root / "prompts" / "defaults" / f"{name}.md").write_text(f"{name} v2\n", encoding="utf-8")
+        userfiles.ensure(self.root)
+        cfg = tomllib.loads(config.read_text(encoding="utf-8"))
+        self.assertEqual(cfg["stages"], {"flow": ["review1", "revise1"], "translate": "chatgpt@high"})  # untouched
+        self.assertEqual(cfg["general"], {"language": "en", "parallel": 3})  # the user's value stays, the new one is added
+        self.assertEqual(cfg["providers"]["agy"], {"command": ["agy"], "efforts": ["low", "high"]})
+        self.assertLess(config.read_text(encoding="utf-8").index("[providers.agy]"), config.read_text(encoding="utf-8").index("[languages]"))
+        self.assertEqual((self.root / "prompts" / "review.md").read_text(encoding="utf-8"), "review v2\n")  # never edited
+        self.assertEqual((self.root / "prompts" / "rules.md").read_text(encoding="utf-8"), "our own rules\n")  # edited
+        # Once more without changes: nothing moves.
+        before = config.read_text(encoding="utf-8")
+        userfiles.ensure(self.root)
+        self.assertEqual(config.read_text(encoding="utf-8"), before)
+
+
+class UpdateTests(unittest.TestCase):
+    """A real git copy, updated as the launcher does it at each start."""
+
+    def git(self, cwd, *args):
+        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@example.com", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+        out = subprocess.run(["git", "-c", "init.defaultBranch=main", *args], cwd=cwd, env=env, capture_output=True, text=True)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        return out.stdout
+
+    def write(self, root, files):
+        for name, text in files.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_text(text, encoding="utf-8")
+
+    @unittest.skipUnless(shutil.which("git"), "git is not installed")
+    def test_update_brings_new_code_and_keeps_the_users_files(self):
+        from pipeline import update
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        self.git(tmp, "init", "--bare", "-q", str(tmp / "origin.git"))
+        dev, app = tmp / "dev", tmp / "app"
+        self.git(tmp, "clone", "-q", str(tmp / "origin.git"), str(dev))
+        # The old layout: the user's files are in git.
+        self.write(dev, {"code.py": "v1\n", "config.toml": "[stages]\nflow = []\n", "prompts/review.md": "review v1\n",
+                         "prompts/defaults/review.md": "review v1\n"})
+        self.git(dev, "add", "-A")
+        self.git(dev, "commit", "-q", "-m", "A")
+        self.git(dev, "push", "-q", "origin", "HEAD:main")
+        self.git(tmp, "clone", "-q", "-b", "main", str(tmp / "origin.git"), str(app))
+        # The user changes the workflow and an instruction on this computer.
+        self.write(app, {"config.toml": "[stages]\nflow = [\"review1\"]\n", "prompts/review.md": "my review\n",
+                         "prompts/custom/custom1.md": "my step\n"})
+        # The update moves the user's files out of git and changes the code and a default.
+        self.git(dev, "rm", "-q", "--cached", "config.toml", "prompts/review.md")
+        self.write(dev, {".gitignore": "/config.toml\n/prompts/*.md\n/prompts/custom/\n", "code.py": "v2\n",
+                         "config.default.toml": "[stages]\nflow = []\n", "prompts/defaults/review.md": "review v2\n"})
+        self.git(dev, "add", "-A")
+        self.git(dev, "commit", "-q", "-m", "B")
+        self.git(dev, "push", "-q", "origin", "HEAD:main")
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(update.update(app), 0)
+        self.assertEqual((app / "code.py").read_text(), "v2\n")
+        self.assertEqual((app / "config.toml").read_text(), "[stages]\nflow = [\"review1\"]\n")
+        self.assertEqual((app / "prompts" / "review.md").read_text(), "my review\n")
+        self.assertEqual((app / "prompts" / "custom" / "custom1.md").read_text(), "my step\n")
+        self.assertIn(i18n.t("update_done", count=1), out.getvalue())
+        self.assertEqual(self.git(app, "status", "--porcelain"), "")  # the user's files are ignored now
+        # A later update: the user's files are not in git any more and stay as they are.
+        self.write(dev, {"code.py": "v3\n"})
+        self.git(dev, "commit", "-q", "-am", "C")
+        self.git(dev, "push", "-q", "origin", "HEAD:main")
+        with redirect_stdout(io.StringIO()):
+            update.update(app)
+        self.assertEqual((app / "code.py").read_text(), "v3\n")
+        self.assertEqual((app / "prompts" / "review.md").read_text(), "my review\n")
+        # Without a reachable repository the application starts as it is.
+        self.git(app, "remote", "set-url", "origin", str(tmp / "missing.git"))
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(update.update(app), 0)
+        self.assertIn(i18n.t("update_skipped_offline"), out.getvalue())
 
 
 class QuotaMessageTests(unittest.TestCase):
