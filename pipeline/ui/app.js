@@ -43,7 +43,7 @@ const I18N = {
     first_book_hint: "İlk kitapta önerilen sıra: önce \"Sözlük\" adımında durun, <code>glossary/&lt;dil&gt;.tsv</code> dosyasını gözden geçirin; sonra 1-3. bölümleri deneyin; uygunsa bütün kitabı çalıştırın.",
     start: "Başlat", stop: "Durdur",
     read_translation: "Çeviriyi oku", read_report: "Raporu oku", download: "İndir",
-    log: "Günlük", not_run_yet: "Henüz çalıştırılmadı.",
+    log: "Günlük", timeline_title: "Günlükten ilerleme", timeline_failed: "{count} hata", not_run_yet: "Henüz çalıştırılmadı.",
     translation: "Çeviri", report: "Rapor", close: "Kapat",
     pick_file: "Önce bir dosya seçin.", pick_ref_language: "Önce referansın dilini seçin.",
     uploaded: "Yüklendi.", upload_failed: "Yükleme başarısız.", output_unreadable: "Çıktı okunamadı.",
@@ -277,7 +277,7 @@ const I18N = {
     first_book_hint: "Recommended order for the first book: stop after the \"Glossary\" step and review <code>glossary/&lt;lang&gt;.tsv</code>; then try segments 1-3; if the result is good, run the whole book.",
     start: "Start", stop: "Stop",
     read_translation: "Read translation", read_report: "Read report", download: "Download",
-    log: "Log", not_run_yet: "Not run yet.",
+    log: "Log", timeline_title: "Progress from the log", timeline_failed: "{count} failed", not_run_yet: "Not run yet.",
     translation: "Translation", report: "Report", close: "Close",
     pick_file: "Select a file first.", pick_ref_language: "Select the language of the reference first.",
     uploaded: "Uploaded.", upload_failed: "Upload failed.", output_unreadable: "Cannot read the output.",
@@ -949,7 +949,8 @@ function renderBook(keepOpen = false) {
     <details class="logbox">
       <summary>${esc(L("log"))} <span class="muted small" data-role="log-file"></span></summary>
       <pre class="log" data-role="log">${esc(L("loading"))}</pre>
-    </details>`;
+    </details>
+    <section class="timeline" data-role="timeline" hidden></section>`;
   loadLog(book);
   if (open === "run" && !book.running) loadEstimate(book);
 }
@@ -1386,6 +1387,26 @@ function readRunForm() {
 const outputUrl = (book, lang, kind, download) =>
   `/api/books/${encodeURIComponent(book)}/output/${encodeURIComponent(lang)}/${kind}?token=${encodeURIComponent(window.TOKEN)}&lang=${uiLang}${download ? "&download=1" : ""}`;
 
+// The steps of the last run as bars, read from the log: done (green), failed (red), still to do (grey).
+function renderTimeline(steps) {
+  const box = $('[data-role="timeline"]');
+  if (!box) return;
+  box.hidden = !steps.length;
+  if (!steps.length) return;
+  box.innerHTML = `<h3>${esc(L("timeline_title"))}</h3>
+    <ol class="tl">${steps.map((s) => {
+      const pct = (n) => (s.total ? (100 * n) / s.total : 0);
+      const state = s.failed ? "failed" : s.done >= s.total ? "done" : "";
+      return `<li class="tl-row ${state}">
+          <span class="tl-name">${esc(stageName(s.stage))}</span>
+          <div class="track" role="img" aria-label="${s.done}/${s.total}">
+            <div class="fill" style="width:${pct(s.done)}%"></div><div class="fill failed" style="width:${pct(s.failed)}%"></div>
+          </div>
+          <span class="tl-count">${s.done}/${s.total}${s.failed ? ` <span class="badge bad">${esc(L("timeline_failed", { count: s.failed }))}</span>` : ""}</span>
+        </li>`;
+    }).join("")}</ol>`;
+}
+
 async function loadLog(book) {
   let data;
   try { data = await api("GET", `/api/books/${encodeURIComponent(book.name)}/log`); } catch {
@@ -1399,6 +1420,7 @@ async function loadLog(book) {
   pre.textContent = data.log || L("not_run_yet");
   if (atBottom) pre.scrollTop = pre.scrollHeight;
   $('[data-role="log-file"]').textContent = data.file;
+  renderTimeline(data.timeline || []);
   if (data.running || book.running) {
     state.poll = setTimeout(() => {
       if (data.running !== book.running || !data.running) return loadBooks(true);

@@ -92,6 +92,24 @@ def _tail(path: Path, size: int = 20000) -> str:
         return f.read().decode("utf-8", "replace")
 
 
+_TASK_LINE = re.compile(r"^\[([\w.]+)\] (\d+)/(\d+)  (.*?)(?:  (HATA|ERROR): .*)?$")
+
+
+def log_timeline(text: str) -> list[dict]:
+    """The progress of each step, read from the lines "[step] n/total  task" of a run log, in the order of the log.
+    A task that failed and then succeeded in the same log counts as done."""
+    steps: dict[str, dict] = {}
+    for line in text.splitlines():
+        m = _TASK_LINE.match(line)
+        if not m:
+            continue
+        step = steps.setdefault(m[1], {"stage": m[1], "total": 0, "tasks": {}})
+        step["total"] = max(step["total"], int(m[3]))
+        step["tasks"][m[4]] = not m[5]
+    return [{"stage": s["stage"], "total": s["total"], "done": sum(s["tasks"].values()),
+             "failed": sum(1 for ok in s["tasks"].values() if not ok)} for s in steps.values()]
+
+
 def _book_pid(book_dir: Path) -> int | None:
     """The id of the process that runs the book, if it is running now (-1 when it runs but the id is unknown)."""
     if not system.is_locked(book_dir / "work" / ".lock"):
@@ -638,7 +656,8 @@ class App:
         book_dir = self.book_dir(book)
         logs = sorted((book_dir / "logs").glob("*.log"))
         job = self.jobs.info(f"book:{book}")
-        return {"log": _tail(logs[-1]) if logs else "", "file": logs[-1].name if logs else "",
+        full = logs[-1].read_text(encoding="utf-8", errors="replace") if logs else ""
+        return {"log": full[-20000:], "file": logs[-1].name if logs else "", "timeline": log_timeline(full),
                 "running": bool(_book_pid(book_dir)) or bool(job and job["running"])}
 
     def export(self, book: str, lang: str, kind: str, fmt: str) -> tuple[bytes, str, str]:

@@ -373,5 +373,16 @@ command = ["codex"]
         self.assertEqual(self.json("GET", "/api/books")[1][0]["run"]["state"], "stopped")
 
 
+class LogTimelineTests(unittest.TestCase):
+    def test_steps_are_read_from_the_log_lines(self):
+        from pipeline.web import log_timeline
+        text = "\n".join([
+            "[translate] 1/3  0001", "[translate] 2/3  0002  ERROR: boom", "[translate] 3/3  0003",
+            "[review1] 1/2  0001 (gemini)  HATA: no", "[review1] 2/2  0001 (gemini)", "[align:da] 0001 → x", "noise"])
+        self.assertEqual(log_timeline(text), [
+            {"stage": "translate", "total": 3, "done": 2, "failed": 1},
+            {"stage": "review1", "total": 2, "done": 1, "failed": 0}])
+
+
 if __name__ == "__main__":
     unittest.main()

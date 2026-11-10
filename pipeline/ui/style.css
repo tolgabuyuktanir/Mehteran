@@ -457,6 +457,15 @@ fieldset.plain legend { padding: 0; font-size: 13px; font-weight: 600; color: va
 .logbox { margin-top: 20px; }
 .logbox summary { margin: 0 0 8px; }
 .logbox .log { max-height: 340px; }
+.timeline { margin-top: 20px; }
+.timeline h3 { margin: 0 0 10px; font-size: 15px; }
+.tl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tl-row { display: grid; grid-template-columns: minmax(120px, 200px) 1fr 100px; gap: 12px; align-items: center; font-size: 14px; }
+.tl-row .track { display: flex; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.tl-row .fill { height: 100%; background: var(--good); }
+.tl-row .fill.failed { background: var(--bad); }
+.tl-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 600px) { .tl-row { grid-template-columns: 1fr 100px; } .tl-row .track { grid-column: 1 / -1; order: 3; } }
 
 .run-panel { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; }
 .run-panel-head { justify-content: space-between; margin-bottom: 6px; font-weight: 500; }
