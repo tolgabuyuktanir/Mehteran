@@ -20,11 +20,15 @@ SCRIPTS = {
     "cyrillic": {"ru", "uk", "bg", "mk", "be", "kk", "ky", "tg", "mn", "ba", "tt", "cv", "ce"},
     "greek": {"el"}, "hebrew": {"he", "yi"}, "georgian": {"ka"}, "armenian": {"hy"},
     "devanagari": {"hi", "mr", "ne"}, "bengali": {"bn"}, "thai": {"th"},
+    "gujarati": {"gu"}, "kannada": {"kn"}, "malayalam": {"ml"}, "gurmukhi": {"pa"}, "tamil": {"ta"},
+    "telugu": {"te"}, "ethiopic": {"am"}, "myanmar": {"my"},
     "cjk": {"zh", "ja", "ko"},
 }
 # Unicode name prefixes of the letters of each alphabet.
 _SCRIPT_OF_NAME = {"LATIN": "latin", "CYRILLIC": "cyrillic", "ARABIC": "arabic", "GREEK": "greek", "HEBREW": "hebrew",
                    "GEORGIAN": "georgian", "ARMENIAN": "armenian", "DEVANAGARI": "devanagari", "BENGALI": "bengali",
+                   "GUJARATI": "gujarati", "KANNADA": "kannada", "MALAYALAM": "malayalam", "GURMUKHI": "gurmukhi",
+                   "TAMIL": "tamil", "TELUGU": "telugu", "ETHIOPIC": "ethiopic", "MYANMAR": "myanmar",
                    "THAI": "thai", "CJK": "cjk", "HIRAGANA": "cjk", "KATAKANA": "cjk", "HANGUL": "cjk"}
 # Frequent Turkish words that no other language of these books uses as often ("de" and "da" are Danish words too).
 TURKISH_WORDS = {"ve", "bir", "bu", "ile", "için", "olan", "gibi", "daha", "çok", "ki", "olarak", "sonra", "kadar",
