@@ -55,10 +55,10 @@ const I18N = {
     confirm_restore: "Yaptığınız değişiklikler silinip varsayılan talimat geri yüklenecek. Devam edilsin mi?",
     request_failed: "İstek başarısız ({status})",
     stage_prepare: "Hazırlık", stage_align: "Hizalama", stage_glossary: "Sözlük", stage_translate: "İlk tercüme",
-    stage_review: "Tashih", stage_apply: "Tashihleri uygula", stage_source_check: "Kaynak kontrolü",
+    stage_review: "Tashih", stage_apply: "Uygula", stage_source_check: "Kaynak kontrolü",
     stage_assemble: "Birleştirme",
     flow_align: "Hazırlık · hizalama", flow_glossary: "Hazırlık · sözlük", flow_translate: "İlk tercüme",
-    flow_review: "Tashih turu", flow_apply: "Bulguları uygula",
+    flow_review: "Tashih", flow_apply: "Bulguları uygula",
     flow_source_check: "Baştan kaynak kontrolü",
     quota_now: "Kullanım sınırında · {time} saatinde kendiliğinden yeniden denenecek",
     quota_last: "Son kullanım sınırı uyarısı: {time}",
@@ -157,6 +157,23 @@ const I18N = {
     max_reviewers: "Bu adıma en çok 4 model atanabilir.",
    
     export_label: "Dışa aktar", fmt_md: "Markdown", fmt_docx: "Word", fmt_pdf: "PDF", fmt_html: "HTML",
+    layout_open: "Biçim ayarları", layout_title: "Dışa aktarma biçimi",
+    layout_intro: "Kitabın Word, PDF ve HTML çıktısının görünümü. Bütün kitaplara uygulanır. Rapor her zaman standart A4 biçimiyle çıkar.",
+    layout_template: "Word şablonu", layout_template_remove: "Şablonu kaldır",
+    layout_template_none: "Şablon yok. Word dosyası aşağıdaki ayarlarla oluşturulur.",
+    layout_template_set: "Yüklü şablon: {name}. Word dosyası bu şablonun stillerini, sayfa boyutunu, kenar boşluklarını, üst ve alt bilgilerini kullanır. Şablondaki metin kullanılmaz.",
+    layout_template_hint: "Yayınevinizin .docx veya .dotx şablonunu yükleyin. Word'deki \"Başlık 1–3\", \"Alıntı\", \"Madde İşareti\" ve \"Dipnot Metni\" stilleri kullanılır; şablonda olmayanlar eklenir.",
+    layout_settings: "Sayfa ve yazı",
+    layout_scope_all: "Word, PDF ve HTML'ye uygulanır.",
+    layout_scope_pdf: "PDF ve HTML'ye uygulanır. Word dosyası şablonu kullanır.",
+    layout_page_size: "Sayfa boyutu", layout_font_size: "Punto", layout_line_spacing: "Satır aralığı",
+    layout_margin_top: "Üst boşluk (cm)", layout_margin_bottom: "Alt boşluk (cm)", layout_margin_side: "Yan boşluklar (cm)",
+    layout_font: "Yazı tipi", layout_arabic_font: "Arapça yazı tipi", layout_automatic: "Otomatik",
+    layout_justify: "Paragrafları iki yana yasla", layout_chapter_new_page: "Her ana bölüm yeni sayfada başlasın",
+    layout_fonts_note: "Yazı tipi bilgisayarda kurulu olmalı. PDF bu bilgisayardaki yazı tipleriyle oluşturulur; Word dosyası açıldığı bilgisayardakileri kullanır. Satır aralığı Word'deki gibidir: 1 tek satır, 1,15 Word'ün varsayılanı.",
+    layout_defaults: "Varsayılan değerler", layout_pick_file: "Önce bir Word dosyası seçin.", layout_confirm_remove: "Word şablonu kaldırılsın mı?",
+    page_A4: "A4 (21 × 29,7 cm)", page_A5: "A5 (14,8 × 21 cm)", page_B5: "B5 (17,6 × 25 cm)", "page_13.5x21": "13,5 × 21 cm",
+    page_16x24: "16 × 24 cm", page_Letter: "Letter (21,6 × 27,9 cm)",
     pdf_hint: "PDF: açılan sayfada yazdırma penceresinden \"PDF olarak kaydet\" seçin.",
     step_install_hint: "Claude Code, Codex ve Gemini bu bilgisayara kurulur. Gerekirse Node.js de uygulamanın klasörüne indirilir. Yönetici izni gerekmez.",
     first_book_title: "İlk kitabınızı ekleyin",
@@ -195,12 +212,14 @@ const I18N = {
     stop_timeout: "Çeviri durdurulamadı. Biraz sonra tekrar deneyin.",
     recover_done: "İş akışı güncellendi: {from} yerine {to}. Çeviri kaldığı yerden devam ediyor.",
     prompt_title_rules: "Yayın ilkeleri", prompt_title_translate: "İlk tercüme", prompt_title_review: "Tashih raporu",
-    prompt_title_revise: "Tashihleri uygulama ve uzlaştırma", prompt_title_source_check: "Baştan kaynak kontrolü", prompt_title_custom_report: "Özel adım: rapor yazan", prompt_title_custom_rewrite: "Özel adım: metni düzelten", prompt_title_gate: "Kontrol noktası",
+    prompt_title_revise: "Bulguları uygulama", prompt_title_source_check: "Baştan kaynak kontrolü", prompt_title_custom_report: "Özel adım: rapor yazan", prompt_title_custom_rewrite: "Özel adım: metni düzelten", prompt_title_gate: "Kontrol noktası",
     prompt_title_glossary: "Terim sözlüğü", prompt_title_align: "Referans hizalama",
     all_steps: "Bütün adımlar",
     step_prompts: "Adım talimatları", step_prompts_hint: "İleri düzey. Her adımın görevini ve cevap biçimini tanımlar.",
     rules_intro: "Yayınevinizin kuralları. Bu belgenin tamamı bütün adımlarda modellere verilir ve önceliklidir. Türkçe yazabilirsiniz. Kuralları kısa ve kesin yazın: her madde tek bir şey söylesin; \"genellikle\", \"mümkünse\" gibi belirsiz sözlerden kaçının.",
-    prompt_used_in: "Kullanıldığı adımlar: {steps}",
+    prompt_used_in: "Kullanıldığı adımlar: {steps}", prompt_unused: "Şu anki iş akışında bu talimatı kullanan adım yok.", not_in_flow: "İş akışında yok",
+    prompt_custom_note: "Her özel adımın kendi görevi İş akışı sekmesinde, o adımın panelinde yazılır ve bu talimattaki {{instructions}} yerine konur. Burada bütün özel adımların ortak çerçevesi ve cevap biçimi var.",
+    ph_instructions: "özel adımın İş akışı sekmesinde yazılan görevi",
     prompts_apply: "Değişiklik, kaydettikten sonra işlenen bölümlerde geçerli olur. Daha önce işlenen bölümler, Kitaplar ekranında \"girdileri değişen bölümler\" olarak gösterilir ve oradan yeniden üretilebilir.",
     ph_target_lang: "hedef dilin adı", ph_source: "Türkçe kaynak bölüm", ph_translation: "denetlenen veya düzeltilen çeviri",
     ph_glossary: "bu bölümde geçen sözlük terimleri", ph_references: "referans tercümelerdeki karşılık pasajlar",
@@ -263,10 +282,10 @@ const I18N = {
     confirm_restore: "Your changes will be deleted and the default instructions restored. Continue?",
     request_failed: "Request failed ({status})",
     stage_prepare: "Preparation", stage_align: "Alignment", stage_glossary: "Glossary", stage_translate: "First translation",
-    stage_review: "Review", stage_apply: "Apply review", stage_source_check: "Source check",
+    stage_review: "Review", stage_apply: "Apply", stage_source_check: "Source check",
     stage_assemble: "Assembly",
     flow_align: "Preparation · alignment", flow_glossary: "Preparation · glossary", flow_translate: "First translation",
-    flow_review: "Review round", flow_apply: "Apply the findings",
+    flow_review: "Review", flow_apply: "Apply the findings",
     flow_source_check: "Source check from the start",
     quota_now: "At its usage limit · tries again by itself at {time}",
     quota_last: "Last usage-limit warning: {time}",
@@ -365,6 +384,23 @@ const I18N = {
     max_reviewers: "This step takes at most 4 models.",
    
     export_label: "Export", fmt_md: "Markdown", fmt_docx: "Word", fmt_pdf: "PDF", fmt_html: "HTML",
+    layout_open: "Layout settings", layout_title: "Export layout",
+    layout_intro: "How the Word, PDF and HTML files of a book look. It applies to all books. The report always has the standard A4 layout.",
+    layout_template: "Word template", layout_template_remove: "Remove the template",
+    layout_template_none: "No template. The Word file is made with the settings below.",
+    layout_template_set: "Uploaded template: {name}. The Word file uses the styles, page size, margins, headers and footers of this template. The text of the template is not used.",
+    layout_template_hint: "Upload the .docx or .dotx template of your publishing house. The Word styles \"Heading 1–3\", \"Quote\", \"List Bullet\" and \"Footnote Text\" are used; the ones that the template lacks are added.",
+    layout_settings: "Page and type",
+    layout_scope_all: "Applies to Word, PDF and HTML.",
+    layout_scope_pdf: "Applies to PDF and HTML. The Word file uses the template.",
+    layout_page_size: "Page size", layout_font_size: "Font size (pt)", layout_line_spacing: "Line spacing",
+    layout_margin_top: "Top margin (cm)", layout_margin_bottom: "Bottom margin (cm)", layout_margin_side: "Side margins (cm)",
+    layout_font: "Font", layout_arabic_font: "Arabic font", layout_automatic: "Automatic",
+    layout_justify: "Justify the paragraphs", layout_chapter_new_page: "Start each top-level chapter on a new page",
+    layout_fonts_note: "The font must be installed. The PDF is made with the fonts of this computer; a Word file uses the fonts of the computer that opens it. Line spacing is as in Word: 1 is single, 1.15 is the Word default.",
+    layout_defaults: "Default values", layout_pick_file: "Select a Word file first.", layout_confirm_remove: "Remove the Word template?",
+    page_A4: "A4 (21 × 29.7 cm)", page_A5: "A5 (14.8 × 21 cm)", page_B5: "B5 (17.6 × 25 cm)", "page_13.5x21": "13.5 × 21 cm",
+    page_16x24: "16 × 24 cm", page_Letter: "Letter (21.6 × 27.9 cm)",
     pdf_hint: "PDF: in the page that opens, choose \"Save as PDF\" in the print dialog.",
     step_install_hint: "Claude Code, Codex and Gemini are installed on this computer. If needed, Node.js is downloaded into the application's folder. No administrator rights are needed.",
     first_book_title: "Add your first book",
@@ -403,12 +439,14 @@ const I18N = {
     stop_timeout: "The translation could not be stopped. Try again in a moment.",
     recover_done: "Workflow updated: {to} instead of {from}. The translation continues where it stopped.",
     prompt_title_rules: "Publishing rules", prompt_title_translate: "First translation", prompt_title_review: "Review report",
-    prompt_title_revise: "Applying and reconciling reviews", prompt_title_source_check: "Source check from the start", prompt_title_custom_report: "Custom step: reporting", prompt_title_custom_rewrite: "Custom step: correcting", prompt_title_gate: "Checkpoint",
+    prompt_title_revise: "Applying the findings", prompt_title_source_check: "Source check from the start", prompt_title_custom_report: "Custom step: reporting", prompt_title_custom_rewrite: "Custom step: correcting", prompt_title_gate: "Checkpoint",
     prompt_title_glossary: "Terminology glossary", prompt_title_align: "Reference alignment",
     all_steps: "All steps",
     step_prompts: "Step instructions", step_prompts_hint: "Advanced. They define the task and the answer format of each step.",
     rules_intro: "The rules of your publishing house. This whole document is given to the models in every step and takes priority. You can write it in Turkish. Write short, exact rules: each item says one thing; avoid vague words such as \"usually\" or \"if possible\".",
-    prompt_used_in: "Used in: {steps}",
+    prompt_used_in: "Used in: {steps}", prompt_unused: "No step of the current workflow uses this instruction.", not_in_flow: "Not in the workflow",
+    prompt_custom_note: "The task of each custom step is written in the Workflow tab, in the panel of that step, and replaces {{instructions}} in this instruction. This instruction holds the common frame and the answer format of all custom steps.",
+    ph_instructions: "the task of the custom step, written in the Workflow tab",
     prompts_apply: "A change applies to the segments processed after you save it. Segments processed earlier are shown on the Books screen as \"segments with changed inputs\", and you can produce them again from there.",
     ph_target_lang: "name of the target language", ph_source: "the Turkish source segment", ph_translation: "the translation that is checked or corrected",
     ph_glossary: "the glossary terms that occur in this segment", ph_references: "the matching passages of the reference translations",
@@ -685,7 +723,7 @@ function toolCard(tool, terminal) {
     if (tool.id !== "claude") actions.push(`<button type="button" class="btn" data-act="key" data-id="${esc(tool.id)}">${esc(L("with_key"))}</button>`);
     if (tool.signed_in) actions.push(`<button type="button" class="btn" data-act="test" data-id="${esc(tool.id)}">${esc(L("test"))}</button>`);
   }
-  const uses = tool.stages.length ? L("used_in", { stages: tool.stages.map(stageName).join(", ") }) : L("not_used");
+  const uses = tool.stages.length ? L("used_in", { stages: tool.stages.map((s) => stageName(s)).join(", ") }) : L("not_used");
   return `
     <article class="card tool" data-id="${esc(tool.id)}">
       <div class="tool-head"><h3>${esc(tool.name)}</h3><span class="muted small">${esc(tool.version)}</span></div>
@@ -1227,8 +1265,69 @@ function exportLinks(book, lang) {
       <span class="muted">${esc(L("export_label"))}:</span>
       <span>${esc(L("translation"))}: ${links("translation", ["md", "docx", "pdf", "html"])}</span>
       <span>${esc(L("report"))}: ${links("report", ["md", "docx", "pdf"])}</span>
+      <button type="button" class="link" data-act="layout">${esc(L("layout_open"))}</button>
     </div>`;
 }
+
+// ---------- export layout ----------
+const LAYOUT_DEFAULTS = { page_size: "A4", margin_top: 2.5, margin_bottom: 2.5, margin_side: 2.5, font: "", arabic_font: "",
+  font_size: 12, line_spacing: 1.15, justify: true, chapter_new_page: true };
+
+function fillLayout(values, template) {
+  const form = $("#layout-form");
+  form.page_size.innerHTML = state.settings.page_sizes.map((s) => `<option value="${esc(s)}">${esc(L("page_" + s))}</option>`).join("");
+  for (const [key, value] of Object.entries(values)) {
+    if (!form[key]) continue;
+    if (form[key].type === "checkbox") form[key].checked = value;
+    else form[key].value = value;
+  }
+  $('[data-role="template-state"]').textContent = template ? L("layout_template_set", { name: template }) : `${L("layout_template_none")} ${L("layout_template_hint")}`;
+  $('[data-act="template-remove"]').hidden = !template;
+  $('[data-role="layout-scope"]').textContent = L(template ? "layout_scope_pdf" : "layout_scope_all");
+}
+
+async function openLayout() {
+  try { state.settings = await api("GET", "/api/settings"); } catch (e) { return toast(e.message, true); }
+  fillLayout(state.settings.export, state.settings.word_template);
+  $("#layout").showModal();
+}
+
+$("#layout-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const form = ev.target;
+  const body = {};
+  for (const key of Object.keys(LAYOUT_DEFAULTS)) {
+    const el = form[key];
+    body[key] = el.type === "checkbox" ? el.checked : el.type === "number" ? Number(el.value) : el.value;
+  }
+  const r = await act(form.querySelector('[type="submit"]'), () => api("PUT", "/api/export", body));
+  if (r) $("#layout").close();
+});
+
+$("#layout").addEventListener("click", async (ev) => {
+  const b = ev.target.closest("button[data-act]");
+  if (!b) return;
+  if (b.dataset.act === "layout-close") return $("#layout").close();
+  if (b.dataset.act === "layout-defaults") return fillLayout(LAYOUT_DEFAULTS, state.settings.word_template);
+  if (b.dataset.act === "template-remove") {
+    if (!confirm(L("layout_confirm_remove"))) return;
+    if (await act(b, () => api("DELETE", "/api/export/template"))) openLayout();
+    return;
+  }
+  if (b.dataset.act === "template-upload") {
+    const file = $("#layout-template").files[0];
+    if (!file) return toast(L("layout_pick_file"), true);
+    await refreshToken();
+    const r = await act(b, async () => {
+      const res = await fetch(`/api/export/template?file=${encodeURIComponent(file.name)}`,
+        { method: "PUT", headers: { "X-Token": window.TOKEN, "X-Lang": uiLang }, body: file });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || L("upload_failed"));
+      return data;
+    });
+    if (r) { $("#layout-template").value = ""; openLayout(); }
+  }
+});
 
 function uploader(kind, extra = "") {
   return `<div class="uploader" data-kind="${kind}">
@@ -1330,6 +1429,8 @@ $("#book").addEventListener("click", async (ev) => {
       return setTimeout(loadBooks, 800);
     case "read":
       return openOutput(book, b.dataset.lang, b.dataset.kind);
+    case "layout":
+      return openLayout();
     case "preview":
       return openPreview(b, book);
     case "open-step": {
@@ -2105,10 +2206,13 @@ window.addEventListener("beforeunload", (ev) => {
 // ---------- prompts ----------
 // The publishing rules come first: they are the instructions that users write. The step instructions are technical.
 const PLACEHOLDERS = ["target_lang", "source", "translation", "glossary", "references", "ref_langs", "context", "issues",
-  "note_lang", "rules", "segment", "window", "ref_lang"];
+  "note_lang", "rules", "segment", "window", "ref_lang", "instructions"];
 
 async function loadPrompts() {
-  try { state.prompts = await api("GET", "/api/prompts"); } catch (e) { return toast(e.message, true); }
+  // The settings give the workflow, which numbers and names the steps that use each instruction.
+  try {
+    [state.prompts, state.settings] = await Promise.all([api("GET", "/api/prompts"), api("GET", "/api/settings")]);
+  } catch (e) { return toast(e.message, true); }
   if (!state.prompt || !state.prompts.some((p) => p.name === state.prompt)) state.prompt = state.prompts[0].name;
   renderPrompts();
 }
@@ -2119,11 +2223,13 @@ const promptDirty = () => {
   return Boolean(p && text && text.value !== p.text);
 };
 
+const usedIn = (p) => p.steps.map((s) => stageName(s)).join(", ");
+
 function renderPrompts() {
   const item = (p) => `
     <li><button type="button" data-name="${esc(p.name)}" class="${p.name === state.prompt ? "active" : ""}">
       <span class="pl-title">${esc(L("prompt_title_" + p.name))}${p.changed ? ` <span class="badge warn">${esc(L("changed"))}</span>` : ""}</span>
-      <span class="pl-steps">${esc(p.name === "rules" ? L("all_steps") : p.steps.map(stageName).join(", "))}</span></button></li>`;
+      <span class="pl-steps">${esc(p.name === "rules" ? L("all_steps") : usedIn(p) || L("not_in_flow"))}</span></button></li>`;
   const rules = state.prompts.filter((p) => p.name === "rules");
   const steps = state.prompts.filter((p) => p.name !== "rules");
   $("#prompt-list").innerHTML = `${rules.map(item).join("")}
@@ -2137,7 +2243,7 @@ function renderPrompts() {
     <div class="row prompt-head">
       <div>
         <h3>${esc(L("prompt_title_" + p.name))}</h3>
-        <p class="muted small">${esc(L(isRules ? "rules_intro" : "prompt_used_in", { steps: p.steps.map(stageName).join(", ") }))}</p>
+        <p class="muted small">${esc(isRules ? L("rules_intro") : p.steps.length ? L("prompt_used_in", { steps: usedIn(p) }) : L("prompt_unused"))}</p>
       </div>
       <div class="row">
         <span class="badge warn" data-role="prompt-dirty" hidden>${esc(L("unsaved"))}</span>
@@ -2145,6 +2251,7 @@ function renderPrompts() {
         <button type="button" class="btn primary" data-act="save" title="Ctrl+S / ⌘S">${esc(L("save"))}</button>
       </div>
     </div>
+    ${p.name.startsWith("custom_") ? `<div class="notice small">${esc(L("prompt_custom_note"))}</div>` : ""}
     ${isRules ? "" : `<div class="notice small">${esc(L("prompts_note"))}</div>
       <details class="placeholders"><summary>${esc(L("required_placeholders"))}</summary>
         <dl>${p.required.map((r) => `<dt><code>{{${esc(r)}}}</code></dt><dd>${esc(PLACEHOLDERS.includes(r) ? L("ph_" + r) : "")}</dd>`).join("")}</dl>

@@ -78,6 +78,45 @@ def set_nodes(text: str, nodes: dict[str, dict]) -> str:
     return text[:start] + "\n".join(lines) + "\n\n" + text[end:].lstrip("\n")
 
 
+EXPORT_COMMENTS = {
+    "page_size": "A4, A5, B5, 13.5x21, 16x24 or Letter",
+    "margin_top": "margins in cm",
+    "font": "body font; \"\" = automatic",
+    "arabic_font": "font of Arabic passages; \"\" = automatic",
+    "font_size": "in points",
+    "line_spacing": "1.0 = single line spacing",
+    "justify": "justified paragraphs",
+    "chapter_new_page": "each top-level chapter starts on a new page",
+    "word_template": "the original name of export/word-template.docx; \"\" = no template",
+}
+
+
+def _comment_block_start(text: str, at: int) -> int:
+    """The start of the comment and blank lines that end just before offset at (they belong to what follows)."""
+    lines = text[:at].splitlines(keepends=True)
+    while lines and (not lines[-1].strip() or lines[-1].lstrip().startswith("#")):
+        at -= len(lines.pop())
+    return at
+
+
+def set_export(text: str, values: dict) -> str:
+    """Writes the [export] section: replaces its keys, or adds it before the providers. Validated by the caller."""
+    width = max(len(k) for k in values)
+    lines = ["# Layout of an exported book (Word, PDF, HTML). A Word template decides the Word layout instead."]
+    for key, value in values.items():
+        written = repr(value) if isinstance(value, float) else _toml_value(value)
+        comment = f"  # {EXPORT_COMMENTS[key]}" if key in EXPORT_COMMENTS else ""
+        lines.append(f"{key.ljust(width)} = {written}{comment}")
+    section = "\n".join(lines) + "\n"
+    if re.search(r"^\[export\][ \t]*$", text, re.M):
+        start, end = _section_span(text, "export")
+        end = _comment_block_start(text, end)  # the comments of the next section stay
+        return text[:start] + section + "\n" + text[end:].lstrip("\n")
+    m = re.search(r"^\[providers\.", text, re.M)
+    at = _comment_block_start(text, m.start()) if m else len(text)
+    return text[:at].rstrip("\n") + "\n\n[export]\n" + section + "\n" + text[at:].lstrip("\n")
+
+
 def set_key(text: str, section: str, key: str, value: str) -> str:
     """Sets key = value (value is TOML text) in a section; adds the line when the key is missing."""
     start, end = _section_span(text, section)

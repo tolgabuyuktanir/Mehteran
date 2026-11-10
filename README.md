@@ -83,6 +83,11 @@ The pipeline writes Markdown (`output/<lang>.md`, `output/<lang>.report.md`). In
 - PDF: when Chrome or Edge is on the computer, a PDF file is made directly (Windows always has Edge). It is set as a book: justified and hyphenated text, indented paragraphs, page numbers, each main chapter on a new page, footnotes at the end of their chapter. Without such a browser, a print-ready page opens; choose "Save as PDF" in the print dialog.
 - HTML and Markdown. Italics and bold are kept in every format.
 
+**Layout of the book.** Click **Layout settings** next to the export links. The settings apply to all books; the report always has the standard A4 layout.
+
+- **Page and type:** page size (A4, A5, B5, 13.5 × 21 cm, 16 × 24 cm, Letter), top, bottom and side margins, font, Arabic font, font size, line spacing (as in Word: 1 is single), justified paragraphs, each top-level chapter on a new page. They are saved in `config.toml` under `[export]`. A font must be installed: the PDF is made with the fonts of this computer, a Word file uses the fonts of the computer that opens it.
+- **Word template:** upload the `.docx` or `.dotx` template of your publishing house. The Word file of the book then takes the template's styles, page size, margins, headers and footers; the text of the template is not used. The built-in Word styles "Heading 1–3", "Quote", "List Bullet", "Footnote Text" and "Footnote Reference" are used, also when Word gave them names in another language; the styles that the template lacks are added. With a template, the settings above apply only to PDF and HTML. Files with macros are not accepted. The template is saved as `export/word-template.docx`.
+
 ## Long books, usage limits and sleep
 
 - Before you start, the Books tab shows how many segments will be processed, how many model calls each tool needs, and an estimated time. While the run is going, it shows the current step, the elapsed time and the remaining calls and time (measured from the run's own speed).
@@ -168,6 +173,7 @@ translate, translate.cmd  command-line launcher (macOS/Linux, Windows)
 config.toml             which tool and model does which stage, language codes
 prompts/                instructions for the models (the translation rules are here)
 prompts/defaults/       the original instructions; "Restore default" uses them
+export/word-template.docx  the Word template of the publishing house (when one is uploaded)
 glossary/<lang>.tsv     one glossary per language; edited by hand; shared by all books
 books/<book>/
   source/               the Turkish book (one file)

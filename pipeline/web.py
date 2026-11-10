@@ -269,7 +269,63 @@ class App:
                 for name, spec in proj.cfg["providers"].items()
             },
             "keep_awake": proj.cfg["general"].get("keep_awake", True) and system.can_keep_awake(),
+            "export": export.layout(proj.cfg.get("export")),
+            "page_sizes": list(export.PAGE_SIZES),
+            "word_template": self.word_template_name(proj),
         }
+
+    # --- export layout and Word template -------------------------------------------
+
+    def template_path(self) -> Path:
+        return self.root / "export" / "word-template.docx"
+
+    def word_template_name(self, proj: Project) -> str:
+        return str(proj.cfg.get("export", {}).get("word_template", "")) if self.template_path().exists() else ""
+
+    def _write_export(self, values: dict, template_name: str) -> None:
+        path = self.root / "config.toml"
+        write_text(path, configfile.set_export(path.read_text(encoding="utf-8"), {**values, "word_template": template_name}))
+
+    def save_export(self, body: dict) -> dict:
+        proj = self.reload()
+        values = {key: body.get(key, default) for key, default in export.DEFAULT_LAYOUT.items()}
+        for key, default in export.DEFAULT_LAYOUT.items():  # numbers arrive as int or float from JSON
+            if isinstance(default, float) and isinstance(values[key], int) and not isinstance(values[key], bool):
+                values[key] = float(values[key])
+            if isinstance(values[key], str):
+                values[key] = values[key].strip()
+        bad = export.layout_problem(values)
+        if bad:
+            raise HTTPError(400, t("export_invalid", field=t("export_field_" + bad)))
+        self._write_export(values, self.word_template_name(proj))
+        return {"message": t("export_saved")}
+
+    def upload_template(self, filename: str, length: int, stream) -> dict:
+        if Path(filename).suffix.lower() not in (".docx", ".dotx") or not 0 < length <= export.TEMPLATE_LIMIT:
+            while 0 < length <= export.TEMPLATE_LIMIT and (chunk := stream.read(min(1024 * 1024, length))):
+                length -= len(chunk)  # read the body first, so that the browser sees the answer
+            raise HTTPError(400, t("template_invalid_type" if length <= export.TEMPLATE_LIMIT else "template_invalid_size"))
+        data = stream.read(length)
+        if len(data) != length:
+            raise HTTPError(400, t("upload_incomplete"))
+        problem = export.template_problem(data)
+        if problem:
+            raise HTTPError(400, t("template_invalid_" + problem))
+        path = self.template_path()
+        path.parent.mkdir(exist_ok=True)
+        tmp = path.with_suffix(".uploading")
+        tmp.write_bytes(data)
+        os.replace(tmp, path)
+        proj = self.reload()
+        name = re.sub(r"[^\w .()-]", "_", Path(filename).name)[:80]
+        self._write_export(export.layout(proj.cfg.get("export")), name)
+        return {"message": t("template_saved", name=name)}
+
+    def delete_template(self) -> dict:
+        proj = self.reload()
+        self.template_path().unlink(missing_ok=True)
+        self._write_export(export.layout(proj.cfg.get("export")), "")
+        return {"message": t("template_removed")}
 
     def save_stages(self, body: dict) -> dict:
         """Saves the workflow canvas: the nodes in order, their options, which provider/model does each stage,
@@ -546,24 +602,26 @@ class App:
         # The report is written in the interface language; the translation in the target language.
         doc_lang = i18n.current() if kind == "report" else lang
         name = f"{book}-{lang}" + ("-report" if kind == "report" else "")
+        lay = export.layout(self.reload().cfg.get("export"))
+        template = self.template_path().read_bytes() if kind == "translation" and self.word_template_name(self.proj) else None
         if fmt == "md":
             return text.encode("utf-8"), "text/markdown", f"{name}.md"
         if fmt == "docx":
             mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            return export.to_docx(text, title, doc_lang, lists=kind == "report"), mime, f"{name}.docx"
+            return export.to_docx(text, title, doc_lang, kind == "report", lay, template), mime, f"{name}.docx"
         if fmt == "pdf":
             # A real PDF from the browser installed on the computer (Chrome or Edge, without its window). Without
             # one, the page opens with the print dialog, where "Save as PDF" makes the file.
-            page = export.to_html(text, title, doc_lang, lists=kind == "report")
+            page = export.to_html(text, title, doc_lang, lists=kind == "report", book_layout=lay)
             with tempfile.TemporaryDirectory() as tmp:
                 source, pdf = Path(tmp) / f"{name}.html", Path(tmp) / f"{name}.pdf"
                 source.write_text(page, encoding="utf-8")
                 if system.print_pdf(source, pdf):
                     return pdf.read_bytes(), "application/pdf", f"{name}.pdf"
-            page = export.to_html(text, title, doc_lang, print_on_load=True, lists=kind == "report")
+            page = export.to_html(text, title, doc_lang, print_on_load=True, lists=kind == "report", book_layout=lay)
             return page.encode("utf-8"), "text/html", f"{name}.html"
         if fmt == "html":
-            page = export.to_html(text, title, doc_lang, lists=kind == "report")
+            page = export.to_html(text, title, doc_lang, lists=kind == "report", book_layout=lay)
             return page.encode("utf-8"), "text/html", f"{name}.html"
         raise HTTPError(404, t("not_found"))
 
@@ -666,6 +724,8 @@ ROUTES = [
     ("POST", r"/api/books/([\w-]+)/stop", lambda a, m, b: a.stop_book(m[1])),
     ("GET", r"/api/books/([\w-]+)/log", lambda a, m, b: a.log(m[1])),
     ("GET", r"/api/prompts", lambda a, m, b: a.prompts()),
+    ("PUT", r"/api/export", lambda a, m, b: a.save_export(b)),
+    ("DELETE", r"/api/export/template", lambda a, m, b: a.delete_template()),
     ("PUT", r"/api/prompts/([\w-]+)", lambda a, m, b: a.save_prompt(m[1], b)),
     ("POST", r"/api/prompts/([\w-]+)/restore", lambda a, m, b: a.restore_prompt(m[1])),
 ]
@@ -717,6 +777,9 @@ def make_handler(app: App, port: int):
                 if method == "PUT" and m:
                     filename = Path(query.get("file", [""])[0]).name
                     return self.send_json(200, app.upload(m[1], m[2], m[3], filename, length, self.rfile))
+                if method == "PUT" and path == "/api/export/template":
+                    filename = Path(query.get("file", [""])[0]).name
+                    return self.send_json(200, app.upload_template(filename, length, self.rfile))
                 m = OUTPUT_RE.fullmatch(path)
                 if method == "GET" and m:
                     out = app.output_path(m[1], m[2], m[3])

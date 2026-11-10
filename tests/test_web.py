@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 from pipeline import system  # noqa: E402
 from pipeline.core import Project  # noqa: E402
 from pipeline.web import App, make_handler  # noqa: E402
-from test_pipeline import REFERENCE, SOURCE, make_project  # noqa: E402
+from test_pipeline import REFERENCE, SOURCE, make_project, make_template  # noqa: E402
 
 
 class WebTests(unittest.TestCase):
@@ -191,6 +191,47 @@ class WebTests(unittest.TestCase):
         self.assertIn(b"<li>one</li>", data)
         self.assertEqual(self.call("GET", f"{base}/translation/exe")[0], 404)
         self.assertEqual(self.call("GET", "/api/books/sample/export/da/translation/md")[0], 404)
+
+    def test_export_layout_and_word_template(self):
+        import tomllib
+        self.json("POST", "/api/books", {"name": "sample"})
+        out = self.root / "books" / "sample" / "output"
+        out.mkdir()
+        (out / "no.md").write_text("# Del\n\nTekst.[^1]\n[^1]: Note.\n", encoding="utf-8")
+        (out / "no.report.md").write_text("# Report\n\n- one\n", encoding="utf-8")
+        base = "/api/books/sample/export/no"
+        status, settings = self.json("GET", "/api/settings")
+        self.assertEqual(settings["export"]["page_size"], "A4")  # the test config has no [export]: the defaults
+        self.assertEqual(settings["word_template"], "")
+
+        layout = {**settings["export"], "page_size": "16x24", "font": "Minion Pro", "font_size": 11}
+        self.assertEqual(self.json("PUT", "/api/export", layout)[0], 200)
+        self.assertEqual(tomllib.loads((self.root / "config.toml").read_text(encoding="utf-8"))["export"]["font_size"], 11.0)
+        self.assertIn(b"size: 160mm 240mm", self.call("GET", f"{base}/translation/html")[1])
+        self.assertIn(b"size: A4", self.call("GET", f"{base}/report/html")[1])
+        status, error = self.json("PUT", "/api/export", {**layout, "font": "x</style>"})
+        self.assertEqual(status, 400)
+        self.assertIn("font", error["error"])
+        self.assertEqual(self.json("PUT", "/api/export", {**layout, "margin_top": 0})[0], 400)
+
+        # The template: refused when it is not a usable Word file, used for the translation, removed again.
+        self.assertEqual(self.call("PUT", "/api/export/template?file=t.pdf", raw=b"%PDF")[0], 400)
+        self.assertEqual(self.call("PUT", "/api/export/template?file=t.docx", raw=b"not a zip")[0], 400)
+        status, data = self.json("PUT", "/api/export/template?file=Yay%C4%B1nevi.dotx", raw=make_template(dotx=True))
+        self.assertEqual(status, 200, data)
+        self.assertEqual(self.json("GET", "/api/settings")[1]["word_template"], "Yayınevi.dotx")
+        with zipfile.ZipFile(io.BytesIO(self.call("GET", f"{base}/translation/docx")[1])) as z:
+            self.assertIn("Balk1", z.read("word/document.xml").decode())
+        with zipfile.ZipFile(io.BytesIO(self.call("GET", f"{base}/report/docx")[1])) as z:
+            self.assertNotIn("word/header1.xml", z.namelist())
+        self.assertIn(b"size: 160mm 240mm", self.call("GET", f"{base}/translation/html")[1])  # PDF/HTML keep the settings
+        self.assertEqual(self.json("PUT", "/api/export", layout)[0], 200)  # saving the settings keeps the template
+        self.assertEqual(self.json("GET", "/api/settings")[1]["word_template"], "Yayınevi.dotx")
+        self.assertEqual(self.json("DELETE", "/api/export/template")[0], 200)
+        self.assertEqual(self.json("GET", "/api/settings")[1]["word_template"], "")
+        self.assertFalse((self.root / "export" / "word-template.docx").exists())
+        with zipfile.ZipFile(io.BytesIO(self.call("GET", f"{base}/translation/docx")[1])) as z:
+            self.assertIn("Minion Pro", z.read("word/styles.xml").decode())
 
     def test_run_that_fails_at_once_reports_the_reason(self):
         self.json("POST", "/api/books", {"name": "sample"})

@@ -2,6 +2,7 @@
 
 import io
 import os
+import re
 import shutil
 import string
 import sys
@@ -403,7 +404,150 @@ class ExportTests(unittest.TestCase):
         self.assertIn("<w:bidi/>", zipfile.ZipFile(io.BytesIO(export.to_docx(self.MD, "K", "ar"))).read("word/document.xml").decode())
 
 
+def make_template(dotx: bool = False, macros: bool = False) -> bytes:
+    """A Word template as Word writes it in Turkish: localized style ids, a header, a sample text, LibreOffice-style
+    footnote separators (ids 0 and 1)."""
+    W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+    main = "template.main+xml" if dotx else ("document.macroEnabled.main+xml" if macros else "document.main+xml")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as z:
+        z.writestr("[Content_Types].xml", '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                   '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                   '<Default Extension="xml" ContentType="application/xml"/>'
+                   f'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.{main}"/>'
+                   '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+                   '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>'
+                   '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>')
+        z.writestr("_rels/.rels", '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
+        z.writestr("word/_rels/document.xml.rels", '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+                   '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>'
+                   '<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/></Relationships>')
+        z.writestr("word/header1.xml", f'<?xml version="1.0"?><w:hdr {W}><w:p><w:r><w:t>YAYINEVİ</w:t></w:r></w:p></w:hdr>')
+        z.writestr("word/styles.xml", f'<?xml version="1.0"?><w:styles {W}>'
+                   '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Minion Pro"/></w:rPr></w:style>'
+                   '<w:style w:type="paragraph" w:styleId="Balk1"><w:name w:val="heading 1"/></w:style>'
+                   '<w:style w:type="paragraph" w:styleId="DipnotMetni"><w:name w:val="footnote text"/></w:style>'
+                   '<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Intense Quote"/></w:style></w:styles>')
+        z.writestr("word/footnotes.xml", f'<?xml version="1.0"?><w:footnotes {W}>'
+                   '<w:footnote w:id="0" w:type="separator"><w:p><w:r><w:separator/></w:r></w:p></w:footnote>'
+                   '<w:footnote w:id="1" w:type="continuationSeparator"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote>'
+                   '<w:footnote w:id="2"><w:p><w:r><w:t>Örnek dipnot</w:t></w:r></w:p></w:footnote></w:footnotes>')
+        z.writestr("word/document.xml", f'<?xml version="1.0"?><w:document {W}><w:body>'
+                   '<w:p><w:r><w:t>Örnek metin</w:t></w:r></w:p>'
+                   '<w:sectPr><w:headerReference w:type="default" r:id="rId7"/><w:pgSz w:w="7655" w:h="11907"/>'
+                   '<w:pgMar w:top="1134" w:right="851" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>'
+                   '</w:body></w:document>')
+        if macros:
+            z.writestr("word/vbaProject.bin", b"x")
+    return buffer.getvalue()
+
+
+class ExportLayoutTests(unittest.TestCase):
+    MD = ExportTests.MD + "\n\n# İkinci bölüm\n\n> Alıntı.[^2]\n[^2]: İkinci dipnot."
+
+    def test_book_layout_reaches_pdf_and_word_and_the_report_keeps_the_standard(self):
+        lay = {"page_size": "A5", "margin_top": 2.0, "margin_bottom": 1.5, "margin_side": 1.8, "font": "Minion Pro",
+               "arabic_font": "Amiri", "font_size": 10.5, "line_spacing": 1.5, "justify": False, "chapter_new_page": False}
+        page = export.to_html(self.MD, "K", "no", lists=False, book_layout=lay)
+        self.assertIn("size: 148mm 210mm; margin: 2.0cm 1.8cm 1.5cm", page)
+        self.assertIn('font-family: "Minion Pro", "Charis SIL"', page)
+        self.assertIn('font-family: "Amiri", "Noto Naskh Arabic"', page)
+        self.assertIn("font-size: 10.5pt; line-height: 2.03", page)
+        self.assertIn("text-align: start; text-indent", page)
+        self.assertNotIn("break-before: page", page)
+        report = export.to_html(self.MD, "K", "no", lists=True, book_layout=lay)
+        self.assertIn("size: A4; margin: 2.2cm 2.3cm 2.6cm", report)
+        self.assertNotIn("Minion", report)
+
+        with zipfile.ZipFile(io.BytesIO(export.to_docx(self.MD, "K", "no", False, lay))) as z:
+            doc, styles = z.read("word/document.xml").decode(), z.read("word/styles.xml").decode()
+        self.assertIn('<w:pgSz w:w="8392" w:h="11907"/>', doc)
+        self.assertIn('w:top="1134" w:right="1021" w:bottom="850" w:left="1021"', doc)
+        self.assertIn('w:ascii="Minion Pro" w:hAnsi="Minion Pro" w:cs="Amiri"', styles)
+        self.assertIn('<w:sz w:val="21"/>', styles)
+        self.assertIn('w:line="360"', styles)
+        self.assertNotIn('<w:jc w:val="both"/>', styles)
+        self.assertNotIn("pageBreakBefore", styles)
+        # Invalid values in config.toml fall back to the defaults; the checks name the first invalid key.
+        self.assertEqual(export.layout({"font_size": 40, "font": 'x"; }', "page_size": "A3", "justify": 1}), export.DEFAULT_LAYOUT)
+        self.assertEqual(export.layout_problem({**export.DEFAULT_LAYOUT, "margin_side": 9.0}), "margin_side")
+        self.assertIsNone(export.layout_problem(export.DEFAULT_LAYOUT))
+
+    def test_word_template_gives_its_styles_page_and_header(self):
+        import xml.etree.ElementTree as ET
+        data = export.to_docx(self.MD, "K", "no", False, {"font": "Arial"}, template=make_template(dotx=True))
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            for part in z.namelist():
+                if part.endswith((".xml", ".rels")):
+                    ET.fromstring(z.read(part))  # every part is well-formed XML
+            doc, styles = z.read("word/document.xml").decode(), z.read("word/styles.xml").decode()
+            notes, types = z.read("word/footnotes.xml").decode(), z.read("[Content_Types].xml").decode()
+            self.assertIn("word/header1.xml", z.namelist())
+        self.assertIn('<w:pStyle w:val="Balk1"/>', doc)  # the template's own heading style
+        self.assertIn('<w:pgSz w:w="7655" w:h="11907"/>', doc)  # the template's page
+        self.assertIn('<w:headerReference w:type="default" r:id="rId7"/>', doc)
+        self.assertNotIn("Örnek metin", doc)
+        self.assertNotIn("Arial", styles)  # the settings do not change a template
+        self.assertIn('<w:pStyle w:val="DipnotMetni"/>', notes)
+        self.assertNotIn("Örnek dipnot", notes)
+        # The separators keep ids 0 and 1; the notes follow them.
+        self.assertIn('<w:footnoteReference w:id="2"/>', doc)
+        self.assertIn('<w:footnoteReference w:id="3"/>', doc)
+        self.assertIn("İkinci dipnot.", notes)
+        # Styles that the template lacks are added; an id that the template uses for another style is not reused.
+        self.assertIn('w:styleId="TPQuote"><w:name w:val="Quote"/>', styles)
+        self.assertIn('<w:pStyle w:val="TPQuote"/>', doc)
+        self.assertIn('<w:name w:val="List Bullet"/>', styles)
+        self.assertIn("wordprocessingml.document.main+xml", types)
+        self.assertNotIn("template.main+xml", types)
+        # The report never takes the template.
+        report = export.to_docx(self.MD, "K", "no", True, template=make_template())
+        self.assertNotIn(b"header1.xml", report)
+
+    def test_unusable_templates_are_refused(self):
+        self.assertIsNone(export.template_problem(make_template()))
+        self.assertEqual(export.template_problem(b"not a zip"), "type")
+        self.assertEqual(export.template_problem(make_template(macros=True)), "macros")
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as z:
+            z.writestr("word/document.xml", "<x/>")
+        self.assertEqual(export.template_problem(buffer.getvalue()), "type")
+        broken = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(make_template())) as src, zipfile.ZipFile(broken, "w") as z:
+            for name in src.namelist():
+                z.writestr(name, src.read(name) if name != "word/document.xml" else b"<w:document>no body</w:document>")
+        self.assertEqual(export.template_problem(broken.getvalue()), "broken")
+        # A bare Word file without styles or notes (as some programs write it) gets ours.
+        bare = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(make_template())) as src, zipfile.ZipFile(bare, "w") as z:
+            for name in src.namelist():
+                if name not in ("word/styles.xml", "word/footnotes.xml"):
+                    z.writestr(name, src.read(name))
+        self.assertIsNone(export.template_problem(bare.getvalue()))
+        with zipfile.ZipFile(io.BytesIO(export.to_docx(self.MD, "K", "no", False, template=bare.getvalue()))) as z:
+            self.assertIn('w:styleId="Heading1"', z.read("word/styles.xml").decode())
+            self.assertIn("İkinci dipnot.", z.read("word/footnotes.xml").decode())
+            self.assertIn('Target="footnotes.xml"', z.read("word/_rels/document.xml.rels").decode())
+
+
 class ConfigFileTests(unittest.TestCase):
+    def test_export_section_is_added_once_and_keeps_the_comments_around_it(self):
+        import tomllib
+        text = (ROOT / "config.toml").read_text(encoding="utf-8")
+        without = re.sub(r"\[export\]\n.*?\n\n", "", text, flags=re.S)
+        self.assertNotIn("[export]", without)
+        values = {**export.DEFAULT_LAYOUT, "font": 'Minion "Pro"', "font_size": 11.0, "word_template": "Yayınevi.docx"}
+        added = configfile.set_export(without, values)
+        again = configfile.set_export(added, values)
+        self.assertEqual(added, again)
+        self.assertEqual(tomllib.loads(added)["export"], values)
+        self.assertEqual(added.count("[export]"), 1)
+        self.assertIn("# Each command reads the prompt", added)
+        self.assertLess(added.index("[export]"), added.index("# Each command reads the prompt"))
+
+
     def test_stage_board_is_saved_and_comments_are_kept(self):
         import tomllib
         text = (ROOT / "config.toml").read_text(encoding="utf-8")

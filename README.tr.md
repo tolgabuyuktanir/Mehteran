@@ -83,6 +83,11 @@ Pipeline Markdown yazar (`output/<dil>.md`, `output/<dil>.report.md`). Kitaplar 
 - PDF: bilgisayarda Chrome veya Edge varsa doğrudan PDF dosyası üretilir (Windows'ta Edge her zaman vardır). Kitap dizgisiyle basılır: iki yana yaslı ve hecelenmiş metin, paragraf girintisi, sayfa numarası, her ana bölüm yeni sayfada, dipnotlar bölüm sonunda. Tarayıcı bulunamazsa yazdırmaya hazır bir sayfa açılır; yazdırma penceresinde "PDF olarak kaydet" seçin.
 - HTML ve Markdown. İtalik ve kalın yazı bütün biçimlerde korunur.
 
+**Kitabın biçimi.** Dışa aktarma bağlantılarının yanındaki **Biçim ayarları**'na tıklayın. Ayarlar bütün kitaplara uygulanır; rapor her zaman standart A4 biçimiyle çıkar.
+
+- **Sayfa ve yazı:** sayfa boyutu (A4, A5, B5, 13,5 × 21 cm, 16 × 24 cm, Letter), üst, alt ve yan kenar boşlukları, yazı tipi, Arapça yazı tipi, punto, satır aralığı (Word'deki gibi: 1 tek satır), iki yana yaslı paragraflar, her ana bölümün yeni sayfada başlaması. `config.toml` dosyasında `[export]` altında saklanır. Yazı tipi kurulu olmalıdır: PDF bu bilgisayardaki yazı tipleriyle oluşturulur, Word dosyası açıldığı bilgisayardakileri kullanır.
+- **Word şablonu:** yayınevinizin `.docx` veya `.dotx` şablonunu yükleyin. Kitabın Word dosyası şablonun stillerini, sayfa boyutunu, kenar boşluklarını, üst ve alt bilgilerini alır; şablondaki metin kullanılmaz. Word'ün yerleşik "Başlık 1–3", "Alıntı", "Madde İşareti", "Dipnot Metni" ve "Dipnot Başvurusu" stilleri kullanılır; Word bunlara Türkçe ad vermiş olsa da bulunur. Şablonda olmayan stiller eklenir. Şablon yüklüyken yukarıdaki ayarlar yalnızca PDF ve HTML'ye uygulanır. Makro içeren dosyalar kabul edilmez. Şablon `export/word-template.docx` olarak saklanır.
+
 ## Uzun kitaplar, kullanım sınırları ve uyku
 
 - Başlamadan önce Kitaplar sekmesi kaç bölümün işleneceğini, araç başına kaç model çağrısı gerektiğini ve tahmini süreyi gösterir. Çeviri sürerken şu anki adımı, geçen süreyi, kalan çağrıları ve kalan süreyi gösterir; kalan süre çalıştırmanın ölçülen hızıyla hesaplanır.
@@ -168,6 +173,7 @@ translate, translate.cmd  komut satırı başlatıcısı (macOS/Linux, Windows)
 config.toml             hangi aşamayı hangi araç ve model yapar, dil kodları
 prompts/                modellere verilen talimatlar (çeviri kuralları buradadır)
 prompts/defaults/       talimatların ilk hâli; "Varsayılana dön" bunu kullanır
+export/word-template.docx  yayınevinin Word şablonu (yüklendiyse)
 glossary/<dil>.tsv      dil başına terim sözlüğü; elle düzenlenir, bütün kitaplarda ortaktır
 books/<kitap>/
   source/               Türkçe kitap (tek dosya)

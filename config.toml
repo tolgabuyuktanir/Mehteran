@@ -30,6 +30,20 @@ quota_wait_minutes = 30 # when a tool reports a usage limit without a reset time
 quota_max_hours    = 24 # give up after waiting this long for a usage limit in one call
 keep_awake   = true     # keep the computer awake while a translation runs (macOS, Windows, Linux with systemd)
 
+[export]
+# Layout of an exported book (Word, PDF, HTML). A Word template decides the Word layout instead.
+page_size        = "A4"  # A4, A5, B5, 13.5x21, 16x24 or Letter
+margin_top       = 2.5  # margins in cm
+margin_bottom    = 2.5
+margin_side      = 2.5
+font             = ""  # body font; "" = automatic
+arabic_font      = ""  # font of Arabic passages; "" = automatic
+font_size        = 12.0  # in points
+line_spacing     = 1.15  # 1.0 = single line spacing
+justify          = true  # justified paragraphs
+chapter_new_page = true  # each top-level chapter starts on a new page
+word_template    = ""  # the original name of export/word-template.docx; "" = no template
+
 # Each command reads the prompt from stdin and writes the answer to stdout.
 #   model        : default model of the provider; if empty, the tool's own default is used. "--model <value>" is added.
 #   models       : model names offered in the Workflow tab (edited there).
