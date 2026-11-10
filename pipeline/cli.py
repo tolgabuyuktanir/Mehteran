@@ -174,7 +174,7 @@ def cmd_install(proj: Project, args) -> int:
 # installed tools (.runtime), logs (.jobs) and session notes.
 PACKAGE_FILES = ["README.md", "README.tr.md", "config.toml", ".gitignore", "translate", "translate.cmd",
                  "Open Interface.command", "Open Interface.bat"]
-PACKAGE_FOLDERS = ["pipeline", "prompts", "scripts", "tests", "glossary"]
+PACKAGE_FOLDERS = ["docs", "pipeline", "prompts", "scripts", "tests", "glossary"]
 PACKAGE_SKIP = {"__pycache__", ".DS_Store", "Thumbs.db"}
 
 
