@@ -164,7 +164,13 @@ def install_node(root: Path) -> None:
     say(t("node_installed", version=version))
 
 
-def find_npm(root: Path) -> tuple[str, dict]:
+def _npm_command(node: str, npm: str) -> list[str]:
+    """The command that runs npm. On Windows npm is a .cmd file; running its script with node avoids cmd.exe."""
+    script = Path(npm).parent / "node_modules" / "npm" / "bin" / "npm-cli.js"
+    return [node, str(script)] if system.IS_WINDOWS and script.is_file() else [npm]
+
+
+def find_npm(root: Path) -> tuple[list[str], dict]:
     """Returns (npm command, environment). Uses the system Node.js when it is recent enough, else the portable one."""
     env = os.environ.copy()
     own = node_bin_dir(root)
@@ -174,19 +180,21 @@ def find_npm(root: Path) -> tuple[str, dict]:
         npm = shutil.which("npm", path=str(folder)) if folder else shutil.which("npm")
         if node and npm and _node_major(node) >= MIN_NODE:
             env["PATH"] = str(Path(node).parent) + os.pathsep + env.get("PATH", "")
-            return npm, env
+            return _npm_command(node, npm), env
     install_node(root)
     npm = shutil.which("npm", path=str(own))
     if not npm:
         raise PipelineError(t("node_install_failed"))
     env["PATH"] = str(own) + os.pathsep + env.get("PATH", "")
-    return npm, env
+    return _npm_command(shutil.which("node", path=str(own)) or "node", npm), env
 
 
 # --- tools --------------------------------------------------------------------
 
 def _run_streaming(argv: list[str], env: dict | None = None) -> None:
-    proc = subprocess.run(system.resolve(argv), env=env, cwd=Path.home(), stdin=subprocess.DEVNULL, **system.hidden_window())
+    argv = system.resolve(argv)
+    say("> " + subprocess.list2cmdline(argv))  # the install log shows what runs, to find a failing step
+    proc = subprocess.run(argv, env=env, cwd=Path.home(), stdin=subprocess.DEVNULL, **system.hidden_window())
     if proc.returncode != 0:
         raise PipelineError(t("install_step_failed", code=proc.returncode))
 
@@ -254,5 +262,5 @@ def install_tool(tool: str, root: Path) -> None:
         while not system.try_lock(lock):  # two installs at once must not download Node.js twice
             time.sleep(1)
         npm, env = find_npm(root)
-        _run_streaming([npm, "install", "--global", "--prefix", str(tool_prefix(root, tool)), "--no-fund", "--no-audit",
+        _run_streaming([*npm, "install", "--global", "--prefix", str(tool_prefix(root, tool)), "--no-fund", "--no-audit",
                         NPM_PACKAGES[tool] + "@latest"], env)
