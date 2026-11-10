@@ -17,17 +17,39 @@ IS_MAC = sys.platform == "darwin"
 
 # --- commands -----------------------------------------------------------------
 
+_SHIM_SCRIPT = re.compile(r'"%dp0%\\([^"]+\.m?js)"', re.I)
+
+
+def _node_script(shim: str) -> list[str] | None:
+    """The npm shim (codex.cmd) of a Node.js tool is a small batch file that starts "node script.js". Returns that
+    command, so that the tool runs without cmd.exe, or None when the file is not such a shim."""
+    try:
+        text = Path(shim).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    match = _SHIM_SCRIPT.search(text)
+    folder = os.path.dirname(shim)
+    script = os.path.join(folder, match.group(1).replace("\\", os.sep)) if match else ""
+    node = os.path.join(folder, "node.exe")
+    node = node if os.path.isfile(node) else shutil.which("node")
+    return [node, script] if match and node and os.path.isfile(script) else None
+
+
 def resolve(argv: list[str]) -> list[str]:
     """Finds the full path of the program and returns a command line that runs it.
 
-    On Windows, npm tools are .cmd files, which run through cmd.exe. cmd.exe removes the first and last quote of
-    a command line that has more than two, so a path with a space ("C:\\Users\\Ahmet Çelik\\...") would break.
-    "/s" with one extra pair of outer quotes keeps every inner quote. The arguments are fixed tool options,
-    validated model names and temporary paths; the book text goes through stdin, never through cmd.exe.
+    On Windows, npm tools are .cmd files. Their command is "node script.js" (see _node_script), which runs without
+    cmd.exe. Any other .cmd or .bat file runs through cmd.exe, which removes the first and last quote of a command
+    line that has more than two, so a path with a space would break; "/s" with one extra pair of outer quotes
+    keeps every inner quote. Such a file gets fixed tool options, validated model names and temporary paths; the
+    book text goes through stdin, never through cmd.exe.
     """
     found = shutil.which(argv[0])
     argv = [found, *argv[1:]] if found else argv
     if IS_WINDOWS and argv[0].lower().endswith((".cmd", ".bat")):
+        direct = _node_script(argv[0])
+        if direct:
+            return [*direct, *argv[1:]]
         return ["cmd.exe", "/d", "/s", "/c", '"' + subprocess.list2cmdline(argv) + '"']
     return argv
 

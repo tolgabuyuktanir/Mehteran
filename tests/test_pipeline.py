@@ -589,6 +589,22 @@ class PlatformTests(unittest.TestCase):
         with mock.patch.object(system, "IS_WINDOWS", False), mock.patch.object(system.shutil, "which", return_value="/usr/bin/codex"):
             self.assertEqual(system.resolve(["codex", "exec"]), ["/usr/bin/codex", "exec"])
 
+    def test_windows_npm_shim_runs_without_cmd_exe(self):
+        from unittest import mock
+        shim = ("@ECHO off\nGOTO start\n:start\nSETLOCAL\nIF EXIST \"%dp0%\\node.exe\" (\n  SET \"_prog=%dp0%\\node.exe\"\n)"
+                " ELSE (\n  SET \"_prog=node\"\n)\nendLocal & goto #_undefined_# 2>NUL || title %COMSPEC% & \"%_prog%\"  "
+                "\"%dp0%\\node_modules\\@openai\\codex\\bin\\codex.js\" %*\n")
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        (tmp / "node_modules" / "@openai" / "codex" / "bin").mkdir(parents=True)
+        script = tmp / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
+        script.write_text("")
+        (tmp / "codex.cmd").write_text(shim)
+        with mock.patch.object(system, "IS_WINDOWS", True), \
+                mock.patch.object(system.shutil, "which", side_effect=lambda n, **k: str(tmp / "codex.cmd") if n == "codex" else "/bin/node"):
+            argv = system.resolve(["codex", "exec", "-o", "out put.txt"])
+        self.assertEqual(argv, ["/bin/node", str(script), "exec", "-o", "out put.txt"])
+
     def test_downloaded_archive_cannot_escape_its_folder(self):
         import tarfile
         tmp = Path(tempfile.mkdtemp())
