@@ -40,7 +40,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: assess
@@ -50,7 +50,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        Decide whether the customer message below is urgent. Urgent means at least one of: a risk to someone's
+        Task: Decide whether the customer message below is urgent. Urgent means at least one of: a risk to someone's
         safety or health, a legal threat or a likely legal problem, a major financial loss for the customer or the
         company, a data or privacy incident, or a customer who is openly angry and about to leave.
 
@@ -77,7 +77,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        A customer message was judged urgent. Write two texts in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
+        Task: A customer message was judged urgent. Write two texts in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
 
         The message:
 
@@ -90,9 +90,10 @@ nodes:
         Company context (it may be empty): {{inputs.company_context}}
 
         1. An escalation note for a manager: what happened, why it is urgent, what is at risk, the decisions
-           needed today. At most 150 words.
+           needed now. At most 150 words.
         2. A first reply to the customer: acknowledge the problem, say what happens next and by when, and do not
-           admit legal liability or promise anything that the company context does not allow.
+           admit legal liability or promise anything that the company context does not allow. Do not invent reasons,
+           excuses, promises or conditions, and do not mention today's date or the year.
 
         Format: Markdown. Put an empty line before and after every heading. Start directly with these headings
         (translated into the output language):
@@ -110,7 +111,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        A customer message was judged not urgent. Draft a friendly, clear reply in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
+        Task: A customer message was judged not urgent. Draft a friendly, clear reply in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
 
         The message:
 
@@ -123,7 +124,8 @@ nodes:
         Company context (it may be empty): {{inputs.company_context}}
 
         Answer each question of the customer. Where the company context does not give the answer, write a
-        placeholder in square brackets for the person who sends the reply, instead of inventing facts.
+        placeholder in square brackets for the person who sends the reply, instead of inventing facts. Do not invent
+        reasons, excuses, promises or conditions, and do not mention today's date or the year.
 
         Format: Markdown. Put an empty line before and after every heading. Start directly with these headings
         (translated into the output language):

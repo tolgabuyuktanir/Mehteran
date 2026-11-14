@@ -46,7 +46,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_policy
@@ -68,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a compliance analyst. Turn the standard below into a complete, numbered list of its individual
+        Task: Act as a compliance analyst. Turn the standard below into a complete, numbered list of its individual
         requirements, so that each one can be checked separately.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -120,7 +120,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a compliance auditor. Check whether the policy below meets each requirement of the list below.
+        Task: Act as a compliance auditor. Check whether the policy below meets each requirement of the list below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language. Keep quotations in the language of the documents.
@@ -173,7 +173,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a gap analysis report for the owner of a policy. Base it on the gap check below.
+        Task: Write the opening of a gap analysis report for the owner of a policy. Base it on the gap check below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language.

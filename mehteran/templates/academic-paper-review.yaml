@@ -37,19 +37,19 @@ inputs:
   - id: methodology_model
     type: provider
     label: {tr: Yöntemi inceleyen model, en: Model for the methodology}
-    default: claude
+    default: auto
   - id: citations_model
     type: provider
     label: {tr: Kaynakları inceleyen model, en: Model for the citations}
-    default: claude
+    default: auto
   - id: clarity_model
     type: provider
     label: {tr: Anlatımı inceleyen model, en: Model for clarity}
-    default: claude
+    default: auto
   - id: editor_model
     type: provider
     label: {tr: Sentezi yazan model, en: Model for the synthesis}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -65,7 +65,7 @@ nodes:
     config:
       provider: "{{inputs.methodology_model}}"
       prompt: |
-        You are an experienced peer reviewer for a scholarly journal. Your task is to assess the METHODOLOGY of
+        Task: Act as an experienced peer reviewer for a scholarly journal. Your task is to assess the METHODOLOGY of
         the paper below. Other reviewers cover the references and the writing; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
@@ -127,7 +127,7 @@ nodes:
     config:
       provider: "{{inputs.citations_model}}"
       prompt: |
-        You are a meticulous reviewer checking the REFERENCES AND CITATIONS of the scholarly paper below. Other
+        Task: Act as a meticulous reviewer checking the REFERENCES AND CITATIONS of the scholarly paper below. Other
         reviewers cover the methodology and the writing; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
@@ -186,7 +186,7 @@ nodes:
     config:
       provider: "{{inputs.clarity_model}}"
       prompt: |
-        You are an experienced academic editor assessing the CLARITY AND STRUCTURE of the paper below for its
+        Task: Act as an experienced academic editor assessing the CLARITY AND STRUCTURE of the paper below for its
         intended scholarly readers. Other reviewers cover the methodology and the references; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
@@ -237,7 +237,7 @@ nodes:
     config:
       provider: "{{inputs.editor_model}}"
       prompt: |
-        You are the handling editor of a scholarly journal. Three independent reviewers have assessed the same
+        Task: Act as the handling editor of a scholarly journal. Three independent reviewers have assessed the same
         paper. Combine their reviews into the opening of a review report for the authors.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

@@ -48,11 +48,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: wrap
@@ -68,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced accounts-payable reviewer. Find the lines in the invoice or expense data below
+        Task: Act as an experienced accounts-payable reviewer. Find the lines in the invoice or expense data below
         that a reviewer should look at more closely.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -139,7 +139,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are an independent checker. A colleague flagged anomalies in the invoice or expense data below.
+        Task: Act as an independent checker. A colleague flagged anomalies in the invoice or expense data below.
         Verify each finding against the data itself.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -195,7 +195,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a note for the person who will check these invoices or expenses. Base it on
+        Task: Write the opening of a note for the person who will check these invoices or expenses. Base it on
         the findings and their verification below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

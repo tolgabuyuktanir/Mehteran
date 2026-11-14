@@ -39,7 +39,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -55,7 +55,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a meticulous fact checker. Check whether the FIGURES AND FACTS of the document below agree with
+        Task: Act as a meticulous fact checker. Check whether the FIGURES AND FACTS of the document below agree with
         each other inside the document. Another checker covers statements, terms and cross-references.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -112,7 +112,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a careful editor. Check whether the STATEMENTS, TERMS AND CROSS-REFERENCES of the document below
+        Task: Act as a careful editor. Check whether the STATEMENTS, TERMS AND CROSS-REFERENCES of the document below
         agree with each other inside the document. Another checker covers numbers and dates.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -169,7 +169,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are the editor responsible for the document. Two checkers have looked for internal inconsistencies.
+        Task: Act as the editor responsible for the document. Two checkers have looked for internal inconsistencies.
         Combine their findings into one list for the author.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

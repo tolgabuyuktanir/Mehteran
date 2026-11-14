@@ -254,7 +254,7 @@ class EngineTests(HomeCase):
         with self.assertRaises(RunError) as e:
             self.engine().start(text, {"lang": "de", "model": "nobody/x", "extra": "1"}, {"doc": self.tmp / "a.pdf"})
         joined = "\n".join(e.exception.messages)
-        for fragment in ("'lang' must be one of: tr, en", "the provider 'nobody' is not configured",
+        for fragment in ("'lang' must be one of: tr, en", "the provider 'nobody' is not available",
                          "there is no input 'extra'", "must be one of: md"):
             self.assertIn(fragment, joined)
         self.assertEqual(self.engine().list(), [])

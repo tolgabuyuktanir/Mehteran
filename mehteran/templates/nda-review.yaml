@@ -49,11 +49,11 @@ inputs:
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -69,7 +69,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are a contracts analyst. Go through the non-disclosure agreement below topic by topic and record
+        Task: Act as a contracts analyst. Go through the non-disclosure agreement below topic by topic and record
         exactly what it says on each topic. Another reviewer judges unusual clauses; keep your judgement short.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -122,7 +122,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced negotiator reviewing a non-disclosure agreement for one side. Find the clauses
+        Task: Act as an experienced negotiator reviewing a non-disclosure agreement for one side. Find the clauses
         that are one-sided, unusually broad or unusual for this side, and obligations that are easy to miss.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -175,7 +175,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of an NDA review report for a person who must decide whether to sign it. Base it on
+        Task: Write the opening of an NDA review report for a person who must decide whether to sign it. Base it on
         the checklist and the review of unusual clauses below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

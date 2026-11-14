@@ -46,7 +46,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_source
@@ -68,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a senior translation reviewer. Compare the translation with its source, passage by passage, and
+        Task: Act as a senior translation reviewer. Compare the translation with its source, passage by passage, and
         find every error of MEANING. Another reviewer covers fluency and style; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and your
@@ -131,7 +131,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an editor who writes natively in the language of the translation below. Assess how the
+        Task: Act as an editor who writes natively in the language of the translation below. Assess how the
         translation reads as a text in its own language: grammar, spelling, punctuation, natural word order and
         collocations, register and consistency. Another reviewer compares it with the source for meaning; use
         the source only to understand an unclear passage.
@@ -188,7 +188,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are the reviewing editor. Two reviewers assessed the same translation: one for accuracy, one for
+        Task: Act as the reviewing editor. Two reviewers assessed the same translation: one for accuracy, one for
         fluency. Combine their findings into the opening of a quality report for the translator and the client.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

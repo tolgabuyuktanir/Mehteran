@@ -17,6 +17,7 @@ description:
     Very large tables are cut and the report says so. The result is a Markdown, Word and HTML report.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: reviews
@@ -47,11 +48,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -67,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a customer insight analyst. Analyse the reviews below.
+        Task: Act as a customer insight analyst. Analyse the reviews below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations stay in their original language.
 
@@ -116,9 +117,11 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check an analysis of customer reviews against the reviews and give the corrected final report.
+        Task: Check an analysis of customer reviews against the reviews and give the corrected final report.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations stay in their original language.
+
+        The product or service the user named (it may be empty; keep it where the analysis uses it): {{inputs.product}}
 
         The reviews:
 
@@ -130,7 +133,7 @@ nodes:
 
         {{nodes.analyse.text}}
 
-        Method: check that every quotation appears in the reviews word for word (replace or remove it otherwise); recount each theme's count and correct it; remove any trend that rests on one or two remarks, or call it a one-off. Keep the structure. Give the corrected report only, then a last section "## Corrections" (translated) with a short list of the changes, or "None.".
+        Method: check that every quotation appears in the reviews word for word (replace or remove it otherwise); recount each theme's count and correct it; remove any trend that rests on one or two remarks, or call it a one-off. Keep the structure. Give the corrected report only, without a list of the changes: the user has not seen the first analysis.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
 

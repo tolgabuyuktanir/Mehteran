@@ -38,7 +38,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -54,7 +54,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced thesis examiner. Assess the ARGUMENT AND STRUCTURE of the thesis chapter below.
+        Task: Act as an experienced thesis examiner. Assess the ARGUMENT AND STRUCTURE of the thesis chapter below.
         Other readers cover the evidence and method, and the writing; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -111,7 +111,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced thesis examiner. Assess the EVIDENCE, THE USE OF SOURCES AND THE METHOD in the
+        Task: Act as an experienced thesis examiner. Assess the EVIDENCE, THE USE OF SOURCES AND THE METHOD in the
         thesis chapter below. Other readers cover the argument structure and the writing; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -169,7 +169,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced academic writing tutor. Assess the WRITING of the thesis chapter below for its
+        Task: Act as an experienced academic writing tutor. Assess the WRITING of the thesis chapter below for its
         readers: examiners in the field. Other readers cover the argument and the evidence; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -220,7 +220,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are the student's thesis supervisor. Three readers have assessed the same chapter. Turn their
+        Task: Act as the student's thesis supervisor. Three readers have assessed the same chapter. Turn their
         reviews into feedback the student can act on.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -263,7 +263,7 @@ nodes:
         (a list of at most 8 steps, in order)
 
         ## Points of disagreement
-        (or one sentence saying there are none)
+        (or "None.")
 
         Final check before you answer:
         1. Language: write in the language set above, even when the material is in another language. Translate

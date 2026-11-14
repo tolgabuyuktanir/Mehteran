@@ -19,6 +19,7 @@ description:
     HTML. Always check numbers read from photos.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: receipts
@@ -51,11 +52,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: receipts
@@ -74,7 +75,7 @@ nodes:
       max_items: 20
       provider: "{{inputs.model}}"
       prompt: |
-        Extract the expense data from one file.
+        Task: Extract the expense data from one file.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep vendor names and item names as written in the file.
 
@@ -99,7 +100,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check expense data and summarise it.
+        Task: Check expense data and summarise it.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -118,6 +119,10 @@ nodes:
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Use tables for the totals. Start directly with these headings (translated):
 
+        # Expense report
+
+        (one sentence, in italics: the data was extracted by AI from the files; check the numbers against the originals, especially those read from photos)
+
         ## Totals
 
         ### By category
@@ -125,7 +130,10 @@ nodes:
         ### Grand total
 
         ## Items to check
-        ("None found." if nothing)
+        ("None." if nothing)
+
+        ## Extracted lines
+        (write only this heading; the tables follow it automatically)
 
         Final check before you answer:
         1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
@@ -136,17 +144,9 @@ nodes:
     label: {tr: "Raporu birleştir", en: "Assemble the report"}
     config:
       template: |
-        # Expense report
-
         {{nodes.summary.text}}
 
-        # Extracted lines
-
         {{nodes.rows.text}}
-
-        ---
-
-        Note: extracted by AI from the files; check the numbers against the originals, especially those read from photos. / Not: Dosyalardan yapay zekâ ile çıkarılmıştır; özellikle fotoğraftan okunan sayıları orijinallerle karşılaştırın.
 
   - id: export
     type: document.export

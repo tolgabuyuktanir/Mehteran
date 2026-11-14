@@ -24,8 +24,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from . import languages, paths, tables
-from .i18n import message_of, t
+from . import languages, paths, tables, winjob
+from .i18n import MESSAGES, message_of, t, text_of
 from .placeholders import only_reference, references
 from .placeholders import parse as parse_ref
 from .placeholders import render as render_template
@@ -33,8 +33,10 @@ from .placeholders import render as render_template
 ID = r"[a-z][a-z0-9_-]{0,63}"
 ID_RE = re.compile(rf"{ID}\Z")  # \Z, not $: "$" also matches before a final newline
 # "provider", "provider/model", optionally "@effort". A model never starts with "-" (it must not look like an option).
-PROVIDER_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_-]{0,39}(/[A-Za-z0-9._:][A-Za-z0-9._:-]{0,80})?(@[a-z]{1,10})?\Z")
-FORMATS = ("md", "docx", "html", "pdf", "epub")  # pdf: Typst; epub: Pandoc (Setup tab)
+PROVIDER_RE = re.compile(r"^(?:auto:(?:strong|fast|local)|[A-Za-z0-9_][A-Za-z0-9_-]{0,39}(/[A-Za-z0-9._:][A-Za-z0-9._:-]{0,80})?"
+                         r"(@[a-z]{1,10})?)\Z")  # auto, auto:strong, auto:fast, auto:local: chosen when a run starts
+# pdf: Typst; epub: Pandoc (Setup tab). eml: an e-mail draft (never sent); json, csv: when the text is JSON or a table.
+FORMATS = ("md", "docx", "html", "pdf", "epub", "eml", "json", "csv")
 MAP_LIMIT = 200  # the most parts a loop (ai.map) may have
 
 
@@ -90,6 +92,7 @@ class Ctx:
     input_types: dict = field(default_factory=dict)  # workflow input id -> its type
     record: Callable[..., None] | None = None  # record(name, started, outcome, until=None, message="") for usage
     log: Path | None = None                     # the node's live log (livelog.py)
+    blocked: Callable[[str], float] | None = None  # provider -> until when a known usage limit blocks it (0: free)
 
 
 @dataclass
@@ -254,8 +257,11 @@ DOCUMENT_RE = re.compile(r'<document name="([^"]*)" index="(\d+)">\n(.*?)\n</doc
 
 def _extract(ctx: Ctx) -> dict:
     ref = only_reference(str(ctx.config.get("file") or "")) or ""
-    if not ref:  # no file named: the workflow's only file input (the check makes sure there is exactly one)
-        ref = "inputs." + next(i for i, kind in ctx.input_types.items() if kind == "file")
+    if not ref:  # no file named: the workflow's only file (or address) input (the check makes sure there is one)
+        ref = "inputs." + next(i for i, kind in ctx.input_types.items() if kind in ("file", "url"))
+    parsed = parse_ref(ref)
+    if parsed and parsed[0] == "inputs" and ctx.input_types.get(parsed[1]) == "url":
+        return {"text": _extract_url(ctx, ctx.value(ref).strip())}
     if ctx.files:
         files, several = ctx.files(ref)
     else:
@@ -278,6 +284,26 @@ def _extract(ctx: Ctx) -> dict:
     return {"text": "\n\n".join(parts)}
 
 
+def _extract_url(ctx: Ctx, url: str) -> str:
+    """The readable text of a web page (an input of type "url"; urlfetch.py refuses private addresses)."""
+    from . import urlfetch
+    if not url:
+        return ""  # an optional address left empty
+    limit = ctx.config.get("max_chars")
+    if ctx.progress:
+        ctx.progress(t("url_reading", url=url[:200]))
+    try:
+        text = urlfetch.read_url(url, ctx.abort, read_pdf=lambda path: read_file(path, None, ctx.config.get("ocr") or "auto",
+                                                                                 render(ctx, "ocr_languages"), ctx.abort))
+    except InterruptedError:
+        raise Aborted() from None
+    except urlfetch.FetchError as e:
+        raise NodeError(message_of(e)) from None
+    if not text.strip():
+        raise NodeError(t("url_empty", url=url[:200]))
+    return text[:limit] + "\n\n[...]" if limit and len(text) > limit else text
+
+
 # --- ai.cli ---------------------------------------------------------------------
 
 DATA_PREAMBLE = (
@@ -293,24 +319,176 @@ def wrap_data(ref: str, text: str) -> str:
     return f'<data source="{ref}">\n{text}\n</data>'
 
 
+def has_empty_input(ctx: Ctx, template: str) -> bool:
+    """True when the step receives data (a connection, a {{nodes.*}} reference or a file input) and all of it is
+    empty. A step with no data at all is an instruction only (e.g. "write a poem") and runs as written."""
+    refs = [ref for ref, _ in (ctx.upstream() if ctx.upstream else [])]
+    for ref in references(template or ""):
+        parsed = parse_ref(ref)
+        if parsed and (parsed[0] == "nodes" or (parsed[0] == "inputs" and ctx.input_types.get(parsed[1]) == "file")):
+            refs.append(ref)
+    if any(ctx.value(ref).strip() for ref in refs):
+        return False
+    # An optional file the user left out gives empty text on purpose: the step runs with it (a required file is
+    # never empty at the start, so an empty file input here is always an optional one).
+    if ctx.files and any(not ctx.files("inputs." + i)[0] for i, kind in ctx.input_types.items() if kind == "file"):
+        return False
+    # Text the user typed or pasted is data too: a template that takes "pasted text or a file" has an empty file step
+    # when only text was given.
+    typed = [ref for ref in references(template or "") if (parse_ref(ref) or ("",))[0] == "inputs"
+             and ctx.input_types.get(parse_ref(ref)[1]) == "text"]
+    return bool(refs) and not any(ctx.value(ref).strip() for ref in typed)
+
+
 def _ai(ctx: Ctx) -> dict:
+    if has_empty_input(ctx, str(ctx.config.get("prompt") or "")):
+        raise NodeError(t("ai_input_empty"))
     prompt = DATA_PREAMBLE + instruction(ctx)
+    json_mode = ctx.config.get("output") == "json"
+    if json_mode:
+        prompt += json_request(str(ctx.config.get("json_schema") or ""))
     ctx.node_dir.mkdir(parents=True, exist_ok=True)
     stem = f"attempt-{ctx.attempt}"
     (ctx.node_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
-    return {"text": ask_model(ctx, ctx.node_dir / "prompt.txt", stem)}
+    answer = ask_model(ctx, ctx.node_dir / "prompt.txt", stem)
+    if not json_mode:
+        return {"text": answer}
+    return {"text": _json_answer(ctx, prompt, answer, stem)}
 
 
-def ask_model(ctx: Ctx, prompt: Path, stem: str, label: str = "") -> str:
+# --- ai.cli with "output: json": the answer must be JSON (and match the schema when one is given) ---------------
+
+def json_request(schema_text: str) -> str:
+    text = ("\n\nAnswer with JSON only: one JSON value, no explanation before or after it and no Markdown code fence.")
+    if schema_text.strip():
+        text += f"\nThe JSON must match this JSON Schema:\n{schema_text.strip()}"
+    return text
+
+
+def parse_json_answer(answer: str):
+    """The JSON value of a model's answer: the whole answer, or the content of a ```json fence, or the text from the
+    first { or [ to the last } or ]. ValueError when none of them is JSON."""
+    text = answer.strip()
+    fenced = re.search(r"```(?:json)?\s*\n(.*?)\n\s*```", text, re.S | re.I)
+    candidates = [text] + ([fenced.group(1)] if fenced else [])
+    starts = [i for i in (text.find("{"), text.find("[")) if i >= 0]
+    if starts:
+        start = min(starts)
+        end = max(text.rfind("}"), text.rfind("]"))
+        if end > start:
+            candidates.append(text[start:end + 1])
+    error = None
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except ValueError as e:
+            error = error or e
+    raise ValueError(str(error) if error else "no JSON")
+
+
+JSON_TYPES = {"object": dict, "array": list, "string": str, "boolean": bool, "null": type(None)}
+
+
+def schema_errors(value, schema, where: str = "$") -> list[str]:
+    """The places where value does not match a JSON Schema (a common subset: type, enum, const, required,
+    properties, additionalProperties: false, items, minItems, maxItems, minLength, maxLength, minimum, maximum)."""
+    if not isinstance(schema, dict):
+        return []
+    errors = []
+    kinds = schema.get("type")
+    if kinds is not None:
+        kinds = kinds if isinstance(kinds, list) else [kinds]
+
+        def is_kind(kind):
+            if kind == "integer":
+                return isinstance(value, int) and not isinstance(value, bool)
+            if kind == "number":
+                return isinstance(value, (int, float)) and not isinstance(value, bool)
+            expected = JSON_TYPES.get(kind)
+            return expected is not None and isinstance(value, expected) and not (kind != "boolean" and isinstance(value, bool))
+        if not any(is_kind(k) for k in kinds):
+            return [f"{where}: expected {' or '.join(map(str, kinds))}"]
+    if "enum" in schema and isinstance(schema["enum"], list) and value not in schema["enum"]:
+        errors.append(f"{where}: must be one of {json.dumps(schema['enum'], ensure_ascii=False)[:200]}")
+    if "const" in schema and value != schema["const"]:
+        errors.append(f"{where}: must be {json.dumps(schema['const'], ensure_ascii=False)[:100]}")
+    if isinstance(value, dict):
+        props = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+        for key in schema.get("required") or []:
+            if key not in value:
+                errors.append(f"{where}: missing property \"{key}\"")
+        for key, item in value.items():
+            if key in props:
+                errors += schema_errors(item, props[key], f"{where}.{key}")
+            elif schema.get("additionalProperties") is False:
+                errors.append(f"{where}: unexpected property \"{key}\"")
+    if isinstance(value, list):
+        if isinstance(schema.get("items"), dict):
+            for n, item in enumerate(value):
+                errors += schema_errors(item, schema["items"], f"{where}[{n}]")
+        if isinstance(schema.get("minItems"), int) and len(value) < schema["minItems"]:
+            errors.append(f"{where}: at least {schema['minItems']} items")
+        if isinstance(schema.get("maxItems"), int) and len(value) > schema["maxItems"]:
+            errors.append(f"{where}: at most {schema['maxItems']} items")
+    if isinstance(value, str):
+        if isinstance(schema.get("minLength"), int) and len(value) < schema["minLength"]:
+            errors.append(f"{where}: at least {schema['minLength']} characters")
+        if isinstance(schema.get("maxLength"), int) and len(value) > schema["maxLength"]:
+            errors.append(f"{where}: at most {schema['maxLength']} characters")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if isinstance(schema.get("minimum"), (int, float)) and value < schema["minimum"]:
+            errors.append(f"{where}: at least {schema['minimum']}")
+        if isinstance(schema.get("maximum"), (int, float)) and value > schema["maximum"]:
+            errors.append(f"{where}: at most {schema['maximum']}")
+    return errors
+
+
+def json_problem(answer: str, schema) -> tuple[object, str]:
+    """(the JSON value, "") or (None, what is wrong) for a model's answer."""
+    try:
+        value = parse_json_answer(answer)
+    except ValueError as e:
+        return None, f"The answer is not valid JSON ({e})."
+    errors = schema_errors(value, schema) if schema is not None else []
+    if errors:
+        return None, "The JSON does not match the schema: " + "; ".join(errors[:10])
+    return value, ""
+
+
+def _json_answer(ctx: Ctx, prompt: str, answer: str, stem: str) -> str:
+    """The answer as pretty-printed JSON. Not JSON (or not matching the schema): the model is asked once more with the
+    error; a second wrong answer fails the step with that error."""
+    schema_text = str(ctx.config.get("json_schema") or "").strip()
+    schema = json.loads(schema_text) if schema_text else None  # the workflow check makes sure it is JSON
+    value, problem = json_problem(answer, schema)
+    if problem:
+        retry = ctx.node_dir / "prompt-json-retry.txt"
+        retry.write_text(f"{prompt}\n\nYour previous answer was rejected: {problem}\nAnswer again with the corrected JSON "
+                         "only.", encoding="utf-8")
+        if ctx.progress:
+            ctx.progress(t("json_retry", error=problem[:300]))
+        answer = ask_model(ctx, retry, f"{stem}-json")
+        value, problem = json_problem(answer, schema)
+    if problem:
+        raise NodeError(t("json_failed", error=problem[:500]))
+    return json.dumps(value, ensure_ascii=False, indent=2)
+
+
+def ask_model(ctx: Ctx, prompt: Path, stem: str, label: str = "", stop: threading.Event | None = None) -> str:
     """One model call with the prompt in the file prompt; its job, answer and error files are <stem>.* next to it.
-    The call is counted for the usage page and written to the node's live log (label: e.g. "part 3")."""
+    The call is counted for the usage page and written to the node's live log (label: e.g. "part 3"). stop: a loop's
+    signal that no further part may start; a part still waiting for a free slot then ends as Aborted."""
     from . import livelog
     started = time.time()
     if ctx.log:
         livelog.append(ctx.log, f"{label + ': ' if label else ''}{t('log_call', name=ctx.provider, chars=prompt.stat().st_size)}",
                        stamp=True)
     try:
-        answer = _ask_model(ctx, prompt, stem, label)
+        answer = _ask_model(ctx, prompt, stem, label, stop)
+    except KnownLimit as e:  # no call was made: only the log says it
+        if ctx.log:
+            livelog.append(ctx.log, f"{label + ': ' if label else ''}quota: {message_of(e)}", stamp=True)
+        raise
     except QuotaWait as e:
         _note(ctx, started, "quota", label, e, until=e.until)
         raise
@@ -332,7 +510,7 @@ def _note(ctx: Ctx, started: float, outcome: str, label: str, message, until: fl
         livelog.append(ctx.log, f"{label + ': ' if label else ''}{outcome}: {message_of(message)}", stamp=True)
 
 
-def _ask_model(ctx: Ctx, prompt: Path, stem: str, label: str) -> str:
+def _ask_model(ctx: Ctx, prompt: Path, stem: str, label: str, stop: threading.Event | None = None) -> str:
     folder = prompt.parent
     job, answer, error = folder / f"{stem}.job.json", folder / f"{stem}.answer.txt", folder / f"{stem}.error.txt"
     quota = folder / f"{stem}.quota.json"
@@ -341,7 +519,7 @@ def _ask_model(ctx: Ctx, prompt: Path, stem: str, label: str) -> str:
     job.write_text(json.dumps({
         "root": str(paths.REPO), "cfg": ctx.provider_cfg, "name": ctx.provider, "prompt": str(prompt),
         "answer": str(answer), "error": str(error), "quota": str(quota), "timeout": int(ctx.timeout), "lang": ctx.lang,
-        "log": str(ctx.log) if ctx.log else "", "label": label,
+        "log": str(ctx.log) if ctx.log else "", "label": label, "home": str(ctx.run_dir.parent.parent),
     }), encoding="utf-8")
     if (ctx.provider_cfg["providers"].get(ctx.provider.partition("@")[0].partition("/")[0]) or {}).get("api") == "ollama":
         from . import ollama
@@ -351,29 +529,71 @@ def _ask_model(ctx: Ctx, prompt: Path, stem: str, label: str) -> str:
             raise NodeError(message_of(e)) from None
     if ctx.slots is not None:
         while not ctx.slots.acquire(timeout=0.1):
-            if ctx.abort.is_set():
+            if ctx.abort.is_set() or (stop is not None and stop.is_set()):
                 raise Aborted()
+        if stop is not None and stop.is_set():  # the slot came free because a part failed: do not start this one
+            ctx.slots.release()
+            raise Aborted()
+    held = None
     try:
+        _known_limit(ctx)
+        held = _provider_slot(ctx, stop)
         return call_worker(job, answer, error, ctx, quota)
+    except QuotaWait:
+        if stop is not None:
+            stop.set()  # a usage limit stops every part not started; set before the slot is released
+        raise
     finally:
+        if held is not None:
+            held.release()
         if ctx.slots is not None:
             ctx.slots.release()
+
+
+class KnownLimit(QuotaWait):
+    """A usage limit met earlier (another run, the Setup test, the translation app) has not reset: no call is made."""
+
+
+def _known_limit(ctx: Ctx) -> None:
+    provider = ctx.provider.partition("@")[0].partition("/")[0]
+    until = ctx.blocked(provider) if ctx.blocked else 0
+    if until and until > time.time():
+        raise KnownLimit(t("quota_known", name=provider, time=time.strftime("%H:%M", time.localtime(until))), until)
+
+
+def _provider_slot(ctx: Ctx, stop: threading.Event | None):
+    """Waits for a free place among the calls at once to this provider over all runs (its "concurrency")."""
+    from . import providers
+    name = ctx.provider.partition("@")[0].partition("/")[0]
+    spec = ctx.provider_cfg["providers"].get(name) or {}
+    if not spec.get("concurrency"):
+        return None
+    sem = providers.slot(name, spec["concurrency"])
+    while not sem.acquire(timeout=0.1):
+        if ctx.abort.is_set() or (stop is not None and stop.is_set()):
+            raise Aborted()
+    return sem
 
 
 def call_worker(job: Path, answer: Path, error: Path, ctx: Ctx, quota: Path | None = None) -> str:
     """Runs one model call in a separate process (mehteran.worker), so that cancel and timeout can stop it with
     the tool it started. A usage limit that the tool reports is raised as QuotaWait."""
     from pipeline import system
-    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(paths.REPO), os.environ.get("PYTHONPATH", "")]).rstrip(os.pathsep)}
+
+    from . import providers
+    env = {**_guarded_env(ctx, providers),
+           "PYTHONPATH": os.pathsep.join([str(paths.REPO), os.environ.get("PYTHONPATH", "")]).rstrip(os.pathsep)}
     proc = subprocess.Popen([sys.executable, "-m", "mehteran.worker", str(job)], cwd=str(paths.REPO), env=env,
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             **system.new_process_group())
+    job = winjob.attach(proc.pid)  # Windows: the worker and its tool end when Mehteran ends (no-op elsewhere)
     try:
         while proc.poll() is None:
             if ctx.abort.wait(0.1):
                 system.stop_tree(proc.pid)
                 raise Aborted()
     finally:
+        winjob.close(job)
         if proc.poll() is None:
             try:
                 proc.wait(5)
@@ -391,6 +611,20 @@ def call_worker(job: Path, answer: Path, error: Path, ctx: Ctx, quota: Path | No
     raise NodeError(message or t("worker_failed", code=proc.returncode))
 
 
+def _guarded_env(ctx: Ctx, providers) -> dict:
+    """The billing guard: no API key that would bill an account goes to the tool, except the tool's own ones when
+    the user allowed "API key (billed)" for it (frozen with the run; a provider of config.toml: the setting now)."""
+    from . import usage
+    name = ctx.provider.partition("@")[0].partition("/")[0]
+    spec = ctx.provider_cfg["providers"].get(name) or {}
+    adapter = providers.ADAPTERS.get(spec.get("adapter") or usage.tool_of(spec) or "")
+    if adapter is None:
+        return providers.guarded_env((), False)
+    allowed = spec["api_key"] if isinstance(spec.get("api_key"), bool) else \
+        providers.read_settings(ctx.run_dir.parent.parent)["providers"].get(adapter.id, {}).get("api_key", False)
+    return providers.guarded_env(adapter.keys, allowed)
+
+
 # --- text.merge -----------------------------------------------------------------
 
 def _merge(ctx: Ctx) -> dict:
@@ -404,42 +638,120 @@ def _merge(ctx: Ctx) -> dict:
 def _export(ctx: Ctx) -> dict:
     markdown = render(ctx, "source") if str(ctx.config.get("source") or "").strip() else joined_upstream(ctx, headings=True)
     title = render(ctx, "title") or ctx.node_id
-    lang = (render(ctx, "lang") or "en").strip()
-    if not re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang):
-        lang = "en"
-    name = ctx.config.get("filename") or ctx.node_id
-    formats = ctx.config.get("formats") or ["md"]
+    if not markdown.strip():
+        raise NodeError(t("export_empty"))
+    try:
+        return export_document(markdown, ctx.config.get("formats") or ["md"], title, render(ctx, "lang"), ctx.node_dir,
+                               ctx.config.get("filename") or ctx.node_id, ctx.config.get("converter") or "auto", ctx.abort)
+    except InterruptedError:
+        raise Aborted() from None
+
+
+def export_document(markdown: str, formats: list[str], title: str, lang: str, folder: Path, name: str,
+                    converter: str = "auto", abort: threading.Event | None = None) -> dict[str, Path]:
+    """Writes the Markdown text as <folder>/<name>.<format> for each format; {format: path}. Used by document.export
+    and by the run page's export of an edited result. A missing tool (Pandoc, Typst) is a NodeError that says what to
+    install, raised before anything is written; a failing tool is a NodeError too. InterruptedError: aborted."""
     from . import pandoc, typst
     from .localtools import ToolError
+    lang = (lang or "en").strip()
+    if not re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang):
+        lang = "en"
     # Word: Mehteran's own exporter; Pandoc when chosen, or ("auto") when it is installed and the text has LaTeX math.
-    converter = ctx.config.get("converter") or "auto"
     have_pandoc = pandoc.binary()[0] is not None
     docx_by_pandoc = converter == "pandoc" or (converter == "auto" and have_pandoc and pandoc.has_math(markdown))
     if ("epub" in formats or ("docx" in formats and converter == "pandoc")) and not have_pandoc:
         raise NodeError(t("pandoc_missing_export"))
     if "pdf" in formats and typst.binary()[0] is None:
         raise NodeError(t("typst_missing"))
-    ctx.node_dir.mkdir(parents=True, exist_ok=True)
+    data = {fmt: structured(markdown, fmt) for fmt in ("json", "csv") if fmt in formats}  # NodeError: no JSON/table
+    folder.mkdir(parents=True, exist_ok=True)
     out = {}
     try:
         for fmt in formats:
-            path = ctx.node_dir / f"{name}.{fmt}"
+            path = folder / f"{name}.{fmt}"
             if fmt == "md":
-                path.write_text(markdown, encoding="utf-8")
+                path.write_text(markdown, encoding="utf-8", newline="\n")
+            elif fmt in data:
+                path.write_text(data[fmt], encoding="utf-8", newline="" if fmt == "csv" else "\n")
+            elif fmt == "eml":
+                path.write_bytes(email_draft(markdown, title, lang))
             elif fmt == "docx" and docx_by_pandoc or fmt == "epub":
-                path.write_bytes(pandoc.export(markdown, fmt, title, lang, ctx.abort))
+                path.write_bytes(pandoc.export(markdown, fmt, title, lang, abort))
             elif fmt == "docx":
                 path.write_bytes(tables.to_docx(markdown, title, lang))
             elif fmt == "pdf":
-                path.write_bytes(typst.to_pdf(markdown, title, lang, ctx.abort))
+                path.write_bytes(typst.to_pdf(markdown, title, lang, abort))
             else:
-                path.write_text(tables.to_html(markdown, title, lang), encoding="utf-8")
+                path.write_text(tables.to_html(markdown, title, lang), encoding="utf-8", newline="\n")
             out[fmt] = path
-    except InterruptedError:
-        raise Aborted() from None
     except ToolError as e:
         raise NodeError(message_of(e)) from None
     return out
+
+
+def email_draft(markdown: str, title: str, lang: str) -> bytes:
+    """An unsent e-mail (.eml) that a mail program opens as a draft: the title as its subject, the Markdown as the
+    plain-text part and as HTML. No sender, no recipient; Mehteran never sends it."""
+    from email.message import EmailMessage
+    from email.policy import SMTP
+    from email.utils import formatdate
+    message = EmailMessage(policy=SMTP)
+    message["Subject"] = " ".join(str(title or "").split())[:200]
+    message["Date"] = formatdate(localtime=True)
+    message["X-Unsent"] = "1"  # Outlook and others open such a file as a draft to edit and send
+    message["Content-Language"] = lang
+    message.set_content(markdown, subtype="plain", charset="utf-8")
+    message.add_alternative(tables.to_html(markdown, title, lang), subtype="html", charset="utf-8")
+    return message.as_bytes()
+
+
+def _table_rows(markdown: str) -> list[list[str]] | None:
+    """The rows of the first Markdown table of the text (the first row is the header), or None."""
+    _, found = tables.extract(markdown)
+    return next(iter(found.values()))["rows"] if found else None
+
+
+def structured(markdown: str, fmt: str) -> str:
+    """The text as a .json or .csv file. json: the text when it is JSON (also inside a ```json fence), else the first
+    Markdown table as a list of objects. csv: the first Markdown table, or JSON that is a list of objects (or of lists).
+    NodeError when the text has neither."""
+    import csv
+    import io
+    try:
+        value = parse_json_answer(markdown)
+    except ValueError:
+        value = None
+    rows = _table_rows(markdown)
+    if fmt == "json":
+        if value is None and rows:
+            header = [cell or f"column_{n + 1}" for n, cell in enumerate(rows[0])]
+            value = [{header[n]: (row[n] if n < len(row) else "") for n in range(len(header))} for row in rows[1:]]
+        if value is None:
+            raise NodeError(t("export_needs_data", format="JSON"))
+        return json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+    if rows is None and isinstance(value, list) and value:
+        if all(isinstance(item, dict) for item in value):
+            header = list(dict.fromkeys(key for item in value for key in item))
+            rows = [header] + [[_cell_text(item.get(key, "")) for key in header] for item in value]
+        elif all(isinstance(item, list) for item in value):
+            rows = [[_cell_text(cell) for cell in item] for item in value]
+    if not rows:
+        raise NodeError(t("export_needs_data", format="CSV"))
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\r\n")
+    for row in rows:
+        # A cell that starts with = + - @ would be a formula in a spreadsheet: it is kept as text.
+        writer.writerow(["'" + cell if cell[:1] in ("=", "+", "-", "@") and not _number(cell) else cell for cell in map(str, row)])
+    return "﻿" + buffer.getvalue()  # the byte order mark: Excel reads the file as UTF-8
+
+
+def _cell_text(value) -> str:
+    return value if isinstance(value, str) else "" if value is None else json.dumps(value, ensure_ascii=False)
+
+
+def _number(text: str) -> bool:
+    return re.fullmatch(r"[+-]?\d+(\.\d+)?", text.strip()) is not None
 
 
 # --- condition ------------------------------------------------------------------
@@ -546,6 +858,13 @@ def split_parts(text: str, how: str, size: int) -> list[tuple[str, str]]:
     return [("", chunk) for chunk in documents.segment(documents.split_long(blocks, size), size) if chunk.strip()]
 
 
+def part_title(ctx: Ctx, n: int) -> str:
+    """"Part n" in the language of the run's output: the workflow's language input when it has one, else the
+    language of the run (not the interface language of whoever looks at it)."""
+    lang = ctx.value("inputs.language").strip() if "language" in ctx.input_types else ""
+    return text_of(MESSAGES["map_part"], lang or ctx.lang).format(n=n)
+
+
 def _map(ctx: Ctx) -> dict:
     how = ctx.config.get("split") or "chunks"
     source = render(ctx, "source") if str(ctx.config.get("source") or "").strip() else joined_upstream(ctx, headings=False)
@@ -562,7 +881,8 @@ def _map(ctx: Ctx) -> dict:
     folder = ctx.node_dir / "parts"
     folder.mkdir(parents=True, exist_ok=True)
     count = len(parts)
-    stop = threading.Event()
+    stop = threading.Event()  # a part failed: parts not started yet wait for the next attempt
+    halt = threading.Event()  # a usage limit: also the parts that wait for a free slot do not start
     finished, lock = [0], threading.Lock()
 
     def one(n: int) -> str:
@@ -580,14 +900,15 @@ def _map(ctx: Ctx) -> dict:
             with lock:
                 finished[0] += 1
             return done.read_text(encoding="utf-8")
-        if stop.is_set() or ctx.abort.is_set():
+        if stop.is_set() or halt.is_set() or ctx.abort.is_set():
             raise Aborted()
         prompt_file = folder / f"{n:04d}.prompt.txt"
         prompt_file.write_text(prompt, encoding="utf-8")
-        answer = ask_model(ctx, prompt_file, f"{n:04d}-attempt-{ctx.attempt}", label=t("map_part", n=n))
+        # A usage limit sets `halt` inside ask_model; any other failure sets `stop` in the loop below.
+        answer = ask_model(ctx, prompt_file, f"{n:04d}-attempt-{ctx.attempt}", label=part_title(ctx, n), stop=halt)
         tmp = done.with_name(done.name + ".tmp")
-        tmp.write_text(answer, encoding="utf-8")
-        os.replace(tmp, done)
+        tmp.write_text(answer, encoding="utf-8", newline="\n")
+        paths.replace(tmp, done)
         with lock:
             finished[0] += 1
             if ctx.progress:
@@ -605,8 +926,7 @@ def _map(ctx: Ctx) -> dict:
                 errors[n] = e
             except NodeError as e:
                 errors[n] = e
-                if not isinstance(e, QuotaWait):
-                    stop.set()  # parts not started yet wait for the next attempt
+                stop.set()  # another failure: parts not started yet wait for the next attempt
     if any(isinstance(e, Aborted) for e in errors.values()) and ctx.abort.is_set():
         raise Aborted()
     failed = {n: e for n, e in errors.items() if not isinstance(e, (QuotaWait, Aborted))}
@@ -619,7 +939,7 @@ def _map(ctx: Ctx) -> dict:
     heading = ctx.config.get("heading", True)
     out = []
     for n in range(1, count + 1):
-        title = parts[n - 1][0] or t("map_part", n=n)
+        title = parts[n - 1][0] or part_title(ctx, n)
         out.append(f"## {title}\n\n{answers[n].strip()}" if heading else answers[n].strip())
     return {"text": "\n\n".join(out)}
 
@@ -680,7 +1000,17 @@ INSTRUCTION_HELP = _l("Ne yapılacağını yazın. Bağlı adımların metinleri
                       "Write what to do. The texts of the connected steps are added by themselves.")
 register(NodeType("ai.cli", {"provider": Field("template", True, label=_l("Model", "Model"), widget="provider", basic=True),
                              "prompt": Field("template", True, label=_l("Talimat", "Instruction"), widget="area", basic=True,
-                                             help=INSTRUCTION_HELP)},
+                                             help=INSTRUCTION_HELP),
+                             "output": Field("choice", default="text", label=_l("Cevap biçimi", "Answer format"), options=(
+                                 ("text", _l("metin", "text")), ("json", _l("JSON (denetlenir)", "JSON (checked)"))),
+                                 help=_l("JSON: cevap JSON olmalıdır; değilse model hatayla bir kez daha sorulur, sonra adım başarısız olur.",
+                                         "JSON: the answer must be JSON; otherwise the model is asked once more with the error, "
+                                         "then the step fails.")),
+                             "json_schema": Field("template", label=_l("JSON şeması", "JSON schema"), widget="area",
+                                                  help=_l("İsteğe bağlı: cevabın uyması gereken JSON Schema (type, properties, "
+                                                          "required, items, enum…).",
+                                                          "Optional: a JSON Schema the answer must match (type, properties, "
+                                                          "required, items, enum…)."))},
                   lambda c: {"text": "text"}, _ai, default_retries=2, default_timeout=1200,
                   label=_l("Yapay zekâ adımı", "AI step"),
                   description=_l("İstemi kurulu bir komut satırı aracıyla bir modele gönderir; cevabı verir.",

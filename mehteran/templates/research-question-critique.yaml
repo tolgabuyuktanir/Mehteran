@@ -34,7 +34,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: wrap
@@ -50,7 +50,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced research methodologist. Critique the research questions and hypotheses below so
+        Task: Act as an experienced research methodologist. Critique the research questions and hypotheses below so
         that the researcher can sharpen them before designing the study.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -105,7 +105,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an independent, sceptical reviewer. For the research questions and hypotheses below, think about
+        Task: Act as an independent, sceptical reviewer. For the research questions and hypotheses below, think about
         what else could explain the expected results and how the hypotheses could fail. Another reviewer covers
         clarity and feasibility; do not repeat that.
 
@@ -152,7 +152,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You help the researcher improve their research questions and hypotheses. Two reviewers have critiqued
+        Task: Help the researcher improve their research questions and hypotheses. Two reviewers have critiqued
         them. Propose revised versions that answer the reviewers' main points while keeping what the researcher
         wants to find out.
 

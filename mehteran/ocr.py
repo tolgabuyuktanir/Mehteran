@@ -23,6 +23,8 @@ import tempfile
 import threading
 from pathlib import Path
 
+from pipeline import system
+
 from . import paths
 from .i18n import t
 from .localtools import ToolError, dir_size, download_verified, run
@@ -99,7 +101,8 @@ def languages() -> list[str]:
     program = tesseract()
     if program:
         try:
-            out = subprocess.run([str(program), "--list-langs"], capture_output=True, text=True, timeout=20)
+            out = subprocess.run([str(program), "--list-langs"], capture_output=True, text=True, timeout=20,
+                                 encoding="utf-8", errors="replace", **system.hidden_window())
             found |= {line.strip() for line in out.stdout.splitlines()[1:] if re.fullmatch(r"[a-z_]{3,20}", line.strip())}
         except (OSError, subprocess.SubprocessError):
             pass
@@ -110,7 +113,8 @@ def _version(program: Path | None) -> str | None:
     if not program:
         return None
     try:
-        out = subprocess.run([str(program), "--version"], capture_output=True, text=True, timeout=20)
+        out = subprocess.run([str(program), "--version"], capture_output=True, text=True, timeout=20,
+                             encoding="utf-8", errors="replace", **system.hidden_window())
     except (OSError, subprocess.SubprocessError):
         return None
     m = re.search(r"(\d+\.\d+(\.\d+)?)", out.stdout + out.stderr)
@@ -228,7 +232,7 @@ def install(langs: list[str] | None = None) -> None:
                   "--override-channels", TESSERACT_SPEC],
                  [str(micromamba), "clean", "--all", "--yes"]):
         print("> " + subprocess.list2cmdline(argv), flush=True)
-        if subprocess.run(argv, env=env, stdin=subprocess.DEVNULL).returncode != 0:
+        if subprocess.run(argv, env=env, stdin=subprocess.DEVNULL, **system.hidden_window()).returncode != 0:
             raise ToolError(t("ocr_install_failed"))
     if not (_bin(prefix) / _exe("tesseract")).is_file():
         raise ToolError(t("ocr_install_failed"))

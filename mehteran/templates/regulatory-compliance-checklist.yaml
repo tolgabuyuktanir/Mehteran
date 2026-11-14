@@ -48,7 +48,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_document
@@ -70,7 +70,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a regulatory analyst. From the regulation text below, list the obligations that apply to the
+        Task: Act as a regulatory analyst. From the regulation text below, list the obligations that apply to the
         organisation within the stated scope, so that each one can be checked separately.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -121,7 +121,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a compliance auditor. Assess whether the organisation's document below meets each obligation in
+        Task: Act as a compliance auditor. Assess whether the organisation's document below meets each obligation in
         the list below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -142,6 +142,7 @@ nodes:
         - partly met: it addresses it, but something is missing (say what);
         - not addressed: the document says nothing on it;
         - unclear: the document's wording allows more than one reading.
+        Write these status words and the phrase "Not found in the document." in the output language.
 
         Rules:
         - Support "met", "partly met" and "unclear" with a quotation from the document and its section.
@@ -190,7 +191,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write a compliance checklist report from an approved assessment.
+        Task: Write a compliance checklist report from an approved assessment.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings and the notice, in this language.

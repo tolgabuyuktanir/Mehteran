@@ -137,8 +137,9 @@ def program_version(program: Path | None, *args: str) -> str | None:
     if not program:
         return None
     try:
+        from pipeline import system
         out = subprocess.run([str(program), *(args or ("--version",))], capture_output=True, text=True, timeout=20,
-                             stdin=subprocess.DEVNULL)
+                             encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, **system.hidden_window())
     except (OSError, subprocess.SubprocessError):
         return None
     m = re.search(r"(\d+\.\d+(\.\d+)?)", out.stdout + out.stderr)
@@ -186,7 +187,7 @@ def conda_install(prefix: Path, specs: list[str]) -> None:
     """Installs pinned conda-forge packages into prefix with micromamba (which checks every package against the
     channel's SHA-256 sums). micromamba comes with the translation app's Poppler installer when it is missing.
     Output goes to stdout (the job log); raises ToolError when a step fails."""
-    from pipeline import runtime
+    from pipeline import runtime, system
     from . import paths
     base = paths.runtime()
     micromamba = base / "micromamba" / exe("micromamba")
@@ -200,5 +201,5 @@ def conda_install(prefix: Path, specs: list[str]) -> None:
                   "--override-channels", *specs],
                  [str(micromamba), "clean", "--all", "--yes"]):
         print("> " + subprocess.list2cmdline(argv), flush=True)
-        if subprocess.run(argv, env=env, stdin=subprocess.DEVNULL).returncode != 0:
+        if subprocess.run(argv, env=env, stdin=subprocess.DEVNULL, **system.hidden_window()).returncode != 0:
             raise ToolError(t("conda_install_failed", specs=" ".join(specs)))

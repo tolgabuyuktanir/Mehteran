@@ -46,6 +46,12 @@ class FavoriteTests(HomeCase):
     def favorites(self):
         return {f"{t['source']}:{t['id']}" for t in self.json("GET", "/api/templates")[1] if t["favorite"]}
 
+    def test_a_favorite_of_a_merged_template_moves_to_the_new_one(self):
+        self.json("PUT", "/api/templates/builtin/multi-length-summary/favorite", body={"on": True})
+        self.assertEqual(self.favorites(), {"builtin:document-summary"})
+        self.app._write_conf("library.json", {"favorites": ["builtin:chapter-summaries", "builtin:document-summary"]})
+        self.assertEqual(self.app._favorites(), ["builtin:document-summary"])
+
     def test_star_and_unstar(self):
         builtin = self.json("GET", "/api/templates")[1][0]
         ref = f"builtin:{builtin['id']}"

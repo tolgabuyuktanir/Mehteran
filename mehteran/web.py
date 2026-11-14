@@ -40,24 +40,39 @@ from pipeline import runtime, system, tools
 from pipeline.core import ROOT, PipelineError, Project
 
 from . import __version__, i18n, languages, paths, schema, settings, templates, translation, yamlio
-from .engine import FILES_SIZE_LIMIT, Engine, RunError, safe_filename
+from . import providers as adapters
+from .engine import FILES_SIZE_LIMIT, Engine, RunError, resume_on_start, safe_filename
 from .i18n import UI, t
 from .nodes import FORMATS, ID_RE, PROVIDER_RE, REGISTRY
 from .placeholders import ITEM_FIELDS
 
 UPLOAD_LIMIT = 300 * 1024 * 1024
 TRANSLATION_FAVORITE = "app:translation"  # the book translation, a favorite like a template (library.json)
+# The choices of the first-start panel, in its order. Each leads to one built-in template (its run window), to a
+# category of the library, to a few named templates, or to the book translation.
+WELCOME_CHOICES = (
+    ("document", {"template": "document-explainer"}),
+    ("writing", {"templates": ("email-reply-draft", "official-letter-writer", "cv-and-cover-letter", "social-media-posts",
+                               "plain-language-rewrite", "writing-polish")}),
+    ("data", {"category": "data"}),
+    ("education", {"category": "education"}),
+    ("research", {"category": "research"}),
+    ("translation", {}),
+)
 JSON_LIMIT = 2 * 1024 * 1024
 STATIC = Path(__file__).resolve().parent / "ui"
 STATIC_TYPES = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css",
                 "canvas.js": "text/javascript", "editor.js": "text/javascript", "live.js": "text/javascript",
-                "icon.svg": "image/svg+xml", "langpicker.js": "text/javascript"}
+                "icon.svg": "image/svg+xml", "langpicker.js": "text/javascript", "markdown.js": "text/javascript",
+                "history.js": "text/javascript"}
 FLAG_RE = re.compile(r"/flags/([a-z]{2}(?:-[a-z]{2})?)\.svg\Z")  # the flags of the language picker (ui/flags)
 TR_LOCALE_RE = re.compile(r"/tr/locales/([a-z]{2})\.json\Z")  # the book translation's texts in other languages
 UPLOAD_RE = re.compile(r"[0-9a-f]{32}\Z")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
        "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 TEXT_FILES = {".md", ".txt", ".yaml", ".json"}
+EDIT_LIMIT = 1024 * 1024  # bytes of an edited result (UTF-8); the JSON request around it stays under JSON_LIMIT
+EDITABLE_RE = re.compile(r"nodes/([a-z][a-z0-9_-]{0,63})/([A-Za-z0-9][A-Za-z0-9_-]{0,99})\.md")  # a step's Markdown output
 
 
 class HTTPError(Exception):
@@ -157,10 +172,11 @@ def _ports(model) -> dict:
 def _check(model) -> dict:
     """The full check of an editor model: valid, the problems with their place, the ports of each node."""
     try:
-        schema.check(copy.deepcopy(model))
+        wf = schema.check(copy.deepcopy(model))
     except schema.WorkflowError as e:
-        return {"valid": False, "problems": e.items(), "ports": _ports(model)}
-    return {"valid": True, "problems": [], "ports": _ports(model)}
+        return {"valid": False, "problems": e.items(), "warnings": [], "ports": _ports(model)}
+    # warnings (schema.warnings): a valid workflow that probably does not do what its author wants
+    return {"valid": True, "problems": [], "warnings": [w.item() for w in schema.warnings(wf)], "ports": _ports(model)}
 
 
 def _model(body) -> dict:
@@ -183,6 +199,9 @@ class App:
         self.uploads.mkdir(parents=True, exist_ok=True)
         self._clean_uploads()
         self.translation = None  # the translation app (mehteran.translation.Translation), set by serve()
+        from . import history
+        self.automation = history.Automation(engine)  # batch starts and saves to a folder (history.py)
+        self.automation.kick()  # work left from before a restart: queued batch runs, saves not done yet
 
     def _clean_uploads(self) -> None:
         """Uploads that never became a run are removed after a day."""
@@ -197,7 +216,9 @@ class App:
         providers = settings.provider_choices(cfg)
         for item in providers:  # the models read from the tool first, then those of config.toml
             item["models"] = list(dict.fromkeys([*(loaded.get(item["name"]) or []), *item["models"]]))
-            item["tool"] = next((tool for tool, spec in tools.TOOLS.items() if spec["provider"] == item["name"]), None)
+            item["tool"] = next((tool for tool, spec in tools.TOOLS.items()
+                                 if adapters.canonical(spec["provider"] or "") == item["name"]), None)
+            item.update(_provider_facts(item["name"], cfg["providers"][item["name"]]))
         node_types = {name: {
             "label": nt.label, "description": nt.description, "outputs": nt.outputs({}),
             "takes_retries": nt.takes_retries, "default_retries": nt.default_retries, "default_timeout": nt.default_timeout,
@@ -231,12 +252,13 @@ class App:
         self.configurations.mkdir(parents=True, exist_ok=True)
         tmp = self.configurations / f"{name}.{secrets.token_hex(4)}.tmp"
         tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.replace(tmp, self.configurations / name)
+        paths.replace(tmp, self.configurations / name)
 
     # --- setup: the same tools, installs and sign-ins as the translation app ---
     def _used(self) -> dict[str, list[str]]:
         """provider -> the names of the templates that use it (a model input's default or a fixed model)."""
         used: dict[str, list[str]] = {}
+        autos: dict[str, str] = {}
         for item in templates.listing(self.home):
             if not item["valid"]:
                 continue
@@ -245,7 +267,12 @@ class App:
             names += [n["config"]["provider"] for n in wf.nodes.values() if isinstance(n["config"].get("provider"), str)
                       and PROVIDER_RE.match(n["config"]["provider"].strip())]
             for name in names:
-                provider = name.partition("@")[0].partition("/")[0]
+                if name.strip() in adapters.AUTO:  # `auto`: the tool it uses now; with none usable, the first adapter
+                    if name not in autos:  # once per kind: each answer asks every tool for its state (not setdefault,
+                        autos[name] = (self._auto_now(name.strip())  # which would ask again for every template)
+                                       or ("ollama" if name.strip() == "auto:local" else next(iter(adapters.ADAPTERS))))
+                    name = autos[name]
+                provider = adapters.canonical(name.partition("@")[0].partition("/")[0])
                 if i18n.localized(wf.data["name"]) not in used.setdefault(provider, []):
                     used[provider].append(i18n.localized(wf.data["name"]))
         return used
@@ -279,10 +306,15 @@ class App:
         translation_used = self._translation_used()
         configured = self.engine.provider_cfg["providers"]
         quota = {**_read_json(ROOT / ".jobs" / "quota.json"), **self._read_conf("quota.json")}
+        states = self._tool_states()  # billing and calls at once (stream P)
+        user = adapters.read_settings(self.home)
         for item in items:
-            item["templates"] = used.get(item["provider"], []) if item["provider"] in configured else []
+            mine = adapters.canonical(item["provider"]) if item["provider"] else None  # "chatgpt" is codex here
+            item["templates"] = used.get(mine, []) if mine in configured else []
             item["translation"] = item["provider"] in translation_used
-            item["configured"] = item["provider"] is None or item["provider"] in configured
+            item["configured"] = item["provider"] is None or mine in configured
+            if mine in adapters.ADAPTERS:
+                item.update(_provider_facts(mine, configured.get(mine) or {}), **_provider_state(mine, states[mine], user))
             item["required"] = bool(item["templates"]) or item["translation"] or item["provider"] is None
             if item["provider"] is None:
                 item["name"] = pipeline_i18n.t(f"tool_name_{item['id']}")
@@ -340,10 +372,12 @@ class App:
         return self.test_model(m, {"name": self._tool(m[1], model=True)["provider"]})
 
     def test_model(self, m, body) -> dict:
-        """One short call to the model, the way a workflow calls it (pipeline.providers.run)."""
+        """One short call to the model, the way a workflow calls it (an adapter, or pipeline.providers.run for a
+        provider of config.toml)."""
         from pipeline.providers import QuotaError, run as run_llm
-        name = str(body.get("name", "")).strip()
         cfg = self.engine.provider_cfg
+        name = str(body.get("name", "")).strip()
+        name = self.engine.resolve_model(name) or name  # `auto`: the model a run would use now
         provider = name.partition("@")[0].partition("/")[0]
         if not PROVIDER_RE.match(name) or provider not in cfg["providers"]:
             raise HTTPError(400, t("bad_provider", value=name))
@@ -359,6 +393,28 @@ class App:
             except ollama.OllamaError as e:
                 raise HTTPError(400, str(e)) from None
             return {"message": t("test_answer", seconds=f"{time.time() - started:.0f}", answer=answer.strip()[:60])}
+        spec = cfg["providers"][provider]
+        if spec.get("adapter") == "openai-local":  # the local server (Setup: "Test")
+            from .providers import base
+            try:
+                answer = adapters.ADAPTERS["openai-local"].chat(spec.get("url", ""), adapters.split(name)[1] or spec.get("model", ""),
+                                                                "Reply with exactly this word and nothing else: OK",
+                                                                base.SYSTEM_PROMPT, 180)
+            except base.CallError as e:
+                raise HTTPError(400, str(e)) from None
+            return {"message": t("test_answer", seconds=f"{time.time() - started:.0f}", answer=answer.strip()[:60])}
+        if spec.get("adapter") in adapters.ADAPTERS:  # with the billing guard, as a run calls it
+            from .providers import base
+            _, model, effort = adapters.split(name)
+            try:
+                answer, _ = base.run(adapters.ADAPTERS[spec["adapter"]], spec, model, effort,
+                                     "Reply with exactly this word and nothing else: OK", 180)
+            except base.UsageLimit as e:
+                self._update_conf("quota.json", provider, {"until": e.until, "since": time.time(), "message": str(e)})
+                raise HTTPError(400, t("quota_known", name=provider, time=time.strftime("%H:%M", time.localtime(e.until)))) from None
+            except base.CallError as e:
+                raise HTTPError(400, str(e)) from None
+            return {"message": t("test_answer", seconds=f"{time.time() - started:.0f}", answer=answer.strip()[:60])}
         try:
             answer = run_llm(Project(ROOT, {"providers": cfg["providers"], "general": cfg["general"]}), name,
                              "Reply with exactly this word and nothing else: OK", wait_for_quota=False, attempts=1, timeout=180)
@@ -366,6 +422,75 @@ class App:
             self._update_conf("quota.json", provider, {"until": e.until, "since": time.time(), "message": str(e)})
             raise
         return {"message": t("test_answer", seconds=f"{time.time() - started:.0f}", answer=answer.strip()[:60])}
+
+    # --- stream P: the AI tools of the workflows (mehteran/providers/): billing, the model order, `auto` ---
+    def _tool_states(self) -> dict:
+        return (self.engine.tool_states or adapters.statuses)()  # the tests give the engine fake states
+
+    def _auto_now(self, kind: str) -> str:
+        """The model that `kind` would use if a run started now ("" when none can)."""
+        cfg = self.engine.provider_cfg
+        found = [c for c in adapters.candidates(kind, self._tool_states(), adapters.read_settings(self.home))
+                 if adapters.split(c)[0] in cfg["providers"]]
+        blocked = self.engine.known_limits()
+        return sorted(found, key=lambda c: adapters.split(c)[0] in blocked)[0] if found else ""
+
+    def providers_get(self, m, body) -> dict:
+        """Each adapter with its state, billing and calls at once; the model order; what each `auto` kind uses now."""
+        cfg = self.engine.provider_cfg
+        user = adapters.read_settings(self.home)
+        states = self._tool_states()
+        blocked = self.engine.known_limits()
+        busy = adapters.busy()
+        items = []
+        for name in adapters.ADAPTERS:
+            if name not in cfg["providers"]:
+                continue
+            st = states[name]
+            items.append({"name": name, "installed": st.get("installed", False), "signed_in": st.get("signed_in", False),
+                          **_provider_facts(name, cfg["providers"][name]), **_provider_state(name, st, user),
+                          "blocked_until": blocked.get(name), "in_use": busy.get(name, {}).get("in_use", 0),
+                          "models": st.get("models") or [], "url": user["providers"].get(name, {}).get("url", ""),
+                          "model": user["providers"].get(name, {}).get("model", "")})
+        auto = {}
+        for kind in adapters.AUTO:
+            chosen = self._auto_now(kind)
+            provider, model, _ = adapters.split(chosen)
+            auto[kind] = {"name": chosen, **adapters.destination(provider, model, cfg["providers"].get(provider))} if chosen else None
+        return {"providers": items, "order": adapters.order(states, user), "order_is_default": not user["order"],
+                "auto": auto}
+
+    def providers_put(self, m, body) -> dict:
+        """Saves the model order ({"order": [model]}) and per tool "API key (billed)" and calls at once
+        ({"providers": {name: {api_key, concurrency}}}) in <data>/configurations/providers.toml."""
+        user = adapters.read_settings(self.home)
+        if "order" in body:
+            order = body["order"]
+            if not isinstance(order, list) or len(order) > 20 or not all(
+                    isinstance(e, str) and adapters.ENTRY_RE.match(e) and adapters.split(e)[0] in adapters.ADAPTERS
+                    for e in order):
+                raise HTTPError(400, t("bad_request"))
+            user["order"] = list(dict.fromkeys(order))
+        for name, change in (body.get("providers") or {}).items() if isinstance(body.get("providers"), dict) else []:
+            if name not in adapters.ADAPTERS or not isinstance(change, dict):
+                raise HTTPError(400, t("bad_request"))
+            mine = user["providers"].setdefault(name, {})
+            if isinstance(change.get("api_key"), bool):
+                mine["api_key"] = change["api_key"]
+            if isinstance(change.get("concurrency"), int) and not isinstance(change["concurrency"], bool):
+                mine["concurrency"] = min(max(change["concurrency"], 1), adapters.MAX_CONCURRENCY)
+            if name == "openai-local" and "url" in change:  # only an address on this computer
+                url = adapters.loopback_url(change["url"]) if change["url"] else ""
+                if url is None:
+                    raise HTTPError(400, t("local_server_url_bad"))
+                mine["url"] = url
+            if name in adapters.NEEDS_MODEL and isinstance(change.get("model"), str):
+                mine["model"] = change["model"].strip()[:120]
+        with self.conf_lock:
+            adapters.write_settings(self.home, user)
+        adapters.forget_status()
+        self.engine.reload_providers()
+        return self.providers_get(m, {})
 
     # --- the visual editor ---
     def editor_check(self, m, body) -> dict:
@@ -398,6 +523,54 @@ class App:
                                            str(body.get("new", "")))}
         except schema.WorkflowError as e:
             raise HTTPError(400, e.items()[0]["message"], e.messages()) from None
+
+    # --- the editor's model calls (mehteran/drafting.py): "Describe it" and "Test this step", as jobs ---
+    @property
+    def editor_jobs(self):
+        if "_editor_jobs" not in self.__dict__:
+            from .drafting import Jobs
+            self.__dict__["_editor_jobs"] = Jobs(self.home)
+        return self.__dict__["_editor_jobs"]
+
+    def _editor_job(self, start) -> dict:
+        from .drafting import DraftError
+        try:
+            return start()
+        except DraftError as e:
+            raise HTTPError(400, str(e)) from None
+
+    def editor_draft(self, m, body) -> dict:
+        """A model writes a first draft of a workflow for {"description", "provider"}: starts the job. One model call
+        (two when the first answer does not pass the check). Nothing is saved and nothing runs."""
+        from . import drafting
+        taken = {item["id"] for item in templates.listing(self.home)}
+        return self._editor_job(lambda: {"id": drafting.start_draft(
+            self.editor_jobs, self.engine, str(body.get("description", "")), str(body.get("provider", "")), taken)})
+
+    def editor_try_source(self, m, body) -> dict:
+        from . import drafting
+        refs = body.get("templates") if isinstance(body.get("templates"), list) else []
+        return self._editor_job(lambda: drafting.try_source(self.engine, _model(body), str(body.get("node", "")), refs[:4]))
+
+    def editor_try(self, m, body) -> dict:
+        """Runs one step of the editor's workflow alone: {"model", "node", "provider", "run": id} with the outputs of
+        that run, or {"sample": text} instead of "run"."""
+        from . import drafting
+        sample = body.get("sample")
+        if sample is not None and not isinstance(sample, str):
+            raise HTTPError(400, t("bad_request"))
+        return self._editor_job(lambda: {"id": drafting.start_try(
+            self.editor_jobs, self.engine, _model(body), str(body.get("node", "")), str(body.get("provider", "")),
+            str(body.get("run", "")), sample)})
+
+    def editor_job_state(self, m, body) -> dict:
+        offset = body.get("offset", 0)
+        if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+            raise HTTPError(400, t("bad_request"))
+        return self._editor_job(lambda: self.editor_jobs.state(m[1], offset))
+
+    def editor_job_cancel(self, m, body) -> dict:
+        return self._editor_job(lambda: {"cancelled": self.editor_jobs.cancel(m[1])})
 
     def template_save_model(self, m, body) -> dict:
         return templates.save_model(m[2], _model(body), self.home, drop_comments=body.get("drop_comments") is True,
@@ -598,7 +771,9 @@ class App:
     # --- favorites: <data>/configurations/library.json {"favorites": ["builtin:<id>", "user:<id>", ...]} ---
     def _favorites(self) -> list[str]:
         value = self._read_conf("library.json").get("favorites")
-        return [x for x in value if isinstance(x, str)] if isinstance(value, list) else []
+        if not isinstance(value, list):
+            return []
+        return list(dict.fromkeys(templates.canonical_ref(x) for x in value if isinstance(x, str)))  # merged ids -> new
 
     def _favorite_refs(self) -> set[str]:
         """What can be a favorite: every template of the library, and the book translation ("app:translation")."""
@@ -606,7 +781,7 @@ class App:
 
     def template_favorite(self, m, body) -> dict:
         """Marks a template (or the book translation) as a favorite or not. An id that is not in the library is refused."""
-        ref = f"{m[1]}:{m[2]}"
+        ref = templates.canonical_ref(f"{m[1]}:{m[2]}")
         if ref not in self._favorite_refs():
             raise HTTPError(404, t("not_found"))
         with self.conf_lock:
@@ -618,6 +793,66 @@ class App:
             data["favorites"] = favorites
             self._write_conf("library.json", data)
         return {"favorite": body.get("on") is True}
+
+    # --- the pre-run estimate (mehteran/estimate.py) and the first-start welcome ---
+    def template_estimate(self, m, body) -> dict:
+        """The model calls of a run of this template with the form's values ({"values": {input: text}}); each model
+        with its tool. Nothing is read or called for it."""
+        from . import estimate
+        values = body.get("values") or {}
+        if not isinstance(values, dict):
+            raise HTTPError(400, t("bad_request"))
+        out = estimate.estimate(schema.parse(templates.read(m[1], m[2], self.home)), values, self.engine.provider_cfg,
+                                resolve=self._auto_now, privacy="local" if body.get("privacy") == "local" else "")
+        by_provider = {name: (tool, spec["name"]) for tool, spec in tools.TOOLS.items() if spec["provider"]
+                       for name in {spec["provider"], adapters.canonical(spec["provider"])}}  # "chatgpt" and "codex"
+        for item in out["models"]:
+            item["tool"], item["tool_name"] = by_provider.get(item["provider"], (None, None))
+        return out
+
+    def _default_providers(self, template_id: str) -> list[str]:
+        """The providers a built-in template calls with its default models."""
+        from . import estimate
+        try:
+            wf = schema.parse(templates.read("builtin", template_id, self.home))
+        except (templates.TemplateError, schema.WorkflowError):
+            return []
+        found = estimate.estimate(wf, {}, self.engine.provider_cfg, resolve=self._auto_now)["models"]
+        return list(dict.fromkeys(item["provider"] for item in found if item["provider"] and item["configured"]))
+
+    def welcome(self, m, body) -> dict:
+        """The first-start panel of the library: shown until the user runs something or closes it. That is kept in
+        <data>/configurations/library.json ("welcome_closed": "dismissed" or "used"), so it holds for every browser
+        and port. Each choice names the providers it needs; the page adds their state from GET /api/tools."""
+        from . import usage
+        closed = self._read_conf("library.json").get("welcome_closed") in ("dismissed", "used")
+        if not closed and (self.engine.store.runs() or usage.translation_runs(ROOT)):
+            self._update_conf("library.json", "welcome_closed", "used")  # stays closed when the runs are removed later
+            closed = True
+        if closed:
+            return {"show": False}
+        builtin = {item["id"]: item.get("category") for item in templates.listing(self.home)
+                   if item["source"] == "builtin" and item["valid"]}
+        choices = []
+        for name, target in WELCOME_CHOICES:
+            if not target:  # the book translation: the providers of its own workflow
+                choices.append({"id": name, "action": "translation", "templates": [],
+                                "providers": sorted(self._translation_used())})
+                continue
+            wanted = (target["template"],) if "template" in target else target.get("templates")
+            ids = [x for x in wanted if x in builtin] if wanted else [x for x, c in builtin.items() if c == target["category"]]
+            if not ids:
+                continue  # a choice whose templates are not in this library is left out
+            choices.append({"id": name, "action": "run" if "template" in target else "category" if "category" in target else "templates",
+                            "category": target.get("category"), "templates": ids,
+                            "providers": list(dict.fromkeys(p for x in ids for p in self._default_providers(x)))})
+        return {"show": True, "choices": choices}
+
+    def welcome_close(self, m, body) -> dict:
+        if body.get("dismissed") is not True:
+            raise HTTPError(400, t("bad_request"))
+        self._update_conf("library.json", "welcome_closed", "dismissed")
+        return {"show": False}
 
     def template_get(self, m, body) -> dict:
         text = templates.read(m[1], m[2], self.home)
@@ -632,6 +867,8 @@ class App:
             out["graph"] = wf.graph()
             out["input_specs"] = list(wf.inputs.values())
             out["outputs"] = wf.data.get("outputs") or []
+            out["warnings"] = [{**w.item(), "label": i18n.localized(wf.nodes[w.where[6:]].get("label")) or w.where[6:]
+                                if w.where.startswith("nodes.") else ""} for w in schema.warnings(wf)]  # the run window
         return out
 
     def template_customize(self, m, body) -> dict:
@@ -647,8 +884,22 @@ class App:
         return {"ok": True}
 
     def template_import(self, m, body) -> dict:
-        new_id = templates.import_text(str(body.get("yaml", "")), self.home)
+        text = str(body.get("yaml", ""))
+        if isinstance(body.get("id"), str) and body["id"].strip():  # the preview's new id for a file whose id is taken
+            if not ID_RE.fullmatch(body["id"].strip()):
+                raise HTTPError(400, t("bad_id", value=body["id"][:70]))
+            text = templates.with_id(text, body["id"].strip())
+        new_id = templates.import_text(text, self.home)
         return {"id": new_id, "ref": f"user:{new_id}"}
+
+    def template_preview(self, m, body) -> dict:
+        """What importing this YAML text would add (sharing.preview), with the AI tool of each model."""
+        from . import sharing
+        out = sharing.preview(str(body.get("yaml", "")), self.home, self.engine.provider_cfg)
+        by_provider = {spec["provider"]: (tool, spec["name"]) for tool, spec in tools.TOOLS.items() if spec["provider"]}
+        for item in out.get("models") or []:
+            item["tool"], item["tool_name"] = by_provider.get(item["provider"], (None, None))
+        return out
 
     def validate(self, m, body) -> dict:
         try:
@@ -710,15 +961,95 @@ class App:
             raise HTTPError(400, t("bad_request"))  # one uploaded file for two inputs: the run moves each file once
         files = {str(key): [self._upload_file(v) for v in value] if isinstance(value, list) else self._upload_file(value)
                  for key, value in uploads.items()}
+        output_dir = self._output_dir(f"{source}:{template_id}", body)  # history.py: save the results there too
+        if isinstance(body.get("batch"), dict):  # "once per file": one queued run per file of one input
+            return self._batch_start(text, f"{source}:{template_id}", values, files, body["batch"], output_dir)
         run_id = self.engine.start(text, {str(k): v for k, v in values.items()}, files,
-                                   template=f"{source}:{template_id}", move_files=True)
+                                   template=f"{source}:{template_id}", move_files=True, launch=False,
+                                   privacy="local" if body.get("privacy") == "local" else "")
+        if output_dir:
+            self.engine.store.update_run(run_id, output_dir=output_dir)
+        self.engine.launch(run_id)
+        if output_dir:
+            self.automation.kick()
         for value in files.values():
             for path in value if isinstance(value, list) else [value]:
                 shutil.rmtree(path.parent, ignore_errors=True)
         return {"id": run_id}
 
     def run_list(self, m, body) -> list:
-        return self.engine.list()
+        from . import history
+        return history.listing(self.engine)
+
+    # --- the history: names, deleting, batches, saving to a folder (history.py) ---
+    def run_label(self, m, body) -> dict:
+        from . import history
+        return history.set_label(self.engine, m[1], body.get("label"), body.get("note"))
+
+    def run_delete(self, m, body) -> dict:
+        """{"dry_run": true}: the size and whether it can be deleted; else deletes the run and its files."""
+        from . import history
+        if body.get("dry_run") is True:
+            run = self.engine.get(m[1])
+            return {"size": history.run_size(self.engine, m[1]), "deletable": history.deletable(self.engine, run)}
+        return {"deleted": True, "size": history.delete_run(self.engine, m[1])}
+
+    def run_cleanup(self, m, body) -> dict:
+        from . import history
+        days = body.get("days")
+        if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= 3650:
+            raise HTTPError(400, t("bad_request"))
+        return history.cleanup(self.engine, days, body.get("dry_run") is True)
+
+    def _output_dir(self, ref: str, body) -> str | None:
+        """The checked folder of "save the results to a folder", or None. A folder used for the first time must be
+        confirmed by the user ("output_confirmed": true); it is then remembered, also as this workflow's folder."""
+        from . import history
+        value = body.get("output_dir")
+        if value in (None, ""):
+            return None
+        folder, problem = history.folder_problem(value, self.home)
+        if problem:
+            raise HTTPError(400, problem)
+        with self.conf_lock:
+            data = self._read_conf("output_folders.json")
+            confirmed = [x for x in data.get("confirmed") or [] if isinstance(x, str)]
+            if str(folder) not in confirmed:
+                if body.get("output_confirmed") is not True:
+                    raise HTTPError(409, t("folder_confirm", path=str(folder)))
+                confirmed.append(str(folder))
+            workflows = data.get("workflows") if isinstance(data.get("workflows"), dict) else {}
+            workflows[ref] = str(folder)
+            self._write_conf("output_folders.json", {**data, "confirmed": confirmed[-200:], "workflows": workflows})
+        return str(folder)
+
+    def output_folder_get(self, m, body) -> dict:
+        """The folder remembered for this workflow ("" when none)."""
+        value = (self._read_conf("output_folders.json").get("workflows") or {}).get(f"{m[1]}:{m[2]}")
+        return {"path": value if isinstance(value, str) else ""}
+
+    def output_folder_check(self, m, body) -> dict:
+        from . import history
+        folder, problem = history.folder_problem(body.get("path"), self.home)
+        confirmed = self._read_conf("output_folders.json").get("confirmed") or []
+        return {"path": str(folder) if folder else "", "problem": str(problem) if problem else None,
+                "confirmed": bool(folder) and str(folder) in confirmed}
+
+    def _batch_start(self, text: str, ref: str, values: dict, files: dict, batch: dict, output_dir: str | None) -> dict:
+        from . import history
+        input_id, ids = str(batch.get("input", "")), batch.get("files")
+        if not isinstance(ids, list) or not ids or input_id in files or len(set(map(str, ids))) != len(ids) \
+                or set(map(str, ids)) & {str(p.parent.name) for v in files.values() for p in (v if isinstance(v, list) else [v])}:
+            raise HTTPError(400, t("bad_request"))
+        if len(ids) > history.MAX_BATCH:
+            raise HTTPError(400, t("batch_too_many", limit=history.MAX_BATCH))
+        each = [self._upload_file(v) for v in ids]
+        batch_id, run_ids = history.start_batch(self.engine, text, ref, {str(k): v for k, v in values.items()}, files,
+                                                input_id, each, output_dir)
+        self.automation.kick()
+        for path in each + [p for v in files.values() for p in (v if isinstance(v, list) else [v])]:
+            shutil.rmtree(path.parent, ignore_errors=True)
+        return {"batch": batch_id, "ids": run_ids, "id": run_ids[0]}
 
     def run_get(self, m, body) -> dict:
         run = self.engine.get(m[1])
@@ -741,6 +1072,7 @@ class App:
             self.engine.cancel(m[1])
         else:
             self.engine.resume(m[1])
+            self.automation.kick()  # a resumed run of a batch, or one that saves to a folder after success
         return {"ok": True}
 
     def node_action(self, m, body) -> dict:
@@ -749,7 +1081,66 @@ class App:
             self.engine.resume(run_id, node_id)
         else:
             self.engine.decide(run_id, node_id, action == "approve", str(body.get("comment", ""))[:20_000])
+        self.automation.kick()
         return {"ok": True}
+
+    # --- edited results: <run>/edited/<node>.<name>.md next to the original output, which is never changed ---
+    def _editable(self, run_id: str, rel: str) -> tuple[Path, str]:
+        """The edited copy of an original output (a Markdown file of a step: nodes/<node>/<name>.md): its path and
+        its path in the run folder. Anything else (inputs, other folders, a path that leaves the run folder) is refused."""
+        m = EDITABLE_RE.fullmatch(rel)
+        try:
+            original = self.engine.artifact(run_id, rel) if m else None
+        except RunError:
+            original = None
+        rel = f"edited/{m[1]}.{m[2]}.md" if original else ""
+        path = paths.inside(self.engine.run_dir(run_id), rel) if original else None
+        if path is None or path.parent.name != "edited":  # also when the edited folder is a link elsewhere
+            raise HTTPError(404, t("file_not_found"))
+        return path, rel
+
+    def edit_get(self, m, body) -> dict:
+        path, rel = self._editable(m[1], m[2])
+        if not path.is_file():
+            return {"path": rel, "exists": False, "text": None, "modified": None, "limit": EDIT_LIMIT}
+        return {"path": rel, "exists": True, "text": path.read_text(encoding="utf-8"), "modified": path.stat().st_mtime,
+                "limit": EDIT_LIMIT}
+
+    def edit_save(self, m, body) -> dict:
+        path, rel = self._editable(m[1], m[2])
+        text = body.get("text")
+        if not isinstance(text, str):
+            raise HTTPError(400, t("bad_request"))
+        data = text.encode("utf-8")
+        if len(data) > EDIT_LIMIT:
+            raise HTTPError(413, t("edit_too_large", limit=EDIT_LIMIT // 1024))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.name}.{secrets.token_hex(4)}.tmp")
+        tmp.write_bytes(data)
+        paths.replace(tmp, path)
+        return {"path": rel, "exists": True, "size": len(data), "modified": path.stat().st_mtime}
+
+    def edit_export(self, m, body) -> dict:
+        """The edited text as one file of FORMATS, with document.export's code (nodes.export_document), next to it."""
+        from .nodes import NodeError, export_document
+        source, rel = self._editable(m[1], m[2])
+        fmt = body.get("format")
+        if fmt not in FORMATS:
+            raise HTTPError(400, t("edit_bad_format", value=str(fmt)[:20], formats=", ".join(FORMATS)))
+        if not source.is_file():
+            raise HTTPError(404, t("edit_not_saved"))
+        if fmt == "md":
+            return {"path": rel, "size": source.stat().st_size}
+        run = self.engine.get(m[1])
+        wf = schema.parse(run["workflow_yaml"])
+        lang = next((run["inputs"][key] for key, spec in wf.inputs.items()
+                     if spec["type"] == "language" and isinstance(run["inputs"].get(key), str)), "en")
+        try:
+            out = export_document(source.read_text(encoding="utf-8"), [fmt], run["workflow_name"], lang, source.parent,
+                                  source.stem)
+        except NodeError as e:
+            raise HTTPError(400, str(e)) from None
+        return {"path": f"edited/{out[fmt].name}", "size": out[fmt].stat().st_size}
 
 
 ID = r"([a-z][a-z0-9_-]{0,63})"
@@ -764,8 +1155,12 @@ ROUTES = [
     ("PUT", rf"/api/templates/(user)/{ID}", App.template_save),
     ("DELETE", rf"/api/templates/(builtin|user)/{ID}", App.template_delete),
     ("POST", r"/api/templates/import", App.template_import),
+    ("POST", r"/api/templates/preview", App.template_preview),  # the import preview (sharing.py)
     ("PUT", rf"/api/templates/(builtin|user)/{ID}/favorite", App.template_favorite),
     ("PUT", r"/api/templates/(app)/(translation)/favorite", App.template_favorite),  # the book translation's card
+    ("POST", rf"/api/templates/(builtin|user)/{ID}/estimate", App.template_estimate),
+    ("GET", r"/api/welcome", App.welcome),
+    ("PUT", r"/api/welcome", App.welcome_close),
     ("POST", r"/api/validate", App.validate),
     ("PUT", rf"/api/templates/(user)/{ID}/model", App.template_save_model),
     ("POST", r"/api/templates/new", App.template_create),
@@ -789,7 +1184,14 @@ ROUTES = [
     ("POST", r"/api/editor/yaml", App.editor_yaml),
     ("POST", r"/api/editor/parse", App.editor_parse),
     ("POST", r"/api/editor/rename", App.editor_rename),
+    ("POST", r"/api/editor/draft", App.editor_draft),
+    ("POST", r"/api/editor/try", App.editor_try),
+    ("POST", r"/api/editor/try/source", App.editor_try_source),
+    ("POST", r"/api/editor/jobs/([0-9a-f]{16})", App.editor_job_state),
+    ("POST", r"/api/editor/jobs/([0-9a-f]{16})/cancel", App.editor_job_cancel),
     ("GET", r"/api/tools", App.tools),
+    ("GET", r"/api/providers", App.providers_get),
+    ("PUT", r"/api/providers", App.providers_put),
     ("POST", r"/api/tools/install-missing", App.install_missing),
     ("POST", r"/api/tools/([a-z]{1,20})/install", App.install_one),
     ("POST", r"/api/tools/([a-z]{1,20})/login", App.login),
@@ -799,10 +1201,21 @@ ROUTES = [
     ("POST", r"/api/runs", App.run_start),
     ("GET", r"/api/runs", App.run_list),
     ("GET", rf"/api/runs/{RUN}", App.run_get),
+    # the history (history.py): a run's name and note, deleting runs, saving results to a folder
+    ("PUT", rf"/api/runs/{RUN}/label", App.run_label),
+    ("DELETE", rf"/api/runs/{RUN}", App.run_delete),
+    ("POST", r"/api/runs/cleanup", App.run_cleanup),
+    ("GET", rf"/api/output-folders/(builtin|user)/{ID}", App.output_folder_get),
+    ("POST", r"/api/output-folders/check", App.output_folder_check),
     ("POST", rf"/api/runs/{RUN}/(cancel|resume)", App.run_action),
     ("POST", rf"/api/runs/{RUN}/nodes/{ID}/(retry|approve|reject)", App.node_action),
+    # an edited result: GET reads it, PUT {text} saves it, POST {format} exports it (the path is the original output)
+    ("GET", rf"/api/runs/{RUN}/edits/(.+)", App.edit_get),
+    ("PUT", rf"/api/runs/{RUN}/edits/(.+)", App.edit_save),
+    ("POST", rf"/api/runs/{RUN}/edits/(.+)", App.edit_export),
 ]
 TEMPLATE_DOWNLOAD_RE = re.compile(rf"/api/templates/(builtin|user)/{ID}/download")
+TEMPLATE_SHARE_RE = re.compile(rf"/api/templates/(builtin|user)/{ID}/share")  # ?author=<name>: the shared file
 FILE_RE = re.compile(rf"/api/runs/{RUN}/files/(.+)")
 LOG_RE = re.compile(rf"/api/runs/{RUN}/log")  # ?node=<id>&offset=<bytes>: a node's live log from offset
 
@@ -875,6 +1288,11 @@ def make_handler(app: App, port: int):
                     text = templates.read(m[1], m[2], app.home)
                     return self.send(200, text.encode("utf-8"), "application/x-yaml",
                                      {"Content-Disposition": f'attachment; filename="{m[2]}.yaml"'})
+                if method == "GET" and (m := TEMPLATE_SHARE_RE.fullmatch(path)):  # "Share": <id>.mehteran.yaml
+                    from . import sharing
+                    name, text = sharing.share_text(m[1], m[2], app.home, query.get("author", [""])[0])
+                    return self.send(200, text.encode("utf-8"), "application/x-yaml",
+                                     {"Content-Disposition": f'attachment; filename="{name}"'})
 
                 route = next(((fn, m) for route_method, pattern, fn in ROUTES
                               if route_method == method and (m := re.fullmatch(pattern, path))), None)
@@ -957,6 +1375,26 @@ def make_handler(app: App, port: int):
     return Handler
 
 
+# --- stream P: what the page shows of an AI tool -----------------------------------------------------------------
+def _provider_facts(name: str, spec: dict) -> dict:
+    """What does not change while Mehteran runs: the tool's name, where the text goes, calls at once."""
+    adapter = adapters.ADAPTERS.get(spec.get("adapter") or "")
+    where = adapters.destination(name, spec.get("model") or "", spec)
+    return {"label": adapter.name if adapter else name, "adapter": spec.get("adapter"), "vendor": where["vendor"],
+            "local": where["local"],
+            "concurrency": spec.get("concurrency"), "context": spec.get("context"),
+            "default_billing": adapter.billing if adapter else None}
+
+
+def _provider_state(name: str, st: dict, user: dict) -> dict:
+    """The billing a call would use now and why `auto` cannot use the tool (a message key), from its state."""
+    billing = adapters.effective_billing(name, st, user)
+    return {"billing": billing, "api_key_allowed": user["providers"].get(name, {}).get("api_key", False),
+            # an API key is in the environment, and the worker does not pass it on
+            "key_dropped": st.get("key_source") in adapters.BILLED_KEYS and billing != "api_key",
+            "problem": adapters.problem(name, st, user)}
+
+
 def _read_json(path: Path) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -969,6 +1407,9 @@ class Server(ThreadingHTTPServer):
     # The page asks for its scripts, styles and first data at once, and a reload adds the closing connections of the
     # page before it: the default queue of 5 waiting connections can overflow, and the browser then gets a reset.
     request_queue_size = 64
+    # Windows: SO_REUSEADDR lets a second server bind a port that another one listens on, so a second start would not
+    # see "port busy". Windows frees a closed port without it.
+    allow_reuse_address = sys.platform != "win32"
 
 
 def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = None) -> None:
@@ -985,6 +1426,8 @@ def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = N
         return
     tools.extend_path(ROOT)
     app = App(engine or Engine())
+    if resume_on_start():  # opt-in: configurations/engine.toml
+        app.engine.resume_interrupted()
     server.RequestHandlerClass = make_handler(app, port)
     # The book translation: the translation app's API under /api/tr/ of this server, with this server's session key.
     app.translation = translation.Translation()

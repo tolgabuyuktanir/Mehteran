@@ -49,11 +49,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: exam
@@ -75,7 +75,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        Split the exam below into separate questions. Do not solve anything.
+        Task: Split the exam below into separate questions. Do not solve anything.
 
         The exam (extracted automatically; page numbers, headers or broken lines are artefacts):
 
@@ -99,7 +99,7 @@ nodes:
       max_items: 150
       provider: "{{inputs.review_model}}"
       prompt: |
-        You take an exam question as a careful student. Solve it on your own.
+        Task: Take an exam question as a careful student. Solve it on your own.
 
         Subject and level (it may be empty): {{inputs.subject}}
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the reasoning in this language; keep the question's own words as they are.
@@ -122,7 +122,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check an answer key. Compare the key with blind solutions, question by question.
+        Task: Check an answer key. Compare the key with blind solutions, question by question.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -140,7 +140,7 @@ nodes:
 
         For every question where the key's answer and the blind answer differ, or the solver said "Cannot be answered" or found several possible choices, or the key has no entry, write one block: the question number, the key's answer, the blind answer, and what you think the cause is. Do not decide yet who is right, but say what must be checked. Do not list questions that agree.
 
-        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated). Write "None found." under "### Mismatches" if everything agrees. Under "### Result" write the number of questions, the number that agree and the number of mismatches.
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with a title for the report (a top-level heading, in the output language); right under it write one short notice paragraph in the output language that says: this is practice material checked by an AI; it is not made or checked by the body that runs any exam, and it may contain errors; a teacher should check it before use. Then write the heading below (translated). Write "None found." under "### Mismatches" if everything agrees. Under "### Result" write the number of questions, the number that agree and the number of mismatches.
 
         ## Comparison
 
@@ -169,7 +169,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        Some questions have a mismatch between the answer key and an independent solution. Decide each one.
+        Task: Some questions have a mismatch between the answer key and an independent solution. Decide each one.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -204,17 +204,9 @@ nodes:
     label: {tr: "Raporu birleştir", en: "Assemble the report"}
     config:
       template: |
-        # Answer key verification
-
         {{nodes.compare.text}}
 
         {{nodes.adjudicate.text}}
-
-        ---
-
-        Notice: This is original practice material written by an AI. It is not a real exam item, it was not made by or checked by the body that runs any exam, and it may contain errors. A teacher should check it before use.
-
-        Uyarı: Bu belge, yapay zekâ tarafından yazılmış özgün alıştırma materyalidir. Gerçek bir sınav sorusu değildir; hiçbir sınav kurumu tarafından hazırlanmamış ya da denetlenmemiştir ve hata içerebilir. Kullanmadan önce bir öğretmen kontrol etmelidir.
 
   - id: approve
     type: approval

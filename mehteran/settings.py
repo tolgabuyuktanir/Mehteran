@@ -1,11 +1,12 @@
-"""The AI tools that Mehteran may call: the [providers.*] sections of the translation app's config.toml.
+"""The AI tools that Mehteran may call, for the workflows.
 
-Mehteran only reads that file; it never writes it. MEHTERAN_CONFIG names another TOML file with the same sections
-(the tests use it for a fake tool). Without config.toml, config.default.toml is used.
-
-Mehteran adds providers of its own that call a local HTTP API instead of a command: "ollama" (local models). Their
-settings may be changed in <data>/configurations/providers.toml ([providers.ollama]: model, options); a provider of
-config.toml with the same name wins.
+- Mehteran's own adapters (mehteran/providers/): claude, codex, antigravity, gemini, ollama, with the user's settings
+  of <data>/configurations/providers.toml. The old name "chatgpt" means codex.
+- The other [providers.*] sections of the translation app's config.toml (a provider the user added there): they
+  run through the translation app's call, pipeline.providers.run. Mehteran only reads that file; it never writes it.
+  Its sections for claude, chatgpt, antigravity and gemini are for the book translation only.
+- MEHTERAN_CONFIG names another TOML file with [providers.*] sections; its providers win over the adapters of the
+  same name (the tests use it for a fake tool). Without config.toml, config.default.toml is used.
 """
 
 from __future__ import annotations
@@ -15,11 +16,8 @@ import tomllib
 from pathlib import Path
 
 from . import paths
-
-# Providers that Mehteran calls itself (mehteran/worker.py), not through a command-line tool.
-OWN_PROVIDERS = {"ollama": {"api": "ollama", "command": ["ollama"], "models": [], "model": ""}}
-OWN_KEYS = {"model", "options"}  # what <data>/configurations/providers.toml may set
-OPTION_KEYS = {"num_ctx": int, "temperature": float, "top_p": float, "seed": int}
+from . import providers as adapters
+from .providers import SYSTEM_PROMPT  # noqa: F401 - imported from here by older code
 
 GENERAL_KEYS = ("timeout", "retries", "quota_wait_minutes", "quota_max_hours")
 GENERAL_DEFAULTS = {"timeout": 1200, "retries": 1, "quota_wait_minutes": 30, "quota_max_hours": 24}
@@ -35,9 +33,6 @@ def config_path() -> Path:
     return paths.REPO / "config.default.toml"
 
 
-SYSTEM_PROMPT = "You are a careful analyst. Follow the instructions in the user message exactly and output only what is requested."
-
-
 def _neutral(command: list) -> list:
     """The command with Mehteran's own system prompt: the translation app's one describes a translator of Islamic
     books, which does not fit a paper review or a comparison. The translation app's file is not changed."""
@@ -45,7 +40,8 @@ def _neutral(command: list) -> list:
 
 
 def provider_config() -> dict:
-    """{"providers": {name: spec}, "general": {...}, "source": path}. A missing or broken file gives no providers."""
+    """{"providers": {name: spec}, "general": {...}, "order": [...], "source": path}. A missing or broken file gives
+    only the adapters."""
     path = config_path()
     try:
         with path.open("rb") as f:
@@ -53,31 +49,22 @@ def provider_config() -> dict:
     except (OSError, tomllib.TOMLDecodeError):
         cfg = {}
     general = cfg.get("general") if isinstance(cfg.get("general"), dict) else {}
-    providers = {name: {**spec, "command": _neutral(spec["command"])} for name, spec in (cfg.get("providers") or {}).items()
-                 if isinstance(spec, dict) and isinstance(spec.get("command"), list) and spec["command"]}
-    providers = {**own_providers(), **providers}
+    user = adapters.read_settings(paths.home())
+    providers = adapters.specs(user)
+    explicit = bool(os.environ.get("MEHTERAN_CONFIG"))
+    for name, spec in (cfg.get("providers") or {}).items():
+        if not (isinstance(spec, dict) and isinstance(spec.get("command"), list) and spec["command"]):
+            continue
+        if explicit or adapters.canonical(name) not in adapters.ADAPTERS:
+            providers[name] = {**spec, "command": _neutral(spec["command"])}
     return {"providers": providers, "general": {k: general.get(k, GENERAL_DEFAULTS[k]) for k in GENERAL_KEYS},
-            "source": str(path)}
+            "order": user["order"], "source": str(path)}
 
 
 def own_providers() -> dict:
-    """Mehteran's own providers with the settings of <data>/configurations/providers.toml (only known keys)."""
-    out = {name: dict(spec) for name, spec in OWN_PROVIDERS.items()}
-    try:
-        with (paths.home() / "configurations" / "providers.toml").open("rb") as f:
-            data = tomllib.load(f).get("providers") or {}
-    except (OSError, tomllib.TOMLDecodeError, AttributeError):
-        data = {}
-    for name, spec in data.items() if isinstance(data, dict) else []:
-        if name not in out or not isinstance(spec, dict):
-            continue
-        if isinstance(spec.get("model"), str):
-            out[name]["model"] = spec["model"]
-        options = spec.get("options") if isinstance(spec.get("options"), dict) else {}
-        out[name]["options"] = {k: kind(v) for k, v in options.items() if k in OPTION_KEYS
-                                and isinstance(v, (int, float)) and not isinstance(v, bool)
-                                for kind in [OPTION_KEYS[k]]}
-    return out
+    """The adapters that Mehteran calls without a command-line tool (Ollama), with the user's settings."""
+    user = adapters.read_settings(paths.home())
+    return {name: adapters.spec(name, user) for name, a in adapters.ADAPTERS.items() if not a.cli}
 
 
 def provider_choices(cfg: dict) -> list[dict]:
@@ -90,6 +77,9 @@ def provider_choices(cfg: dict) -> list[dict]:
             from . import ollama
             models = [m["name"] for m in ollama.installed_models() if ollama.MODEL_RE.match(m["name"])
                       and "/" not in m["name"]]  # "provider/model": a model name with "/" cannot be written
-        out.append({"name": name, "models": models, "local": spec.get("api") == "ollama",
-                    "efforts": [e for e in spec.get("efforts") or [] if isinstance(e, str)] if spec.get("effort") else []})
+        if spec.get("adapter") == "openai-local":  # the local server's models (none while it does not answer)
+            models = [m for m in adapters.ADAPTERS["openai-local"].list_models(spec.get("url", "")) if "/" not in m]
+        out.append({"name": name, "models": models, "local": spec.get("api") in ("ollama", "openai"), "adapter": spec.get("adapter"),
+                    "efforts": [e for e in spec.get("efforts") or [] if isinstance(e, str)]
+                    if spec.get("effort") or spec.get("adapter") else []})
     return out

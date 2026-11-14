@@ -17,6 +17,7 @@ description:
     removes any owner, date or decision that was not said. The result is a Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: recording
@@ -48,11 +49,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -99,6 +100,7 @@ nodes:
         (a table: action, owner, due date)
 
         ## Open questions
+        (a list, or "None.")
 
         ## Key points by topic
 
@@ -119,6 +121,8 @@ nodes:
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
+        What the user chose (given by the user, never remove or change it): the kind "{{inputs.kind}}" (it decides the headings) and the context "{{inputs.context}}" (it may be empty; names and terms in it are given by the user).
+
         The transcript:
 
         {{nodes.extract.text}}
@@ -127,7 +131,7 @@ nodes:
 
         {{nodes.notes.text}}
 
-        Method: for every decision, action item, owner, date, number and name in the notes, find where the transcript says it. Remove or correct each one that the transcript does not support (write "Not stated." for an owner or date). Do not add new content. Keep the structure and headings. Give the corrected notes only, then a last heading "## Corrections" (translated) with a short list of what you changed, or "None.".
+        Method: for every decision, action item, owner, date, number and name in the notes, find where the transcript says it. Remove or correct each one that the transcript does not support (write "Not stated." for an owner or date). Do not add new content. Keep the structure and headings. Give the corrected notes only. Do not describe your changes: the user never saw the first version. Under a heading with no content, write "None.".
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
 

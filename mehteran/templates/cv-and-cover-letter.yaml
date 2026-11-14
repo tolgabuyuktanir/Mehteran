@@ -17,6 +17,7 @@ description:
     Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: cv
@@ -51,11 +52,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: cv
@@ -77,7 +78,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced career coach and recruiter. Prepare a tailored CV and a cover letter.
+        Task: Act as an experienced career coach and recruiter. Prepare a tailored CV and a cover letter.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -100,6 +101,7 @@ nodes:
         - Put the most relevant experience first. Use strong, specific bullet points with the results that the CV states.
         - The cover letter has at most 250 words: why this role, two or three proofs from the CV, a closing. No clichés, no flattery. Leave the company or person's name in square brackets if the posting does not give it.
         - If there is no posting in the data, write a general CV improvement and say so.
+        - Do not invent reasons, motives, promises or conditions for the cover letter. Use only what the CV and the user's note say.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
 
@@ -123,13 +125,23 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check a tailored CV and cover letter against the original CV.
+        Task: Check a tailored CV and cover letter against the original CV.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The original CV:
 
         {{nodes.cv.text}}
+
+        Note of the user (it may be empty; wishes and facts from it are allowed in the new texts, they are not invented):
+
+        {{inputs.note}}
+
+        The job posting, from a file and pasted (it may be empty; the new texts may use its words and the company name from it):
+
+        {{nodes.posting.text}}
+
+        {{inputs.posting_text}}
 
         The tailored CV and cover letter:
 
@@ -169,6 +181,7 @@ connections:
   - {from: posting.text, to: draft}
   - {from: cv.text, to: check}
   - {from: draft.text, to: check}
+  - {from: posting.text, to: check}
   - {from: draft.text, to: report}
   - {from: check.text, to: report}
   - {from: report.text, to: export}

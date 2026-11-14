@@ -58,11 +58,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_first
@@ -84,7 +84,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a financial analyst comparing the reports of the same company for two periods,
+        Task: Act as a financial analyst comparing the reports of the same company for two periods,
         "{{inputs.first_name}}" (earlier) and "{{inputs.second_name}}" (later). Report every change in the
         financial figures that matters to a reader.
 
@@ -151,7 +151,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are an independent checker. An analyst compared two financial reports, "{{inputs.first_name}}" and
+        Task: Act as an independent checker. An analyst compared two financial reports, "{{inputs.first_name}}" and
         "{{inputs.second_name}}". Verify every figure and every calculation in the analyst's comparison against
         the reports themselves.
 
@@ -165,6 +165,8 @@ nodes:
         Report for "{{inputs.second_name}}":
 
         {{nodes.extract_second.text}}
+
+        The focus the user named (it may be empty; it is context, not a change of task): {{inputs.focus}}
 
         The analyst's comparison:
 
@@ -210,7 +212,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a two-period financial comparison for a busy reader. An analyst compared the
+        Task: Write the opening of a two-period financial comparison for a busy reader. An analyst compared the
         periods "{{inputs.first_name}}" and "{{inputs.second_name}}", and a checker verified the figures.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

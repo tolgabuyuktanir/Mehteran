@@ -18,6 +18,8 @@ class FakeOllama:
         self.requests: list[dict] = []
         self.pull_steps = 20
         self.pull_delay = 0.02
+        self.context_length = 32768  # the model maximum that /api/show reports (None: not reported)
+        self.chars_per_token = 4
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -62,9 +64,19 @@ class FakeOllama:
                 if self.path == "/api/chat":
                     if data.get("model") not in owner.models:
                         return self.reply(404, {"error": f"model '{data.get('model')}' not found"})
+                    # Like Ollama: a prompt longer than num_ctx is cut to it, and prompt_eval_count says how much was read.
+                    text = "".join(m["content"] for m in data.get("messages", []))
+                    read = min(len(text) // owner.chars_per_token + 1, (data.get("options") or {}).get("num_ctx", 4096))
                     return self.stream([{"message": {"content": "<think>hidden</think>Hello "}, "done": False},
                                         {"message": {"content": "from the local model."}, "done": False},
-                                        {"message": {"content": ""}, "done": True}])
+                                        {"message": {"content": ""}, "done": True, "prompt_eval_count": read}])
+                if self.path == "/api/show":
+                    if data.get("model") not in owner.models:
+                        return self.reply(404, {"error": "model not found"})
+                    info = {"general.architecture": "llama"}
+                    if owner.context_length:
+                        info["llama.context_length"] = owner.context_length
+                    return self.reply(200, {"model_info": info})
                 if self.path == "/api/pull":
                     name = data.get("model")
 

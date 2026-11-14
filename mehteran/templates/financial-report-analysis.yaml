@@ -43,7 +43,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -59,7 +59,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a financial analyst assessing the OPERATING PERFORMANCE shown in the report below: revenue,
+        Task: Act as a financial analyst assessing the OPERATING PERFORMANCE shown in the report below: revenue,
         growth, margins, profit and segments. Other analysts cover the balance sheet and cash flow, and the
         management narrative; do not review those.
 
@@ -117,7 +117,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a credit and balance-sheet analyst assessing the FINANCIAL POSITION shown in the report below:
+        Task: Act as a credit and balance-sheet analyst assessing the FINANCIAL POSITION shown in the report below:
         balance sheet, cash flow, liquidity, debt and working capital. Other analysts cover the operating
         performance and the management narrative; do not review those.
 
@@ -176,7 +176,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a sceptical equity analyst reading the MANAGEMENT NARRATIVE of the report below: what management
+        Task: Act as a sceptical equity analyst reading the MANAGEMENT NARRATIVE of the report below: what management
         claims, the risks it states, its outlook and the accounting notes that matter. Other analysts cover the
         detailed figures; refer to figures only to test a claim.
 
@@ -234,7 +234,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a financial report analysis for a reader who must understand the company's
+        Task: Write the opening of a financial report analysis for a reader who must understand the company's
         situation quickly. Three analysts have reviewed the same report. Combine their work.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

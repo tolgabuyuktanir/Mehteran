@@ -31,7 +31,7 @@ from .i18n import t
 from .nodes import FORMATS, ID_RE, OPERATORS, PROVIDER_RE, REGISTRY
 
 SCHEMA_VERSION = 1
-INPUT_TYPES = ("file", "text", "choice", "provider", "language")
+INPUT_TYPES = ("file", "text", "choice", "provider", "language", "url")  # url: a web page that document.extract reads
 FILE_FORMATS = ("pdf", "docx", "epub", "md", "txt", "csv", "tsv", "xlsx",  # pipeline.documents, and tables.py
                 "png", "jpg", "jpeg", "tif", "tiff",  # images: read by OCR (ocr.py)
                 "odt", "rtf",  # read by Pandoc (pandoc.py)
@@ -41,8 +41,9 @@ TEXT_LIMIT = 200_000
 LIMITS = {"nodes": 100, "inputs": 30, "connections": 400, "outputs": 30}
 
 # The key orders are also the order in which the editor writes a workflow file (dump()).
-TOP_ORDER = ("schema_version", "id", "based_on", "name", "description", "version", "category", "inputs", "nodes",
-             "connections", "outputs", "layout")
+TOP_ORDER = ("schema_version", "id", "based_on", "author", "name", "description", "version", "category", "tier", "privacy",
+             "inputs", "nodes", "connections", "outputs", "layout")  # author: who shared the file ("Share", sharing.py)
+# privacy: "local": every model call of a run stays on this computer (engine.start refuses any other provider)
 INPUT_ORDER = ("id", "type", "label", "description", "required", "default", "formats", "multiple", "options",
                "multiline")
 NODE_ORDER = ("id", "type", "label", "retries", "timeout", "fallback_provider", "config")
@@ -161,10 +162,12 @@ def check(data) -> Workflow:
     _ident(data.get("id"), "id", add, required=True)
     _localized(data.get("name"), "name", add, required=True)
     _localized(data.get("description"), "description", add)
-    for key in ("version", "category", "based_on"):
+    for key in ("version", "category", "tier", "based_on", "author"):
         if key in data and not (isinstance(data[key], (str, int, float)) and not isinstance(data[key], bool)
                                 and len(str(data[key])) <= 80):
             add(key, "bad_short_text")
+    if "privacy" in data and data["privacy"] != "local":
+        add("privacy", "bad_privacy")
 
     inputs = _inputs(data.get("inputs"), add)
     nodes = _nodes(data.get("nodes"), add)
@@ -310,6 +313,10 @@ def _inputs(value, add) -> dict[str, dict]:
                 add(f"{here}.default", "bad_text")
             if "multiline" in item and not isinstance(item["multiline"], bool):
                 add(f"{here}.multiline", "not_a_bool")
+        elif kind == "url" and "default" in item:
+            from .urlfetch import url_problem
+            if not isinstance(item["default"], str) or (item["default"].strip() and url_problem(item["default"].strip())):
+                add(f"{here}.default", "bad_url_default")
     return inputs
 
 
@@ -439,12 +446,12 @@ def _references(nodes: dict, inputs: dict, connected: set, add) -> None:
 def _type_rules(node_id: str, kind: str, config: dict, inputs: dict, nodes: dict, add) -> None:
     here = f"nodes.{node_id}.config"
     if kind == "document.extract" and not config.get("file") and \
-            sum(spec.get("type") == "file" for spec in inputs.values()) != 1:
+            sum(spec.get("type") in ("file", "url") for spec in inputs.values()) != 1:
         add(f"{here}.file", "extract_needs_file")
     if kind == "document.extract" and isinstance(config.get("file"), str) and config["file"]:
         ref = placeholders.only_reference(config["file"])
         parsed = placeholders.parse(ref) if ref else None
-        is_file = parsed and ((parsed[0] == "inputs" and inputs.get(parsed[1], {}).get("type") == "file") or
+        is_file = parsed and ((parsed[0] == "inputs" and inputs.get(parsed[1], {}).get("type") in ("file", "url")) or
                               (parsed[0] == "nodes" and parsed[1] in nodes and REGISTRY.get(nodes[parsed[1]].get("type"))
                                and REGISTRY[nodes[parsed[1]]["type"]].outputs(nodes[parsed[1]].get("config") or {}).get(parsed[2]) == "file"))
         if not is_file:
@@ -468,6 +475,13 @@ def _type_rules(node_id: str, kind: str, config: dict, inputs: dict, nodes: dict
                 re.compile(match)
             except re.error as e:
                 add(f"{here}.match", "bad_regex", error=e)
+    if kind == "ai.cli" and isinstance(config.get("json_schema"), str) and config["json_schema"].strip():
+        import json
+        try:
+            if not isinstance(json.loads(config["json_schema"]), dict):
+                raise ValueError("not an object")
+        except ValueError as e:
+            add(f"{here}.json_schema", "bad_json_schema", error=e)
     if "provider" in REGISTRY[kind].config and isinstance(config.get("provider"), str):
         provider = config["provider"].strip()
         ref = placeholders.only_reference(provider)
@@ -548,6 +562,35 @@ def _layout(value, nodes: dict, add) -> None:
         elif not (isinstance(position, dict) and set(position) == {"x", "y"} and
                   all(isinstance(v, int) and not isinstance(v, bool) and abs(v) <= POSITION_LIMIT for v in position.values())):
             add(here, "bad_position", limit=POSITION_LIMIT)
+
+
+# --- warnings: a valid workflow that probably does not do what its author wants ----------------------
+# Shown by the editor and before a run; they never block saving or running. (What fails while a run works is the
+# engine's part.)
+
+def warnings(wf: Workflow) -> list[Problem]:
+    """The warnings of a checked workflow, each with its place:
+    - a step that needs a text but has no incoming connection and names no input of the run form,
+    - a step whose result nobody uses: no connection leaves it and it is not a result of the workflow,
+    - a workflow that saves nothing: no export step and no result."""
+    out: list[Problem] = []
+    sources = {source for c in wf.data.get("connections") or [] for source in [str(c["from"]).partition(".")[0]]}
+    results = {source.partition(".")[0] for source in wf.outputs.values()}
+    for node_id, node in wf.nodes.items():
+        node_type = REGISTRY[node["type"]]
+        config = node.get("config") or {}
+        if node["type"] != "document.extract" and not wf.upstream[node_id]:
+            named = [parsed for key, spec in node_type.config.items()
+                     if spec.kind == "template" and spec.widget != "provider" and isinstance(config.get(key), str)
+                     for ref in placeholders.references(config[key]) for parsed in [placeholders.parse(ref)]
+                     if parsed and parsed[0] == "inputs"]
+            if not named:
+                out.append(Problem(f"nodes.{node_id}", "warn_step_no_input"))
+        if node["type"] != "document.export" and node_id not in sources and node_id not in results:
+            out.append(Problem(f"nodes.{node_id}", "warn_output_unused"))
+    if not wf.outputs and not any(node["type"] == "document.export" for node in wf.nodes.values()):
+        out.append(Problem("outputs", "warn_no_result"))
+    return out
 
 
 # --- the editor: ordered writing and renaming -------------------------------------

@@ -3,6 +3,7 @@ comment handling, the editor and setup routes (with every tool call mocked: noth
 
 import copy
 import json
+import re
 import sys
 import threading
 import unittest
@@ -178,18 +179,21 @@ class SaveModelTests(HomeCase):
         text = templates.read("builtin", "document-comparison", self.home)
         templates.import_text(templates.with_id(text, "mine"), self.home)
         path = self.home / "templates" / "mine.yaml"
-        stored = path.read_text(encoding="utf-8").replace("version: \"1.0\"", "version: \"1.0\"  # bump me")
-        stored = stored.replace("  - id: summary\n", "  # the reader's summary\n  - id: summary\n")
-        stored = stored.replace("      prompt: |\n        You write the opening",
-                                "      # the opening\n      prompt: |\n        You write the opening")
+        stored = re.sub(r"(?m)^version: .*$", lambda m: m.group(0) + "  # bump me", path.read_text(encoding="utf-8"), count=1)
+        if "  # the reader's summary\n  - id: summary\n" not in stored:  # the template may already have this comment
+            stored = stored.replace("  - id: summary\n", "  # the reader's summary\n  - id: summary\n")
+        stored = stored.replace("      prompt: |\n        Task: Write the opening",
+                                "      # the opening\n      prompt: |\n        Task: Write the opening")
+        self.assertIn("# bump me", stored)
+        self.assertIn("# the opening", stored)
         path.write_text(stored, encoding="utf-8")
         model = schema.parse(stored).data
-        model["version"] = "1.1"
+        model["version"] = "9.9"
         model["nodes"].insert(0, model["nodes"].pop(3))  # a node moved: its comment moves with it
         self.assertEqual(templates.save_model("mine", model, self.home), {"saved": True, "comments": 0})
         saved = path.read_text(encoding="utf-8")
         self.assertTrue(saved.startswith("# Built-in template"), "the header comment is kept")
-        self.assertIn("# bump me\nversion: '1.1'", saved)
+        self.assertIn("# bump me\nversion: '9.9'", saved)
         self.assertIn("  # the reader's summary\n  - id: summary\n", saved)
         self.assertIn("      # the opening\n      prompt: |\n", saved)
         self.assertEqual(schema.parse(saved).data, model)
@@ -351,7 +355,7 @@ class EditorRouteTests(ServerCase):
         self.assertEqual(info["node_types"]["ai.cli"]["config"]["provider"]["widget"], "provider")
         self.assertEqual(info["node_types"]["document.export"]["outputs"], {"md": "file"})
         self.assertFalse(info["node_types"]["approval"]["takes_retries"])
-        self.assertEqual(info["formats"], ["md", "docx", "html", "pdf", "epub"])
+        self.assertEqual(info["formats"], ["md", "docx", "html", "pdf", "epub", "eml", "json", "csv"])
         self.assertTrue(info["node_types"]["ai.cli"]["description"]["tr"])
 
 

@@ -90,18 +90,18 @@ class WebTests(HomeCase):
         with mock.patch.object(web, "UPLOAD_LIMIT", 10):
             self.assertEqual(self.json("PUT", "/api/uploads?file=a.md", raw=b"x" * 50)[0], 413)
         status, data = self.json("POST", "/api/runs", body={"template": "builtin:document-comparison",
-                                                            "files": {"first": "../../databases"}})
+                                                            "files": {"documents": "../../databases"}})
         self.assertEqual(status, 400)
 
     def run_comparison(self) -> str:
-        uploads = {}
-        for key, name, text in (("first", "old.md", "Notice: 30 days."), ("second", "new.md", "Notice: 7 days.")):
+        uploads = []
+        for name, text in (("old.md", "Notice: 30 days."), ("new.md", "Notice: 7 days.")):
             status, data = self.json("PUT", f"/api/uploads?file={name}", raw=text.encode())
             self.assertEqual(status, 200)
-            uploads[key] = data["upload"]
+            uploads.append(data["upload"])
         status, data = self.json("POST", "/api/runs", body={
-            "template": "builtin:document-comparison", "files": uploads,
-            "values": {"language": "en", "analyst_model": "fake/small@high", "writer_model": "claude"}})
+            "template": "builtin:document-comparison", "files": {"documents": uploads},
+            "values": {"mode": "pair", "language": "en", "model": "fake/small@high", "writer_model": "claude"}})
         self.assertEqual(status, 200, data)
         return data["id"]
 
@@ -152,7 +152,7 @@ class WebTests(HomeCase):
         self.assertEqual((status, data["ref"]), (200, "user:my-compare"))
         status, tpl = self.json("GET", "/api/templates/user/my-compare")
         self.assertTrue(tpl["valid"])
-        self.assertEqual(len(tpl["graph"]["nodes"]), 6)
+        self.assertEqual(len(tpl["graph"]["nodes"]), 8)
         bad = tpl["yaml"] + "surprise: 1\nnodes2: []\n"
         status, data = self.json("PUT", "/api/templates/user/my-compare", body={"yaml": bad})
         self.assertEqual(status, 400)

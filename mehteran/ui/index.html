@@ -15,6 +15,8 @@
 <script src="/canvas.js" defer></script>
 <script src="/editor.js" defer></script>
 <script src="/live.js" defer></script>
+<script src="/markdown.js" defer></script>
+<script src="/history.js" defer></script>
 <script src="/app.js" defer></script>
 </head>
 <body>
@@ -65,6 +67,8 @@
           <button type="button" class="btn primary" data-goto="workflows/new" data-i18n="new_workflow"></button>
         </div>
       </div>
+      <!-- the first-start welcome (app.js: showWelcome): until something was run or it was closed -->
+      <section id="welcome-panel" class="welcome-panel" aria-labelledby="welcome-title" hidden></section>
       <div class="lib-tools">
         <input type="search" id="template-search" data-i18n-placeholder="search_templates" data-i18n-label="search_templates">
         <div id="template-filters"></div>
@@ -98,6 +102,7 @@
           <h2 data-i18n="tab_runs"></h2>
           <button type="button" class="btn small primary" data-goto="workflows" data-i18n="new_run"></button>
         </div>
+        <div id="run-tools" class="run-tools"></div>
         <ul id="run-list"></ul>
       </aside>
       <div id="run" class="book-detail"></div>
@@ -116,6 +121,7 @@
     <section class="card box onboarding" id="onboarding"></section>
     <div id="tools" class="tool-grid"></div>
     <p class="small muted config-note" id="config-note"></p>
+    <section class="card box providers-panel" id="providers-panel"></section>
     <section id="local-tools" class="local-tools"></section>
   </section>
 </main>
@@ -133,11 +139,14 @@
 <dialog id="reader" aria-labelledby="reader-title">
   <div class="dialog-head">
     <h3 id="reader-title"></h3>
-    <div class="row">
+    <div class="row reader-actions">
+      <!-- a run's results (app.js: openReader, openCompare): formatted or plain, edit, compare -->
+      <div id="reader-tools" class="row" hidden></div>
       <a id="reader-download" class="btn" href="#" data-i18n="download"></a>
       <button type="button" class="btn" id="reader-close" data-i18n="close"></button>
     </div>
   </div>
+  <div id="reader-body" class="reader-body" hidden></div>
   <pre id="reader-text" class="reader"></pre>
 </dialog>
 
@@ -145,11 +154,18 @@
   <form id="new-form">
     <div class="dialog-head"><h3 id="new-title" data-i18n="new_workflow"></h3></div>
     <div class="layout-body stack">
-      <p class="muted small" data-i18n="new_intro"></p>
-      <label for="new-id" data-i18n="workflow_id"></label>
-      <input id="new-id" class="mono" autocomplete="off" spellcheck="false" required placeholder="my-review">
-      <label for="new-name" data-i18n="workflow_name"></label>
-      <input id="new-name" autocomplete="off" required>
+      <!-- only the name is asked; the id is made from it (editor.js: slugOf) and can be changed under "Advanced" -->
+      <label for="new-name" data-i18n="new_name_label"></label>
+      <input id="new-name" autocomplete="off" required maxlength="120" data-i18n-placeholder="new_name_placeholder">
+      <p class="muted small" data-i18n="new_name_hint"></p>
+      <details class="advanced new-advanced" id="new-advanced">
+        <summary data-i18n="advanced_settings"></summary>
+        <div class="stack">
+          <label for="new-id" data-i18n="workflow_id"></label>
+          <input id="new-id" class="mono" autocomplete="off" spellcheck="false" maxlength="64" placeholder="my-review">
+          <p class="muted small" data-i18n="new_id_hint"></p>
+        </div>
+      </details>
       <p class="small warn-text" id="new-problem" role="alert"></p>
     </div>
     <div class="dialog-foot row">

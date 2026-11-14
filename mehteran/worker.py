@@ -1,8 +1,10 @@
 """One model call in its own process: python -m mehteran.worker <job.json>
 
 The engine starts this process for each ai.cli attempt, so that a cancel or a timeout can stop it together with
-the command-line tool it started. The call itself is pipeline.providers.run (used read-only): the prompt goes on
-stdin to the tool, in an empty temporary folder.
+the command-line tool it started. An adapter's tool (mehteran/providers/) gets the prompt on stdin, in an empty
+temporary folder, and its stdout goes to the node's live log as it arrives (mehteran/toolstream.py). A provider that
+the user added to config.toml runs through the translation app's call (pipeline.providers.run). The environment has
+no API key that would bill an account, unless the user allowed it (nodes.call_worker).
 """
 
 from __future__ import annotations
@@ -15,12 +17,14 @@ import threading
 import time
 from pathlib import Path
 
-from mehteran import livelog
+from mehteran import livelog, toolstream
+from mehteran import providers as adapters
+from mehteran.providers import base
 
 
 def _write(path: Path, text: str) -> None:
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
+    tmp.write_text(text, encoding="utf-8", newline="\n")
     os.replace(tmp, path)
 
 
@@ -74,7 +78,12 @@ def main(job_file: str) -> int:
             return 1
         _write(Path(job["answer"]), answer)
         return 0
-    if log:  # the translation app's provider code returns the answer at the end; nothing streams before that
+    if spec.get("adapter") == "openai-local":  # a local server with an OpenAI-compatible API, on 127.0.0.1
+        return _local_server_call(job, spec, prompt, log, prefix, model)
+    if spec.get("adapter") in adapters.ADAPTERS:  # one of Mehteran's own adapters (mehteran/providers/)
+        return _adapter_call(job, spec, prompt, log, prefix)
+    # A provider of config.toml that the user added: the translation app's call, as it is.
+    if log:
         livelog.append(log, f"{prefix}--- {job['name']}: {' '.join(Path(a).name for a in spec.get('command', [])[:1])} ---\n")
     try:
         # One attempt and no waiting for a usage limit here: the engine counts attempts, applies the timeout and
@@ -96,6 +105,63 @@ def main(job_file: str) -> int:
         livelog.append(log, answer.rstrip() + "\n")
     return 0
 
+
+def _local_server_call(job: dict, spec: dict, prompt: str, log: Path | None, prefix: str, model: str) -> int:
+    """One call to the local OpenAI-compatible server; its text streams into the live log."""
+    adapter = adapters.ADAPTERS["openai-local"]
+    if log:
+        livelog.append(log, f"{prefix}--- {job['name']} ---\n")
+    try:
+        answer = adapter.chat(spec.get("url", ""), model or spec.get("model", ""), prompt, base.SYSTEM_PROMPT,
+                              job["timeout"], on_text=(lambda piece: livelog.append(log, piece)) if log else None)
+    except base.UsageLimit as e:
+        _write(Path(job["error"]), str(e))
+        if job.get("quota"):
+            _write(Path(job["quota"]), json.dumps({"until": e.until}))
+        return 1
+    except base.CallError as e:
+        _write(Path(job["error"]), str(e))
+        return 1
+    if log:
+        livelog.append(log, "\n")
+    _write(Path(job["answer"]), answer)
+    return 0
+
+
+def _adapter_call(job: dict, spec: dict, prompt: str, log: Path | None, prefix: str) -> int:
+    """One call through an adapter: the tool's output goes to the live log as it arrives (toolstream.py)."""
+    from mehteran import usage
+    from pipeline.i18n import t
+    adapter = adapters.ADAPTERS[spec["adapter"]]
+    provider, model, effort = adapters.split(job["name"])
+    if log:
+        livelog.append(log, f"{prefix}--- {job['name']}: {adapter.program} ---\n")
+    live = toolstream.LiveOutput(log, [], prefix, stream_json=adapter.stream_json) if log else None
+    shown, stdout = "", ""
+    try:
+        answer, stdout = base.run(adapter, spec, model, effort, prompt, job["timeout"], live.feed if live else None,
+                                  default_wait=job["cfg"]["general"].get("quota_wait_minutes", 30) * 60)
+    except base.UsageLimit as e:
+        _write(Path(job["error"]), t("quota_hit", name=provider, time=time.strftime("%H:%M", time.localtime(e.until))))
+        if job.get("quota"):
+            _write(Path(job["quota"]), json.dumps({"until": e.until}))
+        return 1
+    except base.CallError as e:
+        _write(Path(job["error"]), str(e))
+        return 1
+    except Exception as e:  # noqa: BLE001 - reported to the engine as the node's error
+        _write(Path(job["error"]), f"{type(e).__name__}: {e}")
+        return 1
+    finally:
+        if live:
+            shown = live.close()
+    seen = adapter.usage_seen(stdout)
+    if seen and job.get("home"):  # the tool's own usage report (Claude Code's rate_limit_event), for the usage page
+        usage.remember(Path(job["home"]), adapter.id, seen)
+    _write(Path(job["answer"]), answer)
+    if log and not toolstream.same_text(shown, answer):  # the answer was not shown while the tool ran
+        livelog.append(log, answer.rstrip() + "\n")
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1]))

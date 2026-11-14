@@ -29,6 +29,31 @@ class TemplateError(ValueError):
         super().__init__("\n".join(messages))
 
 
+# Built-in templates that were merged into another one. A run, a favorite or a bookmark that names the old id works
+# with the new template.
+ALIASES = {
+    "multi-document-comparison": "document-comparison",
+    "chapter-summaries": "document-summary",
+    "multi-length-summary": "document-summary",
+    "terms-plain-language": "plain-language-rewrite",
+    "proofreading-change-list": "writing-polish",
+    "abstract-title-improvement": "writing-polish",
+    "sat-math-practice-set": "exam-practice-set",
+    "sat-reading-writing-practice": "exam-practice-set",
+    "lgs-yks-practice": "exam-practice-set",
+    "ap-mcq-from-notes": "ap-question-generator",
+    "ap-frq-generator": "ap-question-generator",
+}
+
+
+def canonical_ref(ref: str) -> str:
+    """"builtin:old-id" or "old-id" -> the ref of the template that replaced it; any other ref stays as it is."""
+    source, _, template_id = ref.rpartition(":")
+    if source in ("", BUILTIN) and template_id in ALIASES:
+        return f"{BUILTIN}:{ALIASES[template_id]}"
+    return ref
+
+
 def folder(source: str, home: Path) -> Path:
     return paths.BUILTIN_TEMPLATES if source == BUILTIN else home / "templates"
 
@@ -36,6 +61,8 @@ def folder(source: str, home: Path) -> Path:
 def _path(source: str, template_id: str, home: Path) -> Path:
     if source not in SOURCES or not ID_RE.match(template_id or ""):
         raise TemplateError([t("template_not_found", id=template_id)], 404)
+    if source == BUILTIN:
+        template_id = ALIASES.get(template_id, template_id)
     return folder(source, home) / f"{template_id}.yaml"
 
 
@@ -53,9 +80,13 @@ def read(source: str, template_id: str, home: Path) -> str:
 def resolve(ref: str, home: Path) -> tuple[str, str]:
     """"builtin:x", "user:x" or "x" -> (source, id)."""
     source, _, template_id = ref.rpartition(":")
+    if source == BUILTIN:
+        template_id = ALIASES.get(template_id, template_id)
     if source:
         read(source, template_id, home)
         return source, template_id
+    if template_id in ALIASES and not _path(USER, template_id, home).is_file():
+        return BUILTIN, ALIASES[template_id]
     found = [s for s in SOURCES if _path(s, template_id, home).is_file()]
     if not found:
         raise TemplateError([t("template_not_found", id=ref)], 404)
@@ -79,9 +110,17 @@ def summary(source: str, template_id: str, home: Path) -> dict:
         if isinstance(data, dict):  # a draft keeps its name and description in the list
             out.update({key: data[key] for key in ("name", "description", "category") if key in data})
         return out
-    out.update({key: wf.data.get(key) for key in ("name", "description", "version", "category", "based_on")})
+    out.update({key: wf.data.get(key) for key in ("name", "description", "version", "category", "tier", "based_on")})
     out["nodes"] = len(wf.nodes)
     out["inputs"] = len(wf.inputs)
+    # What a run needs, for the library cards: required files, model calls (an upper bound when a condition picks a
+    # branch), loops (a model call per part).
+    out["docs"] = sum(1 for s in wf.inputs.values() if s["type"] == "file" and s.get("required", True))
+    out["calls"] = sum(1 for n in wf.nodes.values() if n["type"] == "ai.cli")
+    out["loops"] = sum(1 for n in wf.nodes.values() if n["type"] == "ai.map")
+    out["branches"] = any(n["type"] == "condition" for n in wf.nodes.values())
+    if source == BUILTIN:
+        out["aliases"] = sorted(old for old, new in ALIASES.items() if new == template_id)
     return out
 
 
@@ -92,8 +131,8 @@ def listing(home: Path) -> list[dict]:
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    os.replace(tmp, path)
+    tmp.write_text(text, encoding="utf-8", newline="\n")
+    paths.replace(tmp, path)
 
 
 def _check_new_id(new_id: str, home: Path) -> None:

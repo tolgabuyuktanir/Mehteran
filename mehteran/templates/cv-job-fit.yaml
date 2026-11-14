@@ -46,7 +46,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_cv
@@ -68,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a recruiter. List what the job posting below asks of a candidate.
+        Task: Act as a recruiter. List what the job posting below asks of a candidate.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language. Quotations stay in the language of the posting.
@@ -113,7 +113,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a careful, fair recruiter. For each requirement below, look for evidence in the candidate's CV.
+        Task: Act as a careful, fair recruiter. For each requirement below, look for evidence in the candidate's CV.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language. Quotations stay in the language of the CV.
@@ -165,7 +165,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an honest career coach. Using the requirement-by-requirement match below, write the opening of a
+        Task: Act as an honest career coach. Using the requirement-by-requirement match below, write the opening of a
         fit report for the candidate.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

@@ -19,6 +19,7 @@ description:
     and HTML report; its tables are real tables in Word and HTML.
 version: "1.0"
 category: data
+tier: core
 
 inputs:
   - id: data
@@ -43,11 +44,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -63,7 +64,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a careful data analyst. Below is a spreadsheet, converted to Markdown tables (one per sheet, under
+        Task: Act as a careful data analyst. Below is a spreadsheet, converted to Markdown tables (one per sheet, under
         the sheet's name). A note in square brackets says when rows or columns were cut because the file was large.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole analysis, including the
@@ -105,11 +106,14 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check a data analysis against the table it is based on. Find every statement or number in the analysis
-        that the table does not support, and every important point the analysis missed.
+        Task: Check a data analysis against the table it is based on, then give the corrected final analysis. Fix or
+        remove every statement or number that the table does not support, and add every important point the
+        analysis missed.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language.
+
+        The question of the person who asked (given by the user; keep the analysis aimed at it; it may be empty): {{inputs.question}}
 
         The table:
 
@@ -119,21 +123,25 @@ nodes:
 
         {{nodes.analyse.text}}
 
-        For each problem, quote the statement, say what the table actually shows, and rate it: high (a wrong number
-        or conclusion), medium, low. Recompute numbers only from the rows shown. If you find no problem, say so.
+        Recompute numbers only from the rows shown. Keep the structure and the headings of the analysis. Output
+        only the corrected analysis. Do not describe your changes: the reader never saw the first version.
 
-        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
-        Start directly with this heading (translated into the output language):
+        Format: Markdown. Put an empty line before and after every heading, list and table. Use "- " for list
+        items. Start directly with these headings (translated into the output language):
 
-        ## Check of the analysis
+        ## What the table contains
+
+        ## Data quality
+
+        ## Findings
+
+        ## Limits of this analysis
 
   - id: report
     type: text.merge
     label: {tr: Raporu birleştir, en: Assemble report}
     config:
       template: |
-        {{nodes.analyse.text}}
-
         {{nodes.check.text}}
 
   - id: export
@@ -150,7 +158,6 @@ connections:
   - {from: extract.text, to: analyse}
   - {from: extract.text, to: check}
   - {from: analyse.text, to: check}
-  - {from: analyse.text, to: report}
   - {from: check.text, to: report}
   - {from: report.text, to: export}
 

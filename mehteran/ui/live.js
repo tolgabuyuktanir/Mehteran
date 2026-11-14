@@ -15,6 +15,8 @@ const ICONS = {
   data: ["M4 20h16", "M6.5 20v-7", "M11 20V6", "M15.5 20v-10", "M20 20V9"],
   documents: ["M6 3h8l4 4v14H6Z", "M14 3v4h4", "M9 12h6", "M9 16h6"],
   education: ["M2.5 9 12 4.5 21.5 9 12 13.5Z", "M6.5 11v5c3 2.6 8 2.6 11 0v-5", "M21.5 9v5"],
+  developers: ["M8.5 8 4 12l4.5 4", "M15.5 8 20 12l-4.5 4", "M13.5 5.5l-3 13"],
+  exams: ["M6 3.5h12v17H6Z", "M9 8.5l1.5 1.5L13.5 7", "M9 14.5l1.5 1.5 3-3", "M15 9h1.5", "M15 15h1.5"],
   everyday: ["M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z", "M12 2.5v2", "M12 19.5v2", "M2.5 12h2", "M19.5 12h2", "M5.3 5.3l1.4 1.4", "M17.3 17.3l1.4 1.4", "M5.3 18.7l1.4-1.4", "M17.3 6.7l1.4-1.4"],
   legal: ["M12 4v16", "M8 20h8", "M5 7h14", "M5 7 2.5 13c1.5 1.4 3.5 1.4 5 0Z", "M19 7l-2.5 6c1.5 1.4 3.5 1.4 5 0Z"],
   research: ["M11 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z", "M20 20l-4.7-4.7"],
@@ -524,13 +526,18 @@ async function setUpFooter() {
 }
 
 // The user guide, in the reader dialog (docs/mehteran.md, or its Turkish copy).
+// Formatted by markdown.js in the rich reader of app.js (readerOpen); the reader gives the plain one back on close.
 async function openDocs() {
-  const dialog = document.getElementById("reader");
-  document.getElementById("reader-title").textContent = S("footer_docs");
+  readerOpen(S("footer_docs"));
+  const seq = reader.seq;
   document.getElementById("reader-download").hidden = true;
-  document.getElementById("reader-text").textContent = S("loading");
-  if (!dialog.open) dialog.showModal();
-  try { document.getElementById("reader-text").textContent = (await api("GET", "/api/docs")).text; }
-  catch (err) { document.getElementById("reader-text").textContent = err.message; }
-  dialog.addEventListener("close", () => { document.getElementById("reader-download").hidden = false; }, {once: true});
+  try {
+    const text = (await api("GET", "/api/docs")).text;
+    if (seq !== reader.seq) return;
+    const page = Markdown.render(text);
+    page.classList.add("reader-pane", "docs-page");
+    fill(document.getElementById("reader-body"), page);
+  } catch (err) {
+    if (seq === reader.seq) fill(document.getElementById("reader-body"), h("div", {class: "notice bad reader-pane"}, err.message));
+  }
 }

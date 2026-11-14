@@ -19,6 +19,7 @@ description:
     anything invented or too strong. This is not legal advice. The result is a Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: kind
@@ -69,11 +70,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: draft
@@ -101,10 +102,10 @@ nodes:
 
         Rules:
         - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Put every missing detail in square brackets, for example [date], [file number], [full name], so that the user can fill it.
-        - Polite, firm, clear, no threats and no insults. State the request in one precise paragraph. Do not cite a law or article number unless the user gave it.
-        - For layout "tr_formal" and the language Turkish use this order: the authority in capitals and centred ("... MAKAMINA"), then "Konu:", then the explanations in numbered paragraphs, then the request starting with "Gereğini arz ederim." or "Gereğini saygılarımla arz ederim.", then the date, the name, the signature and the address. For other layouts or languages use the normal formal letter order of that language: sender, date, recipient, subject line, greeting, body, closing, signature.
+        - Polite, firm, clear, no threats and no insults. State the request in one precise paragraph. Do not cite a law or article number unless the user gave it. Do not invent reasons, excuses, promises or conditions: state only what the user's facts and request say. Do not mention today's date or the year unless the user gave it.
+        - For layout "tr_formal" and the language Turkish use this order: the authority in capitals and centred ("... MAKAMINA"), then "Konu:", then the explanations in numbered paragraphs (write the authority line as plain bold Markdown text in capitals, without HTML tags), then the request starting with "Gereğini arz ederim." or "Gereğini saygılarımla arz ederim.", then the date, the name, the signature and the address. For other layouts or languages use the normal formal letter order of that language: sender, date, recipient, subject line, greeting, body, closing, signature.
 
-        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Output only the letter, then a heading "## Notes" (translated) with the placeholders to fill and attachments to add (for example copies of documents).
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Do not describe your changes: the user never saw the draft. Output only the letter, then a heading "## Notes" (translated) with the placeholders to fill and attachments to add (for example copies of documents).
 
         Final check before you answer:
         1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
@@ -121,6 +122,11 @@ nodes:
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
+        The kind of letter: {{inputs.kind}}
+        The layout: {{inputs.style}}
+        The recipient the user gave (it may be empty): {{inputs.recipient}}
+        The sender details the user gave (it may be empty): {{inputs.sender}}
+
         The facts the user gave:
 
         {{inputs.facts}}
@@ -129,7 +135,7 @@ nodes:
 
         {{nodes.draft.text}}
 
-        Method: compare the draft with the facts. Remove or bracket every fact, number, date, law or accusation that the user did not give. Soften any claim that is stronger than the facts allow. Check that the request is clear and that the layout is complete. Give the corrected letter and the "## Notes" section, then a last section "## Changes" (translated) with a short list of what you changed, or "None.", and a last line with this meaning: This text was written by an AI as a starting point. It is not legal advice; check it, and ask a lawyer when the matter is serious.
+        Method: compare the draft with everything the user gave: the facts, the recipient and the sender details. The recipient, the name and the address in those fields are given by the user; keep them exactly and never bracket or remove them. Remove or bracket every fact, number, date, law or accusation that the user did not give. Soften any claim that is stronger than the facts allow. Check that the request is clear and that the layout is complete. Give the corrected letter and the "## Notes" section, then a last line with this meaning: This text was written by an AI as a starting point. It is not legal advice; check it, and ask a lawyer when the matter is serious.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
 

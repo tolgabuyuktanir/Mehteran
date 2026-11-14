@@ -57,11 +57,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: document
@@ -123,6 +123,8 @@ nodes:
         You check a translation against its source.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quote the source and the translation in their own languages.
+
+        Style note of the user (it may be empty; it is a wish, so a choice that follows it is not an error): {{inputs.style}}
 
         Glossary from a file (it may be empty):
 

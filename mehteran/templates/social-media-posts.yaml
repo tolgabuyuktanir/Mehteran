@@ -17,6 +17,7 @@ description:
     a Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: source
@@ -56,11 +57,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -76,7 +77,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a social media editor. Write posts that promote the material below.
+        Task: Act as a social media editor. Write posts that promote the material below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -92,7 +93,7 @@ nodes:
         {{inputs.source_text}}
 
         Rules:
-        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use a number only when the material gives it. No invented quotations. No hype words the material cannot support ("revolutionary", "guaranteed").
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use a number only when the material gives it. No invented quotations. No hype words the material cannot support ("revolutionary", "guaranteed"). Do not invent reasons, excuses, promises or conditions (no offers, discounts or deadlines that the material does not state).
         - Each post stands alone: a hook in the first line, one clear idea, one call to action. Fit each platform: LinkedIn (long: 120 to 200 words; short: at most 60 words), X thread (5 to 7 posts, each at most 270 characters, numbered 1/n), Instagram (caption at most 120 words; a carousel plan of 5 to 7 slides with a short title and one line of text each; say what image each slide needs).
         - Give 5 hashtags per platform (none on X more than 2). No emojis unless the tone is playful, then at most 2 per post.
         - If there is no material, say so in one sentence and stop.
@@ -122,9 +123,11 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check social media posts against their source and give the corrected final posts.
+        Task: Check social media posts against their source and give the corrected final posts.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        What the user chose (given by the user, never remove or change it): the tone "{{inputs.tone}}" and the goal and audience "{{inputs.goal}}" (it may be empty). Wording that serves the goal or addresses the audience is allowed; a claim about the material is not.
 
         The source:
 
@@ -138,7 +141,7 @@ nodes:
 
         {{nodes.posts.text}}
 
-        Method: check every number, name, date and claim against the source and fix or remove the ones it does not support. Count the characters of each X post and shorten any above 280. Keep the structure and headings. Give the corrected posts only, then a last section "## Corrections" (translated) with a short list of the changes, or "None.".
+        Method: check every number, name, date and claim against the source and fix or remove the ones it does not support. Count the characters of each X post and shorten any above 280. Keep the structure and headings. Give the corrected posts only. Do not describe your changes: the user never saw the first version.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
 

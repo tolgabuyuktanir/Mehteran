@@ -45,7 +45,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_document
@@ -67,7 +67,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You turn a style guide into a numbered list of rules that an editor can check in a text, one by one.
+        Task: Turn a style guide into a numbered list of rules that an editor can check in a text, one by one.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language. Keep examples from the guide in the guide's own language.
@@ -112,7 +112,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a copy editor. Check the text below against the numbered style rules below and list every
+        Task: Act as a copy editor. Check the text below against the numbered style rules below and list every
         breach.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -163,7 +163,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a senior editor. Assess the overall editorial quality of the text below for its intended
+        Task: Act as a senior editor. Assess the overall editorial quality of the text below for its intended
         readers. Another editor checks the detailed style rules; do not review spelling, punctuation or
         formatting conventions.
 
@@ -222,7 +222,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of an editorial review report for the author of a text. Two editors have
+        Task: Write the opening of an editorial review report for the author of a text. Two editors have
         reviewed it: one against the style guide, one for overall quality. Their reviews follow.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

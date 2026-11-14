@@ -48,7 +48,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_paper
@@ -70,7 +70,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced academic author preparing a revision. Split the reviewers' comments below into
+        Task: Act as an experienced academic author preparing a revision. Split the reviewers' comments below into
         single points and check, for each point, whether the revised manuscript appears to address it.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -121,7 +121,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write a response letter to the reviewers for the authors. Use the sorted comments below, the
+        Task: Write a response letter to the reviewers for the authors. Use the sorted comments below, the
         manuscript and the authors' note.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole letter, including the
@@ -191,7 +191,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You finalise a response letter to reviewers. The authors read the draft below and wrote notes.
+        Task: Finalise a response letter to reviewers. The authors read the draft below and wrote notes.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole letter, including the
         headings, in this language.

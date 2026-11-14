@@ -44,7 +44,12 @@ CREATE TABLE IF NOT EXISTS calls (
 CREATE INDEX IF NOT EXISTS calls_time ON calls (started);
 """
 # Columns added later; a database made before them gets them on open (old rows: NULL, their text is shown).
-ADDED = {"runs": ("error_key", "error_params"), "nodes": ("error_key", "error_params"), "events": ("key", "params")}
+ADDED = {"runs": ("error_key", "error_params", *"label note batch output_dir output_state main_input".split()),
+         "nodes": ("error_key", "error_params"), "events": ("key", "params")}
+# The history's own columns of a run (history.py): label and note (the user's name for it), batch (the batch id of a
+# run started "once per file"), output_dir and output_state (save the results to a folder after success), main_input
+# (the first file name or the start of the first text input, computed once).
+HISTORY_COLUMNS = ("label", "note", "batch", "output_dir", "output_state", "main_input")
 
 
 def _keyed(fields: dict) -> dict:
@@ -121,7 +126,18 @@ class Store:
     def runs(self, limit: int = 200) -> list[dict]:
         return [_localized(row, "error", "error_key", "error_params") for row in
                 self._rows("SELECT id, workflow_id, workflow_name, template, status, created, started, finished, error, "
-                           "error_key, error_params FROM runs ORDER BY created DESC LIMIT ?", (limit,))]
+                           "error_key, error_params, " + ", ".join(HISTORY_COLUMNS) +
+                           " FROM runs ORDER BY created DESC LIMIT ?", (limit,))]
+
+    # --- the history (history.py) ---
+    def delete_run(self, run_id: str) -> None:
+        """The run's rows (its nodes and events too). Its model calls stay: they are the usage history."""
+        with closing(self._connect()) as db:
+            db.execute("BEGIN IMMEDIATE")
+            for table in ("nodes", "events"):
+                db.execute(f"DELETE FROM {table} WHERE run_id=?", (run_id,))
+            db.execute("DELETE FROM runs WHERE id=?", (run_id,))
+            db.execute("COMMIT")
 
     def update_run(self, run_id: str, **fields) -> None:
         fields = _keyed(fields)

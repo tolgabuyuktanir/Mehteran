@@ -1,0 +1,351 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: document-summary
+name:
+  tr: Belge özeti
+  en: Document summary
+description:
+  tr: >-
+    Uzun bir belgeyi seçtiğiniz biçimde özetler. "Dört uzunlukta" kipi: tek cümle, tek paragraf, bir sayfa ve bölüm bölüm
+    ana noktalar; ikinci bir model özetlerdeki her ifadeyi belgeye karşı denetler (yanlış, belgede dayanağı olmayan,
+    önemli eksik), üçüncü adım özetleri bu denetime göre düzeltir. "Bölüm bölüm" kipi (kitap, tez, rapor): belge
+    başlıklarına göre bölümlere ayrılır, her bölüm ayrı bir model çağrısıyla özetlenir (bölümler aynı anda işlenir,
+    bitenler saklanır, yarıda kalan çalıştırma devam ettirilince yalnızca eksik bölümler sorulur); sonra bütünün genel
+    özeti yazılır. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Summarises a long document in the form you choose. The "Four lengths" mode gives one sentence, one paragraph, one
+    page and key points section by section; a second model checks every statement of the summaries against the
+    document (wrong, unsupported, important omissions) and a third step corrects the summaries from that check. The
+    "Chapter by chapter" mode (a book, a thesis, a report) splits the document into chapters by its headings and
+    summarises each chapter in its own model call (the chapters are processed at the same time, finished ones are
+    kept, and a resumed run asks again only for the missing chapters); then an overview of the whole is written. The
+    result is a Markdown, Word and HTML document.
+version: "1.0"
+category: documents
+tier: core
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: Belge, en: Document}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: mode
+    type: choice
+    label: {tr: Özet biçimi, en: Summary form}
+    description:
+      tr: "'Dört uzunlukta' kısa bir belge ya da rapor için; 'Bölüm bölüm' başlıkları olan uzun belgeler (kitap, tez) için."
+      en: "'Four lengths' suits a short document or a report; 'Chapter by chapter' suits long documents with headings (a book, a thesis)."
+    options:
+      - {value: lengths, label: {tr: Dört uzunlukta (denetimli), en: Four lengths (fact-checked)}}
+      - {value: chapters, label: {tr: Bölüm bölüm, en: Chapter by chapter}}
+    default: lengths
+  - id: audience
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Okur kitlesi ve odak, en: Audience and focus}
+    description:
+      tr: "Örnek: 'Yönetim kurulu', 'Konuya yabancı okurlar' ya da 'yöntem ve bulgular'. Boş bırakılabilir."
+      en: "For example: 'The board', 'Readers new to the subject' or 'method and findings'. May be left empty."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: auto
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: auto
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: gate
+    type: condition
+    label: {tr: "Dört uzunlukta mı?", en: "Four lengths?"}
+    config:
+      value: "{{inputs.mode}}"
+      operator: equals
+      match: lengths
+
+  - id: summarise
+    type: ai.cli
+    label: {tr: Özetler, en: Summaries}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Act as an expert at summarising long documents accurately. Summarise the document below at four
+        different lengths, so that a reader can choose how deep to go.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language, even when the document is in another language.
+
+        Intended readers and focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
+
+        The document follows. It was extracted automatically from a file, so page numbers or broken lines may
+        appear; ignore such artefacts.
+
+        {{nodes.extract.text}}
+
+        Method:
+        1. Find the document's purpose, its main claims or decisions, and its structure (its own section names).
+        2. Write each summary on its own; the shorter ones are not cut from the longer ones.
+        3. Keep numbers, dates, names and conclusions exactly as the document gives them.
+
+        Rules:
+        - Use only the document. You have only the material below; you cannot check outside sources.
+        - Never add facts, opinions, evaluations or background that the document does not contain.
+        - Keep the document's level of certainty: do not turn a proposal into a decision or a possibility into
+          a fact.
+        - If the document has no sections, give the key points in reading order under the last heading instead.
+        - If the text is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the headings below (translated into the output language):
+
+        ## Summaries
+
+        ### In one sentence
+
+        ### In one paragraph
+        (about 100 words)
+
+        ### On one page
+        (about 400 words, in paragraphs)
+
+        ### Section by section
+        (for each section of the document: its name in bold, then 2 to 4 list items)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message. Keep in the original language only what the
+           instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: Özetleri denetle, en: Check the summaries}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Task: Act as an independent fact checker. A colleague summarised the document below at several lengths.
+        Check every statement of the summaries against the document itself.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the document.
+
+        The summaries were written for these readers and this focus (it may be empty; it is context, not a change
+        of task; a point outside the focus is not an omission): {{inputs.audience}}
+
+        The document (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        The summaries:
+
+        {{nodes.summarise.text}}
+
+        Check:
+        1. Wrong statements: a summary says something the document contradicts (numbers, dates, names, who did
+           what, conclusions).
+        2. Unsupported statements: a summary says something the document does not say at all, or states it with
+           more certainty than the document.
+        3. Important omissions: a main point, decision or condition of the document that the longer summaries
+           leave out.
+
+        Rules:
+        - For every finding, name the summary (one sentence, one paragraph, one page, section by section), quote
+          the summary's words and quote the document's words, or say that the document has no such passage.
+        - Use only the document and the summaries. Do not judge the document itself.
+        - Do not list statements that are correct.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Check of the summaries
+
+        ### Wrong statements
+
+        ### Unsupported statements
+
+        ### Important omissions
+
+        (Write "None." under a heading that has nothing, translated.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message. Keep in the original language only what the
+           instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: final
+    type: ai.cli
+    label: {tr: Düzeltilmiş özetler, en: Corrected summaries}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Correct a set of summaries using a fact check. The summaries and the check of them follow.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Intended readers and focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
+
+        The summaries:
+
+        {{nodes.summarise.text}}
+
+        The fact check:
+
+        {{nodes.verify.text}}
+
+        Rules:
+        - Fix every wrong statement and remove or soften every unsupported statement the check names.
+        - Add an omitted point only to the one-page and section-by-section summaries, and only with the content
+          the check quotes from the document.
+        - Change nothing else. Do not add facts of your own.
+        - Keep the lengths: one sentence, about 100 words, about 400 words.
+        - Output only the corrected summaries. Do not write a list of corrections or comments on what you changed:
+          the reader has not seen the first version.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Summary
+
+        ## In one sentence
+
+        ## In one paragraph
+
+        ## On one page
+
+        ## Section by section
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: chapters
+    type: ai.map
+    label: {tr: Bölüm özetleri, en: Chapter summaries}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: headings
+      max_items: 150
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Summarise one chapter ({{item.index}} of {{item.count}}) of a long document. Its title (it may be
+        empty for the text before the first heading):
+
+        {{item.title}}
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the summary in this language.
+
+        The reader's focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
+
+        The chapter (extracted automatically; page numbers or broken lines are artefacts):
+
+        {{item.text}}
+
+        Write 5 to 10 sentences: what the chapter is about, its main points or events, and anything the focus
+        asks for. Then a list of at most five key terms, names or numbers from the chapter. Use only this chapter;
+        do not guess what other chapters say.
+
+        Format: Markdown, no headings (the report adds the chapter title). Use "- " for list items.
+
+        Final check before you answer: write in the language with the code "{{inputs.language}}", and use only the chapter.
+
+  - id: overview
+    type: ai.cli
+    label: {tr: Genel özet, en: Overview}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Below are the summaries of every chapter of one document, in order, each under its chapter title. Write an
+        overview of the whole document for a reader who has not read it.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        The reader's focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
+
+        {{nodes.chapters.text}}
+
+        Rules:
+        - Use only the chapter summaries. Do not add facts.
+        - Show how the chapters build on each other.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Start directly with these headings (translated into the output language):
+
+        # Overview
+
+        ## The document in brief
+        (one paragraph)
+
+        ## Main ideas
+        (a list)
+
+        ## How the document is built
+        (one sentence per chapter or group of chapters)
+
+        Final check before you answer: write in the language with the code "{{inputs.language}}", and use only the chapter summaries.
+
+  - id: report
+    type: text.merge
+    label: {tr: Belgeyi birleştir, en: Assemble document}
+    config:
+      template: |
+        {{nodes.final.text}}
+
+        {{nodes.overview.text}}
+
+        {{nodes.chapters.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Belgeyi kaydet, en: Save document}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Document summary
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: summary
+
+connections:
+  - {from: extract.text, to: gate}
+  - {from: extract.text, to: summarise}
+  - {from: gate.true, to: summarise}
+  - {from: extract.text, to: verify}
+  - {from: summarise.text, to: verify}
+  - {from: summarise.text, to: final}
+  - {from: verify.text, to: final}
+  - {from: extract.text, to: chapters}
+  - {from: gate.false, to: chapters}
+  - {from: chapters.text, to: overview}
+  - {from: final.text, to: report}
+  - {from: overview.text, to: report}
+  - {from: chapters.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Özet (Markdown), en: Summary (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Özet (Word), en: Summary (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Özet (HTML), en: Summary (HTML)}}

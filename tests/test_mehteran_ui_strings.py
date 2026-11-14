@@ -24,7 +24,7 @@ UI_DIR = paths.CODE / "ui"
 def used_keys() -> set[str]:
     """Every text key the page uses: data-i18n* attributes, and S("key") / ternaries / with_* maps in the scripts."""
     keys = set(re.findall(r'data-i18n(?:-placeholder|-label)?="([a-z_0-9]+)"', (UI_DIR / "index.html").read_text(encoding="utf-8")))
-    for name in ("app.js", "editor.js", "canvas.js", "live.js", "langpicker.js"):
+    for name in ("app.js", "editor.js", "canvas.js", "live.js", "langpicker.js", "history.js"):
         js = (UI_DIR / name).read_text(encoding="utf-8")
         keys |= set(re.findall(r'\bS\(\s*"([a-z_0-9]+)"', js))
         keys |= {k for pair in re.findall(r'\bS\([^()]*?\?\s*"([a-z_0-9]+)"\s*:\s*"([a-z_0-9]+)"', js) for k in pair}
@@ -46,7 +46,7 @@ class UiStringTests(unittest.TestCase):
                                           "rejected", "skipped", "cancelled", "interrupted")]
         family += [f"input_type_{t}" for t in schema.INPUT_TYPES]
         family += [f"effort_{e}" for e in ("low", "medium", "high", "xhigh", "max")]
-        family += [f"port_{p}" for p in ("text", "comment", "md", "docx", "html", "pdf", "epub")]  # the names of the output ports
+        family += [f"port_{p}" for p in ("text", "comment", "md", "docx", "html", "pdf", "epub", "eml", "json", "csv")]  # the names of the output ports
         from mehteran import ocr
         family += [f"ocr_lang_{code}" for code in ocr.LANGUAGES]  # the Setup tab's OCR language list
         from mehteran.nodes import REGISTRY

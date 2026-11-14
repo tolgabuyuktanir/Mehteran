@@ -43,7 +43,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -59,7 +59,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced investor assessing the MARKET AND CUSTOMER case of the business plan or pitch
+        Task: Act as an experienced investor assessing the MARKET AND CUSTOMER case of the business plan or pitch
         deck below. Other reviewers cover the financials and the execution; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -116,7 +116,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a financial due-diligence reviewer assessing the FINANCIALS of the business plan or pitch deck
+        Task: Act as a financial due-diligence reviewer assessing the FINANCIALS of the business plan or pitch deck
         below. Other reviewers cover the market and the execution; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -175,7 +175,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced operator and mentor assessing the EXECUTION case of the business plan or pitch
+        Task: Act as an experienced operator and mentor assessing the EXECUTION case of the business plan or pitch
         deck below: whether this team can do what the plan says. Other reviewers cover the market and the
         financials; do not review those.
 
@@ -231,7 +231,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening memo of a business plan critique for its author, as a demanding funder would see
+        Task: Write the opening memo of a business plan critique for its author, as a demanding funder would see
         it. Three reviewers have assessed the same plan. Combine their reviews.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

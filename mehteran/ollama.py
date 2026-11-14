@@ -30,7 +30,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import paths
+from . import paths, winjob
 from .i18n import t
 from .localtools import ToolError, dir_size, disk_free, download_verified, memory
 
@@ -48,7 +48,10 @@ ASSETS = {
 DEFAULT_URL = "http://127.0.0.1:11434"
 # A model name as Ollama writes it: "qwen2.5:7b", "library/gemma3:4b", "user/model:tag".
 MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}(/[A-Za-z0-9][A-Za-z0-9._-]{0,63})?(:[A-Za-z0-9][A-Za-z0-9._-]{0,63})?\Z")
-DEFAULT_OPTIONS = {"num_ctx": 8192}  # Ollama's own default context is small; a document would be cut silently
+# Ollama's own default context is small and cuts a long document silently. The context (num_ctx) of a call is sized
+# from the prompt: at least MIN_CTX, at most the model's maximum and what the computer's memory can hold.
+MIN_CTX = 8192
+CHARS_PER_TOKEN = 3  # a safe (low) estimate, so that the context is rather too large than too small
 
 GB = 1_000_000_000
 # Checked in the Ollama registry (the tags exist; size = the model's layers). ram: memory needed to run it, roughly.
@@ -179,12 +182,13 @@ def installed_models() -> list[dict]:
 # --- starting and stopping ---------------------------------------------------------------
 
 _server: subprocess.Popen | None = None
+_server_job: int | None = None  # Windows job handle of _server (see winjob)
 _server_lock = threading.Lock()
 
 
 def ensure_running(timeout: float = 30) -> None:
     """Starts `ollama serve` on 127.0.0.1 when no Ollama answers. Raises OllamaError when there is none."""
-    global _server
+    global _server, _server_job
     if running():
         return
     with _server_lock:
@@ -201,6 +205,7 @@ def ensure_running(timeout: float = 30) -> None:
             with open(log, "ab") as out:
                 _server = subprocess.Popen([str(program), "serve"], env=env, stdin=subprocess.DEVNULL, stdout=out,
                                            stderr=subprocess.STDOUT, **system.new_process_group())
+                _server_job = winjob.attach(_server.pid)  # Windows: ends with Mehteran even when atexit does not run
         end = time.time() + timeout
         while time.time() < end:
             if running():
@@ -218,7 +223,7 @@ def started_here() -> bool:
 @atexit.register
 def stop_started() -> None:
     """Stops the Ollama server that this process started (never one that was already running)."""
-    global _server
+    global _server, _server_job
     if started_here():
         from pipeline import system
         system.stop_tree(_server.pid)
@@ -226,10 +231,38 @@ def stop_started() -> None:
             _server.wait(10)
         except subprocess.TimeoutExpired:
             _server.kill()
-    _server = None
+    winjob.close(_server_job)
+    _server, _server_job = None, None
 
 
 # --- answers ----------------------------------------------------------------------------
+
+def model_context(model: str) -> int | None:
+    """The largest context (tokens) that the model supports, from /api/show; None when Ollama does not tell."""
+    try:
+        with _open("/api/show", {"model": model, "name": model}, timeout=10) as res:
+            info = json.loads(res.read()).get("model_info") or {}
+    except (OSError, ValueError, AttributeError):
+        return None
+    values = [v for k, v in info.items() if k.endswith(".context_length") and isinstance(v, int) and v > 0]
+    return values[0] if values else None
+
+
+def memory_context() -> int:
+    """The context that the computer's memory can hold safely: 1024 tokens per GB of memory, from 4096 to 131072
+    (the key-value cache of a 7B model needs about 0.5 MB per token)."""
+    ram = memory()
+    return 8192 if ram is None else max(4096, min(131072, int(ram / GB) * 1024))
+
+
+def context_size(prompt: str, system_prompt: str, model: str) -> int:
+    """num_ctx for this call: the prompt and room for the reply, at least MIN_CTX, at most the model's maximum and
+    the memory-safe context. Rounded up to 1024."""
+    needed = (len(prompt) + len(system_prompt)) // CHARS_PER_TOKEN + 1
+    wanted = needed + max(2048, needed // 2)  # a reply may be as long as a rewritten document
+    size = -(-max(wanted, MIN_CTX) // 1024) * 1024
+    return min(size, model_context(model) or size, memory_context())
+
 
 def chat(model: str, prompt: str, system_prompt: str, timeout: float, options: dict | None = None,
          on_text=None) -> str:
@@ -237,7 +270,8 @@ def chat(model: str, prompt: str, system_prompt: str, timeout: float, options: d
     piece of the answer as it arrives (the live log)."""
     if not MODEL_RE.match(model or ""):
         raise OllamaError(t("ollama_bad_model", name=model))
-    body = {"model": model, "stream": True, "options": {**DEFAULT_OPTIONS, **(options or {})},
+    options = {"num_ctx": context_size(prompt, system_prompt, model), **(options or {})}  # a set num_ctx wins
+    body = {"model": model, "stream": True, "options": options,
             "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}]}
     end = time.time() + timeout
     parts: list[str] = []
@@ -256,6 +290,9 @@ def chat(model: str, prompt: str, system_prompt: str, timeout: float, options: d
                 if on_text and piece:
                     on_text(piece)
                 if event.get("done"):
+                    # The prompt filled the whole context: Ollama cut its beginning (a document, the instruction).
+                    if (event.get("prompt_eval_count") or 0) >= options["num_ctx"]:
+                        raise OllamaError(t("ollama_too_long", tokens=options["num_ctx"]))
                     break
     except urllib.error.HTTPError as e:
         message = _error_text(e)
@@ -422,7 +459,9 @@ def install() -> Path:
 
 def _program_version(program: Path) -> str | None:
     try:
-        out = subprocess.run([str(program), "--version"], capture_output=True, text=True, timeout=10)
+        from pipeline import system
+        out = subprocess.run([str(program), "--version"], capture_output=True, text=True, timeout=10,
+                             encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, **system.hidden_window())
     except (OSError, subprocess.SubprocessError):
         return None
     m = re.search(r"(\d+\.\d+\.\d+)", out.stdout + out.stderr)

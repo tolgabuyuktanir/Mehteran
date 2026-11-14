@@ -63,11 +63,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -83,7 +83,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write product copy for a shop or marketplace.
+        Task: Write product copy for a shop or marketplace.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -100,9 +100,11 @@ nodes:
         {{inputs.info}}
 
         Rules:
-        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use only features, materials, sizes and claims that the information gives. Where something customers will ask is missing, list it under "Missing information" instead of guessing.
+        - If both product information sources are empty, write only the single line "No product information given." (translated) and stop.
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use only features, materials, sizes and claims that the information gives. Do not invent reasons, excuses, promises or conditions (for example warranty, delivery or return terms). Where something customers will ask is missing, list it under "Missing information" instead of guessing.
         - No medical, safety, legal or "best" claims that the information does not support.
         - Write for the reader's benefit: lead with what the product does for them, then the facts.
+        - The audience is the readers you address; it is not a product fact. Do not turn it into a claim about intended use unless the information says so.
         - If the information lists several products, write one full block for each, with the product name as a heading.
         - Search title: at most 60 characters. Meta description: at most 155 characters, with a reason to click. Count the characters.
 
@@ -119,9 +121,11 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check product copy against the product information and give the corrected final copy.
+        Task: Check product copy against the product information and give the corrected final copy.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        What the user chose (given by the user, never remove or change it): the channel "{{inputs.channel}}", the audience "{{inputs.audience}}" (it may be empty) and the tone "{{inputs.tone}}".
 
         The product information:
 
@@ -133,7 +137,7 @@ nodes:
 
         {{nodes.write.text}}
 
-        Method: remove or fix every feature, number, material or claim that the information does not give. Recount the characters of every search title and meta description and shorten those that are too long. Keep the structure. Give the corrected copy only, then a last section "## Corrections" (translated) with a short list of changes, or "None.".
+        Method: wording that addresses the audience is allowed; a claim about the product is not. Remove or fix every feature, number, material or claim that the information does not give. Recount the characters of every search title and meta description and shorten those that are too long. Keep the structure. Give the corrected copy only, then a last section "## Corrections" (translated) with a short list of changes, or "None.".
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
 

@@ -46,7 +46,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_rfp
@@ -68,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a bid analyst. List every requirement that the request for proposal (RFP) below places on a
+        Task: Act as a bid analyst. List every requirement that the request for proposal (RFP) below places on a
         proposal or on the bidder, so that a team can check its proposal against them one by one.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -124,7 +124,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a strict bid reviewer. For each numbered requirement below, decide whether the proposal meets
+        Task: Act as a strict bid reviewer. For each numbered requirement below, decide whether the proposal meets
         it, using only the proposal text.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -145,6 +145,7 @@ nodes:
         - partly compliant: it meets part of it, or only vaguely;
         - non-compliant: the proposal states something that contradicts it;
         - not addressed: the proposal does not mention it.
+        Write these status words and the phrase "Not found in the document." in the output language.
 
         Rules:
         - You have only the material below; you cannot check outside sources.
@@ -195,7 +196,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a compliance report for a bid team that must submit soon. Base it on the
+        Task: Write the opening of a compliance report for a bid team that must submit soon. Base it on the
         compliance matrix and the bid manager's notes below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -226,13 +227,13 @@ nodes:
         (3 to 5 sentences: overall readiness for submission)
 
         ## Risks of disqualification
-        (a list, or one sentence saying there are none)
+        (a list, or "None.")
 
         ## Fixes before submission
         (a list, most important first)
 
         ## Corrections from the bid manager
-        (a list, or one sentence saying there were none)
+        (a list, or "None.")
 
         Final check before you answer:
         1. Language: write in the language set above, even when the material is in another language. Translate

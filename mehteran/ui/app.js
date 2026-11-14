@@ -273,7 +273,7 @@ async function route() {
   $("#setup-banner").hidden = state.ready || !(tab === "runs" || (tab === "workflows" && !editing && !translating));
   if (!(tab === "workflows" && parts.length > 1 && !editing && !translating)) closeDrawer();
   try {
-    if (tab === "setup") { loadLocal(); await loadTools(); }
+    if (tab === "setup") { loadLocal(); loadProviders(); await loadTools(); }
     else if (tab === "runs") await showRuns(parts.slice(1));
     else await showWorkflows(parts.slice(1));
   } catch (err) {
@@ -350,7 +350,7 @@ async function loadTools() {
   setReady(toolsReady(data));
   fill($("#tools"), ...data.tools.map((tool) => toolCard(tool, data.terminal)));
   fillUsageSlots();  // live.js: the usage of each AI tool
-  $("#config-note").replaceChildren(S("config_note", {path: (INFO && INFO.config_source) || "config.toml"}));
+  $("#config-note").replaceChildren(S("config_note_workflows", {path: (INFO && INFO.config_source) || "config.toml"}));
   state.toolsBusy = data.tools.some((tool) => tool.job && tool.job.running) || Boolean(data.all_job && data.all_job.running);
   const watchingSignIn = state.signInUntil > Date.now() && data.tools.some((tool) => tool.installed && !tool.signed_in);
   if (state.toolsBusy) state.toolPoll = setTimeout(loadTools, 2500);
@@ -453,7 +453,8 @@ function toolCard(tool, terminal) {
       need(tool.required),
       h("span", {class: "badge " + (tool.installed ? "good" : "bad")}, S(tool.installed ? "installed" : "not_installed")),
       tool.installed && tool.provider ? h("span", {class: "badge " + (tool.signed_in ? "good" : "warn")},
-        S(tool.signed_in ? "signed_in" : "not_signed_in") + (tool.signed_in && tool.sign_in_info ? " · " + tool.sign_in_info : "")) : null),
+        S(tool.signed_in ? "signed_in" : "not_signed_in") + (tool.signed_in && tool.sign_in_info ? " · " + tool.sign_in_info : "")) : null,
+      tool.installed && tool.billing ? billingBadge(tool.billing) : null),  // stream P: what a call would use
     h("div", {class: "uses"}, uses),
     h("div", {class: "small muted"}, tool.requirements),
     tool.installed && !tool.signed_in && tool.sign_in_help ? h("div", {class: "small"}, tool.sign_in_help) : null,
@@ -473,7 +474,8 @@ const GB = 1024 * 1024 * 1024;
 const gb = (bytes) => (bytes == null ? "–" : bytes >= GB ? `${(bytes / GB).toFixed(1)} GB` : fileSize(bytes));
 
 // A confirmation in a dialog of the page (not the browser's confirm()): a title, lines of facts and two buttons.
-function askConfirm(title, lines, ok) {
+// danger: the action deletes something (a red button instead of the green one).
+function askConfirm(title, lines, ok, danger) {
   const dialog = $("#confirm-dialog");
   return new Promise((resolve) => {
     const done = (answer) => { dialog.close(); resolve(answer); };
@@ -482,10 +484,10 @@ function askConfirm(title, lines, ok) {
       h("div", {class: "layout-body stack"}, lines.filter(Boolean).map((line) => h("p", {class: "small"}, line))),
       h("div", {class: "dialog-foot row"},
         h("button", {type: "button", class: "btn", onclick: () => done(false)}, S("cancel_action")),
-        h("button", {type: "submit", class: "btn primary"}, ok))));
+        h("button", {type: "submit", class: danger ? "btn danger confirm-ok" : "btn primary confirm-ok"}, ok))));
     dialog.addEventListener("cancel", () => resolve(false), {once: true});
     dialog.showModal();
-    $("button.primary", dialog).focus();
+    $("button.confirm-ok", dialog).focus();
   });
 }
 
@@ -728,9 +730,11 @@ async function loadTemplateList() {
 function recentTemplates(limit = 6) {
   const seen = new Set(), out = [];
   for (const run of state.recentRuns || []) {
-    const item = (state.templates || []).find((t) => `${t.source}:${t.id}` === run.template);
-    if (!item || seen.has(run.template)) continue;
-    seen.add(run.template);
+    // a run of a merged template names its old id: the template lists it under "aliases"
+    const item = (state.templates || []).find((t) => `${t.source}:${t.id}` === run.template
+      || (t.source === "builtin" && (t.aliases || []).some((old) => `builtin:${old}` === run.template)));
+    if (!item || seen.has(`${item.source}:${item.id}`)) continue;
+    seen.add(`${item.source}:${item.id}`);
     out.push({item, at: run.created});
     if (out.length === limit) break;
   }
@@ -756,6 +760,7 @@ function fold(text) {
 
 function templateMatches(item) {
   const q = fold(state.tplQuery.trim());
+  if (state.tplOnly && !(item.source === "builtin" && state.tplOnly.ids.includes(item.id))) return false;  // a welcome choice
   if (state.tplCategory === "~fav" ? !item.favorite : state.tplCategory === "~mine" ? item.source !== "user"
     : state.tplCategory && item.category !== state.tplCategory) return false;
   if (!q) return true;
@@ -775,53 +780,89 @@ async function showWorkflows(parts) {
   if (!state.templates.length) fill($("#template-grid"), skeleton("cards"));  // live.js: shapes until the list comes
   await loadTemplateList();
   renderLibrary();
+  showWelcome();  // the first-start welcome, above the library
   if (parts[0] === "import") return openDrawer(importView());
   if (parts.length === 2) return showTemplate(parts[0], parts[1]);
 }
 
+// The library has two views: "mine" (own workflows, drafts, favorites, the workflows run last) and "all" (the
+// templates: a "start here" group, the book translation, then one group per category). The first view is "mine"
+// once there is anything of the user's own, else "all"; the choice is kept for the session.
+function hasOwnWork() {
+  return state.templates.some((t) => t.source === "user" || t.favorite) || (state.recentRuns || []).length > 0
+    || INFO.translation.favorite || Boolean(state.trBooks && state.trBooks.length);
+}
+
+// "1 document · 2 model calls": what a run of the workflow asks for, from its file (docs, calls, loops, branches).
+function needsLine(item) {
+  if (!item.valid) return S("problems_found", {count: (item.problems || []).length});
+  const parts = [item.docs ? S(item.docs === 1 ? "needs_doc_one" : "needs_doc_many", {count: item.docs}) : S("needs_text")];
+  if (item.calls) parts.push(S(item.branches ? "needs_calls_max" : item.calls === 1 ? "needs_call_one" : "needs_calls_many", {count: item.calls}));
+  if (item.loops) parts.push(S("needs_loop"));
+  return parts.join(" · ");
+}
+
 function renderLibrary() {
+  if (!state.libView) state.libView = hasOwnWork() ? "mine" : "all";
+  const view = state.libView;
   const categories = [...new Set(state.templates.filter((t) => t.source === "builtin").map((t) => t.category || ""))]
     .sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), LANG));
-  const mine = state.templates.filter((t) => t.source === "user").length;
-  const favorites = state.templates.filter((t) => t.favorite);
-  const favCount = favorites.length + (INFO.translation.favorite ? 1 : 0);  // the book translation can be a favorite too
-  if (state.tplCategory === "~fav" && !favCount) state.tplCategory = "";
-  const chip = (value, label, count) => h("button", {type: "button", class: "pick", "aria-pressed": String(state.tplCategory === value),
-    onclick: () => { state.tplCategory = value; renderLibrary(); }}, label, h("span", {class: "count"}, " " + count));
-  fill($("#template-filters"), h("div", {class: "pick-chips cat-filter", role: "group", "aria-label": S("filter_category")},
-    chip("", S("all"), state.templates.length + 1),  // + the book translation, pinned above
-    favCount ? chip("~fav", "★ " + S("favorites"), favCount) : null,
-    mine ? chip("~mine", S("my_templates"), mine) : null,
-    categories.map((c) => chip(c, categoryLabel(c), state.templates.filter((t) => t.category === c && t.source === "builtin").length))));
+  const chip = (value, label, count) => h("button", {type: "button", class: "pick", "aria-pressed": String(state.tplCategory === value && !state.tplOnly),
+    onclick: () => { state.tplCategory = value; state.tplOnly = null; renderLibrary(); }}, label, h("span", {class: "count"}, " " + count));
+  const tab = (value, label) => h("button", {type: "button", class: "pick view-tab", "aria-pressed": String(view === value),
+    onclick: () => { state.libView = value; state.tplCategory = ""; state.tplOnly = null; renderLibrary(); }}, label);
+  const builtin = state.templates.filter((t) => t.source === "builtin");
+  fill($("#template-filters"), h("div", {class: "pick-chips view-switch", role: "group", "aria-label": S("library_view")},
+    tab("mine", S("view_mine")), tab("all", S("view_templates"))),
+    view === "all" ? h("div", {class: "pick-chips cat-filter", role: "group", "aria-label": S("filter_category")},
+      chip("", S("all"), state.templates.length + 1),  // + the book translation
+      categories.map((c) => chip(c, categoryLabel(c), builtin.filter((t) => t.category === c).length)),
+      // the workflows of a welcome choice: a chip of its own, removed by a click
+      state.tplOnly ? h("button", {type: "button", class: "pick", "aria-pressed": "true", onclick: () => { state.tplOnly = null; renderLibrary(); }},
+        state.tplOnly.label, h("span", {class: "count"}, " ✕")) : null) : null);
   $("#template-search").value = state.tplQuery;
-  const visible = state.templates.filter(templateMatches);
-  const pinned = translationMatches() ? translationCard() : null;
-  $("#library-count").textContent = S("count_templates", {count: visible.length + (pinned ? 1 : 0)});
-  // Under the book translation: the favorites, then the workflows run last (not while a category or a search is chosen).
-  const plain = !state.tplCategory && !state.tplQuery.trim();
-  const favs = plain ? favorites : [];
-  const recent = plain ? recentTemplates() : [];
-  fill($("#template-grid"), pinned ? h("section", {class: "lib-group lib-pinned"}, h("h3", {class: "lib-group-title"}, S("pinned")),
-    h("div", {class: "lib-grid"}, pinned)) : null,
-    favs.length ? h("section", {class: "lib-group lib-favorites"}, h("h3", {class: "lib-group-title"}, "★ " + S("favorites"),
-      h("span", {class: "muted small"}, S("count_templates", {count: favs.length}))), h("div", {class: "lib-grid"}, favs.map(templateCard))) : null,
-    recent.length ? h("section", {class: "lib-recent"}, h("h3", {class: "lib-group-title"}, S("recently_used")),
+  const searching = Boolean(state.tplQuery.trim());
+  const group = (cls, title, items, extra) => h("section", {class: "lib-group " + cls}, h("h3", {class: "lib-group-title"}, title,
+    h("span", {class: "muted small"}, S("count_templates", {count: items.length}))), extra || null, h("div", {class: "lib-grid"}, items.map((x) => (typeof x === "function" ? x() : templateCard(x)))));
+  const sections = [];
+  let total = 0;
+  if (view === "mine") {
+    const match = state.templates.filter(templateMatches);
+    const favs = match.filter((t) => t.favorite), own = match.filter((t) => t.source === "user" && !t.draft && !t.favorite);
+    const drafts = match.filter((t) => t.source === "user" && t.draft && !t.favorite);
+    const book = (INFO.translation.favorite || (state.trBooks && state.trBooks.length)) && translationMatches(true);
+    const recent = searching ? [] : recentTemplates();
+    if (book) { sections.push(group("lib-pinned", S("translation_group"), [translationCard])); total += 1; }
+    if (favs.length) { sections.push(group("lib-favorites", "★ " + S("favorites"), favs)); total += favs.length; }
+    if (recent.length) sections.push(h("section", {class: "lib-recent"}, h("h3", {class: "lib-group-title"}, S("recently_used")),
       h("div", {class: "recent-row"}, recent.map(({item, at}) => h("span", {class: "recent-chip"},
         h("button", {type: "button", class: "linkish", onclick: () => go(`workflows/${item.source}/${item.id}`)}, L(item.name) || item.id,
           h("span", {class: "small muted"}, " · " + fmtTime(at))),
         h("button", {type: "button", class: "icon-btn", disabled: !item.valid, "aria-label": S("run") + ": " + (L(item.name) || item.id),
-          title: S("run"), onclick: () => openRun(item.source, item.id)}, "▶"))))) : null,
-    visible.length || pinned ? templateGroups(visible).map((g) => h("section", {class: "lib-group"},
-    h("h3", {class: "lib-group-title"}, g.label, h("span", {class: "muted small"}, S("count_templates", {count: g.items.length}))),
-    h("div", {class: "lib-grid"}, g.items.map(templateCard))))
-    : h("div", {class: "empty"}, S("no_templates_match")));
+          title: S("run"), onclick: () => openRun(item.source, item.id)}, "▶"))))));
+    if (own.length) { sections.push(group("", S("my_templates"), own)); total += own.length; }
+    if (drafts.length) { sections.push(group("", S("drafts"), drafts)); total += drafts.length; }
+    if (!sections.length) sections.push(h("div", {class: "empty"}, searching ? S("no_templates_match") : S("mine_empty"),
+      searching ? null : h("div", {class: "row"}, h("button", {type: "button", class: "btn small primary", onclick: () => { state.libView = "all"; renderLibrary(); }}, S("view_templates")))));
+  } else {
+    const visible = state.templates.filter(templateMatches);
+    const plain = !state.tplCategory && !searching && !state.tplOnly;
+    const start = plain ? state.templates.filter((t) => t.tier === "core" && t.source === "builtin") : [];
+    if (start.length) sections.push(group("lib-start", S("start_here"), start));  // not counted: they are also in their category
+    if (translationMatches(false)) { sections.push(group("lib-pinned", S("translation_group"), [translationCard])); total += 1; }
+    for (const g of templateGroups(visible)) { sections.push(group("", g.label, g.items)); total += g.items.length; }
+    if (!visible.length && !sections.length) sections.push(h("div", {class: "empty"}, S("no_templates_match")));
+  }
+  // An empty "My workflows" view says so in its own box; "0 templates" next to it would only add noise.
+  $("#library-count").textContent = view === "mine" && !total ? "" : S("count_templates", {count: total});
+  fill($("#template-grid"), ...sections);
   staggerOnce($("#template-grid"));  // live.js: the cards come in one after the other, the first time
 }
 
 // The book translation: the translation app, pinned at the top of the library. Found by the same search, in both
 // languages ("çeviri", "translation", "kitap", "book"); hidden while a category is chosen.
-function translationMatches() {
-  if (state.tplCategory === "~fav" ? !INFO.translation.favorite : state.tplCategory) return false;
+function translationMatches(inMine) {
+  if (state.tplOnly || (!inMine && state.tplCategory)) return false;
   const q = fold(state.tplQuery.trim());
   const text = fold(["translation", "translate", ...Object.values(UI.translation_card_title || {}), ...Object.values(UI.translation_card_text || {})].join(" "));
   return !q || q.split(/\s+/).every((word) => text.includes(word));
@@ -875,13 +916,127 @@ function templateCard(item) {
       h("span", {class: "tpl-name"}, L(item.name) || item.id),
       h("span", {class: "tpl-desc"}, L(item.description) || item.id)),
     h("div", {class: "tpl-foot"},
-      h("span", {class: "small muted"}, item.valid ? S("template_meta_short", {nodes: item.nodes, inputs: item.inputs})
-        : S("problems_found", {count: (item.problems || []).length})),
+      h("span", {class: "small muted"}, needsLine(item)),
       h("span", {class: "row"},
         favoriteButton(item, renderLibrary),  // live.js
         h("button", {type: "button", class: "btn small", onclick: open}, S("details")),
         h("button", {type: "button", class: "btn small primary", disabled: !item.valid, title: item.valid ? null : S("run_blocked", {count: (item.problems || []).length}),
           onclick: () => openRun(item.source, item.id)}, "▶ " + S("run")))));
+}
+
+// --- the first-start welcome: three choices above the library, until something was run or it was closed ----------
+// GET /api/welcome says whether to show it and which providers each choice needs (PUT /api/welcome closes it for
+// good; the server keeps that, so it holds for every browser). The state of the tools is the Setup tab's data
+// (GET /api/tools); the install and sign-in buttons call the Setup tab's own addresses.
+const welcome = {data: null, tools: null, toolsAt: 0, poll: null};
+
+async function showWelcome() {
+  const panel = $("#welcome-panel");
+  if (!welcome.data || welcome.data.show) {  // asked again while it shows: a first run closes it
+    try { welcome.data = await api("GET", "/api/welcome"); } catch { return; }
+  }
+  panel.hidden = !welcome.data.show;
+  if (!welcome.data.show) { clearTimeout(welcome.poll); return; }
+  drawWelcome();
+  if (Date.now() - welcome.toolsAt > 10000) loadWelcomeTools();
+}
+
+async function loadWelcomeTools() {
+  clearTimeout(welcome.poll);
+  welcome.toolsAt = Date.now();
+  try { welcome.tools = await api("GET", "/api/tools"); } catch { return; }
+  if (!welcome.data || !welcome.data.show || state.tab !== "workflows") return;
+  setReady(toolsReady(welcome.tools));
+  drawWelcome();
+  // As the Setup tab: often while an install runs, for two minutes after a sign-in was started.
+  const busy = welcome.tools.tools.some((tool) => tool.job && tool.job.running);
+  const watching = state.signInUntil > Date.now() && welcome.tools.tools.some((tool) => tool.installed && !tool.signed_in);
+  if (busy || watching) welcome.poll = setTimeout(loadWelcomeTools, busy ? 2500 : 4000);
+}
+
+// One tool of a choice: its name, its state, and the next step right there (install, sign in) when it is not ready.
+function welcomeTool(tool, terminal) {
+  const id = encodeURIComponent(tool.id), job = tool.job, running = Boolean(job && job.running);
+  let mark, action = null;
+  if (!tool.installed) {
+    mark = h("span", {class: "badge bad"}, S("not_installed"));
+    action = h("button", {type: "button", class: "btn small primary", disabled: running, onclick: async (e) => {
+      await act(e.currentTarget, () => api("POST", `/api/tools/${id}/install`));
+      loadWelcomeTools();
+    }}, S(running ? "installing" : "install"));
+  } else if (!tool.signed_in) {
+    mark = h("span", {class: "badge warn"}, S("not_signed_in"));
+    const method = tool.id === "gemini" ? "google" : terminal ? "terminal" : "";  // an API key: on the Setup tab
+    action = method ? h("button", {type: "button", class: "btn small primary", onclick: async (e) => {
+      const r = await act(e.currentTarget, () => api("POST", `/api/tools/${id}/login`, {method}));
+      if (r) state.signInUntil = Date.now() + 2 * 60 * 1000;
+      loadWelcomeTools();
+    }}, S("welcome_sign_in")) : null;
+  } else mark = h("span", {class: "badge good"}, S("welcome_tool_ready"));
+  return h("div", {class: "welcome-tool"}, h("span", {class: "welcome-tool-name"}, tool.name), mark, action,
+    job && !running && job.code !== 0 ? h("span", {class: "small warn-text"}, S("welcome_install_failed")) : null);
+}
+
+function welcomeTools(providers) {
+  const data = welcome.tools;
+  if (!data) return h("div", {class: "welcome-tools"}, h("p", {class: "small muted"}, S("welcome_checking")));
+  const tools = providers.map((p) => data.tools.find((tool) => tool.provider === p) || p);
+  const ready = tools.every((tool) => typeof tool === "string" || (tool.installed && tool.signed_in));
+  return h("div", {class: "welcome-tools"}, h("span", {class: "small fld-label"}, S("welcome_needs")),
+    tools.length ? tools.map((tool) => (typeof tool === "string"  // a provider without a tool of its own (a local model)
+      ? h("div", {class: "welcome-tool"}, h("span", {class: "welcome-tool-name"}, tool), localTag((INFO.providers || []).find((p) => p.name === tool)))
+      : welcomeTool(tool, data.terminal)))
+      : h("p", {class: "small muted"}, S("welcome_no_tool")),
+    ready && tools.length ? null : h("button", {type: "button", class: "linkish small welcome-setup", onclick: () => go("setup")}, S("welcome_setup_link")));
+}
+
+// A choice's icon (a category's, live.js) and its texts.
+function welcomeText(id) {
+  return {
+    document: ["documents", S("welcome_document_title"), S("welcome_document_text"), S("welcome_document_go")],
+    writing: ["writing", S("welcome_writing_title"), S("welcome_writing_text"), S("welcome_show_go")],
+    data: ["data", S("welcome_data_title"), S("welcome_data_text"), S("welcome_show_go")],
+    education: ["education", S("welcome_education_title"), S("welcome_education_text"), S("welcome_show_go")],
+    research: ["research", S("welcome_research_title"), S("welcome_research_text"), S("welcome_show_go")],
+    translation: ["translation", S("welcome_translation_title"), S("welcome_translation_text"), S("welcome_translation_go")],
+  }[id];
+}
+
+// What a choice does: the run window of its template, the library with its workflows only, or the book translation.
+function welcomeGo(choice, title) {
+  if (choice.action === "translation") return go("workflows/translation");
+  if (choice.action === "run") return openRun("builtin", choice.templates[0]);
+  state.tplQuery = "";
+  state.libView = "all";
+  state.tplCategory = choice.action === "category" ? choice.category : "";
+  state.tplOnly = choice.action === "templates" ? {ids: choice.templates, label: title} : null;
+  renderLibrary();
+  $(".lib-tools").scrollIntoView({behavior: calm() ? "auto" : "smooth", block: "start"});
+}
+
+function drawWelcome() {
+  const panel = $("#welcome-panel");
+  const card = (choice) => {
+    const text = welcomeText(choice.id);
+    if (!text) return null;
+    const [kind, title, about, label] = text;
+    return h("article", {class: `tpl-card welcome-card cat-${kind}`},
+      h("div", {class: "welcome-main"}, h("span", {class: "tpl-head"}, iconTile(kind), h("h4", {class: "tpl-name"}, title)),
+        h("p", {class: "tpl-desc"}, about)),
+      welcomeTools(choice.providers),
+      h("div", {class: "tpl-foot"}, h("span", {class: "small muted"}, choice.templates.length > 1 ? S("count_templates", {count: choice.templates.length}) : ""),
+        h("button", {type: "button", class: "btn small primary", onclick: () => welcomeGo(choice, title)}, label)));
+  };
+  fill(panel,
+    h("div", {class: "welcome-head"},
+      h("div", {}, h("h3", {id: "welcome-title"}, S("welcome_title")), h("p", {class: "muted"}, S("welcome_intro"))),
+      h("button", {type: "button", class: "btn small", onclick: async (e) => {
+        if (!await act(e.currentTarget, () => api("PUT", "/api/welcome", {dismissed: true}))) return;
+        welcome.data = {show: false};
+        clearTimeout(welcome.poll);
+        panel.hidden = true;
+      }}, S("welcome_dismiss"))),
+    h("div", {class: "welcome-grid"}, welcome.data.choices.map(card)));
 }
 
 // The drawer: one workflow, or the import form. Closing it (Esc, the close button) goes back to the library.
@@ -909,6 +1064,7 @@ async function showTemplate(source, id) {
     h("b", {}, L(spec.label) || spec.id), " ", h("span", {class: "small muted"}, S("input_type_" + spec.type) + (spec.required === false ? " · " + S("optional") : "")),
     spec.description ? h("div", {class: "small muted"}, L(spec.description)) : null));
   const outputs = (tpl.outputs || []).map((o) => h("li", {}, h("b", {}, L(o.label) || o.id), " ", h("code", {}, o.from)));
+  const share = tpl.valid ? shareBox(source, id) : null;
   openDrawer(
     h("div", {class: "drawer-head"},
       h("div", {class: "stack"},
@@ -931,11 +1087,13 @@ async function showTemplate(source, id) {
         if (!duplicate.hidden) copyId.focus();
       }}, S("duplicate")),
       h("a", {class: "btn", href: `/api/templates/${source}/${id}/download?token=${encodeURIComponent(TOKEN)}`}, S("export_yaml")),
+      share ? share.button : null,  // history.js: "Share" (<id>.mehteran.yaml)
       source === "user" ? h("button", {type: "button", class: "btn danger", onclick: async (e) => {
         if (!confirm(S("confirm_delete", {id}))) return;
         if (await act(e.currentTarget, () => api("DELETE", `/api/templates/user/${id}`))) { toast(S("deleted")); go("workflows"); }
       }}, S("delete")) : null),
     duplicate,
+    share ? share.box : null,
     source === "builtin" ? h("p", {class: "small muted"}, S("builtin_edit_note")) : null,
     tpl.valid ? null : problemsBox({message: S(tpl.draft ? "draft_cannot_run" : "template_invalid", {count: tpl.problems.length}), problems: tpl.problems}),
     tpl.graph ? h("section", {class: "drawer-sec"}, h("h3", {}, S("graph")), previewCanvas(tpl.graph)) : null,
@@ -994,13 +1152,21 @@ function yamlEditor(text, id) {
     }}, S("validate")), h("button", {type: "button", class: "btn primary", onclick: save}, S("save"))), result);
 }
 
-function importView() {
+// text: the YAML to show again (the preview's "Back"). A file chosen here, or dropped on the library
+// (state.importText), opens the preview first (history.js: showImportPreview); "Import" there adds it.
+function importView(text) {
   const area = h("textarea", {class: "code", spellcheck: "false", rows: 18, "aria-label": S("yaml_source")});
+  if (typeof text === "string") area.value = text;
   const result = h("div", {"aria-live": "polite"});
   const picker = h("input", {type: "file", accept: ".yaml,.yml", "aria-label": S("import_file"), onchange: async () => {
     const file = picker.files[0];
-    if (file) area.value = await file.text();
+    if (file) { area.value = await file.text(); showImportPreview(area.value); }
   }});
+  if (state.importText) {
+    const dropped = state.importText;
+    state.importText = null;
+    setTimeout(() => showImportPreview(dropped));
+  }
   return [h("div", {class: "drawer-head"}, h("h2", {id: "drawer-title"}, S("import_title")),
     h("button", {type: "button", class: "icon-btn drawer-x", "aria-label": S("close"), title: S("close"), onclick: () => go("workflows")}, "✕")),
   h("p", {class: "muted small"}, S("import_lede")),
@@ -1010,48 +1176,248 @@ function importView() {
       const res = await api("POST", "/api/validate", {yaml: area.value});
       result.replaceChildren(res.valid ? h("p", {class: "good-text"}, "✓ " + S("valid")) : problemsBox({message: S("problems_found", {count: res.problems.length}), problems: res.problems}));
     }}, S("validate")),
-    h("button", {type: "button", class: "btn primary", onclick: async () => {
-      try { const res = await api("POST", "/api/templates/import", {yaml: area.value}); toast(S("imported", {id: res.id})); go(`workflows/user/${res.id}`); }
-      catch (err) { result.replaceChildren(problemsBox(err)); }
-    }}, S("import"))), result];
+    h("button", {type: "button", class: "btn primary", onclick: () => {
+      if (!area.value.trim()) return result.replaceChildren(h("p", {class: "small warn-text"}, S("import_empty")));
+      showImportPreview(area.value);
+    }}, S("preview_open"))), result];
 }
 
 // --- the run dialog: every input of a workflow, then the run starts and its page opens -----------------
+// --- stream P: the model picker (`auto` and each tool with its state), the providers' Setup panel -----------------
+// GET /api/providers: each tool's state, billing and calls at once, the model order, what each `auto` kind uses now.
+const AUTO_KINDS = ["auto", "auto:fast", "auto:strong", "auto:local"];
+const providerStates = {data: null, at: 0, loading: null};
+
+async function loadProviderStates(force) {
+  if (!force && providerStates.data && Date.now() - providerStates.at < 20000) return providerStates.data;
+  if (!providerStates.loading) {
+    providerStates.loading = api("GET", "/api/providers").then((data) => { providerStates.data = data; providerStates.at = Date.now(); return data; })
+      .catch(() => providerStates.data).finally(() => { providerStates.loading = null; });
+  }
+  return providerStates.loading;
+}
+
+const providerInfo = (name) => ((providerStates.data && providerStates.data.providers) || []).find((p) => p.name === name) || null;
+const autoChoice = (kind) => (providerStates.data && providerStates.data.auto && providerStates.data.auto[kind]) || null;
+const canonicalProvider = (name) => (name === "chatgpt" ? "codex" : name);  // the translation app's name for Codex
+const BILLING_LEVEL = {subscription: "good", free: "good", local: "good", api_key: "warn"};
+const billingBadge = (billing) => (billing ? h("span", {class: "badge billing " + (BILLING_LEVEL[billing] || "")}, S("billing_" + billing)) : null);
+
 function providerField(spec) {
   const providers = (INFO && INFO.providers) || [];
   const def = typeof spec.default === "string" ? spec.default : "";
-  const defProvider = def.split("@")[0].split("/")[0], defModel = def.split("@")[0].split("/")[1] || "", defEffort = def.split("@")[1] || "";
-  const pSel = h("select", {"aria-label": S("provider")}, providers.map((p) => h("option", {value: p.name, selected: p.name === defProvider},
-    p.local ? `${p.name} (${S("local")})` : p.name)));
+  const [defBase, defEffort = ""] = def.split("@");
+  const defProvider = canonicalProvider(defBase.split("/")[0]), defModel = defBase.split("/").slice(1).join("/");
+  const label = (p) => {
+    const st = providerInfo(p.name);
+    const base = p.label || p.name;
+    return st ? `${base} · ${st.problem ? S(st.problem) : S("billing_" + st.billing)}` : base;
+  };
+  const toolOptions = providers.map((p) => h("option", {value: p.name, selected: p.name === defProvider}, label(p)));
+  const pSel = h("select", {"aria-label": S("provider")},
+    h("optgroup", {label: S("auto_group")}, AUTO_KINDS.map((k) => h("option", {value: k, selected: k === def}, S("auto_kind_" + k.replace(":", "_"))))),
+    h("optgroup", {label: S("tools_group")}, toolOptions));
+  const isAuto = () => AUTO_KINDS.includes(pSel.value);
   const listId = "models-" + spec.id;
   const model = h("input", {type: "text", list: listId, placeholder: S("model_default"), value: defModel, class: "mono", "aria-label": S("model")});
   const datalist = h("datalist", {id: listId});
   const effort = h("select", {"aria-label": S("effort")});
+  const autoLine = h("span", {class: "usage-hint small auto-line"});
+  const hint = usageHint();  // live.js: "5 saat: %54", in a warning colour near a limit
   const refresh = () => {
     const p = providers.find((x) => x.name === pSel.value) || {models: [], efforts: []};
+    model.hidden = effort.hidden = isAuto();
     datalist.replaceChildren(...p.models.map((m) => h("option", {value: m})));
     const keep = effort.value || defEffort;
     effort.replaceChildren(h("option", {value: ""}, S("effort_default")), ...p.efforts.map((e) => h("option", {value: e, selected: e === keep}, S("effort_" + e))));
     effort.disabled = !p.efforts.length;
+    showHint();
   };
-  const hint = usageHint();  // live.js: "5 saat: %54", in a warning colour near a limit
-  pSel.addEventListener("change", () => { refresh(); hint.show(pSel.value); });
+  const showHint = () => {
+    // auto: "Otomatik: claude/haiku · 5 saat: %54"; a tool: its usage, or why it cannot run now
+    if (isAuto()) {
+      const chosen = autoChoice(pSel.value);
+      const provider = chosen ? chosen.name.split("@")[0].split("/")[0] : "";
+      autoLine.textContent = !providerStates.data ? "" : chosen
+        ? [S("auto_now", {name: chosen.name}), usageHintText(provider), S(chosen.local ? "sent_to_local" : "sent_to", {vendor: chosen.vendor})].filter(Boolean).join(" · ")
+        : S(pSel.value === "auto:local" ? "auto_none_local_ui" : "auto_none_ui");
+      autoLine.className = "usage-hint small auto-line " + (chosen ? usageLevel(usageOf(provider)) : "warn-text");
+      hint.hidden = true;
+      autoLine.hidden = !autoLine.textContent;
+      return;
+    }
+    const st = providerInfo(pSel.value);
+    autoLine.textContent = st && st.problem ? S(st.problem) : st && st.billing === "api_key" ? S("billed_warning") : "";
+    autoLine.className = "usage-hint small auto-line warn-text";
+    autoLine.hidden = !autoLine.textContent;
+    hint.show(pSel.value);
+  };
+  pSel.addEventListener("change", refresh);
   refresh();
-  loadUsage().then(() => hint.show(pSel.value));
-  const wrap = h("div", {class: "provider-pick"}, pSel, model, datalist, effort, hint);
-  wrap.read = () => pSel.value + (model.value.trim() ? "/" + model.value.trim() : "") + (effort.value ? "@" + effort.value : "");
+  loadUsage().then(showHint);
+  loadProviderStates().then(() => {
+    toolOptions.forEach((o, i) => { o.textContent = label(providers[i]); });
+    // The workflow's default tool cannot run here (not installed, not signed in, billed): start on `auto`.
+    const st = providerInfo(pSel.value);
+    if (!isAuto() && !wrap.touched && st && st.problem && autoChoice("auto")) {
+      pSel.value = "auto";
+      pSel.dispatchEvent(new Event("change", {bubbles: true}));
+    } else showHint();
+  });
+  const wrap = h("div", {class: "provider-pick"}, pSel, model, datalist, effort, autoLine, hint);
+  wrap.addEventListener("input", () => { wrap.touched = true; });
+  pSel.addEventListener("pointerdown", () => { wrap.touched = true; });
+  wrap.read = () => (isAuto() ? pSel.value : pSel.value + (model.value.trim() ? "/" + model.value.trim() : "") + (effort.value ? "@" + effort.value : ""));
   wrap.write = (value) => {
     const [base, level] = String(value).split("@");
     const [prov, ...rest] = base.split("/");
-    if (!providers.some((p) => p.name === prov)) return;
-    pSel.value = prov;
+    if (AUTO_KINDS.includes(String(value))) { pSel.value = String(value); refresh(); return; }
+    if (!providers.some((p) => p.name === canonicalProvider(prov))) return;
+    pSel.value = canonicalProvider(prov);
     refresh();
     model.value = rest.join("/");
     effort.value = level || "";
-    hint.show(prov);
+    showHint();
   };
   if (!providers.length) wrap.appendChild(h("p", {class: "small warn-text"}, S("no_providers")));
   return wrap;
+}
+
+// The estimate's steps: "Summary → Anthropic", in a fold; a step that privacy: local refuses is marked, open.
+function estimateSteps(est) {
+  const refused = est.refused || 0;
+  return h("details", {class: "estimate-steps small", open: refused > 0},
+    h("summary", {}, S("sent_to_title"), refused ? h("span", {class: "badge bad"}, S("privacy_refused_count", {count: refused})) : null),
+    h("ul", {class: "plain"}, est.steps.map((s) => h("li", {class: s.refused ? "bad-text" : ""},
+      h("b", {}, L(s.label) || s.node), ": ", h("code", {}, s.model || "–"), " → ",
+      s.sent_to ? S(s.local ? "sent_to_local" : "sent_to", {vendor: s.sent_to}) : "–"))));
+}
+
+// The run window's privacy choice: "only models on this computer" (a workflow with "privacy: local" always is).
+function privacyField(tpl, estimate) {
+  const fixed = Boolean(tpl.model && tpl.model.privacy === "local");
+  const box = h("input", {type: "checkbox", checked: fixed, disabled: fixed, onchange: () => { estimate.privacy = box.checked ? "local" : ""; estimate.refresh(true); }});
+  estimate.privacy = fixed ? "local" : "";
+  const row = h("div", {class: "stack privacy-row"}, h("label", {class: "check"}, box, h("span", {}, S("privacy_local_label"))),
+    h("span", {class: "small muted"}, S(fixed ? "privacy_local_fixed" : "privacy_local_hint")));
+  row.read = () => (box.checked ? "local" : "");
+  return row;
+}
+
+// The Setup tab's panel of the AI tools for workflows: the model order of `auto`, billing, calls at once.
+async function loadProviders(force) {
+  const el = $("#providers-panel");
+  if (!el) return;
+  let data;
+  try { data = await loadProviderStates(force); } catch (e) { return fill(el, problemsBox(e)); }
+  if (!data || state.tab !== "setup") return;
+  const save = async (button, change) => {
+    const res = await act(button, () => api("PUT", "/api/providers", change));
+    if (res) { providerStates.data = res; providerStates.at = Date.now(); drawProviders(res); }
+  };
+  drawProviders(data, save);
+}
+
+function drawProviders(data, save) {
+  const el = $("#providers-panel");
+  save = save || el.save;
+  el.save = save;
+  const order = data.order.slice();
+  const labelOf = (entry) => {
+    const p = providerInfo(entry.split("@")[0].split("/")[0]);
+    return p ? p.label : entry;
+  };
+  const move = (i, by) => (e) => {
+    const next = order.slice();
+    [next[i], next[i + by]] = [next[i + by], next[i]];
+    save(e.currentTarget, {order: next});
+  };
+  const rows = order.map((entry, i) => {
+    const p = providerInfo(entry.split("@")[0].split("/")[0]);
+    return h("li", {class: "order-row"},
+      h("span", {class: "order-n"}, String(i + 1)),
+      h("span", {class: "order-name"}, h("b", {}, labelOf(entry)), " ", h("code", {}, entry)),
+      p ? billingBadge(p.billing) : null,
+      p && p.problem ? h("span", {class: "badge warn"}, S(p.problem)) : p && p.blocked_until ? h("span", {class: "badge warn"}, S("hint_limited", {time: fmtTime(p.blocked_until)})) : null,
+      h("span", {class: "order-actions"},
+        h("button", {type: "button", class: "icon-btn", disabled: i === 0, "aria-label": `${S("move_up")}: ${entry}`, title: S("move_up"), onclick: move(i, -1)}, "↑"),
+        h("button", {type: "button", class: "icon-btn", disabled: i === order.length - 1, "aria-label": `${S("move_down")}: ${entry}`, title: S("move_down"), onclick: move(i, 1)}, "↓"),
+        h("button", {type: "button", class: "icon-btn danger", "aria-label": `${S("remove")}: ${entry}`, title: S("remove"),
+          onclick: (e) => save(e.currentTarget, {order: order.filter((_, j) => j !== i)})}, "✕")));
+  });
+  // Adding a model: a tool, then optionally its model.
+  const usable = data.providers.filter((p) => p.installed);
+  const addTool = h("select", {"aria-label": S("provider")}, usable.map((p) => h("option", {value: p.name}, p.label)));
+  const addModel = h("input", {type: "text", class: "mono", list: "order-models", placeholder: S("model_default"), "aria-label": S("model")});
+  const addList = h("datalist", {id: "order-models"});
+  const fillModels = () => {
+    const info = ((INFO && INFO.providers) || []).find((x) => x.name === addTool.value);
+    const p = providerInfo(addTool.value);
+    addList.replaceChildren(...[...new Set([...((p && p.models) || []), ...((info && info.models) || [])])].map((m) => h("option", {value: m})));
+  };
+  addTool.addEventListener("change", fillModels);
+  fillModels();
+  const add = h("form", {class: "row order-add", onsubmit: (e) => {
+    e.preventDefault();
+    const entry = addTool.value + (addModel.value.trim() ? "/" + addModel.value.trim() : "");
+    save($("button", e.currentTarget), {order: [...order.filter((x) => x !== entry), entry]});
+  }}, addTool, addModel, addList, h("button", {type: "submit", class: "btn"}, "+ " + S("order_add")));
+  const autoLines = AUTO_KINDS.map((k) => {
+    const chosen = data.auto && data.auto[k];
+    return h("li", {}, h("b", {}, S("auto_kind_" + k.replace(":", "_"))), ": ",
+      chosen ? [h("code", {}, chosen.name), " · ", S(chosen.local ? "sent_to_local" : "sent_to", {vendor: chosen.vendor})]
+        : h("span", {class: "warn-text"}, S("auto_none_short")));
+  });
+  const tools = data.providers.map((p) => {
+    const sizes = Array.from({length: 8}, (_, i) => i + 1);
+    const conc = h("select", {"aria-label": `${S("concurrency")}: ${p.label}`, onchange: (e) => save(e.currentTarget, {providers: {[p.name]: {concurrency: Number(e.currentTarget.value)}}})},
+      sizes.map((n) => h("option", {value: String(n), selected: n === p.concurrency}, String(n))));
+    const key = p.default_billing !== "local" ? h("label", {class: "check small"},
+      h("input", {type: "checkbox", checked: p.api_key_allowed, onchange: (e) => save(e.currentTarget, {providers: {[p.name]: {api_key: e.currentTarget.checked}}})}),
+      h("span", {}, S("allow_api_key"))) : null;
+    return h("tr", {},
+      h("th", {scope: "row"}, p.label, h("div", {class: "small muted"}, S(p.local ? "sent_to_local" : "sent_to", {vendor: p.vendor}))),
+      h("td", {}, billingBadge(p.billing), p.key_dropped ? h("div", {class: "small muted"}, S("key_dropped")) : null,
+        p.problem ? h("div", {class: "small warn-text"}, S(p.problem)) : null),
+      h("td", {}, h("label", {class: "row small"}, conc, h("span", {}, S("at_once", {count: p.in_use || 0})))),
+      h("td", {}, key));
+  });
+  fill(el,
+    h("div", {class: "panel-head"}, h("div", {}, h("h2", {}, S("providers_title")), h("p", {class: "muted"}, S("providers_intro")))),
+    h("div", {class: "providers-grid"},
+      h("section", {class: "stack"}, h("h3", {}, S("order_title")),
+        h("p", {class: "small muted"}, S(data.order_is_default ? "order_default_note" : "order_note")),
+        rows.length ? h("ol", {class: "plain order-list"}, rows) : h("p", {class: "small warn-text"}, S("order_empty")), add),
+      h("section", {class: "stack"}, h("h3", {}, S("auto_title")), h("ul", {class: "plain auto-list small"}, autoLines),
+        h("p", {class: "small muted"}, S("auto_explain")))),
+    h("div", {class: "table-wrap"}, h("table", {class: "providers-table"},
+      h("thead", {}, h("tr", {}, h("th", {scope: "col"}, S("provider")), h("th", {scope: "col"}, S("billing")),
+        h("th", {scope: "col"}, S("concurrency")), h("th", {scope: "col"}, S("api_key_column")))),
+      h("tbody", {}, tools))),
+    localServerForm(data, save),
+    h("p", {class: "small muted"}, S("providers_file_note")));
+}
+
+// A local server with an OpenAI-compatible API (LM Studio, llama.cpp, vLLM): its address on this computer and model.
+function localServerForm(data, save) {
+  const p = data.providers.find((x) => x.name === "openai-local");
+  if (!p) return null;
+  const url = h("input", {type: "url", class: "mono", value: p.url || "", placeholder: "http://127.0.0.1:1234/v1", "aria-label": S("local_server_url")});
+  const model = h("input", {type: "text", class: "mono", value: p.model || "", list: "local-server-models", placeholder: S("model_default"), "aria-label": S("model")});
+  const result = h("span", {class: "small muted", "aria-live": "polite"});
+  return h("form", {class: "stack local-server", onsubmit: (e) => {
+    e.preventDefault();
+    save($("button[type=submit]", e.currentTarget), {providers: {"openai-local": {url: url.value.trim(), model: model.value.trim()}}});
+  }},
+  h("h3", {}, S("local_server_title")), h("p", {class: "small muted"}, S("local_server_intro")),
+  h("div", {class: "row order-add"}, url, model, h("datalist", {id: "local-server-models"}, (p.models || []).map((m) => h("option", {value: m}))),
+    h("button", {type: "submit", class: "btn"}, S("save")),
+    h("button", {type: "button", class: "btn", disabled: !p.installed, onclick: async (e) => {
+      const r = await act(e.currentTarget, () => api("POST", "/api/models/test", {name: "openai-local" + (model.value.trim() ? "/" + model.value.trim() : "")}));
+      if (r) result.textContent = r.message;
+    }}, S("test"))),
+  h("span", {class: "small " + (p.installed ? "good-text" : "muted")}, p.url ? S(p.installed ? "local_server_ok" : "local_server_down", {count: (p.models || []).length}) : S("local_server_none")),
+  result);
 }
 
 // The browser's own file button cannot be translated: a button of the page opens the real file input, which stays
@@ -1104,6 +1470,51 @@ function multiFileField(spec, accept) {
   return wrap;
 }
 
+// --- the run dialog's estimate: the model calls of the run, per model, with the tool's usage now -------------------
+// POST /api/templates/<source>/<id>/estimate with the form's model and choice values; asked again when one of them
+// changes (another model). The counts come from the workflow: nothing here is a share of a usage limit.
+function runEstimate(source, id, fields) {
+  const el = h("section", {class: "run-estimate", "aria-live": "polite"});
+  let seq = 0, timer = null;
+  const count = (item) => [item.calls || !item.loops ? String(item.calls) : null,
+    item.loops ? S("estimate_per_part", {parts: item.max_parts}) : null].filter(Boolean).join(" + ");
+  const draw = (est) => {
+    el.last = est;
+    if (!est.steps.length) return fill(el, h("p", {class: "small muted"}, S("estimate_none")));
+    fill(el, h("div", {class: "estimate-head"}, h("b", {}, S("estimate_title")),
+      h("span", {class: "small"}, S("estimate_calls", {calls: count(est)}), " · ", S("estimate_max", {count: est.max_calls}))),
+    batchEstimateLine(est, el.times),  // history.js: × the files of a batch
+    h("ul", {class: "plain estimate-models"}, est.models.map((m) => {
+      const usage = usageHintText(m.provider);  // live.js: "5 saat: %54"
+      const local = (INFO.providers || []).find((p) => p.name === m.provider);
+      return h("li", {}, h("span", {class: "estimate-model"}, m.tool_name ? m.tool_name + " · " : "", h("code", {}, m.model || "–"), localTag(local),
+        m.configured ? null : h("span", {class: "badge bad"}, S("estimate_not_configured")),
+        m.auto ? h("span", {class: "muted small"}, " · " + S("auto_kind_" + m.auto.replace(":", "_"))) : null),
+      h("span", {class: "small"}, S("estimate_calls", {calls: count(m)})),
+      m.sent_to ? h("span", {class: "small sent-to"}, S(m.local ? "sent_to_local" : "sent_to", {vendor: m.sent_to})) : null,
+      m.configured ? h("span", {class: "usage-hint small " + usageLevel(usageOf(m.provider))},
+        usage ? S("estimate_usage_now", {text: usage}) : S("estimate_usage_none")) : null);
+    })),
+    estimateSteps(est),  // stream P: each step and where its prompt goes
+    est.conditional ? h("p", {class: "small muted"}, S("estimate_conditional", {count: est.conditional})) : null,
+    h("p", {class: "small muted"}, S("estimate_no_cost")));
+  };
+  const ask = async () => {
+    const mine = ++seq, values = {};
+    for (const {spec, control} of fields) if (["provider", "choice"].includes(spec.type)) values[spec.id] = control.read();
+    try {
+      const [est] = await Promise.all([api("POST", `/api/templates/${source}/${id}/estimate`, {values, privacy: el.privacy || ""}), loadUsage()]);
+      if (mine === seq) draw(est);
+    } catch (err) { if (mine === seq) fill(el, h("p", {class: "small muted"}, err.message)); }
+  };
+  el.refresh = (soon) => { clearTimeout(timer); timer = setTimeout(ask, soon ? 0 : 350); };
+  el.times = 1;
+  el.setTimes = (n) => { el.times = n; if (el.last) draw(el.last); };  // a batch: one run per file
+  fill(el, h("p", {class: "small muted"}, S("loading")));
+  el.refresh(true);
+  return el;
+}
+
 async function openRun(source, id) {
   let tpl;
   try { tpl = await api("GET", `/api/templates/${source}/${id}`); } catch (err) { return toast(err.message, true); }
@@ -1138,7 +1549,8 @@ async function openRun(source, id) {
     } else if (spec.type === "provider") {
       control = providerField(spec);
     } else {
-      control = spec.multiline ? h("textarea", {rows: 3}) : h("input", {type: "text"});
+      control = spec.multiline ? h("textarea", {rows: 3})
+        : h("input", spec.type === "url" ? {type: "url", placeholder: "https://…", dir: "ltr"} : {type: "text"});
       control.value = spec.default || "";
       if (spec.required !== false) control.required = true;
       control.read = () => control.value;
@@ -1156,6 +1568,9 @@ async function openRun(source, id) {
       control, spec.description ? h("p", {class: "small muted"}, L(spec.description)) : null)});
   }
   const lastRun = recallInputs(source, id);  // live.js: the values of the last run of this workflow
+  const estimate = runEstimate(source, id, fields);  // the model calls of this run, before it starts
+  const extras = runExtras(source, id, fields, estimate);  // history.js: once per file, save to a folder
+  const privacy = privacyField(tpl, estimate);  // only models on this computer
   const status = h("div", {class: "small grow", "aria-live": "polite"});
   const submit = h("button", {class: "btn primary", type: "submit"}, "▶ " + S("start_run"));
   const form = h("form", {class: "run-form", onsubmit: async (e) => {
@@ -1164,7 +1579,9 @@ async function openRun(source, id) {
     status.replaceChildren();
     try {
       const values = {}, files = {};
+      const extra = await extras.prepare();  // the folder checked (and confirmed once), the files of a batch
       for (const {spec, control} of fields) {
+        if (spec.id === extra.batchInput) continue;
         const value = control.read();
         if (spec.type === "file") {
           const problem = control.check && control.check();
@@ -1179,11 +1596,22 @@ async function openRun(source, id) {
           files[spec.id] = spec.multiple ? ids : ids[0];
         } else values[spec.id] = value;
       }
+      const body = {template: `${source}:${id}`, values, files};
+      if (privacy.read()) body.privacy = privacy.read();
+      if (extra.output_dir) Object.assign(body, {output_dir: extra.output_dir, output_confirmed: true});
+      if (extra.batchFiles) {
+        const ids = [];
+        for (const file of extra.batchFiles) {
+          status.replaceChildren(S("uploading", {name: file.name}));
+          ids.push((await api("PUT", `/api/uploads?file=${encodeURIComponent(file.name)}`, undefined, file)).upload);
+        }
+        body.batch = {input: extra.batchInput, files: ids};
+      }
       status.replaceChildren(S("starting"));
-      const res = await api("POST", "/api/runs", {template: `${source}:${id}`, values, files});
+      const res = await api("POST", "/api/runs", body);
       rememberInputs(source, id, fields);  // live.js: for "Same as last time"
       dialog.close();
-      toast(S("run_started_toast"));
+      toast(res.batch ? S("batch_started", {count: res.ids.length}) : S("run_started_toast"));
       go("runs/" + res.id);
     } catch (err) {
       status.replaceChildren(problemsBox(err));
@@ -1194,13 +1622,24 @@ async function openRun(source, id) {
     h("p", {class: "small muted"}, S("new_run_lede"))),
     h("button", {type: "button", class: "icon-btn", "aria-label": S("close"), title: S("close"), onclick: () => dialog.close()}, "✕")),
   h("div", {class: "layout-body run-fields"}, tpl.description ? h("p", {class: "muted small"}, L(tpl.description)) : null,
+    // warnings of the workflow (schema.warnings): shown before the run; they do not block it
+    (tpl.warnings || []).length ? h("details", {class: "notice warn run-warnings"}, h("summary", {}, S("warnings_found", {count: tpl.warnings.length})),
+      h("ul", {class: "failures"}, tpl.warnings.map((w) => h("li", {}, w.label ? h("b", {}, `“${w.label}”: `) : null, w.message)))) : null,
     lastRun ? h("div", {class: "row last-run"}, h("button", {type: "button", class: "btn small", onclick: (e) => {
       for (const {spec, control} of fields) if (spec.id in lastRun && control.write) control.write(lastRun[spec.id]);
       e.currentTarget.disabled = true;
+      estimate.refresh(true);
       toast(S("last_filled"));
     }}, "↺ " + S("same_as_last")), h("span", {class: "small muted"}, S("same_as_last_hint"))) : null,
-    fields.length ? fields.map((f) => f.row) : h("p", {class: "muted"}, S("no_inputs"))),
+    fields.length ? fields.map((f) => f.row) : h("p", {class: "muted"}, S("no_inputs")), extras, privacy),
+  estimate,
   h("div", {class: "dialog-foot row"}, status, h("button", {type: "button", class: "btn", onclick: () => dialog.close()}, S("cancel_action")), submit));
+  // A changed value (another model, typed or chosen) gives a new estimate.
+  for (const {spec, control} of fields) {
+    if (!["provider", "choice"].includes(spec.type)) continue;
+    control.addEventListener("change", () => estimate.refresh(true));
+    control.addEventListener("input", () => estimate.refresh(false));
+  }
   fill(dialog, form);
   if (!dialog.open) dialog.showModal();
   const first = $(".run-fields input:not(.file-native), .run-fields select, .run-fields textarea, .run-fields .file-pick button", form);
@@ -1221,23 +1660,9 @@ async function showRuns(parts) {
 
 // The workflow runs, then the last run of each book of the book translation (it opens the translation's books).
 // What runs has a stop button: a workflow run can be resumed later, a book translation continues where it stopped.
+// history.js draws it: a search field, a group per workflow (a batch as one row), the book translations' group.
 function renderRunList(runs, selected) {
-  const books = state.trRuns || [];
-  const refresh = () => showRuns(selected ? [selected] : []);
-  const mark = (status, active) => (active || status === "queued" ? h("span", {class: "dot", title: S("status_" + status)}) : badge(status));
-  const runItems = runs.map((r) => h("li", {class: "rl-item"}, h("button", {type: "button", class: r.id === selected ? "active" : "",
-    "aria-current": r.id === selected ? "true" : null, onclick: () => go("runs/" + r.id)},
-    h("span", {class: "rl-main"}, h("span", {class: "rl-name"}, r.workflow_name), h("span", {class: "small muted"}, fmtTime(r.created))),
-    mark(r.status, r.status === "running")),
-    FINAL.has(r.status) ? null : stopButton(S("stop_named", {name: r.workflow_name}), (b) => stopRun(b, r.id, refresh))));
-  const bookItems = books.map((b) => h("li", {class: "rl-item"}, h("button", {type: "button", onclick: () => go("workflows/translation/books")},
-    h("span", {class: "rl-main"}, h("span", {class: "rl-name"}, iconTile("translation"), b.book),
-      h("span", {class: "small muted"}, b.started ? fmtTime(b.started) : "", b.stage && b.active ? " · " + b.stage : "")),
-    mark(b.waiting_quota ? "waiting_quota" : b.status, b.active)),
-    b.active ? stopButton(S("stop_named", {name: b.book}), (btn) => stopBook(btn, b.book, refresh)) : null));
-  fill($("#run-list"), ...(runs.length || books.length ? [...runItems,
-    bookItems.length ? h("li", {class: "rl-sep small muted"}, S("translation_card_title")) : null, ...bookItems]
-    : [h("li", {class: "muted small pl-empty"}, S("no_runs"))]));
+  historyList(runs, selected);
 }
 
 async function showRun(runId, keep) {
@@ -1274,14 +1699,9 @@ async function showRun(runId, keep) {
     actions.push(h("button", {type: "button", class: "btn primary", onclick: (e) => post(e.currentTarget, `/api/runs/${runId}/resume`, {}, S("resumed"))}, S("resume")));
   const [tplSource, tplId] = (run.template || "").split(":");
   if (tplSource && tplId) actions.push(h("button", {type: "button", class: "btn", onclick: () => openRun(tplSource, tplId)}, "▶ " + S("run_again")));
+  actions.push(...runManage(run, runId).filter(Boolean));  // history.js: rename, delete
 
-  // The workflow's results; a workflow that names none shows the files its steps saved (an export step's documents).
-  let outputs = (run.outputs || []).filter((o) => o.path);
-  if (!(run.outputs || []).length) {
-    outputs = run.graph.nodes.flatMap((g) => Object.entries(run.nodes[g.id].outputs || {})
-      .filter(([port]) => (run.node_info[g.id].ports || {})[port] === "file")
-      .map(([port, path]) => ({id: `${g.id}.${port}`, label: `${L(run.node_info[g.id].label) || g.id} · ${port}`, path})));
-  }
+  const outputs = runResults(run);  // the results box: resultsBox() (the reader, compare, edit and export)
   const done = run.graph.nodes.filter((g) => run.nodes[g.id].status === "succeeded").length;
   // A loop (ai.map) reports "done/count" in its progress events; the bar follows the last one.
   const parts = (nodeId) => {
@@ -1313,11 +1733,12 @@ async function showRun(runId, keep) {
   fill($("#run"),
     h("div", {class: "run-head"},
       h("div", {class: "stack"},
-        h("div", {class: "book-title"}, h("h2", {}, run.workflow_name), badge(run.status), live ? h("span", {class: "dot", title: S("live")}) : null),
+        h("div", {class: "book-title"}, h("h2", {}, run.label || run.workflow_name), badge(run.status), live ? h("span", {class: "dot", title: S("live")}) : null),
         h("p", {class: "row small muted"}, h("span", {}, S("started"), ": ", fmtTime(run.started || run.created)),
           h("span", {}, S("col_duration"), ": ", duration(run.started, run.finished)),
           h("span", {}, S("nodes_done", {done, total: run.graph.nodes.length})), h("code", {}, run.id),
-          run.template ? h("code", {}, run.template) : null)),
+          run.template ? h("code", {}, run.template) : null),
+        runNotes(run)),  // history.js: the run's name and note, where its results were saved
       actions.length ? h("div", {class: "row run-actions"}, actions) : null),
     run.error ? h("div", {class: "notice bad"}, h("b", {}, S("error")), " ", run.error) : null,
     live ? overall : null,
@@ -1325,16 +1746,15 @@ async function showRun(runId, keep) {
       waiting.map((g) => `${L(run.node_info[g.id].label) || g.id}: ${run.nodes[g.id].error || ""}`).join(" · "), " ",
       h("button", {type: "button", class: "btn small switch-open", onclick: () => { state.selectedNode = waiting[0].id; state.switchOpen = `${runId}:${waiting[0].id}`; refresh(); }},
         S("switch_model"))) : null,
-    outputs.length ? h("section", {class: "card box results-box"}, h("h3", {}, S("results")),
-      h("div", {class: "row"}, outputs.map((o) => h("a", {class: "btn", href: fileUrl(runId, o.path, true)}, "↓ " + (L(o.label) || o.id))))) : null,
-    h("div", {class: "run-cols"},
+    outputs.length ? resultsBox(run, runId, outputs) : null,
+    flowFold(run, runId, h("div", {class: "run-cols"},  // history.js: one line for a finished run
       h("div", {class: "run-main"},
         h("section", {class: "card box run-graph"}, h("div", {class: "row run-graph-head"}, h("h3", {}, S("graph")),
           h("button", {type: "button", class: "btn small", onclick: () => state.runCanvas.fit()}, S("fit"))),
           state.runCanvas.el, h("p", {class: "small muted"}, S("monitor_hint"))),
         h("section", {class: "card box timeline"}, h("h3", {}, S("progress")), h("ol", {class: "tl"}, timeline)),
         liveLogPanel(run, runId)),  // live.js: the selected (or working) step's log, kept between redraws
-      h("aside", {class: "run-aside"}, nodePanel(run, runId, post))),
+      h("aside", {class: "run-aside"}, nodePanel(run, runId, post)))),
     // A file input's value is its stored path, or a list of paths for a several-files input.
     h("details", {class: "logbox"}, h("summary", {}, S("inputs_used")), h("ul", {class: "plain"}, Object.entries(run.inputs).map(([k, v]) =>
       h("li", {}, h("code", {}, k), ": ", (Array.isArray(v) ? v : [v]).map((x, i) => [i ? ", " : "",
@@ -1377,7 +1797,11 @@ function nodePanel(run, runId, post) {
       ? h("button", {type: "button", class: "btn small", onclick: (e) => post(e.currentTarget, `/api/runs/${runId}/nodes/${id}/retry`, {}, S("retry_sent"))}, S("retry")) : null,
       h("button", {type: "button", class: "icon-btn", "aria-label": S("close"), title: S("close"), onclick: () => { state.selectedNode = null; showRun(runId, true); }}, "✕")))];
   if (n.error && n.status === "waiting_quota") parts.push(h("div", {class: "notice warn"}, n.error));
-  else if (n.error) parts.push(h("div", {class: "notice bad"}, h("b", {}, S("error")), " ", n.error));
+  else if (n.error) {  // the last meaningful line (server: error_summary); the full tool text stays under details
+    const brief = n.error_summary || n.error;
+    parts.push(h("div", {class: "notice bad"}, h("b", {}, S("error")), " ", brief,
+      brief !== n.error ? h("details", {}, h("summary", {}, S("error_details")), h("pre", {class: "small"}, n.error)) : null));
+  }
   parts.push(switchBox(run, runId, id, () => showRun(runId, true)), switchEvents(run, id));  // live.js
   if (n.status === "skipped") parts.push(h("p", {class: "small muted"}, S("skipped_hint")));
   if (n.status === "waiting_approval") {
@@ -1402,17 +1826,299 @@ function nodePanel(run, runId, post) {
   return h("section", {class: "card box", id: "node-panel"}, parts);
 }
 
-// The reader: a text output in a dialog, always as plain text.
-async function openReader(runId, rel, title) {
+// --- results: the reader (formatted or plain), compare two runs, edit and export -----------------------------------
+// A result's .md file is shown formatted (markdown.js) or as plain text; "mehteran.readerView" remembers the choice.
+// "Edit" saves an edited copy next to the run (<run>/edited/<node>.<name>.md, PUT /api/runs/<run>/edits/<output>);
+// the original output never changes, and the reader offers both. The edited copy is exported with document.export's
+// code (POST /api/runs/<run>/edits/<output> {format}). "Compare" shows a result of this run next to the same result
+// of another finished run of the same workflow, and marks the paragraphs that differ.
+// The rich reader uses #reader-tools and #reader-body; on close the dialog is the plain reader again (#reader-text),
+// as the guide (live.js) uses it.
+const isMarkdown = (rel) => /\.md$/i.test(rel || "");
+const isEditable = (rel) => /^nodes\/[a-z][a-z0-9_-]*\/[A-Za-z0-9][A-Za-z0-9_-]*\.md$/.test(rel || "");
+const filePath = (rel) => rel.split("/").map(encodeURIComponent).join("/");
+const reader = {view: recall("mehteran.readerView") === "plain" ? "plain" : "formatted", seq: 0};
+
+// The workflow's results; a workflow that names none shows the files its steps saved (an export step's documents).
+function runResults(run) {
+  if ((run.outputs || []).length) return run.outputs.filter((o) => o.path);
+  return run.graph.nodes.flatMap((g) => Object.entries(run.nodes[g.id].outputs || {})
+    .filter(([port]) => (run.node_info[g.id].ports || {})[port] === "file")
+    .map(([port, path]) => ({id: `${g.id}.${port}`, label: `${L(run.node_info[g.id].label) || g.id} · ${port}`, path})));
+}
+
+function resultsBox(run, runId, outputs) {
+  const name = (o) => L(o.label) || o.id;
+  const texts = outputs.filter((o) => isMarkdown(o.path));
+  return h("section", {class: "card box results-box"},
+    h("div", {class: "row results-head"}, h("h3", {}, S("results")),
+      FINAL.has(run.status) && texts.length ? h("button", {type: "button", class: "btn small", onclick: () => openCompare(run, texts[0].id)},
+        "⇄ " + S("compare_action")) : null),
+    h("div", {class: "row"}, outputs.map((o) => isMarkdown(o.path)
+      ? h("span", {class: "result-item"},
+        h("button", {type: "button", class: "btn", title: S("read"), onclick: () => openReader(runId, o.path, name(o))}, name(o)),
+        h("a", {class: "btn", href: fileUrl(runId, o.path, true), title: S("download"), "aria-label": `${S("download")}: ${name(o)}`}, "↓"))
+      : h("a", {class: "btn", href: fileUrl(runId, o.path, true)}, "↓ " + name(o)))));
+}
+
+// The rich reader: open it (wide for the compare view) and give the plain one back when it closes.
+function readerOpen(title, wide) {
   const dialog = $("#reader");
+  reader.seq++;
+  reader.editing = false;
+  reader.dirty = false;
+  reader.compare = null;
   $("#reader-title").textContent = title;
-  $("#reader-download").href = fileUrl(runId, rel, true);
-  $("#reader-text").textContent = S("loading");
+  $("#reader-text").hidden = true;
+  $("#reader-body").hidden = false;
+  $("#reader-tools").hidden = false;
+  $("#reader-download").hidden = Boolean(wide);
+  dialog.classList.toggle("wide", Boolean(wide));
+  fill($("#reader-tools"));
+  fill($("#reader-body"), h("p", {class: "muted reader-pane"}, S("loading")));
+  if (!reader.hooked) {
+    reader.hooked = true;
+    // Unsaved edits are not lost by Esc or the close button without a question.
+    const keep = () => reader.editing && reader.dirty && !confirm(S("edit_discard_confirm"));
+    dialog.addEventListener("cancel", (e) => { if (keep()) e.preventDefault(); });
+    $("#reader-close").addEventListener("click", (e) => { if (keep()) e.stopImmediatePropagation(); }, true);
+  }
+  if (!reader.open) {
+    reader.open = true;
+    dialog.addEventListener("close", () => {
+      reader.open = false;
+      reader.seq++;
+      reader.editing = false;
+      reader.compare = null;
+      dialog.classList.remove("wide");
+      fill($("#reader-tools"));
+      fill($("#reader-body"));
+      $("#reader-tools").hidden = true;
+      $("#reader-body").hidden = true;
+      $("#reader-text").hidden = false;
+      $("#reader-download").hidden = false;
+    }, {once: true});
+  }
   if (!dialog.open) dialog.showModal();
+}
+
+// "Formatted / Plain text"; redraw: the view to draw again.
+function viewToggle(redraw) {
+  const pick = (view) => h("button", {type: "button", class: "tab" + (reader.view === view ? " active" : ""), "aria-pressed": String(reader.view === view),
+    onclick: () => { reader.view = view; remember("mehteran.readerView", view); redraw(); }}, S(view === "formatted" ? "md_formatted" : "md_plain"));
+  return h("div", {class: "seg", role: "group", "aria-label": S("md_view")}, pick("formatted"), pick("plain"));
+}
+
+// A text as the reader shows it; mark(src): true for a paragraph to mark as different (the compare view).
+function resultView(text, markdown, mark) {
+  if (!text) return h("p", {class: "muted reader-pane"}, S("empty_output"));
+  const json = jsonPretty(text);  // history.js: the answer of an AI step with "output: json"
+  if (json) return h("pre", {class: "md-plain json-view reader-pane", dir: "ltr"}, json);
+  if (markdown && reader.view === "formatted") {
+    const el = Markdown.render(text, {mark});
+    el.classList.add("reader-pane");
+    return el;
+  }
+  return h("div", {class: "md-plain reader-pane"}, text);
+}
+
+// The reader for one output (the results box, a step's outputs, a step's prompt).
+async function openReader(runId, rel, title) {
+  readerOpen(title);
+  const seq = reader.seq;
+  Object.assign(reader, {runId, rel, title, original: "", edited: null, editPath: "", limit: 0, version: "original", notice: null});
+  $("#reader-download").href = fileUrl(runId, rel, true);
   try {
-    const text = await api("GET", `/api/runs/${runId}/files/${rel.split("/").map(encodeURIComponent).join("/")}`);
-    $("#reader-text").textContent = text || S("empty_output");
-  } catch (err) { $("#reader-text").textContent = err.message; }
+    const [text, edit] = await Promise.all([api("GET", `/api/runs/${runId}/files/${filePath(rel)}`),
+      isEditable(rel) ? api("GET", `/api/runs/${runId}/edits/${filePath(rel)}`).catch(() => null) : null]);
+    if (seq !== reader.seq) return;
+    reader.original = typeof text === "string" ? text : JSON.stringify(text, null, 2);
+    reader.edited = edit && edit.exists ? edit : null;
+    reader.editPath = edit ? edit.path : "";
+    reader.limit = edit ? edit.limit : 0;
+    reader.version = reader.edited ? "edited" : "original";  // the user's own version first, when there is one
+    drawReader();
+  } catch (err) {
+    if (seq === reader.seq) fill($("#reader-body"), h("div", {class: "notice bad reader-pane"}, err.message));
+  }
+}
+
+function drawReader() {
+  const r = reader;
+  const edited = r.version === "edited" && r.edited;
+  $("#reader-download").href = fileUrl(r.runId, edited ? r.edited.path : r.rel, true);
+  $("#reader-download").hidden = r.editing;
+  fill($("#reader-tools"), !r.editing && isMarkdown(r.rel) ? viewToggle(drawReader) : null,
+    !r.editing && isEditable(r.rel) && r.limit ? h("button", {type: "button", class: "btn", onclick: startEdit}, "✎ " + S("edit_action")) : null);
+  if (r.editing) return drawEditor();
+  fill($("#reader-body"), r.edited || r.notice ? versionBar() : null, resultView(edited ? r.edited.text : r.original, isMarkdown(r.rel)));
+}
+
+// Original / Edited, when the user saved an edited version; and the export of the edited version.
+function versionBar() {
+  const r = reader;
+  const status = h("p", {class: "small reader-status", role: "status", "aria-live": "polite"}, r.notice || "");
+  r.notice = null;
+  if (!r.edited) return h("div", {class: "reader-bar"}, status);
+  const pick = (version) => h("button", {type: "button", class: "tab" + (r.version === version ? " active" : ""), "aria-pressed": String(r.version === version),
+    onclick: () => { r.version = version; drawReader(); }}, S(version === "edited" ? "version_edited" : "version_original"));
+  const names = {md: "Markdown (.md)", docx: "Word (.docx)", html: "HTML (.html)", pdf: "PDF (.pdf)", epub: "EPUB (.epub)",
+    eml: S("format_eml"), json: "JSON (.json)", csv: "CSV (.csv)"};
+  const format = h("select", {"aria-label": S("export_format")}, ((INFO && INFO.formats) || Object.keys(names)).map((f) => h("option", {value: f}, names[f] || f)));
+  format.value = recall("mehteran.exportFormat") || "docx";
+  if (!format.value) format.value = "md";
+  const exportButton = h("button", {type: "button", class: "btn", title: S("export_hint"), onclick: async (e) => {
+    const button = e.currentTarget, seq = reader.seq;
+    remember("mehteran.exportFormat", format.value);
+    button.disabled = true;
+    status.className = "small reader-status muted";
+    status.textContent = S("export_working");
+    try {
+      const out = await api("POST", `/api/runs/${r.runId}/edits/${filePath(r.rel)}`, {format: format.value});
+      if (seq !== reader.seq) return;
+      h("a", {href: fileUrl(r.runId, out.path, true)}).click();  // an attachment: the page stays
+      status.className = "small reader-status good-text";
+      status.textContent = S("export_done", {name: out.path.split("/").pop()});
+    } catch (err) {
+      status.className = "small reader-status warn-text";
+      status.textContent = err.message;
+    } finally { button.disabled = false; }
+  }}, "⇩ " + S("export_action"));
+  return h("div", {class: "reader-bar"},
+    h("div", {class: "row"},
+      h("div", {class: "seg", role: "group", "aria-label": S("version_label")}, pick("original"), pick("edited")),
+      h("span", {class: "small muted"}, S("edit_modified", {time: fmtTime(r.edited.modified)})),
+      h("span", {class: "grow"}),
+      h("label", {class: "row export-row"}, h("span", {class: "small muted"}, S("export_label")), format), exportButton),
+    status);
+}
+
+function startEdit() {
+  const r = reader;
+  const text = r.version === "edited" && r.edited ? r.edited.text : r.original;
+  if (new TextEncoder().encode(text).length > r.limit) {
+    r.notice = S("edit_too_big", {limit: Math.floor(r.limit / 1024)});
+    return drawReader();
+  }
+  Object.assign(r, {editing: true, dirty: false, draft: text});
+  drawReader();
+}
+
+// The editor: the text on one side, its formatted preview on the other (under it on a narrow screen: hidden).
+function drawEditor() {
+  const r = reader;
+  const area = h("textarea", {class: "edit-area", dir: "auto", spellcheck: "true", "aria-label": S("edit_text_label")});
+  area.value = r.draft;
+  const preview = h("div", {class: "edit-preview"});
+  const status = h("p", {class: "small muted grow", role: "status", "aria-live": "polite"}, S("edit_note", {path: r.editPath}));
+  const show = () => fill(preview, resultView(area.value, isMarkdown(r.rel)));
+  let timer;
+  area.addEventListener("input", () => {
+    r.draft = area.value;
+    r.dirty = true;
+    clearTimeout(timer);
+    timer = setTimeout(show, 250);
+  });
+  show();
+  const cancel = h("button", {type: "button", class: "btn", onclick: () => {
+    if (r.dirty && !confirm(S("edit_discard_confirm"))) return;
+    Object.assign(r, {editing: false, dirty: false});
+    drawReader();
+  }}, S("edit_cancel"));
+  const save = h("button", {type: "button", class: "btn primary", onclick: async (e) => {
+    const button = e.currentTarget, seq = reader.seq;
+    if (new TextEncoder().encode(area.value).length > r.limit) {
+      status.className = "small warn-text grow";
+      status.textContent = S("edit_too_big", {limit: Math.floor(r.limit / 1024)});
+      return;
+    }
+    button.disabled = true;
+    try {
+      const out = await api("PUT", `/api/runs/${r.runId}/edits/${filePath(r.rel)}`, {text: area.value});
+      if (seq !== reader.seq) return;
+      Object.assign(r, {edited: {...out, text: area.value}, version: "edited", editing: false, dirty: false, notice: S("edit_saved")});
+      drawReader();
+    } catch (err) {
+      status.className = "small warn-text grow";
+      status.textContent = err.message;
+      button.disabled = false;
+    }
+  }}, "✓ " + S("edit_save"));
+  fill($("#reader-body"),
+    h("div", {class: "edit-grid"}, area, h("div", {class: "edit-preview-col"}, h("p", {class: "small muted"}, S("edit_preview")), preview)),
+    h("div", {class: "row reader-foot"}, status, cancel, save));
+  area.focus();
+  area.setSelectionRange(0, 0);  // the text from its start
+  area.scrollTop = 0;
+}
+
+// The compare view: this run's result next to the same result (same output id) of another finished run of the same
+// workflow (GET /api/runs: the same template; a run without one: the same workflow id).
+async function openCompare(run, outputId) {
+  readerOpen(S("compare_title", {name: run.workflow_name}), true);
+  const seq = reader.seq;
+  let runs;
+  try { runs = await api("GET", "/api/runs"); }
+  catch (err) { fill($("#reader-body"), h("div", {class: "notice bad reader-pane"}, err.message)); return; }
+  if (seq !== reader.seq) return;
+  const others = runs.filter((r) => r.id !== run.id && FINAL.has(r.status)
+    && (run.template ? r.template === run.template : r.workflow_id === run.workflow_id));
+  const before = others.find((r) => r.created < run.created) || others[0];
+  reader.compare = {run, outputId, others, otherId: before ? before.id : null, diff: true, runs: {[run.id]: run}, texts: {}};
+  drawCompare();
+}
+
+async function compareText(runId, outputId) {
+  const c = reader.compare;
+  if (!c.runs[runId]) c.runs[runId] = await api("GET", `/api/runs/${runId}`);
+  const output = runResults(c.runs[runId]).find((o) => o.id === outputId && isMarkdown(o.path));
+  if (!output) return null;
+  const key = `${runId}/${output.path}`;
+  if (!(key in c.texts)) c.texts[key] = String(await api("GET", `/api/runs/${runId}/files/${filePath(output.path)}`));
+  return c.texts[key];
+}
+
+async function drawCompare() {
+  const c = reader.compare, seq = reader.seq;
+  if (!c) return;
+  const outputs = runResults(c.run).filter((o) => isMarkdown(o.path));
+  fill($("#reader-tools"), viewToggle(drawCompare), h("label", {class: "check small compare-diff"},
+    h("input", {type: "checkbox", checked: c.diff, disabled: reader.view !== "formatted", onchange: (e) => { c.diff = e.target.checked; drawCompare(); }}),
+    S("compare_diff")));
+  if (!c.others.length) {
+    fill($("#reader-body"), h("p", {class: "notice reader-pane"}, S("compare_none")));
+    return;
+  }
+  const label = (r) => `${fmtTime(r.created)} · ${capital(S("status_" + r.status))} · ${r.id}`;
+  const runSelect = h("select", {id: "compare-run", onchange: (e) => { c.otherId = e.target.value; drawCompare(); }},
+    c.others.map((r) => h("option", {value: r.id}, label(r))));
+  runSelect.value = c.otherId;
+  const outputSelect = outputs.length > 1 ? h("select", {id: "compare-output", onchange: (e) => { c.outputId = e.target.value; drawCompare(); }},
+    outputs.map((o) => h("option", {value: o.id}, L(o.label) || o.id))) : null;
+  if (outputSelect) outputSelect.value = c.outputId;
+  const bar = h("div", {class: "reader-bar row"},
+    h("label", {class: "row", for: "compare-run"}, h("span", {class: "small muted"}, S("compare_with")), runSelect),
+    outputSelect ? h("label", {class: "row", for: "compare-output"}, h("span", {class: "small muted"}, S("compare_output")), outputSelect) : null);
+  fill($("#reader-body"), bar, h("p", {class: "muted reader-pane"}, S("loading")));
+  let mine, theirs;
+  try { [mine, theirs] = await Promise.all([compareText(c.run.id, c.outputId), compareText(c.otherId, c.outputId)]); }
+  catch (err) {
+    if (seq === reader.seq && reader.compare === c) fill($("#reader-body"), bar, h("div", {class: "notice bad reader-pane"}, err.message));
+    return;
+  }
+  if (seq !== reader.seq || reader.compare !== c || runSelect.value !== c.otherId) return;
+  const other = c.runs[c.otherId];
+  const marks = (text, against) => {
+    if (!c.diff || text == null || against == null) return null;
+    const set = new Set(Markdown.blocks(against));
+    return (src) => !set.has(src);
+  };
+  const column = (r, title, text, against) => h("section", {class: "compare-col"},
+    h("div", {class: "compare-head"}, h("b", {}, title), h("span", {class: "small muted"}, fmtTime(r.started || r.created)), badge(r.status)),
+    text == null ? h("p", {class: "muted reader-pane"}, S("compare_missing")) : resultView(text, true, marks(text, against)));
+  fill($("#reader-body"), bar,
+    mine != null && mine === theirs ? h("p", {class: "small muted reader-status"}, S("compare_same")) : null,
+    h("div", {class: "compare-grid"}, column(c.run, S("compare_this"), mine, theirs), column(other, S("compare_other"), theirs, mine)));
 }
 
 // --- a server older than the files on disk -----------------------------------------------------------
@@ -1447,7 +2153,7 @@ async function boot() {
   document.querySelectorAll("#translation .subtab").forEach((b) => b.addEventListener("click", () => go("workflows/translation/" + b.dataset.sub)));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => go(b.dataset.goto)));
   $("#brand").addEventListener("click", (e) => { e.preventDefault(); go(home()); });
-  $("#tools-refresh").addEventListener("click", () => { loadTools(); loadLocal(); });
+  $("#tools-refresh").addEventListener("click", () => { loadTools(); loadLocal(); loadProviders(true); });
   $("#reader-close").addEventListener("click", () => $("#reader").close());
   $("#template-search").addEventListener("input", (e) => { state.tplQuery = e.target.value; renderLibrary(); });
   $("#template-import").addEventListener("click", () => go("workflows/import"));

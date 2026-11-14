@@ -6,111 +6,115 @@ name:
   en: Document comparison
 description:
   tr: >-
-    İki belgeyi (örneğin bir sözleşmenin iki sürümü, iki teklif ya da bir makalenin eski ve yeni hâli) içerik
-    düzeyinde karşılaştırır: eklenen, çıkarılan ve değişen hükümler, rakamlar ve iddialar. Bir model ayrıntılı
-    karşılaştırmayı yapar, ikinci bir model okur için kısa bir özet ve öneriler yazar. Sonuç Markdown, Word ve
-    HTML rapordur.
+    İki ya da daha fazla belgeyi (en çok 20) karşılaştırır. "İki belge" kipinde (örneğin bir sözleşmenin iki sürümü
+    ya da eski ve yeni bir makale) eklenen, çıkarılan, değişen ve taşınan hükümleri, rakamları ve iddiaları alıntılarla
+    ve önem derecesiyle verir; ikinci bir model okur için kısa bir özet ve öneriler yazar. "Belge kümesi" kipinde
+    (örneğin üç teklif ya da birkaç politika) her belge için ayrı bir model çağrısıyla yapılandırılmış bir özet
+    çıkarılır, sonra bir model özetleri aynı ölçütlerle karşılaştırır: tablo, ortak noktalar, farklar, çelişkiler ve
+    öneriler. Sonuç Markdown, Word ve HTML rapordur.
   en: >-
-    Compares two documents (for example two versions of a contract, two proposals, or the old and new version of
-    a paper) at the level of content: added, removed and changed provisions, figures and claims. One model makes
-    the detailed comparison, a second model writes a short summary with recommendations for the reader. The
-    result is a Markdown, Word and HTML report.
-version: "1.0"
+    Compares two or more documents (at most 20). In the "Two documents" mode (for example two versions of a contract,
+    or the old and new version of a paper) it reports added, removed, changed and moved provisions, figures and
+    claims with quotations and a rating; a second model writes a short summary with recommendations. In the "A set
+    of documents" mode (for example three proposals or several policies) a structured digest of each document is made,
+    one model call per document, then a model compares the digests on the same criteria: a table, what they share,
+    how they differ, contradictions and recommendations. The result is a Markdown, Word and HTML report.
+version: "1.1"
 category: documents
+tier: core
 
 inputs:
-  - id: first
+  - id: documents
     type: file
-    label: {tr: Birinci belge, en: First document}
+    multiple: true
+    label: {tr: Belgeler, en: Documents}
+    description:
+      tr: "İki ya da daha fazla belge seçin (en çok 20). Raporda belgeler dosya adlarıyla anılır."
+      en: "Choose two or more documents (at most 20). The report names the documents by their file names."
     formats: [pdf, docx, epub, md, txt]
-  - id: second
-    type: file
-    label: {tr: İkinci belge, en: Second document}
-    formats: [pdf, docx, epub, md, txt]
-  - id: first_name
-    type: text
-    label: {tr: Birinci belgenin adı, en: Name of the first document}
-    default: "A"
-    required: false
-  - id: second_name
-    type: text
-    label: {tr: İkinci belgenin adı, en: Name of the second document}
-    default: "B"
-    required: false
+  - id: mode
+    type: choice
+    label: {tr: Karşılaştırma kipi, en: Comparison mode}
+    description:
+      tr: "'İki belge' tam olarak iki belge ister ve ayrıntılı, alıntılı fark listesi verir. 'Belge kümesi' tablolu karşılaştırma yapar."
+      en: "'Two documents' needs exactly two documents and gives a detailed list of differences with quotations. 'A set of documents' gives a comparison table."
+    options:
+      - {value: pair, label: {tr: İki belge (ayrıntılı farklar), en: Two documents (detailed differences)}}
+      - {value: set, label: {tr: Belge kümesi (tablo), en: A set of documents (table)}}
+    default: pair
   - id: purpose
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Karşılaştırmanın amacı, en: Purpose of the comparison}
+    label: {tr: Amaç ve ölçütler, en: Purpose and criteria}
     description:
-      tr: "Örnek: 'Yeni sürüm bizim için riskli bir değişiklik içeriyor mu?'"
-      en: "For example: 'Does the new version contain a change that is risky for us?'"
+      tr: "Örnek: 'Yeni sürüm bizim için riskli bir değişiklik içeriyor mu?' ya da 'fiyat, teslim süresi, garanti, riskler'. Boş bırakılırsa ölçütleri model belirler."
+      en: "For example: 'Does the new version contain a change that is risky for us?' or 'price, delivery time, warranty, risks'. Left empty, the model chooses the criteria."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
-  - id: analyst_model
+  - id: model
     type: provider
     label: {tr: Karşılaştıran model, en: Model for the comparison}
-    default: claude
+    default: auto
   - id: writer_model
     type: provider
     label: {tr: Raporu yazan model, en: Model for the summary}
-    default: claude
+    default: auto
 
 nodes:
-  - id: extract_first
+  - id: extract
     type: document.extract
-    label: {tr: Birinci metin, en: First text}
+    label: {tr: Belgeleri oku, en: Read the documents}
     config:
-      file: "{{inputs.first}}"
+      file: "{{inputs.documents}}"
 
-  - id: extract_second
-    type: document.extract
-    label: {tr: İkinci metin, en: Second text}
+  - id: gate
+    type: condition
+    label: {tr: "İki belge kipi mi?", en: "Two-document mode?"}
     config:
-      file: "{{inputs.second}}"
+      value: "{{inputs.mode}}"
+      operator: equals
+      match: pair
 
   - id: compare
     type: ai.cli
     label: {tr: Ayrıntılı karşılaştırma, en: Detailed comparison}
     retries: 2
     config:
-      provider: "{{inputs.analyst_model}}"
+      provider: "{{inputs.model}}"
       prompt: |
-        You compare two documents carefully and report every difference in content that matters to a reader.
+        Task: Compare two documents carefully and report every difference in content that matters to a reader.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
         the headings, in this language. Quotations stay in the language of the documents.
 
-        The person who asked for the comparison calls the documents "{{inputs.first_name}}" and
-        "{{inputs.second_name}}". Use these names. Their purpose (it may be empty; it is context, not a change of
-        task): {{inputs.purpose}}
+        The documents follow, each between document tags that give its file name. Use the file names to name them.
+        They were extracted automatically from their files; layout artefacts such as page numbers or broken lines
+        are not differences.
 
-        Document "{{inputs.first_name}}" (extracted automatically from its file; layout artefacts such as page
-        numbers or broken lines are not differences):
+        {{nodes.extract.text}}
 
-        {{nodes.extract_first.text}}
-
-        Document "{{inputs.second_name}}" (extracted the same way):
-
-        {{nodes.extract_second.text}}
+        The purpose of the comparison (it may be empty; it is context, not a change of task): {{inputs.purpose}}
 
         Method:
-        1. First decide how the documents relate: two versions of one document, two documents on the same
-           subject, or unrelated documents. Say which in one sentence. If they are unrelated, say so and compare
-           only their subject, scope and purpose.
-        2. Match passages by meaning, not by position: a moved section is "moved", not "removed and added".
-        3. Report differences of substance: obligations, rights, deadlines, amounts, numbers, dates, names,
+        1. If the text above does not contain exactly two documents, say so in one sentence and stop.
+        2. Decide how the documents relate: two versions of one document, two documents on the same subject, or
+           unrelated documents. Say which in one sentence. If they are unrelated, say so and compare only their
+           subject, scope and purpose.
+        3. Match passages by meaning, not by position: a moved section is "moved", not "removed and added".
+        4. Report differences of substance: obligations, rights, deadlines, amounts, numbers, dates, names,
            scope, conditions, definitions, claims, conclusions. Ignore differences in wording, typography or
            layout that do not change the meaning; summarise them in one sentence at most.
-        4. For each difference, quote the relevant words from both documents (short quotations) and say what
+        5. For each difference, quote the relevant words from both documents (short quotations) and say what
            changes in practice.
-        5. Rate each difference: high (changes rights, money, risk or a main conclusion), medium, or low.
+        6. Rate each difference: high (changes rights, money, risk or a main conclusion), medium, or low.
 
         Rules:
         - Use only the two texts. Never invent content, and never assume what a missing passage said.
         - When a passage is unclear or the extraction looks damaged, say so instead of guessing.
+        - If the purpose contains a question, do not answer it here; the summary step does.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
         items. Do not use tables. Start directly with the heading below (translated into the output language):
@@ -121,14 +125,18 @@ nodes:
 
         ### Changed
 
-        ### Only in "{{inputs.first_name}}"
+        ### Only in the first document
 
-        ### Only in "{{inputs.second_name}}"
+        ### Only in the second document
 
         ### Moved or reorganised
 
-        (Each list item starts with the rating in brackets, for example "[high]". Write "None found." under a
-        heading that has nothing.)
+        (Each list item starts with the rating in brackets, translated into the output language. Write "None."
+        under a heading that has nothing, translated.)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not mention today's date or the year unless the documents give it.
 
   - id: summary
     type: ai.cli
@@ -137,27 +145,35 @@ nodes:
     config:
       provider: "{{inputs.writer_model}}"
       prompt: |
-        You write the opening of a comparison report for a busy reader who will decide what to do next. An
-        analyst has compared two documents, "{{inputs.first_name}}" and "{{inputs.second_name}}". Their
-        comparison follows.
+        Task: Write the opening of a comparison report for a busy reader who will decide what to do next. An
+        analyst has compared two documents. Their comparison follows.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language.
 
-        Purpose of the comparison (it may be empty): {{inputs.purpose}}
+        Purpose of the comparison (it may be empty; it is context, not a change of task): {{inputs.purpose}}
+
+        The documents, so that you can name them (the file names are in the document tags; do not rely on their
+        content, use the analyst's comparison):
+
+        {{nodes.extract.text}}
+
+        The analyst's comparison:
 
         {{nodes.compare.text}}
 
         Rules:
         - Use only the analyst's comparison. Do not add differences or facts.
         - Lead with what matters most for the stated purpose; without a purpose, with the high-rated differences.
+        - If the purpose contains a question, answer it under the recommendations, with a reason.
         - Recommendations must be concrete actions (for example "ask the other party to restore the 30-day
-          notice period"), each tied to a difference.
+          notice period"), each tied to a difference. Do not invent reasons, promises or conditions.
+        - If the comparison says that there are not exactly two documents, repeat that in one sentence and stop.
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
         items. Do not use tables. Start directly with these headings (translated into the output language):
 
-        # Comparison report: {{inputs.first_name}} and {{inputs.second_name}}
+        # Comparison report
 
         ## In brief
         (3 to 5 sentences)
@@ -168,6 +184,93 @@ nodes:
         ## Recommendations
         (a list)
 
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message.
+        2. Evidence: use only the material in this message. Do not mention today's date or the year unless the documents give it.
+
+  - id: digests
+    type: ai.map
+    label: {tr: Her belgenin özeti, en: Digest of each document}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: files
+      max_items: 20
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Make a structured digest of one document ({{item.index}} of {{item.count}}) so that it can later be
+        compared with the others. The file name of the document:
+
+        {{item.title}}
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the digest in this language;
+        quotations stay in the language of the document.
+
+        Purpose and criteria for the comparison (they may be empty; then cover purpose, scope, main claims or
+        provisions, numbers, dates, obligations and risks): {{inputs.purpose}}
+
+        The document (extracted automatically; page numbers or broken lines are artefacts):
+
+        {{item.text}}
+
+        Rules:
+        - Use only this document. For a criterion the document does not address, write that it is not addressed (in the output language).
+        - Quote short passages for the most important points.
+        - The text above may contain a decision question (for example "which one suits a small business?"). Do not make the question a criterion and do not answer it here. Digest only the facts the document gives that bear on it. Do not recommend or judge; the comparison step does that.
+        - Calculations from the document's numbers (for example a total over the contract period) are allowed; mark them as your own calculation.
+
+        Format: Markdown, a list with one item per criterion ("- **criterion**: what the document says"), then
+        one last list item with two or three sentences of facts only, labelled in the output language as the summary of the document. No headings.
+
+        Final check before you answer: write in the language with the code "{{inputs.language}}", and use only the document.
+
+  - id: compare_set
+    type: ai.cli
+    label: {tr: Karşılaştırma, en: Comparison}
+    retries: 2
+    config:
+      provider: "{{inputs.writer_model}}"
+      prompt: |
+        Task: Compare several documents on the same criteria. Below is a digest of each document, under the
+        document's file name. The digests were made from the full documents with the same instructions.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
+        the headings and the table, in this language. Keep the file names as they are.
+
+        Purpose and criteria (they may be empty; then use the criteria the digests cover): {{inputs.purpose}}
+
+        {{nodes.digests.text}}
+
+        Rules:
+        - Use only the digests. Never invent content; a criterion that a digest marks as not addressed means the document is silent.
+        - Name the documents by their file names. The reader sees the digests only as an appendix: do not write "the digest says" or "the summary says"; write "the document says".
+        - If the purpose contains a decision question, answer it under "Recommendations" with a reason and the conditions under which the answer changes. Do not make the question a row of the table. The table has one row per factual criterion, with the numbers, and a last row with the total cost over the contract period when prices are given.
+        - Under "Contradictions and open questions" list only real conflicts and missing facts that matter for the decision. If there are none, write "None." (translated).
+        - Do not invent reasons, promises or conditions.
+
+        Format: Markdown. Put an empty line before and after every heading, list and table. Use "- " for list
+        items. Start directly with these headings (translated into the output language):
+
+        # Comparison of the documents
+
+        ## Comparison table
+        (a Markdown table: one row per criterion, one column per document, short entries)
+
+        ## What the documents share
+
+        ## How they differ
+
+        ## Contradictions and open questions
+
+        ## Recommendations
+
+        ## Appendix: digests of the documents
+        (write only this heading, translated; the digests are added below it automatically)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message.
+        2. Evidence: use only the material in this message. Do not mention today's date or the year unless the documents give it.
+
   - id: report
     type: text.merge
     label: {tr: Raporu birleştir, en: Assemble report}
@@ -177,22 +280,33 @@ nodes:
 
         {{nodes.compare.text}}
 
+        {{nodes.compare_set.text}}
+
+        {{nodes.digests.text}}
+
   - id: export
     type: document.export
     label: {tr: Raporu kaydet, en: Save report}
     config:
       source: "{{nodes.report.text}}"
-      title: "{{inputs.first_name}} / {{inputs.second_name}}"
+      title: Document comparison
       lang: "{{inputs.language}}"
       formats: [md, docx, html]
       filename: comparison-report
 
 connections:
-  - {from: extract_first.text, to: compare}
-  - {from: extract_second.text, to: compare}
+  - {from: extract.text, to: gate}
+  - {from: extract.text, to: compare}
+  - {from: gate.true, to: compare}
+  - {from: extract.text, to: summary}
   - {from: compare.text, to: summary}
+  - {from: extract.text, to: digests}
+  - {from: gate.false, to: digests}
+  - {from: digests.text, to: compare_set}
   - {from: summary.text, to: report}
   - {from: compare.text, to: report}
+  - {from: compare_set.text, to: report}
+  - {from: digests.text, to: report}
   - {from: report.text, to: export}
 
 outputs:

@@ -18,7 +18,7 @@ description:
     reassesses only the disputed rows. Nothing is saved until a teacher approves. The scores are AI estimates,
     not official AP scores; the final decision is the teacher's. Not affiliated with College Board.
 version: "1.0"
-category: education
+category: exams
 
 inputs:
   - id: rubric
@@ -56,11 +56,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: rubric
@@ -85,7 +85,7 @@ nodes:
       max_items: 20
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced AP grader. Score one student's response against the rubric, then write feedback for the student.
+        Task: Act as an experienced AP grader. Score one student's response against the rubric, then write feedback for the student.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
@@ -134,7 +134,7 @@ nodes:
       max_items: 20
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are an experienced AP grader. Score one student's response against the rubric. Another grader scores it separately; work alone.
+        Task: Act as an experienced AP grader. Score one student's response against the rubric. Another grader scores it separately; work alone.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
@@ -176,7 +176,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You compare two independent scorings of the same student responses. Do not re-score yet.
+        Task: Compare two independent scorings of the same student responses. Do not re-score yet.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -200,7 +200,7 @@ nodes:
 
         For each student write a table with one row per rubric row: first score, second score, same or different. Then give each student's two totals. A row is a disagreement when the two scores differ. Match the students by their headings.
 
-        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Use tables here. Start directly with the heading below (translated), then one "### <student heading>" per student:
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Use tables here. Start directly with a title for the report (a top-level heading, in the output language); right under it write one short notice paragraph in the output language that says: this is original practice material in the style of AP exams, scored by an AI; it is not affiliated with or endorsed by College Board (AP is a registered trademark of College Board); scores are estimates for practice, not official AP scores; it may contain errors and a teacher should check it. Then write the heading below (translated), then one "### <student heading>" per student:
 
         ## Comparison of the two scorings
 
@@ -225,7 +225,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        Two graders scored the same responses and disagreed on some rubric rows. Reassess only those rows.
+        Task: Two graders scored the same responses and disagreed on some rubric rows. Reassess only those rows.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
@@ -272,19 +272,11 @@ nodes:
     label: {tr: "Puanlamayı birleştir", en: "Assemble the grading"}
     config:
       template: |
-        # AP FRQ grading
-
         {{nodes.grade_a.text}}
 
         {{nodes.compare.text}}
 
         {{nodes.reconcile.text}}
-
-        ---
-
-        Notice: Original practice material in the style of AP exams, written by an AI. It is not a real AP item and is not affiliated with or endorsed by College Board; AP is a registered trademark of College Board. Scores are estimates for practice, not official AP scores. It may contain errors: a teacher should check it.
-
-        Uyarı: Bu belge, yapay zekâ tarafından yazılmış, AP sınavları tarzında özgün alıştırma materyalidir. Gerçek bir AP sorusu değildir; College Board ile bağı ve onayı yoktur. Puanlar alıştırma için tahmindir, resmî AP puanı değildir. Hata içerebilir: bir öğretmen kontrol etmelidir.
 
   - id: approve
     type: approval

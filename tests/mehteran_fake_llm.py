@@ -7,9 +7,11 @@ Environment:
 Prompt markers:
   SLEEP=<seconds>        wait before answering
   SLEEPONCE=<s>:<file>   wait only while <file> does not exist (the first call creates it)
+  STREAM=<n>:<seconds>   print n lines before the answer, one every <seconds> (output that arrives in steps)
   FAIL=<n>:<file>        the first n calls fail (a counter in <file>)
   QUOTA=<n>:<file>       the first n calls report a usage limit (a counter in <file>)
   ANSWER=<word>          answer exactly this word (an underscore is a space)
+  ONRETRY=<word>         answer this word instead when the prompt says the previous answer was rejected
 """
 
 import os
@@ -35,6 +37,11 @@ once = re.search(r"SLEEPONCE=([\d.]+):(\S+)", prompt)
 if once and not os.path.exists(once.group(2)):
     open(once.group(2), "w").close()
     time.sleep(float(once.group(1)))
+stream = re.search(r"STREAM=(\d+):([\d.]+)", prompt)
+if stream:
+    for i in range(int(stream.group(1))):
+        print(f"stream line {i + 1} of {stream.group(1)}", flush=True)
+        time.sleep(float(stream.group(2)))
 fail = re.search(r"FAIL=(\d+):(\S+)", prompt)
 if fail:
     path = fail.group(2)
@@ -55,6 +62,9 @@ if os.environ.get("MEHTERAN_FAKE_LOG"):
     with open(os.environ["MEHTERAN_FAKE_LOG"], "a", encoding="utf-8") as log:
         log.write(f"{tag} {start:.3f} {time.time():.3f}\n")
 answer = re.search(r"ANSWER=(\S+)", prompt)
+retry = re.search(r"ONRETRY=(\S+)", prompt)  # the answer to a JSON step's second question (nodes._json_answer)
+if retry and "previous answer was rejected" in prompt:
+    answer = retry
 if answer:
     print(answer.group(1).replace("_", " "))
     sys.exit(0)

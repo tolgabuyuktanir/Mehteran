@@ -18,6 +18,7 @@ description:
     a Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: document
@@ -43,7 +44,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -62,7 +63,7 @@ nodes:
       max_items: 100
       provider: "{{inputs.model}}"
       prompt: |
-        You prepare material for a presentation. Read one section of a long document.
+        Task: Prepare material for a presentation. Read one section of a long document.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -81,7 +82,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a presentation coach. Write a slide-by-slide outline from the points of each section of a document.
+        Task: Act as a presentation coach. Write a slide-by-slide outline from the points of each section of a document.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -107,6 +108,7 @@ nodes:
         ## Slides
 
         ## What was left out
+        (a list, or "None.")
 
         Final check before you answer:
         1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.

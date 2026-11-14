@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from pathlib import Path
 
 CODE = Path(__file__).resolve().parent          # the mehteran package
@@ -42,6 +43,19 @@ def inside(base: Path, *parts: str) -> Path | None:
     except (OSError, ValueError):
         return None
     return path if path == base or path.is_relative_to(base) else None
+
+
+def replace(src: Path, dst: Path) -> None:
+    """os.replace that waits a moment when Windows refuses it because another thread or program has dst open
+    (a reader of the file that is being replaced). Other systems never wait."""
+    for attempt in range(40):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if sys.platform != "win32" or attempt == 39:
+                raise
+            time.sleep(0.05)
 
 
 def runtime() -> Path:

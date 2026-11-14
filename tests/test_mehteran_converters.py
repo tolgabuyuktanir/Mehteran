@@ -467,7 +467,7 @@ class ApiTests(LocalCase):
     def test_editor_offers_the_new_formats(self):
         status, info = self.json("GET", "/api/info")
         self.assertEqual(status, 200)
-        self.assertEqual(info["formats"], ["md", "docx", "html", "pdf", "epub"])
+        self.assertEqual(info["formats"], ["md", "docx", "html", "pdf", "epub", "eml", "json", "csv"])
         for fmt in ("odt", "rtf", "mp3", "mp4", "webm"):
             self.assertIn(fmt, info["file_formats"])
 

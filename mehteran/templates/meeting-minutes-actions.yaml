@@ -15,6 +15,7 @@ description:
     writes corrections; then a model writes the formal minutes. The result is a Markdown, Word and HTML document.
 version: "1.0"
 category: documents
+tier: core
 
 inputs:
   - id: notes
@@ -37,7 +38,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -53,7 +54,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced meeting secretary. From the meeting notes or transcript below, extract what was
+        Task: Act as an experienced meeting secretary. From the meeting notes or transcript below, extract what was
         decided, who must do what, what is still open and which risks were raised.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -121,7 +122,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write formal meeting minutes from an approved list of decisions and actions.
+        Task: Write formal meeting minutes from an approved list of decisions and actions.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language.
@@ -145,6 +146,7 @@ nodes:
         - Where an owner or a deadline is "not stated", keep it as "not stated" (translated into the output
           language) so that the gap is visible.
         - If the meeting details give no name, date or attendees, leave those lines out.
+        - Under a heading that has no item, write "None." (translated into the output language).
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
         items. Do not use tables. Start directly with these headings (translated into the output language):

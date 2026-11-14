@@ -34,6 +34,7 @@ from pathlib import Path
 from pipeline import system
 
 from . import i18n, languages, livelog, paths, placeholders, schema, settings
+from . import providers as adapters
 from .i18n import t
 from .nodes import REGISTRY, PROVIDER_RE, Aborted, Ctx, NodeError, QuotaWait, wrap_data
 from .store import ACTIVE_NODE, BLOCKING_NODE, FINISHED_RUN, Store
@@ -98,12 +99,17 @@ class Engine:
         self.home = Path(home) if home else paths.home()
         self.store = Store(self.home / "databases" / "mehteran.sqlite3")
         self._provider_cfg = provider_cfg
+        # the usage limits that the translation app met count too (not for providers given here or by MEHTERAN_CONFIG)
+        self.translation_limits = provider_cfg is None and not os.environ.get("MEHTERAN_CONFIG")
         self.parallel = max(1, parallel)
         self.retry_delay = retry_delay
         self.quota_delay = quota_delay  # tests: seconds to wait for a usage limit instead of the tool's reset time
         self.heartbeat = 30.0  # seconds between the "still working" lines of a node's live log
         self._threads: dict[str, threading.Thread] = {}
         self._lock = threading.Lock()
+        self.awake = True  # keep the computer awake while runs work (tests switch it off)
+
+    _awake_started = False
 
     @property
     def provider_cfg(self) -> dict:
@@ -119,28 +125,16 @@ class Engine:
     # --- starting ----------------------------------------------------------------
 
     def start(self, workflow_yaml: str, values: dict | None = None, files: dict | None = None, template: str = "",
-              move_files: bool = False) -> str:
-        """Checks the workflow and the inputs, records the run and starts it in a background thread.
+              move_files: bool = False, launch: bool = True, privacy: str = "") -> str:
+        """Checks the workflow and the inputs, records the run and starts it in a background thread (launch=False:
+        the run stays "queued" until launch(); the batches of history.py start their runs a few at a time).
 
         values: {input id: text} for text, choice and provider inputs. files: {input id: path, or a list of paths for
-        an input with "multiple: true"} for file inputs (copied into the run folder, or moved when move_files is set)."""
+        an input with "multiple: true"} for file inputs (copied into the run folder, or moved when move_files is set).
+        privacy "local" (or the workflow's "privacy: local"): only models that run on this computer."""
         wf = schema.parse(workflow_yaml)
         inputs, problems = self._inputs(wf, values or {}, files or {})
-        providers = {}
-        for node_id, node in wf.nodes.items():
-            if isinstance(node.get("fallback_provider"), str):  # used when the step's model reports a usage limit
-                fallback = placeholders.render(node["fallback_provider"].strip(), lambda ref: inputs.get(ref[7:], ""))
-                problem = self.provider_problem(fallback)
-                if problem:
-                    problems.append(f"nodes.{node_id}.fallback_provider: {problem}")
-                providers[f"{node_id}:fallback"] = fallback
-            if not isinstance((node.get("config") or {}).get("provider"), str):
-                continue  # no model (a condition that does not ask one)
-            name = placeholders.render(node["config"]["provider"].strip(), lambda ref: inputs.get(ref[7:], ""))
-            problem = self.provider_problem(name)
-            if problem:
-                problems.append(f"nodes.{node_id}: {problem}")
-            providers[node_id] = name
+        providers, auto = self._resolve_providers(wf, inputs, problems, privacy or wf.data.get("privacy") or "")
         if problems:
             raise RunError(problems)
 
@@ -148,15 +142,21 @@ class Engine:
         run_dir = self.run_dir(run_id)
         (run_dir / "inputs").mkdir(parents=True)
         try:
-            self._create(run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files)
+            self._create(run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files, auto)
         except BaseException:
             shutil.rmtree(run_dir, ignore_errors=True)  # no run without its database row
             raise
         self.store.event(run_id, None, "created", template or wf.id)
-        self._launch(run_id)
+        if launch:
+            self._launch(run_id)
         return run_id
 
-    def _create(self, run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files) -> None:
+    def launch(self, run_id: str) -> None:
+        """Starts a run created with start(..., launch=False)."""
+        self._launch(run_id)
+
+    def _create(self, run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files,
+                auto: dict | None = None) -> None:
         for input_id, source in (files or {}).items():
             target_dir = run_dir / "inputs" / input_id
             target_dir.mkdir()
@@ -169,10 +169,14 @@ class Engine:
                 (shutil.move if move_files else shutil.copyfile)(str(item), str(target))
                 stored.append(target.relative_to(run_dir).as_posix())
             inputs[input_id] = stored if several else stored[0]
-        (run_dir / "workflow.yaml").write_text(workflow_yaml, encoding="utf-8")
-        used = {name.partition("@")[0].partition("/")[0] for name in providers.values()}
+        (run_dir / "workflow.yaml").write_text(workflow_yaml, encoding="utf-8", newline="\n")
+        auto = auto or {"nodes": {}, "candidates": {}}
+        used = {name.partition("@")[0].partition("/")[0]
+                for name in [*providers.values(), *(c for found in auto["candidates"].values() for c in found)]}
         cfg = self.provider_cfg
         frozen = {"providers": {name: cfg["providers"][name] for name in sorted(used)}, "general": cfg["general"]}
+        if auto["nodes"]:  # the steps of an `auto` model and the models each kind may move to (frozen with the run)
+            frozen["auto"] = auto
         self.store.create_run({"id": run_id, "workflow_id": wf.id, "workflow_name": json.dumps(wf.data["name"], ensure_ascii=False),
                                "template": template, "inputs": inputs, "providers": providers, "provider_cfg": frozen,
                                "workflow_yaml": workflow_yaml, "lang": i18n.current()}, wf.order)
@@ -180,6 +184,9 @@ class Engine:
     def provider_problem(self, name: str) -> str | None:
         if not PROVIDER_RE.match(name or ""):
             return t("bad_provider", value=name)
+        if name in adapters.AUTO:
+            return None  # chosen when the run starts (_resolve_providers)
+        name = adapters.canonical(name, self.provider_cfg["providers"])
         provider, _, rest = name.partition("/")
         provider = provider.partition("@")[0]
         effort = name.partition("@")[2]
@@ -189,6 +196,100 @@ class Engine:
         if effort and effort not in (spec.get("efforts") or []):
             return t("effort_not_offered", effort=effort, name=provider)
         return None
+
+    # --- stream P: the model of each step (aliases, `auto`, privacy, known usage limits) -------------------------
+    tool_states = None  # tests: a function that gives providers.statuses() without asking the real tools
+
+    def _resolve_providers(self, wf: schema.Workflow, inputs: dict, problems: list, privacy: str) -> tuple[dict, dict]:
+        """({node_id: model, "<node>:fallback": model}, {"nodes": {node_id: kind}, "candidates": {kind: [model]}}).
+
+        An old name becomes the adapter's ("chatgpt" -> "codex"). `auto` kinds take the first usable model of the
+        user's model order whose provider has no known usage limit now; the others stay as candidates for a later
+        usage limit. privacy "local": `auto` becomes auto:local and any model that does not run here is refused."""
+        cfg = self.provider_cfg
+        local_only = privacy == "local"
+        auto: dict = {"nodes": {}, "candidates": {}}
+        known: dict = {}
+
+        def choose(kind: str) -> list[str]:
+            if kind not in auto["candidates"]:
+                if "states" not in known:
+                    known["user"] = adapters.read_settings(self.home)
+                    known["states"] = (self.tool_states or adapters.statuses)()
+                    known["blocked"] = self.known_limits()
+                found = [c for c in adapters.candidates(kind, known["states"], known["user"], local_only)
+                         if adapters.split(c)[0] in cfg["providers"]]
+                auto["candidates"][kind] = sorted(found, key=lambda c: adapters.split(c)[0] in known["blocked"])
+            return auto["candidates"][kind]
+
+        def resolve(template: str, where: str) -> str:
+            name = adapters.canonical(placeholders.render(template.strip(), lambda ref: inputs.get(ref[7:], "")), cfg["providers"])
+            if name in adapters.AUTO:
+                kind = "auto:local" if local_only else name
+                found = choose(kind)
+                if not found:
+                    problems.append(f"{where}: {t('auto_none_local' if kind == 'auto:local' else 'auto_none')}")
+                    return name
+                if where.count(".") == 1:  # a step's own model (not its fallback)
+                    auto["nodes"][where.split(".")[1]] = kind
+                return found[0]
+            problem = self.provider_problem(name)
+            if not problem and local_only and not self.is_local(name):
+                problem = t("privacy_refused", name=name)
+            if problem:
+                problems.append(f"{where}: {problem}")
+            return name
+
+        providers = {}
+        for node_id, node in wf.nodes.items():
+            if isinstance(node.get("fallback_provider"), str):  # used when the step's model reports a usage limit
+                providers[f"{node_id}:fallback"] = resolve(node["fallback_provider"], f"nodes.{node_id}.fallback_provider")
+            if isinstance((node.get("config") or {}).get("provider"), str):  # else no model (a plain condition)
+                providers[node_id] = resolve(node["config"]["provider"], f"nodes.{node_id}")
+        return providers, auto
+
+    def resolve_model(self, name: str) -> str:
+        """The model a single call uses now (the editor's drafts and tests): `auto` from the model order ("" when
+        none can), an old name as the adapter's."""
+        if name not in adapters.AUTO:
+            return adapters.canonical(name, self.provider_cfg["providers"])
+        problems: list = []
+        wf = schema.parse(f"schema_version: {schema.SCHEMA_VERSION}\nid: one-call\nname: x\nnodes:\n"
+                          f"  - {{id: a, type: ai.cli, config: {{provider: '{name}', prompt: x}}}}\n")
+        found, _ = self._resolve_providers(wf, {}, problems, "")
+        return "" if problems else found["a"]
+
+    def reload_providers(self) -> None:
+        """The user changed providers.toml: read the settings again at the next run (not when a test gave them)."""
+        if self._provider_cfg is not None and "source" in self._provider_cfg:
+            self._provider_cfg = None
+
+    def is_local(self, name: str) -> bool:
+        provider, model, _ = adapters.split(name)
+        spec = self.provider_cfg["providers"].get(provider) or {}
+        return adapters.destination(provider, model or spec.get("model") or "", spec)["local"]
+
+    def known_limits(self, exclude: tuple[str, str] | None = None) -> dict[str, float]:
+        """{provider: until} of the usage limits that have not reset (all runs, the translation app). exclude:
+        (run id, node id) whose own limits do not count (the step waits for them itself; a resume tries again)."""
+        from pipeline.core import ROOT
+        return adapters.blocked(self.store, ROOT if self.translation_limits else None, exclude=exclude)
+
+    def _next_auto(self, run: dict, node_id: str, provider: str, until: float) -> str | None:
+        """After a usage limit of an `auto` step: the next candidate without a known limit, or, when every one has
+        a limit, the one that resets first. None: stay with this provider (it resets first, or the step is not
+        `auto`)."""
+        auto = run["provider_cfg"].get("auto") or {}
+        kind = (auto.get("nodes") or {}).get(node_id)
+        found = (auto.get("candidates") or {}).get(kind) or []
+        if not kind or len(found) < 2:
+            return None
+        blocked = {**self.known_limits()}
+        current = adapters.split(provider)[0]
+        blocked[current] = max(blocked.get(current, 0), until or time.time() + 60)
+        free = [c for c in found if adapters.split(c)[0] not in blocked]
+        best = free[0] if free else min(found, key=lambda c: blocked[adapters.split(c)[0]])
+        return best if adapters.split(best)[0] != current else None
 
     def _inputs(self, wf: schema.Workflow, values: dict, files: dict) -> tuple[dict, list[str]]:
         inputs, problems = {}, []
@@ -245,6 +346,12 @@ class Engine:
                     problems.append(t("input_not_language", id=input_id, value=value))
             elif spec["type"] == "provider":
                 problem = self.provider_problem(value)
+                if problem:
+                    problems.append(f"{input_id}: {problem}")
+            elif spec["type"] == "url":  # read by document.extract (urlfetch.py); the form only is checked here
+                from .urlfetch import url_problem
+                value = value.strip()
+                problem = url_problem(value) if value else None
                 if problem:
                     problems.append(f"{input_id}: {problem}")
             elif len(value) > schema.TEXT_LIMIT:
@@ -309,7 +416,7 @@ class Engine:
                                       finished=time.time(), **fields):
             draft.unlink(missing_ok=True)
             raise RunError([t("node_not_waiting", id=node_id)])
-        os.replace(draft, node_dir / "comment.md")
+        paths.replace(draft, node_dir / "comment.md")
         self.store.event(run_id, node_id, "approved" if approve else "rejected", comment)
         if not self.is_active(run_id):
             self.store.update_run(run_id, status="queued", cancel_requested=0)
@@ -334,6 +441,8 @@ class Engine:
         if run is None:
             raise RunError([t("run_not_found", id=run_id)])
         run["nodes"] = self.store.nodes(run_id)
+        for info in run["nodes"].values():
+            info["error_summary"] = error_summary(info.get("error"), info.get("error_key"))
         run["workflow_name"] = display_name(run["workflow_name"])
         if run["status"] == "running" and not self.is_active(run_id):
             # Nobody drives it. Either the driver ended normally between the read above and this check (it wrote
@@ -357,6 +466,29 @@ class Engine:
                 run["status"] = self.get(run["id"])["status"]
         return runs
 
+    def _keep_awake(self) -> None:
+        """Keeps the computer awake from the first run on. pipeline.system.keep_awake holds until this process ends,
+        so it is called once, not per run."""
+        with self._lock:
+            if self.awake and not Engine._awake_started:
+                Engine._awake_started = True
+                system.keep_awake()
+
+    def resume_interrupted(self) -> list[str]:
+        """Resumes the runs that were running (or waiting for a usage limit) when the previous process ended. A run
+        that another process drives is left alone. Returns the ids. They continue with their frozen settings."""
+        resumed = []
+        for run in self.store.runs():
+            if run["status"] != "running" or self.is_active(run["id"]):
+                continue
+            try:
+                self.get(run["id"])  # records the interruption
+                self.resume(run["id"])
+                resumed.append(run["id"])
+            except (RunError, ValueError, KeyError, OSError):
+                continue
+        return resumed
+
     def is_active(self, run_id: str) -> bool:
         return self.thread_alive(run_id) or system.is_locked(self.run_dir(run_id) / ".lock")
 
@@ -373,6 +505,7 @@ class Engine:
             thread = threading.Thread(target=self._execute, args=(run_id,), name=f"run-{run_id}", daemon=True)
             self._threads[run_id] = thread
             thread.start()
+        self._keep_awake()
 
     def _execute(self, run_id: str) -> None:
         try:
@@ -473,7 +606,7 @@ class Engine:
             # Each node's error as stored (its key and values when it is a message of ours): shown in any language.
             error = t("run_failed_nodes", nodes=[
                 [n, {"$key": nodes[n]["error_key"], "params": nodes[n]["error_params"] or {}} if nodes[n].get("error_key")
-                 else (nodes[n]["error"] or "")[:300]] for n in failed])
+                 else error_summary(nodes[n]["error"])[:300]] for n in failed])
         elif "waiting_approval" in states.values():
             status, error = "waiting_approval", None
         else:
@@ -489,7 +622,7 @@ class Engine:
         show = (wf.nodes[node_id].get("config") or {}).get("show") or ""
         text = placeholders.render(show, resolve) if show.strip() else \
             "\n\n".join(x.strip() for x in (resolve(ref) for ref, _ in self._upstream(run, wf, node_id)) if x.strip())
-        (node_dir / "text.md").write_text(text, encoding="utf-8")
+        (node_dir / "text.md").write_text(text, encoding="utf-8", newline="\n")
         self.store.update_node(run["id"], node_id, status="waiting_approval", started=time.time(),
                                outputs={"text": f"nodes/{node_id}/text.md"})
         self.store.event(run["id"], node_id, "waiting_approval")
@@ -562,6 +695,7 @@ class Engine:
         error = ""
         attempt_no = 0
         quota_since = None
+        waited = None  # the provider this step waited for last (stream P: known usage limits)
         log = node_dir / livelog.NAME
         while True:
             if cancel.is_set():
@@ -583,7 +717,11 @@ class Engine:
                       input_types={i: spec["type"] for i, spec in wf.inputs.items()},
                       record=lambda name, started, outcome, until=None, message="": self.store.record_call(
                           run_id, node_id, name, started, outcome, until, message),
-                      log=log)
+                      log=log,
+                      # a usage limit known from another call blocks the provider without a call; not right after
+                      # this step waited for it (the wait was for that limit)
+                      blocked=None if waited == provider else
+                      lambda name: self.known_limits((run_id, node_id)).get(name, 0))
             result: dict = {}
 
             def work():
@@ -633,6 +771,11 @@ class Engine:
             elif "quota" in result:
                 # A usage limit: wait until it resets and try again; not counted as a failed attempt.
                 limit = result["quota"]
+                nxt = self._next_auto(fresh, node_id, provider, limit.until)
+                if nxt:  # an `auto` step: the next model of the user's order that has no usage limit now
+                    self._set_provider(run_id, node_id, nxt, auto=True)
+                    quota_since = None
+                    continue
                 fallback = fresh["providers"].get(f"{node_id}:fallback")
                 if fallback and fallback != provider:  # the workflow names another model for this case: no waiting
                     self._set_provider(run_id, node_id, fallback, auto=True)
@@ -656,6 +799,7 @@ class Engine:
                     else:
                         if not cancel.is_set():
                             self.store.event(run_id, node_id, "quota_resumed")
+                            waited = provider
                     continue  # the loop top records a cancel
                 error = t("quota_gave_up", hours=general.get("quota_max_hours", 24), error=limit)
             else:
@@ -749,8 +893,8 @@ class Engine:
             if kind == "text":
                 path = node_dir / f"{port}.md"
                 tmp = path.with_name(path.name + ".tmp")
-                tmp.write_text(str(value), encoding="utf-8")
-                os.replace(tmp, path)
+                tmp.write_text(str(value), encoding="utf-8", newline="\n")
+                paths.replace(tmp, path)
             else:
                 path = Path(value)
             stored[port] = path.resolve().relative_to(run_dir.resolve()).as_posix()
@@ -780,6 +924,31 @@ def _as_list(value) -> list:
     if value is None or value == "":
         return []
     return list(value) if isinstance(value, (list, tuple)) else [value]
+
+
+def resume_on_start() -> bool:
+    """The opt-in setting "resume_interrupted = true" of <data>/configurations/engine.toml: `mehter ui` then resumes
+    the runs that the previous process left running (see Engine.resume_interrupted). Off when the file is missing."""
+    import tomllib
+    try:
+        with (paths.home() / "configurations" / "engine.toml").open("rb") as f:
+            return tomllib.load(f).get("resume_interrupted") is True
+    except (OSError, tomllib.TOMLDecodeError):
+        return False
+
+
+_FRAME = re.compile(r"^\s+|^(Traceback \(most recent call last\)|During handling|The above exception|\^+$)")
+
+
+def error_summary(error: str | None, key: str | None = None) -> str:
+    """One line for an error that a tool wrote: its last meaningful line (not a traceback frame). A message of ours
+    (it has a key) and a one-line error are returned as they are. The full text stays in `error`."""
+    text = (error or "").strip()
+    if key or "\n" not in text:
+        return text
+    lines = [line.rstrip() for line in text.splitlines() if line.strip()]
+    meaningful = [line for line in lines if not _FRAME.match(line)]
+    return (meaningful or lines)[-1][:300]
 
 
 def display_name(stored: str) -> str:

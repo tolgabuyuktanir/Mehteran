@@ -18,6 +18,7 @@ description:
     Markdown, Word and HTML document.
 version: "1.0"
 category: everyday
+tier: core
 
 inputs:
   - id: documents
@@ -38,7 +39,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
-    default: claude
+    default: auto
 
 nodes:
   - id: documents
@@ -93,10 +94,12 @@ nodes:
         {{nodes.find.text}}
 
         Rules:
-        - Use only these passages. Use only what the material in this message says. Do not invent names, numbers, dates or quotations. After every statement write the file name in brackets, for example [contract.pdf].
+        - Use only these passages. Use only what the material in this message says. Do not invent names, numbers, dates or quotations. When more than one file was searched, write the file name in brackets after each statement, for example [contract.pdf]. When only one file was searched, give the file name only in the Sources section. Never put a file name inside every bullet of a one-file answer.
         - If documents disagree, say so and show both quotations; do not choose silently.
         - If the passages do not answer the question, or only in part, say clearly what is missing. Do not fill the gap from general knowledge.
-        - Give the direct answer first, in one to three sentences.
+        - Give the direct answer first, in one to three sentences. Answer every part of the question; do not skip a part.
+        - Work out simple calculations that the passages allow (for example half of a monthly amount) and show the arithmetic; say which number you assumed.
+        - In "Where the documents disagree or are silent" list only real gaps or conflicts that matter for the question. Write "None." when there are none. Do not write filler such as "there is no conflict because there is only one document".
 
         Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
 

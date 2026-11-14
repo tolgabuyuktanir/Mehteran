@@ -56,11 +56,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -76,7 +76,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a communications editor. Before a text is adapted for new readers, write a short brief that a
+        Task: Act as a communications editor. Before a text is adapted for new readers, write a short brief that a
         person will check.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -141,7 +141,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a communications writer. Write the adapted text for the target readers, following the approved
+        Task: Act as a communications writer. Write the adapted text for the target readers, following the approved
         brief.
 
         Language of the text: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole text in this
@@ -168,6 +168,7 @@ nodes:
         Rules:
         - Keep every fact of "Facts to keep" with its exact numbers, dates and names. Do not add facts, promises
           or claims that are not in the original.
+          Do not invent reasons, excuses, promises or conditions.
         - Respect the channel and the length.
         - Output only the adapted text, starting with a "# " title (for an e-mail, the subject line). No notes.
         - Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
@@ -187,7 +188,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You check an adapted text against its approved brief and its original.
+        Task: Check an adapted text against its approved brief and its original.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
         headings, in this language.

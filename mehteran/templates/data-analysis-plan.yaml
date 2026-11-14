@@ -59,11 +59,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: wrap
@@ -79,7 +79,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a careful data analyst. Describe the table below so that someone can judge what it contains and
+        Task: Act as a careful data analyst. Describe the table below so that someone can judge what it contains and
         what it can be used for. Do not answer the analysis question yet; other steps do that.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -131,7 +131,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a statistician. Write an analysis plan that answers the question below with this data. The
+        Task: Act as a statistician. Write an analysis plan that answers the question below with this data. The
         plan is for someone who will carry it out in a statistics tool or a spreadsheet.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -193,7 +193,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a data analyst. Give first, simple descriptive findings that bear on the question, computed by
+        Task: Act as a data analyst. Give first, simple descriptive findings that bear on the question, computed by
         hand from the visible rows of the table below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -244,7 +244,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are an independent checker. A colleague computed descriptive findings from the table below. Check
+        Task: Act as an independent checker. A colleague computed descriptive findings from the table below. Check
         every number and every statement.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

@@ -18,7 +18,7 @@ description:
     solution, the answer, common traps and the skill tested (Markdown, Word, HTML). An AI solution can be wrong,
     so two models agreeing is not proof. Not affiliated with College Board.
 version: "1.0"
-category: education
+category: exams
 
 inputs:
   - id: question
@@ -44,11 +44,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract

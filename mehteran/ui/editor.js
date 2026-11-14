@@ -40,6 +40,23 @@ const Editor = (() => {
     document.addEventListener("keydown", onKey);
     $("#new-form").addEventListener("submit", createNew);
     $("#new-cancel").addEventListener("click", () => { $("#new-dialog").close(); if (!ed.model) go("workflows"); });
+    // The id follows the name until the user writes one under "Advanced".
+    $("#new-name").addEventListener("input", () => { if (!$("#new-id").dataset.own) $("#new-id").value = freeId(slugOf($("#new-name").value)); });
+    $("#new-id").addEventListener("input", () => { $("#new-id").dataset.own = $("#new-id").value.trim() ? "1" : ""; });
+  }
+
+  // "Haftalık İş Raporu" -> "haftalik-is-raporu": letters folded as the library search does (app.js: fold), anything
+  // else a "-"; starts with a letter; at most 64 characters. A name without Latin letters gives "workflow".
+  function slugOf(name) {
+    const slug = fold(name).replace(/[^a-z0-9]+/g, "-").replace(/^[^a-z]+/, "").replace(/-+$/, "").slice(0, 56).replace(/-+$/, "");
+    return slug || "workflow";
+  }
+  // The id with a number added while a workflow of the library has it.
+  function freeId(id) {
+    const taken = new Set(state.templates.map((t) => t.id));
+    let out = id;
+    for (let k = 2; taken.has(out); k++) out = `${id}-${k}`;
+    return out;
   }
 
   async function open(parts) {
@@ -49,7 +66,9 @@ const Editor = (() => {
       if (ed.isNew && ed.model) return render();  // created meanwhile (two routes at start)
       if (!$("#new-dialog").open) {
         $("#new-id").value = "";
+        $("#new-id").dataset.own = "";
         $("#new-name").value = "";
+        $("#new-advanced").open = false;
         $("#new-problem").textContent = "";
         $("#new-dialog").showModal();
       }
@@ -68,7 +87,7 @@ const Editor = (() => {
   async function load(source, id) {
     const tpl = await api("GET", `/api/templates/${source}/${id}`);
     Object.assign(ed, {source, id, isNew: false, fresh: false, origin: null, readOnly: false, storedYaml: tpl.yaml, sel: null, draft: Boolean(tpl.draft),
-      mode: "visual", history: [], future: [], problems: [], ports: {}, canvas: null, wfTab: "general"});
+      mode: "visual", history: [], future: [], problems: [], warnings: [], ports: {}, canvas: null, wfTab: "general", draftBy: "", palOpen: false, tries: {}});
     ed.model = obj(tpl.model) || {schema_version: 1, id, name: id, nodes: []};
     if (!obj(tpl.model)) { ed.mode = "yaml"; ed.yamlBase = tpl.yaml; }
     if (source === "builtin") {
@@ -92,19 +111,35 @@ const Editor = (() => {
 
   function createNew(e) {
     e.preventDefault();
-    const id = $("#new-id").value.trim(), name = $("#new-name").value.trim();
-    if (!/^[a-z][a-z0-9_-]{0,63}$/.test(id)) { $("#new-problem").textContent = S("new_id_rule"); return; }
-    if (state.templates.some((t) => t.id === id)) { $("#new-problem").textContent = S("template_exists_ui", {id}); return; }
+    const name = $("#new-name").value.trim();
     if (!name) { $("#new-problem").textContent = S("new_name_needed"); return; }
+    // The id: the one written under "Advanced" (checked as written), else made from the name (always free).
+    const own = $("#new-id").dataset.own ? $("#new-id").value.trim() : "";
+    const id = own || freeId(slugOf(name));
+    const problem = !/^[a-z][a-z0-9_-]{0,63}$/.test(id) ? S("new_id_rule") : state.templates.some((t) => t.id === id) ? S("template_exists_ui", {id}) : "";
+    if (problem) { $("#new-advanced").open = true; $("#new-problem").textContent = problem; $("#new-id").focus(); return; }
     $("#new-dialog").close();
-    Object.assign(ed, {source: "user", id, isNew: true, fresh: true, origin: null, draft: false, readOnly: false, storedYaml: null, sel: null, mode: "visual", problems: [], wfTab: "general",
-      ports: {}, canvas: null, model: {schema_version: 1, id, name: {tr: name, en: name}, nodes: [], connections: [], layout: {}}});
+    startNew({schema_version: 1, id, name: {tr: name, en: name}, nodes: [], connections: [], layout: {}});
+  }
+
+  // An unsaved workflow of the user in the editor: an empty one ("New workflow"), or a draft that a model wrote
+  // (draftBy: the model's name; yaml and problems: a draft that did not pass the check opens on the YAML tab).
+  function startNew(model, opts = {}) {
+    const id = String(model.id || "");
+    Object.assign(ed, {source: "user", id, isNew: true, fresh: true, origin: null, draft: false, readOnly: false, storedYaml: null, sel: null, mode: "visual", problems: [], warnings: [], wfTab: "general",
+      ports: {}, canvas: null, model, draftBy: opts.draftBy || "", palOpen: true, tries: {}, valid: false});
+    if (nodes().length) ensureLayout(true);
+    if (opts.yaml != null) { ed.mode = "yaml"; ed.yamlBase = opts.yaml; }
     ed.saved = "";
     ed.history = [JSON.stringify(ed.model)];
     ed.future = [];
     if (location.hash !== "#workflows/new") history.replaceState(null, "", "#workflows/new");
     state.hash = "workflows/new";
     render();
+    if (opts.yaml != null && opts.problems) {
+      fill($("#yaml-problems"), h("div", {class: "notice bad", role: "alert"}, h("b", {}, S("draft_invalid", {model: opts.draftBy || ""})),
+        h("ul", {class: "failures"}, opts.problems.map((p) => h("li", {}, p)))));
+    }
     check();
     loadModels();
   }
@@ -193,7 +228,7 @@ const Editor = (() => {
     try { res = await api("POST", "/api/editor/check", {model: ed.model}); } catch (err) { toast(err.message, true); return; }
     if (seq !== ed.checkSeq) return;  // a newer check is on its way
     const portsChanged = JSON.stringify(res.ports) !== JSON.stringify(ed.ports);
-    Object.assign(ed, {problems: res.problems, valid: res.valid, ports: res.ports});
+    Object.assign(ed, {problems: res.problems, warnings: res.warnings || [], valid: res.valid, ports: res.ports});
     renderCanvas();
     if (portsChanged) renderInspectorChips();
     renderProblems();
@@ -218,7 +253,8 @@ const Editor = (() => {
   // Below 1440 px the palette starts as an icon rail, so the canvas keeps its room next to the inspector; opening or
   // folding it by hand holds for this session.
   const paletteChoice = () => { try { return sessionStorage.getItem("mehteran.palette"); } catch { return null; } };
-  const paletteFolded = () => { const v = paletteChoice(); return v ? v === "folded" : window.innerWidth < 1440; };
+  // A new workflow starts with the palette open (its steps with their names), whatever the width.
+  const paletteFolded = () => { const v = paletteChoice(); return v ? v === "folded" : ed.palOpen && window.innerWidth >= 1100 ? false : window.innerWidth < 1440; };
   window.addEventListener("resize", () => {
     const board = $("#board");
     if (board && !paletteChoice() && board.classList.contains("pal-folded") !== paletteFolded()) { board.classList.toggle("pal-folded", paletteFolded()); renderPalette(); }
@@ -242,7 +278,7 @@ const Editor = (() => {
     const toolbar = h("div", {class: "ed-toolbar"},
       h("button", {type: "button", class: "btn small", onclick: () => go("workflows"), title: S("back_to_library")}, "← " + S("tab_workflows")),
       h("div", {class: "ed-titles"},
-        h("h2", {id: "wf-title"}, ed.fresh ? S("new_workflow") : L(ed.model.name) || ed.id,
+        h("h2", {id: "wf-title"}, L(ed.model.name) || ed.id || S("new_workflow"),
           " ", h("span", {class: "badge warn", id: "ed-draft", hidden: !ed.draft}, S("draft"))),
         h("p", {id: "wf-sub", class: "small muted"}, ed.origin ? S("copy_note_short", {name: L(ed.origin.name) || ed.origin.id}) : h("code", {}, ed.id))),
       h("div", {class: "seg", role: "tablist", "aria-label": S("view_mode")},
@@ -289,10 +325,12 @@ const Editor = (() => {
     if (ed.origin && ed.isNew) parts.push(dirty() ? S("unsaved") : S("copy_unchanged"));
     else if (ed.isNew) parts.push(S("not_saved_yet"));
     else parts.push(dirty() ? S("unsaved") : S("saved_state"));
-    parts.push(ed.valid ? "✓ " + S("valid_short") : S("problems_found", {count: ed.problems.length}));
+    const empty = !nodes().length && ed.mode === "visual";  // before the first step nothing is a problem yet
+    parts.push(empty ? S("status_no_steps") : ed.valid ? "✓ " + S("valid_short") + (ed.warnings.length ? ` · ${S("warnings_short", {count: ed.warnings.length})}` : "")
+      : S("problems_found", {count: ed.problems.length}));
     if (!$("#board-status")) return;
     $("#board-status").textContent = parts.join(" · ");
-    $("#board-status").className = "small " + (!ed.valid ? "warn-text" : dirty() ? "warn-text" : "muted");
+    $("#board-status").className = "small " + (empty ? "muted" : !ed.valid ? "warn-text" : dirty() ? "warn-text" : "muted");
     if ($("#ed-draft")) $("#ed-draft").hidden = !ed.draft;
     // With problems the workflow can still be kept: as a draft, which cannot run until it passes the check.
     const save = $("#ed-save");
@@ -331,19 +369,95 @@ const Editor = (() => {
 
   function renderCanvas() {
     if (ed.canvas) ed.canvas.setView(view(), ed.sel);
+    renderStarters();
   }
 
   function renderProblems() {
     const box = $("#board-warnings");
     if (!box) return;
-    if (!ed.problems.length) return box.replaceChildren();
+    renderStarters();
+    // A model wrote this draft: say so until the user closes the note or saves.
+    const by = ed.draftBy && ed.isNew ? h("div", {class: "notice warn draft-by", role: "status"}, h("span", {}, S("draft_by", {model: ed.draftBy})),
+      h("button", {type: "button", class: "icon-btn", "aria-label": S("close"), title: S("close"), onclick: () => { ed.draftBy = ""; renderProblems(); }}, "✕")) : null;
+    // Nothing is called a problem before the first step: the empty canvas offers the starters instead.
+    if (!nodes().length || (!ed.problems.length && !ed.warnings.length)) return fill(box, by);
+    const line = (p) => h("li", {}, h("button", {type: "button", class: "linkish", onclick: () => focusProblem(p.where)},
+      placeOf(p.where) ? h("b", {}, placeOf(p.where) + ": ") : null, p.message));
     // Folded to one line by default, so that the list never covers the boxes being built; the choice is kept.
-    const list = h("details", {class: "notice bad problems-list", open: ed.problemsOpen,
+    const list = ed.problems.length ? h("details", {class: "notice bad problems-list", open: ed.problemsOpen,
       ontoggle: (e) => { ed.problemsOpen = e.currentTarget.open; }},
       h("summary", {}, S(ed.readOnly ? "problems_found" : "draft_problems", {count: ed.problems.length})),
-      h("ul", {class: "failures"}, ed.problems.map((p) => h("li", {}, h("button", {type: "button", class: "linkish", onclick: () => focusProblem(p.where)},
-        p.where ? h("code", {}, p.where) : null, " ", p.message)))));
-    box.replaceChildren(list);
+      h("ul", {class: "failures"}, ed.problems.map(line))) : null;
+    // Warnings (schema.warnings): the workflow can be saved and run; they name what probably is not meant.
+    const warn = ed.warnings.length ? h("details", {class: "notice warn problems-list warnings-list", open: ed.warningsOpen,
+      ontoggle: (e) => { ed.warningsOpen = e.currentTarget.open; }},
+      h("summary", {}, S("warnings_found", {count: ed.warnings.length})),
+      h("ul", {class: "failures"}, ed.warnings.map(line))) : null;
+    fill(box, by, list, warn);
+  }
+
+  // The place of a problem in the words of the page: the step's title and the field's label, not "nodes.a.config.prompt".
+  function placeOf(where) {
+    const parts = String(where || "").split(".");
+    const node = /^(nodes|layout)$/.test(parts[0]) ? nodeById(parts[1]) : null;
+    if (node) {
+      const spec = parts[2] === "config" && typeInfo(node.type) ? typeInfo(node.type).config.find((f) => f.name === parts[3]) : null;
+      const fieldName = spec ? (spec.name === "prompt" ? S("instruction") : L(spec.label) || spec.name)
+        : parts[2] === "label" ? S("node_label") : parts[2] === "fallback_provider" ? S("fallback_provider") : parts[2] && parts[2] !== "config" ? parts[2] : "";
+      return `“${titleOf(node)}”` + (fieldName ? ` · ${fieldName}` : "");
+    }
+    const input = parts[0] === "inputs" && arr(ed.model.inputs).find((i) => obj(i) && i.id === parts[1]);
+    if (input) return `${S("place_input")} “${L(input.label) || input.id}”`;
+    const edge = /^connections\[(\d+)\]/.exec(where);
+    if (edge && conns()[Number(edge[1])]) {
+      const c = conns()[Number(edge[1])], from = nodeById(splitFrom(c.from)[0]), to = nodeById(c.to);
+      return `${S("connection")} ${from ? titleOf(from) : c.from} → ${to ? titleOf(to) : c.to}`;
+    }
+    const top = {name: S("workflow_name"), description: S("workflow_description"), id: S("workflow_id"), outputs: S("outputs"), inputs: S("inputs"),
+      connections: S("place_connections"), nodes: S("palette_steps")}[parts[0].replace(/\[.*/, "")];
+    return top || where || "";
+  }
+
+  // The empty canvas: three ways to start. Each is one step of the history, so "Undo" brings the empty canvas back.
+  function renderStarters() {
+    const wrap = $(".canvas-wrap");
+    if (!wrap) return;
+    const old = $(".starters", wrap);
+    const show = !ed.readOnly && ed.mode === "visual" && !nodes().length;
+    if (!show) { if (old) old.remove(); return; }
+    if (old) return;
+    wrap.appendChild(h("div", {class: "starters"},
+      h("h3", {}, S("starters_title")), h("p", {class: "muted small"}, S("starters_text")),
+      h("div", {class: "starter-row"},
+        h("button", {type: "button", class: "starter", onclick: () => starter("document")}, h("span", {class: "starter-flow"}, "¶ → ✦ → ⇩"), h("b", {}, S("starter_document")),
+          h("span", {class: "small muted"}, S("starter_document_text"))),
+        h("button", {type: "button", class: "starter", onclick: () => starter("text")}, h("span", {class: "starter-flow"}, "✎ → ✦ → ⇩"), h("b", {}, S("starter_text")),
+          h("span", {class: "small muted"}, S("starter_text_text"))),
+        h("button", {type: "button", class: "starter describe", onclick: () => Drafter.open()}, h("span", {class: "starter-flow"}, "✦"), h("b", {}, S("starter_describe")),
+          h("span", {class: "small muted"}, S("starter_describe_text"))))));
+  }
+
+  // A starter: read a document (or take a text typed into the run form), ask a model, save the answer. The
+  // instruction is a first suggestion in the page's language; the user changes it.
+  function starter(kind) {
+    const m = ed.model;
+    const lang = textLang(), text = (key) => (UI[key] && UI[key][lang]) || S(key);
+    const label = (type) => JSON.parse(JSON.stringify(typeInfo(type).label));
+    m.inputs = [kind === "document" ? {id: "document", type: "file", label: {tr: "Belge", en: "Document"}}
+      : {id: "text", type: "text", multiline: true, label: {tr: "Metin", en: "Text"}}];
+    m.nodes = [];
+    const model = modelInput();
+    m.inputs.push({id: "language", type: "language", label: {tr: "Cevabın dili", en: "Language of the answer"}});
+    if (kind === "document") m.nodes.push({id: "extract", type: "document.extract", label: label("document.extract"), config: {file: "{{inputs.document}}"}});
+    m.nodes.push({id: "ai", type: "ai.cli", label: label("ai.cli"), config: {provider: `{{inputs.${model}}}`,
+      prompt: kind === "document" ? text("starter_document_prompt") : text("starter_text_prompt") + "\n\n{{inputs.text}}"}});
+    m.nodes.push({id: "export", type: "document.export", label: label("document.export"), config: {formats: ["md", "docx"]}});
+    m.connections = [...(kind === "document" ? [{from: "extract.text", to: "ai"}] : []), {from: "ai.text", to: "export"}];
+    m.outputs = [{id: "result", from: "ai.text", label: {tr: "Sonuç", en: "Result"}}];
+    ensureLayout(true);
+    ed.sel = {kind: "node", id: "ai"};
+    changed();
+    requestAnimationFrame(() => ed.canvas.fit());
   }
 
   // --- selection and the inspector ------------------------------------------------------------------
@@ -434,15 +548,22 @@ const Editor = (() => {
   // A {tr, en} text. A plain string becomes a map when one language is edited.
   function localizedPair(target, key, where, label, opts = {}) {
     const get = (lang) => { const v = target[key]; return typeof v === "string" ? v : obj(v) ? v[lang] || "" : ""; };
+    // opts.only "main": one field, in the page's language (English for a third one); what is written there is the
+    // text of the other language too while that one has none of its own. opts.only "other": the other language
+    // alone (shown under "Advanced settings"). Without it: both, side by side.
+    const main = textLang(), other = main === "tr" ? "en" : "tr";
     const set = (lang, value) => {
       const v = target[key];
       const map = typeof v === "string" ? {tr: v, en: v} : {...(obj(v) || {})};
+      const before = map[lang];
       if (value.trim()) map[lang] = value; else delete map[lang];
+      if (opts.only === "main" && (!map[other] || map[other] === before)) { if (value.trim()) map[other] = value; else delete map[other]; }
       if (Object.keys(map).length) target[key] = map; else delete target[key];
     };
-    return h("div", {class: "pair" + (opts.wide ? " wide" : ""), "data-where": where, "data-deep": "1"},
+    const langs = opts.only === "main" ? [main] : opts.only === "other" ? [other] : ["tr", "en"];
+    return h("div", {class: "pair" + (opts.wide ? " wide" : "") + (opts.only === "main" ? " single" : ""), "data-where": where, "data-deep": "1"},
       h("span", {class: "fld-label"}, label, opts.required ? h("span", {class: "muted small"}, " · " + S("required")) : null),
-      h("div", {class: "pair-row"}, ["tr", "en"].map((lang) => h("span", {class: "pair-cell"}, h("span", {class: "lang-tag"}, lang.toUpperCase()),
+      h("div", {class: "pair-row"}, langs.map((lang) => h("span", {class: "pair-cell"}, opts.only === "main" ? null : h("span", {class: "lang-tag"}, lang.toUpperCase()),
         textControl(() => get(lang), (v) => set(lang, v), `${where}:${lang}`, {area: opts.area, rows: opts.rows, spell: true})))),
       h("span", {class: "field-problem small"}));
   }
@@ -493,7 +614,9 @@ const Editor = (() => {
     const more = [
       h("div", {class: "grid2"}, field(S("node_id"), idInput, where + ".id", {hint: S("rename_hint")}),
         field(S("node_type"), h("input", {type: "text", value: n.type, readonly: true, class: "mono", tabindex: "-1"}), where + ".type")),
-      localizedPair(n, "label", where + ".label", S("node_label")),
+      localizedPair(n, "label", where + ".label", S("other_language_of", {field: S("node_label")}), {only: "other"}),
+      basic.filter((spec) => spec.kind === "localized").map((spec) => localizedPair(n.config, spec.name, `${where}.config.${spec.name}`,
+        S("other_language_of", {field: L(spec.label) || spec.name}), {area: true, rows: 3, wide: true, only: "other"})),
       advanced.map((spec) => configField(n, spec, `${where}.config.${spec.name}`)),
       basic.some((spec) => spec.kind === "template" && spec.widget !== "provider") ? h("div", {class: "fld"},
         h("span", {class: "fld-label"}, S("references_title")), h("p", {class: "small muted"}, S("references_hint")), refChips(n.id)) : null];
@@ -508,7 +631,7 @@ const Editor = (() => {
     // model input of the run form ("{{inputs.backup}}").
     if (config.some((spec) => spec.widget === "provider")) {
       const listId = "fallback-names-" + n.id;
-      const names = [...(INFO.providers || []).flatMap((p) => [p.name, ...(p.models || []).map((x) => `${p.name}/${x}`)]),
+      const names = [...AUTO_KINDS, ...(INFO.providers || []).flatMap((p) => [p.name, ...(p.models || []).map((x) => `${p.name}/${x}`)]),
         ...arr(ed.model.inputs).filter((i) => obj(i) && i.type === "provider" && typeof i.id === "string").map((i) => `{{inputs.${i.id}}}`)];
       const input = textControl(() => n.fallback_provider, (v) => setOrDelete(n, "fallback_provider", v.trim()), where + ".fallback_provider", {mono: true});
       input.setAttribute("list", listId);
@@ -516,8 +639,114 @@ const Editor = (() => {
         {hint: S("fallback_provider_hint"), after: h("datalist", {id: listId}, names.map((x) => h("option", {value: x})))}));
     }
     return [head, h("p", {class: "simple-note"}, note),
-      h("div", {class: "node-settings simple"}, basic.map((spec) => simpleField(n, spec, `${where}.config.${spec.name}`))),
+      // "Test this step" stands right under the instruction (or the condition's question): the answer shows there.
+      h("div", {class: "node-settings simple"}, basic.map((spec) => [simpleField(n, spec, `${where}.config.${spec.name}`),
+        (spec.name === "prompt" || spec.name === "question") && canTry(n) ? tryBox(n) : null])),
       advancedBox("node:" + n.id, more)];
+  }
+
+  // --- "Test this step": one step runs alone (POST /api/editor/try), nothing is saved ------------------------
+  // The texts of the steps before it come from the last run of this workflow, or are a pasted sample. The state of
+  // a test is kept per step while the editor is open (ed.tries), so the answer stays when the panel is drawn again.
+  const canTry = (n) => !ed.readOnly && (n.type === "ai.cli" || (n.type === "condition" && obj(n.config) && n.config.operator === "ai"));
+
+  function redrawTry(id) {
+    const el = document.getElementById("try-" + id), n = nodeById(id);
+    if (el && n && ed.sel && ed.sel.kind === "node" && ed.sel.id === id) el.replaceWith(tryBox(n));
+  }
+
+  async function openTry(n) {
+    const st = ed.tries[n.id];
+    st.open = true;
+    st.source = null;
+    st.problem = "";
+    redrawTry(n.id);
+    try {
+      st.source = await api("POST", "/api/editor/try/source", {model: ed.model, node: n.id,
+        templates: [`user:${ed.id}`, ...(ed.origin ? [`${ed.origin.source}:${ed.origin.id}`] : [])]});
+      if (!st.source.run) st.mode = "sample";
+    } catch (err) { st.problem = err.problems && err.problems.length ? S("try_needs_valid") : err.message; }
+    redrawTry(n.id);
+  }
+
+  async function startTry(n, provider) {
+    const st = ed.tries[n.id];
+    Object.assign(st, {problem: "", result: null, log: "", offset: 0, provider});
+    try {
+      const body = {model: ed.model, node: n.id, provider};
+      if (st.mode === "sample") body.sample = st.sample || ""; else body.run = st.source.run.id;
+      st.usedSource = st.mode === "sample" ? S("try_from_sample") : S("try_from_run", {time: fmtTime(st.source.run.created)});
+      st.job = (await api("POST", "/api/editor/try", body)).id;
+    } catch (err) { st.problem = [err.message, ...(err.problems || [])].filter((x, i, all) => all.indexOf(x) === i).join(" "); return redrawTry(n.id); }
+    redrawTry(n.id);
+    await followJob(st.job, (state) => {
+      st.log += state.log;
+      const pre = document.querySelector(`#try-${CSS.escape(n.id)} .job-log`);
+      if (pre) { pre.textContent = st.log; pre.scrollTop = pre.scrollHeight; }
+    }, (state) => {
+      st.job = null;
+      if (state.status === "done") st.result = state.result;
+      else st.problem = state.status === "cancelled" ? S("try_cancelled") : state.error || S("try_failed");
+      redrawTry(n.id);
+    });
+  }
+
+  function tryBox(n) {
+    ed.tries = ed.tries || {};
+    const st = ed.tries[n.id] || (ed.tries[n.id] = {open: false, mode: "run", sample: "", source: null, job: null, log: "", result: null, problem: ""});
+    const box = (...children) => h("div", {class: "try-box" + (st.open ? " open" : ""), id: "try-" + n.id}, children);
+    if (!st.open) {
+      return box(h("button", {type: "button", class: "btn small", onclick: () => openTry(n)}, "▷ " + S("try_step")),
+        h("span", {class: "small muted"}, S("try_step_hint")));
+    }
+    const head = h("div", {class: "row try-head"}, h("b", {}, S("try_step")), h("span", {class: "grow"}),
+      h("button", {type: "button", class: "icon-btn", "aria-label": S("close"), title: S("close"), disabled: Boolean(st.job),
+        onclick: () => { st.open = false; redrawTry(n.id); }}, "✕"));
+    if (!st.source) return box(head, h("p", {class: "small " + (st.problem ? "warn-text" : "muted")}, st.problem || S("try_loading")));
+    const run = st.source.run;
+    const name = "try-src-" + n.id;
+    const pick = (mode, label, disabled) => h("label", {class: "check"}, h("input", {type: "radio", name, checked: st.mode === mode, disabled: disabled || Boolean(st.job),
+      onchange: () => { st.mode = mode; redrawTry(n.id); }}), label);
+    const sample = h("textarea", {rows: 4, "aria-label": S("try_sample"), placeholder: S("try_sample_placeholder"), disabled: Boolean(st.job)});
+    sample.value = st.sample;
+    sample.addEventListener("input", () => { st.sample = sample.value; });
+    // The model: the run form's picker (the tool's name, its models, and how much of its usage limit is used now).
+    const model = providerField({id: "try-model-" + n.id, default: st.provider || st.source.provider || ""});
+    ["change", "input"].forEach((ev) => model.addEventListener(ev, () => { st.provider = model.read(); }));
+    const go = h("button", {type: "button", class: "btn primary small", disabled: Boolean(st.job), onclick: () => startTry(n, model.read())}, "▷ " + S("try_run"));
+    const cancel = st.job ? h("button", {type: "button", class: "btn small", onclick: () => api("POST", `/api/editor/jobs/${st.job}/cancel`).catch(() => {})}, S("cancel_action")) : null;
+    const answer = st.result ? h("div", {class: "try-result"},
+      h("p", {class: "small muted"}, S("try_answer_of", {model: st.result.provider, source: st.usedSource})),
+      st.result.branch ? h("p", {}, h("span", {class: "badge " + (st.result.branch === "true" ? "good" : "warn")}, S("try_branch", {branch: portLabel(n.type, st.result.branch)}))) : null,
+      h("div", {class: "try-answer"}, resultView(st.result.text, true))) : null;
+    return box(head,
+      h("div", {class: "stack try-source"}, h("span", {class: "fld-label"}, S("try_source")),
+        pick("run", run ? h("span", {}, S("try_from_run", {time: fmtTime(run.created)}), " ",
+          h("a", {href: "#runs/" + run.id, class: "small"}, S("try_open_run"))) : h("span", {class: "muted"}, S("try_no_run")), !run),
+        pick("sample", S("try_from_sample")),
+        st.mode === "sample" ? sample : null),
+      h("div", {class: "stack"}, h("span", {class: "fld-label"}, S("model")), model),
+      h("p", {class: "small muted"}, S("try_note")),
+      h("div", {class: "row"}, go, cancel, st.job ? h("span", {class: "small muted", role: "status"}, S("try_working")) : null),
+      st.problem ? h("p", {class: "small warn-text", role: "alert"}, st.problem) : null,
+      st.job || (st.log && !st.result) ? h("pre", {class: "job-log", "aria-label": S("live_log")}, st.log) : null,
+      answer);
+  }
+
+  // Follows an editor job (drafting.Jobs): onPiece for each state while it runs, onEnd with the last one.
+  async function followJob(id, onPiece, onEnd) {
+    let offset = 0;
+    for (;;) {
+      let state;
+      try { state = await api("POST", `/api/editor/jobs/${id}`, {offset}); } catch (err) { return onEnd({status: "failed", error: err.message}); }
+      offset = state.offset;
+      onPiece(state);
+      if (state.status !== "running") {
+        if (state.log) continue;  // the rest of the log first
+        return onEnd(state);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
   }
 
   // Which file of the run form the step reads: one of the workflow's file inputs, or a new one made here.
@@ -561,7 +790,7 @@ const Editor = (() => {
     if (spec.kind === "template" || spec.kind === "localized") {
       const label = key === "prompt" ? S("instruction") : key === "question" ? S("condition_question") : L(spec.label) || key;
       const hint = L(spec.help) || (key === "prompt" ? S("instruction_hint") : "");
-      if (spec.kind === "localized") return localizedPair(n.config, key, w, label, {area: true, rows: 3, wide: true});
+      if (spec.kind === "localized") return localizedPair(n.config, key, w, label, {area: true, rows: 3, wide: true, only: "main"});
       return field(label, textControl(() => n.config[key], (v) => setOrDelete(n.config, key, v), w,
         {area: true, rows: key === "prompt" ? 10 : 4, template: true, spell: true}), w,
         {wide: true, after: [hint ? h("span", {class: "small muted fld-help"}, hint) : null,
@@ -717,6 +946,10 @@ const Editor = (() => {
       provInputs.length ? h("div", {class: "pick-row"}, h("span", {class: "pick-provider"}, S("from_run_form")),
         h("div", {class: "pick-chips"}, provInputs.map((i) => h("button", {type: "button", class: "pick", "data-edit": "1",
           "aria-pressed": String(Boolean(inputRef && inputRef[1] === i.id)), onclick: () => set(`{{inputs.${i.id}}}`)}, L(i.label) || i.id)))) : null,
+      // stream P: `auto`, chosen from the user's model order when a run starts (app.js AUTO_KINDS)
+      h("div", {class: "pick-row"}, h("span", {class: "pick-provider"}, S("auto_group")),
+        h("div", {class: "pick-chips"}, AUTO_KINDS.map((k) => h("button", {type: "button", class: "pick", "data-edit": "1",
+          "aria-pressed": String(value === k), onclick: () => set(k)}, S("auto_kind_" + k.replace(":", "_")))))),
       rows.length ? rows : h("p", {class: "small warn-text"}, S("no_providers")),
       efforts,
       h("div", {class: "row"}, raw, h("button", {type: "button", class: "btn small", disabled: !testName, onclick: (e) => testModel(e.currentTarget, testName)},
@@ -763,9 +996,11 @@ const Editor = (() => {
     category.setAttribute("list", "category-list");
     return [head, tabs,
       h("div", {class: "node-settings"},
-        localizedPair(m, "name", "name", S("workflow_name"), {required: true}),
-        localizedPair(m, "description", "description", S("workflow_description"), {area: true, rows: 3})),
+        localizedPair(m, "name", "name", S("workflow_name"), {required: true, only: "main"}),
+        localizedPair(m, "description", "description", S("workflow_description"), {area: true, rows: 3, only: "main"})),
       advancedBox("workflow", [
+        localizedPair(m, "name", "name", S("other_language_of", {field: S("workflow_name")}), {only: "other"}),
+        localizedPair(m, "description", "description", S("other_language_of", {field: S("workflow_description")}), {area: true, rows: 3, only: "other"}),
         field(S("workflow_id"), idControl, "id", {hint: ed.isNew ? S("required") : S("id_fixed")}),
         h("div", {class: "grid2"},
           field(S("version"), textControl(() => m.version, (v) => setOrDelete(m, "version", v.trim()), "version", {}), "version"),
@@ -835,8 +1070,8 @@ const Editor = (() => {
       extra.push(field(S("default"), textControl(() => item.default, (v) => setOrDelete(item, "default", v), where + ".default",
         {area: item.multiline === true, rows: 2}), where + ".default", {wide: true}));
     } else if (item.type === "provider") {
-      const names = (INFO.providers || []).flatMap((p) => [p.name, ...p.models.map((x) => `${p.name}/${x}`)]);
-      const def = textControl(() => item.default, (v) => setOrDelete(item, "default", v.trim()), where + ".default", {mono: true, placeholder: "claude"});
+      const names = [...AUTO_KINDS, ...(INFO.providers || []).flatMap((p) => [p.name, ...p.models.map((x) => `${p.name}/${x}`)])];
+      const def = textControl(() => item.default, (v) => setOrDelete(item, "default", v.trim()), where + ".default", {mono: true, placeholder: "auto"});
       def.setAttribute("list", "provider-names");
       extra.push(field(S("default_model_field"), h("span", {class: "row"}, def, h("datalist", {id: "provider-names"}, names.map((x) => h("option", {value: x}))),
         h("button", {type: "button", class: "btn small", onclick: (e) => item.default && testModel(e.currentTarget, item.default)}, S("test_model"))), where + ".default"));
@@ -878,9 +1113,13 @@ const Editor = (() => {
         h("button", {type: "button", class: "icon-btn danger", "data-edit": "1", "aria-label": S("remove"), title: S("remove"), onclick: () => { list.splice(i, 1); changed(); }}, "×")),
       h("div", {class: "grid3"}, field(S("input_id"), idInput, where + ".id"), field(S("input_type"), typeSel, where + ".type"),
         h("label", {class: "check"}, required, S("required"))),
-      localizedPair(item, "label", where + ".label", S("input_label")),
-      localizedPair(item, "description", where + ".description", S("input_description")),
-      extra, h("span", {class: "field-problem small"}));
+      localizedPair(item, "label", where + ".label", S("input_label"), {only: "main"}),
+      localizedPair(item, "description", where + ".description", S("input_description"), {only: "main"}),
+      extra,
+      advancedBox("input:" + item.id, [
+        localizedPair(item, "label", where + ".label", S("other_language_of", {field: S("input_label")}), {only: "other"}),
+        localizedPair(item, "description", where + ".description", S("other_language_of", {field: S("input_description")}), {only: "other"})]),
+      h("span", {class: "field-problem small"}));
   }
 
   function outputsEditor() {
@@ -897,7 +1136,9 @@ const Editor = (() => {
             field(S("output_from"), h("select", {"data-key": where + ".from", onchange: (e) => { o.from = e.target.value; changed({keepInspector: true}); }},
               h("option", {value: ""}, "–"), [...new Set([...sources, o.from].filter(Boolean))].map((s) => h("option", {value: s, selected: s === o.from}, s))), where + ".from"),
             h("div", {class: "row end"}, h("button", {type: "button", class: "icon-btn danger", "data-edit": "1", "aria-label": S("remove"), onclick: () => { list.splice(i, 1); changed(); }}, "×"))),
-          localizedPair(o, "label", where + ".label", S("output_label")), h("span", {class: "field-problem small"}));
+          localizedPair(o, "label", where + ".label", S("output_label"), {only: "main"}),
+          advancedBox("output:" + o.id, [localizedPair(o, "label", where + ".label", S("other_language_of", {field: S("output_label")}), {only: "other"})]),
+          h("span", {class: "field-problem small"}));
       }),
       h("button", {type: "button", class: "btn small", "data-edit": "1", disabled: !sources.length, onclick: () => {
         if (!Array.isArray(m.outputs)) m.outputs = [];
@@ -955,13 +1196,60 @@ const Editor = (() => {
       }
       if (input) config.file = `{{inputs.${input}}}`;
     }
+    // A step that takes a model takes the run form's model: the workflow's model input, or a new one.
+    const modelKey = (info.config.find((f) => f.widget === "provider") || {}).name;
+    if (modelKey && !config[modelKey] && (type !== "condition" || config.operator === "ai")) config[modelKey] = `{{inputs.${modelInput()}}}`;
+    // Correct by construction: the new step is connected from the selected step (a click on the palette: else from
+    // the step added last) when that step gives a text and this one takes one, and it stands to the right of it.
+    const from = type === "document.extract" ? null : ed.sel && ed.sel.kind === "node" ? nodeById(ed.sel.id) : at ? null : nodes()[nodes().length - 1];
+    const port = from ? freeTextPort(from) : "";
     m.nodes.push({id, type, label: JSON.parse(JSON.stringify(info.label)), config});
     if (!obj(m.layout)) m.layout = {};
-    const pos = at || ed.canvas.center();
-    m.layout[id] = {x: Math.round(pos.x - NODE_W / 2), y: Math.round(pos.y - HEAD_H / 2)};
+    const pos = at ? {x: at.x - NODE_W / 2, y: at.y - HEAD_H / 2} : port ? rightOf(from.id) : nodes().length > 1 ? freeSpot(ed.canvas.center()) : {x: 40, y: 80};
+    m.layout[id] = {x: Math.round(pos.x), y: Math.round(pos.y)};
+    if (port) {
+      if (!Array.isArray(m.connections)) m.connections = [];
+      m.connections.push({from: `${from.id}.${port}`, to: id});
+    }
     ed.sel = {kind: "node", id};
-    changed();
-    toast(S("node_added", {name: L(info.label)}));
+    changed();  // one step of the history: the node, its inputs and its connection
+    toast(port ? S("node_added_connected", {name: L(info.label), from: titleOf(from)}) : S("node_added", {name: L(info.label)}));
+    if (!at) requestAnimationFrame(() => ed.canvas.fit());
+  }
+
+  // The id of the workflow's model input (the first one), made when there is none.
+  function modelInput() {
+    const m = ed.model;
+    if (!Array.isArray(m.inputs)) m.inputs = [];
+    const found = m.inputs.find((i) => obj(i) && i.type === "provider" && typeof i.id === "string");
+    if (found) return found.id;
+    const taken = new Set(m.inputs.map((i) => obj(i) && i.id));
+    let id = "model";
+    for (let k = 2; taken.has(id); k++) id = `model${k}`;
+    const first = (INFO.providers || [])[0];
+    m.inputs.push({id, type: "provider", label: {tr: "Model", en: "Model"}, ...(first ? {default: first.name} : {})});
+    return id;
+  }
+
+  // The text port of a step that a new step can be connected from: "text"; for a condition its first branch that
+  // leads nowhere yet. "" when the step gives files only (an export).
+  function freeTextPort(n) {
+    const kinds = ed.ports[n.id] || Object.fromEntries(((typeInfo(n.type) || {}).outputs || []).map((o) => [o.name, o.kind]));
+    const texts = portsOf(n).filter((p) => kinds[p] === "text");
+    if (!(typeInfo(n.type) || {}).branches) return texts.includes("text") ? "text" : texts[0] || "";
+    return texts.find((p) => !conns().some((c) => c.from === `${n.id}.${p}`)) || "";
+  }
+
+  // A free place for a new box: to the right of the box id, lower while another box stands there.
+  function rightOf(id) {
+    const p = obj(ed.model.layout[id]) || {x: 0, y: 0};
+    return freeSpot({x: (Number(p.x) || 0) + NODE_W + 96 + NODE_W / 2, y: (Number(p.y) || 0) + HEAD_H / 2});
+  }
+  function freeSpot(center) {
+    const pos = {x: center.x - NODE_W / 2, y: center.y - HEAD_H / 2};
+    const boxes = nodes().map((n) => obj(ed.model.layout[n.id])).filter(Boolean);
+    while (boxes.some((b) => Math.abs(b.x - pos.x) < NODE_W + 24 && Math.abs(b.y - pos.y) < 130)) pos.y += 150;
+    return pos;
   }
 
   function moveNode(id, x, y, final) {
@@ -1229,5 +1517,91 @@ const Editor = (() => {
 
   function relabel() { if (ed.model) render(); }
 
-  return {init, open, dirty, relabel};
+  return {init, open, dirty, relabel, startNew, followJob, current: () => (ed.model && ed.isNew && !nodes().length ? {id: ed.id, name: ed.model.name} : null)};
+})();
+
+// "Describe it, I will build it": the user writes what the workflow should do, a model writes a first draft
+// (POST /api/editor/draft, mehteran/drafting.py: one model call, a second one only when the first answer does not
+// pass the check). The draft opens in the editor as an unsaved workflow; nothing is saved and nothing runs.
+const Drafter = (() => {
+  const st = {dialog: null, text: "", job: null, log: "", problem: "", keep: null};
+
+  function open() {
+    if (!st.dialog) {
+      st.dialog = h("dialog", {id: "draft-dialog", class: "draft-dialog", "aria-labelledby": "draft-title"});
+      document.body.appendChild(st.dialog);
+      st.dialog.addEventListener("close", () => { if (st.job) api("POST", `/api/editor/jobs/${st.job}/cancel`).catch(() => {}); });
+    }
+    st.keep = Editor.current();  // an empty new workflow: the draft takes its name and id
+    st.problem = "";
+    draw();
+    if (!st.dialog.open) st.dialog.showModal();
+    const area = $("textarea", st.dialog);
+    if (area) area.focus();
+  }
+
+  function draw() {
+    const head = h("div", {class: "dialog-head"}, h("div", {}, h("h3", {id: "draft-title"}, S("describe_title")), h("p", {class: "small muted"}, S("describe_intro"))),
+      h("button", {type: "button", class: "icon-btn", "aria-label": S("close"), title: S("close"), onclick: () => st.dialog.close()}, "✕"));
+    if (st.job) {
+      return fill(st.dialog, head, h("div", {class: "layout-body stack"},
+        h("p", {role: "status"}, S("describe_working")),
+        h("pre", {class: "job-log", "aria-label": S("live_log")}, st.log)),
+      h("div", {class: "dialog-foot row"}, h("button", {type: "button", class: "btn", onclick: () => api("POST", `/api/editor/jobs/${st.job}/cancel`).catch(() => {})}, S("describe_stop"))));
+    }
+    const area = h("textarea", {id: "draft-text", rows: 8, maxlength: 4000, required: true, placeholder: S("describe_placeholder")});
+    area.value = st.text;
+    area.addEventListener("input", () => { st.text = area.value; });
+    const model = providerField({id: "draft-model", default: recall("mehteran.draftModel") || ""});
+    const form = h("form", {class: "draft-form", onsubmit: (e) => { e.preventDefault(); start(model.read()); }},
+      head,
+      h("div", {class: "layout-body stack"},
+        h("label", {class: "fld-label", for: "draft-text"}, S("describe_label")), area,
+        h("div", {class: "describe-examples"}, h("span", {class: "small muted"}, S("describe_examples")),
+          [1, 2, 3].map((k) => h("button", {type: "button", class: "linkish small", onclick: () => { st.text = area.value = S("describe_example_" + k); area.focus(); }},
+            "“" + S("describe_example_" + k) + "”"))),
+        h("span", {class: "fld-label"}, S("describe_model")), model,
+        h("p", {class: "small muted"}, S("describe_one_call")),
+        st.problem ? h("div", {class: "notice bad", role: "alert"}, st.problem) : null),
+      h("div", {class: "dialog-foot row"}, h("button", {type: "button", class: "btn", onclick: () => st.dialog.close()}, S("cancel_action")),
+        h("button", {type: "submit", class: "btn primary"}, "✦ " + S("describe_start"))));
+    fill(st.dialog, form);
+  }
+
+  async function start(provider) {
+    if (!st.text.trim()) return;
+    if (Editor.dirty() && !st.keep && !confirm(S("describe_replace_confirm"))) return;
+    remember("mehteran.draftModel", provider);
+    st.problem = "";
+    st.log = "";
+    try { st.job = (await api("POST", "/api/editor/draft", {description: st.text, provider})).id; } catch (err) { st.problem = err.message; return draw(); }
+    draw();
+    await Editor.followJob(st.job, (state) => {
+      st.log += state.log;
+      const pre = $(".job-log", st.dialog);
+      if (pre) { pre.textContent = st.log; pre.scrollTop = pre.scrollHeight; }
+    }, (state) => {
+      st.job = null;
+      if (state.status !== "done") {
+        st.problem = state.status === "cancelled" ? S("describe_cancelled") : state.error || S("describe_failed");
+        return st.dialog.open ? draw() : null;
+      }
+      finish(state.result);
+    });
+  }
+
+  // The draft opens in the editor, unsaved. One that did not pass the check opens on the YAML tab with its problems.
+  function finish(result) {
+    const model = result.model || {schema_version: 1, id: "draft", name: S("new_workflow"), nodes: []};
+    if (st.keep && result.model) Object.assign(model, {id: st.keep.id, name: st.keep.name});
+    let yaml = result.valid ? null : result.yaml;
+    if (yaml != null && st.keep && result.model) yaml = yaml.replace(/^id:.*$/m, `id: ${st.keep.id}`);
+    st.dialog.close();
+    st.text = "";
+    Editor.startNew(model, {draftBy: result.provider, yaml, problems: result.valid ? null : result.problems});
+    if (!isEditorHash(location.hash.slice(1))) go("workflows/new");
+    toast(S(result.valid ? "describe_done" : "describe_done_invalid"));
+  }
+
+  return {open};
 })();

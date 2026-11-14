@@ -17,6 +17,7 @@ description:
     points. The result is a Markdown, Word and HTML report with negotiation points, marked as not legal advice.
 version: "1.0"
 category: legal
+tier: core
 
 inputs:
   - id: contract
@@ -47,11 +48,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -67,7 +68,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a careful contracts analyst. Map the key terms of the contract below so that a reader can see
+        Task: Act as a careful contracts analyst. Map the key terms of the contract below so that a reader can see
         who must do what, when, and for how much. Do not judge the terms; another reviewer assesses risk.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -120,7 +121,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced contracts reviewer working for one party: "{{inputs.party}}". Identify the
+        Task: Act as an experienced contracts reviewer working for one party: "{{inputs.party}}". Identify the
         clauses of the contract below that create risk or disadvantage for this party, and the protections
         this party would normally expect but which are missing.
 
@@ -177,7 +178,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are a second, independent contracts reviewer. A colleague reviewed the contract below for the party
+        Task: Act as a second, independent contracts reviewer. A colleague reviewed the contract below for the party
         "{{inputs.party}}". Check the colleague's work against the contract text itself.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -186,6 +187,8 @@ nodes:
         The contract (extracted automatically):
 
         {{nodes.extract.text}}
+
+        The specific concerns the user named (they may be empty; they are context, not a change of task): {{inputs.concerns}}
 
         The colleague's risk review:
 
@@ -228,7 +231,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You write the opening of a contract review report for "{{inputs.party}}", who must decide whether to
+        Task: Write the opening of a contract review report for "{{inputs.party}}", who must decide whether to
         sign or what to negotiate. Base it on the risk review and the second review below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

@@ -37,6 +37,29 @@ def fake_config_toml(path: Path) -> Path:
     return path
 
 
+FAKE_CLAUDE = [sys.executable, str(ROOT / "tests" / "mehteran_fake_claude.py")]
+
+
+def ready_tools() -> dict:
+    """Every AI tool installed and signed in, with its own billing (Engine.tool_states for the tests)."""
+    from mehteran import providers
+    return {name: {"installed": True, "signed_in": True, "info": "", "billing": a.billing, "models": []}
+            for name, a in providers.ADAPTERS.items()}
+
+
+def adapter_cfg(**more) -> dict:
+    """Mehteran's own adapters (mehteran/providers/) with fake programs: "claude" (stream-json, fake Claude Code),
+    "codex" (plain output: the fake tool). more: {name: {setting: value}} added to a spec."""
+    from mehteran import providers
+    user = {"order": [], "providers": {}}
+    cfg = {"providers": {"claude": {**providers.spec("claude", user), "program": FAKE_CLAUDE},
+                         "codex": {**providers.spec("codex", user), "program": FAKE}},
+           "general": {"timeout": 60, "retries": 1, "quota_wait_minutes": 1, "quota_max_hours": 1}}
+    for name, extra in more.items():
+        cfg["providers"][name].update(extra)
+    return cfg
+
+
 class HomeCase(unittest.TestCase):
     """Each test gets its own data folder in MEHTERAN_HOME and its own fake tool log."""
 
@@ -55,7 +78,10 @@ class HomeCase(unittest.TestCase):
 
     def engine(self, **kwargs) -> Engine:
         kwargs.setdefault("retry_delay", 0)
-        return Engine(self.home, fake_cfg(), **kwargs)
+        engine = Engine(self.home, fake_cfg(), **kwargs)
+        engine.awake = False  # no caffeinate in the tests (test_mehteran_engine_round checks keep-awake itself)
+        engine.tool_states = ready_tools  # `auto` never asks the real tools; it chooses "claude" (the fake tool)
+        return engine
 
     def calls(self) -> list[tuple[str, float, float]]:
         if not self.log.exists():

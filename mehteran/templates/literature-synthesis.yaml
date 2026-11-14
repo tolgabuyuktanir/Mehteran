@@ -49,11 +49,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract_1
@@ -81,7 +81,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced researcher writing a literature synthesis. Three papers, called P1, P2 and P3,
+        Task: Act as an experienced researcher writing a literature synthesis. Three papers, called P1, P2 and P3,
         follow. Summarise each one, then synthesise them around the research question or topic below.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -152,7 +152,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are a meticulous second reader. A colleague wrote the synthesis below from three papers, P1, P2 and
+        Task: Act as a meticulous second reader. A colleague wrote the synthesis below from three papers, P1, P2 and
         P3. Check every statement that carries a tag ([P1], [P2], [P3]) against the paper texts.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

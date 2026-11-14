@@ -41,7 +41,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -57,7 +57,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a senior requirements engineer. Assess the QUALITY OF EACH INDIVIDUAL REQUIREMENT in the document
+        Task: Act as a senior requirements engineer. Assess the QUALITY OF EACH INDIVIDUAL REQUIREMENT in the document
         below. Another reviewer covers missing requirements and conflicts; do not review those.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -113,7 +113,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a systems analyst. Look at the requirements document below AS A WHOLE and find what is missing
+        Task: Act as a systems analyst. Look at the requirements document below AS A WHOLE and find what is missing
         or in conflict. Another reviewer covers the wording of individual requirements; do not review that.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -173,7 +173,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You lead the requirements review. Two reviewers have assessed the same document. Write the opening of
+        Task: Lead the requirements review. Two reviewers have assessed the same document. Write the opening of
         the review report: what to fix first and what to ask the stakeholders.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

@@ -10,8 +10,8 @@ limits that the translation app met.
     Mehteran's own Codex calls are --ephemeral (the translation app's command) and write no session log, so the value
     is from the last interactive Codex use.
   - Claude Code reports a "rate_limit_event" (utilization of the 5-hour and the weekly window, reset times) in its
-    stream-json output. The translation app's command uses text output, so Mehteran asks only when the user wants it
-    (probe_claude: one very short call with the smallest model) and keeps the answer in configurations/usage.json.
+    stream-json output. Mehteran's Claude adapter uses stream-json, so every call of a run updates it; the user may
+    also ask (probe_claude: one very short call with the smallest model). Kept in configurations/usage.json.
   - Gemini CLI and Antigravity CLI report token counts per answer, but no limits: None.
 - The translation app's usage limits: <code folder>/.jobs/quota.json (read only), and the last limit met by a model
   test on the Setup tab: <data>/configurations/quota.json.
@@ -25,6 +25,8 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+
+from . import paths
 
 WINDOWS = {"today": None, "5h": 5 * 3600, "7d": 7 * 86400}
 TOOL_OF = {"claude": "claude", "codex": "codex", "gemini": "gemini", "agy": "antigravity"}
@@ -179,23 +181,34 @@ def parse_claude_events(text: str) -> dict | None:
 
 
 def probe_claude(home: Path, program: str = "claude", timeout: int = 120) -> dict | None:
-    """Asks Claude Code for one word with its smallest model in stream-json mode and keeps its rate_limit_event."""
+    """Asks Claude Code for one word with its smallest model in stream-json mode and keeps its rate_limit_event.
+    The environment has no API key unless the user allowed it (the billing guard of mehteran/providers)."""
     from pipeline import system
+
+    from . import providers
+    allowed = providers.read_settings(home)["providers"].get("claude", {}).get("api_key", False)
     argv = system.resolve([program, "-p", "--model", "haiku", "--tools", "", "--no-session-persistence",
                            "--output-format", "stream-json", "--verbose"])
     with tempfile.TemporaryDirectory(prefix="mehteran-probe-") as tmp:
         proc = subprocess.run(argv, input="Reply with exactly: OK", capture_output=True, text=True, encoding="utf-8",
-                              errors="replace", timeout=timeout, cwd=tmp, **system.hidden_window())
+                              errors="replace", timeout=timeout, cwd=tmp,
+                              env=providers.guarded_env(providers.ADAPTERS["claude"].keys, allowed), **system.hidden_window())
     found = parse_claude_events(proc.stdout)
     if found:
-        path = home / "configurations" / "usage.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        data = _read_json(path)
-        data["claude"] = found
-        tmp_path = path.with_name(path.name + ".tmp")
-        tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.replace(tmp_path, path)
+        remember(home, "claude", found)
     return found
+
+
+def remember(home: Path, tool: str, found: dict) -> None:
+    """Keeps what a tool reported about its usage in <data>/configurations/usage.json (probe_claude, and every
+    Claude Code call of a run: mehteran/worker.py)."""
+    path = home / "configurations" / "usage.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = _read_json(path)
+    data[tool] = found
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+    tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    paths.replace(tmp_path, path)
 
 
 # --- the translation app's running books ------------------------------------------------

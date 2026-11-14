@@ -40,10 +40,27 @@ class TemplateTests(HomeCase):
         self.assertEqual(sha(paths.BUILTIN_TEMPLATES / "academic-paper-review.yaml"), before)
 
     def test_customize_keeps_a_version_with_special_characters_as_text(self):
-        text = templates.read("builtin", "document-comparison", self.home).replace('version: "1.0"', "version: 'a\\g<0>\\9'")
+        text = templates.read("builtin", "document-comparison", self.home).replace('version: "1.1"', "version: 'a\\g<0>\\9'")
         templates.import_text(templates.with_id(text, "odd"), self.home)
         templates.customize("user", "odd", "odd2", self.home)
         self.assertIn("based_on: user:odd@a\\g<0>\\9\n", templates.read("user", "odd2", self.home))
+
+    def test_merged_template_ids_still_work_as_aliases(self):
+        for old, new in templates.ALIASES.items():
+            with self.subTest(old=old):
+                self.assertIn(new, templates.ids("builtin", self.home))
+                self.assertNotIn(old, templates.ids("builtin", self.home))
+                self.assertEqual(templates.resolve(old, self.home), ("builtin", new))
+                self.assertEqual(templates.resolve(f"builtin:{old}", self.home), ("builtin", new))
+                self.assertEqual(templates.canonical_ref(f"builtin:{old}"), f"builtin:{new}")
+        item = next(i for i in templates.listing(self.home) if i["id"] == "document-summary")
+        self.assertEqual(item["aliases"], ["chapter-summaries", "multi-length-summary"])
+
+    def test_pasted_text_runs_without_the_optional_file(self):
+        engine = self.engine()
+        text = templates.read("builtin", "email-reply-draft", self.home)
+        run_id = engine.start(text, {"thread": "Can you send the offer by Friday?", "language": "en", "model": "fake"}, {})
+        self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])
 
     def test_customize_makes_an_independent_copy(self):
         templates.customize("builtin", "academic-paper-review", "my-review", self.home)
@@ -137,15 +154,15 @@ class TemplateTests(HomeCase):
         second = self.doc("v2.txt", "# Contract\n\nNotice period: 7 days.\n\nPrice: 100 EUR.")
         engine = self.engine()
         text = templates.read("builtin", "document-comparison", self.home)
-        run_id = engine.start(text, {"first_name": "Old", "second_name": "New", "language": "en",
-                                     "analyst_model": "fake", "writer_model": "claude"}, {"first": first, "second": second})
+        run_id = engine.start(text, {"mode": "pair", "language": "en", "model": "fake", "writer_model": "claude"},
+                          {"documents": [first, second]})
         self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])
         run = engine.get(run_id)
         self.assertEqual(len(self.calls()), 2)
         compare = next(p for p in self.prompts.iterdir() if "Notice period: 30 days" in p.read_text(encoding="utf-8"))
         prompt = compare.read_text(encoding="utf-8")
         self.assertIn("Notice period: 7 days", prompt)
-        self.assertIn('Document "Old"', prompt)
+        self.assertIn("v1.md", prompt)
         report = (engine.run_dir(run_id) / run["nodes"]["export"]["outputs"]["md"]).read_text(encoding="utf-8")
         self.assertEqual(report.count("## Answer"), 2)
         self.assertTrue((engine.run_dir(run_id) / "nodes" / "export" / "comparison-report.docx").is_file())

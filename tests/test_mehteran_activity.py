@@ -95,12 +95,19 @@ class SwitchTests(HomeCase):
 
     def test_loop_keeps_its_finished_parts_after_a_switch(self):
         engine = self.engine(quota_delay=120, parallel=1)
-        run_id = engine.start(LOOP.replace("MARK", f"QUOTA=1:{self.tmp / 'q'}"), files={"book": self.doc("book.md", BOOK)})
+        # One part (the last section) meets the limit. A limit stops the parts not yet started; which parts finished
+        # before it depends on the order the parts got their turn. Each part must succeed exactly once: a finished
+        # part is kept, not asked again, and the part that met the limit runs again on the new model.
+        book = BOOK.replace("Gamma.", f"Gamma. QUOTA=1:{self.tmp / 'q'}")
+        run_id = engine.start(LOOP.replace("MARK", ""), files={"book": self.doc("book.md", book)})
         self.wait_for(lambda: engine.get(run_id)["nodes"]["each"]["status"] == "waiting_quota")
         engine.switch(run_id, "each", "claude")
         self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])
         ok = [(c["provider"], c["outcome"]) for c in engine.store.calls(0) if c["outcome"] == "ok"]
-        self.assertEqual(sorted(ok), [("claude", "ok")] + [("fake", "ok")] * 3, "only the part that met the limit ran again")
+        self.assertEqual(len(ok), 4, "each of the 4 parts succeeded once: no finished part was asked again")
+        self.assertIn(("claude", "ok"), ok, "the part that met the limit ran on the new model")
+        text = (self.home / "executions" / run_id / engine.get(run_id)["nodes"]["each"]["outputs"]["text"]).read_text(encoding="utf-8")
+        self.assertEqual([f"Answer part{i}" in text for i in range(1, 5)], [True] * 4, "the loop's text has every part")
 
     def test_fallback_provider(self):
         engine = self.engine(quota_delay=120)

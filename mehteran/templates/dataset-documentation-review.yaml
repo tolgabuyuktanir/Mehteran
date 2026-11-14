@@ -56,7 +56,7 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -78,7 +78,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a data curator. Check how completely the dataset documentation below describes the dataset, so
+        Task: Act as a data curator. Check how completely the dataset documentation below describes the dataset, so
         that a person who has never seen the data could use it correctly. Another reviewer compares the
         documentation with sample rows; do not do that.
 
@@ -131,7 +131,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a data quality reviewer. Check whether the dataset documentation below agrees with the sample
+        Task: Act as a data quality reviewer. Check whether the dataset documentation below agrees with the sample
         rows, and whether the documentation agrees with itself. Another reviewer checks completeness; do not
         do that.
 
@@ -189,7 +189,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You write the opening of a dataset documentation review for the person who maintains the
+        Task: Write the opening of a dataset documentation review for the person who maintains the
         documentation. Two reviewers have assessed it. Combine their findings into actions.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

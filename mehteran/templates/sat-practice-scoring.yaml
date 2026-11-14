@@ -21,7 +21,7 @@ description:
     and the key can come from a file (CSV, Excel, PDF, Word, text) or be pasted. The score range is not
     official; a real SAT score depends on the adaptive test design. Not affiliated with College Board.
 version: "1.0"
-category: education
+category: exams
 
 inputs:
   - id: answers_file
@@ -78,11 +78,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: answers
@@ -104,7 +104,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You score a student's practice test. Work alone, from the data only.
+        Task: Score a student's practice test. Work alone, from the data only.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -156,7 +156,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You score a student's practice test. Work alone, from the data only; a second scorer does the same job separately.
+        Task: Score a student's practice test. Work alone, from the data only; a second scorer does the same job separately.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -208,7 +208,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are an experienced SAT tutor. Two scorers counted the same practice test independently. Reconcile them and write the student's report.
+        Task: Act as an experienced SAT tutor. Two scorers counted the same practice test independently. Reconcile them and write the student's report.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
@@ -298,13 +298,7 @@ nodes:
       template: |
         {{nodes.approve.text}}
 
-        Reviewer comment / Değerlendirici notu: {{nodes.approve.comment}}
-
-        ---
-
-        Notice: Original practice material in the style of the digital SAT, written by an AI. It is not a real SAT item and is not affiliated with or endorsed by College Board; SAT is a registered trademark of College Board. It may contain errors: check every answer before you rely on it.
-
-        Uyarı: Bu belge, yapay zekâ tarafından yazılmış, dijital SAT tarzında özgün alıştırma materyalidir. Gerçek bir SAT sorusu değildir; College Board ile bağı ve onayı yoktur. Hata içerebilir: güvenmeden önce her cevabı kontrol edin.
+        {{nodes.approve.comment}}
 
   - id: export
     type: document.export

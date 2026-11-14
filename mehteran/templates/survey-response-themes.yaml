@@ -53,11 +53,11 @@ inputs:
   - id: model
     type: provider
     label: {tr: Model, en: Model}
-    default: claude
+    default: auto
   - id: review_model
     type: provider
     label: {tr: İkinci görüş için model, en: Model for the second opinion}
-    default: claude
+    default: auto
 
 nodes:
   - id: extract
@@ -73,7 +73,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        You are a qualitative researcher. Code the free-text survey responses below inductively and build a
+        Task: Act as a qualitative researcher. Code the free-text survey responses below inductively and build a
         codebook. Another researcher codes the same responses independently; work on your own.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -130,7 +130,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are an independent qualitative researcher. Build a codebook for the free-text survey responses below.
+        Task: Act as an independent qualitative researcher. Build a codebook for the free-text survey responses below.
         Another researcher codes the same responses separately; do not try to guess their result.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
@@ -187,7 +187,7 @@ nodes:
     config:
       provider: "{{inputs.review_model}}"
       prompt: |
-        You are the lead researcher. Two researchers coded the same survey responses independently. Compare
+        Task: Act as the lead researcher. Two researchers coded the same survey responses independently. Compare
         their codebooks, resolve the differences against the responses, and write the final themes.
 
         Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the

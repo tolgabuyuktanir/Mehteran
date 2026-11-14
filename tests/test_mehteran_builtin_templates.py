@@ -15,7 +15,7 @@ from mehteran_support import HomeCase  # noqa: E402
 
 from mehteran import paths, schema, templates  # noqa: E402
 
-CATEGORIES = {"research", "documents", "legal", "business", "data", "writing", "education", "everyday"}
+CATEGORIES = {"research", "documents", "legal", "business", "data", "writing", "education", "everyday", "exams", "developers"}
 EXPORT_FORMATS = {"md", "docx", "html"}
 # A model step gets only its prompt: no template may claim or ask for a web search or browsing.
 NO_WEB = re.compile(r"\bweb\b|\binternet\b|\bbrows(e|er|ing)\b|\bonline\b|search engine|\bgoogle\b", re.I)
@@ -62,6 +62,12 @@ class BuiltinTemplateTests(HomeCase):
                 self.assertTrue(exports)
                 for node in exports:
                     self.assertEqual(set(node["config"]["formats"]), EXPORT_FORMATS)
+
+    def test_start_here_group_is_small_and_general(self):
+        core = [i for i in builtin_ids() if self.load(i).data.get("tier") == "core"]
+        self.assertTrue(15 <= len(core) <= 25, len(core))
+        for template_id in core:
+            self.assertNotIn(self.load(template_id).data["category"], {"exams"}, template_id)
 
     def test_prompts_do_not_mention_web_access(self):
         for template_id in builtin_ids():
