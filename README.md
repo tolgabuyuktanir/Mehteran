@@ -38,3 +38,7 @@ If you downloaded a zip file, download the new zip and move these from the old f
 ## More
 
 The [user guide](docs/guide.md) describes the interface in detail, the workflow, the export layout, the command line, the folders, the settings, the limits and the development.
+
+## Mehteran (local AI workflows)
+
+The same folder also holds **Mehteran**, a program that runs AI workflows on this computer (for example an academic paper review by three models, or a comparison of two documents). It uses the tools and sign-ins of the translation app. The translation app is part of its interface: the "Islamic book translation" card at the top of the Workflows tab opens it with all its features. `./translate ui` still works on its own. Start Mehteran with `./mehter ui` (Windows: `mehter ui`); it opens at `http://127.0.0.1:8766/`. See the [Mehteran guide](docs/mehteran.md).

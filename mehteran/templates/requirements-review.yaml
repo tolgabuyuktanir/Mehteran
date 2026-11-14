@@ -1,0 +1,252 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: requirements-review
+name:
+  tr: Gereksinim belgesi incelemesi
+  en: Requirements document review
+description:
+  tr: >-
+    Bir gereksinim belgesini (yazılım, ürün veya hizmet) iki bağımsız gözle inceler. Bir model her gereksinimin
+    kalitesine bakar (belirsiz, test edilemez, birden çok gereksinimi birleştiren, çözümü dikte eden) ve yeniden
+    yazım önerir; ikinci bir model eksikleri arar (işlevsel olmayan gereksinimler, hata durumları, çelişkiler,
+    tanımsız terimler). Üçüncü model paydaşlara sorulacak soruları ve öncelikli düzeltmeleri yazar. Sonuç Markdown,
+    Word ve HTML rapordur.
+  en: >-
+    Reviews a requirements document (software, product or service) through two independent lenses. One model
+    checks the quality of each requirement (ambiguous, not testable, compound, dictating the solution) and
+    proposes rewrites; a second model looks for gaps (non-functional requirements, error cases, conflicts,
+    undefined terms). A third model writes the questions for stakeholders and the priority fixes. The result is a
+    Markdown, Word and HTML report.
+version: "1.0"
+category: documents
+
+inputs:
+  - id: requirements
+    type: file
+    label: {tr: Gereksinim belgesi, en: Requirements document}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: context
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Ürün ve kullanıcılar, en: Product and users}
+    description:
+      tr: "Örnek: 'Hastane randevu sistemi; kullanıcılar hastalar ve sekreterler.'"
+      en: "For example: 'A hospital appointment system; the users are patients and receptionists.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.requirements}}"
+
+  - id: quality
+    type: ai.cli
+    label: {tr: Gereksinim kalitesi, en: Requirement quality}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a senior requirements engineer. Assess the QUALITY OF EACH INDIVIDUAL REQUIREMENT in the document
+        below. Another reviewer covers missing requirements and conflicts; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations and suggested rewrites in the language of the document.
+
+        Product and users (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The document follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        For each requirement that has a problem, check whether it is:
+        - ambiguous: vague words such as "fast", "user-friendly", "appropriate", "etc.", or more than one reading;
+        - not testable: no measurable acceptance criterion;
+        - compound: several requirements in one sentence;
+        - dictating the solution: it prescribes a design or technology without a stated reason;
+        - inconsistently worded: mixed "shall", "should", "will", "may" without a defined meaning.
+
+        Rules:
+        - Use the requirement's own identifier, or quote its first words if it has none.
+        - Quote the problem words, name the problem, and give one rewritten version. Where the rewrite needs a
+          value the document does not give (a time, a number), write a placeholder in brackets such as
+          "[response time to be agreed]"; never invent the value.
+        - Do not list requirements that have no problem.
+        - Use only the document. You have only the material below; you cannot check outside sources.
+        - If the text is not a requirements document or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Requirement quality
+
+        ### Overview
+        (how the requirements are organised, roughly how many there are, 2 to 3 sentences of judgement)
+
+        ### Requirements to rewrite
+        (each item: identifier, problem type, quotation, rewrite)
+
+        ### Wording conventions
+        (one short list)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: completeness
+    type: ai.cli
+    label: {tr: Eksiklik ve çelişkiler, en: Gaps and conflicts}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a systems analyst. Look at the requirements document below AS A WHOLE and find what is missing
+        or in conflict. Another reviewer covers the wording of individual requirements; do not review that.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the document.
+
+        Product and users (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The document follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Check:
+        1. Non-functional requirements: performance, availability, security, privacy, accessibility, usability,
+           capacity, maintainability, legal or regulatory constraints. Say which are stated and which are absent.
+        2. Error and edge cases: invalid input, failures of other systems, concurrent use, empty or maximum data,
+           roles and permissions.
+        3. Conflicts: requirements that contradict each other. Quote both.
+        4. Undefined terms, actors or data that the requirements rely on.
+        5. Dependencies and assumptions: external systems, data sources or decisions the document relies on
+           without stating them.
+
+        Rules:
+        - Quote and locate every conflict and every undefined term.
+        - A missing area is a finding: write what is missing and why it matters for this product. Write
+          "Not found in the document." where the document has nothing on a topic.
+        - Do not invent requirements as if the document had them; suggestions are suggestions.
+        - Use only the document. You have only the material below; you cannot check outside sources.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Gaps and conflicts
+
+        ### Non-functional requirements
+
+        ### Error and edge cases
+
+        ### Conflicts between requirements
+
+        ### Undefined terms and actors
+
+        ### Hidden dependencies and assumptions
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: synthesis
+    type: ai.cli
+    label: {tr: Sorular ve öncelikler, en: Questions and priorities}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You lead the requirements review. Two reviewers have assessed the same document. Write the opening of
+        the review report: what to fix first and what to ask the stakeholders.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Requirement quality review:
+
+        {{nodes.quality.text}}
+
+        Gaps and conflicts review:
+
+        {{nodes.completeness.text}}
+
+        Rules:
+        - Use only the two reviews. Do not add findings.
+        - Priority fixes come first when they block design or testing (conflicts, missing acceptance criteria,
+          undefined core terms).
+        - Each stakeholder question must be answerable by a person and must name the requirement or area it
+          concerns.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Requirements review
+
+        ## Overall assessment
+        (one of: ready / ready with fixes / needs rework, then 2 to 4 sentences)
+
+        ## Priority fixes
+        (a list, at most 8 items)
+
+        ## Questions for stakeholders
+        (a list, grouped by topic)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.synthesis.text}}
+
+        {{nodes.quality.text}}
+
+        {{nodes.completeness.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Requirements review
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: requirements-review
+
+connections:
+  - {from: extract.text, to: quality}
+  - {from: extract.text, to: completeness}
+  - {from: quality.text, to: synthesis}
+  - {from: completeness.text, to: synthesis}
+  - {from: synthesis.text, to: report}
+  - {from: quality.text, to: report}
+  - {from: completeness.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

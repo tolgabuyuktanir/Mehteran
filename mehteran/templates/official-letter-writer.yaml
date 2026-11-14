@@ -1,0 +1,157 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: official-letter-writer
+name:
+  tr: "Dilekçe ve resmî mektup yazıcı"
+  en: "Petition and formal letter writer"
+description:
+  tr: >-
+    Olayı ve isteğinizi birkaç cümleyle anlatın; dilekçe, şikâyet, itiraz, istifa ya da genel bir resmî mektup
+    yazar. Türkçede resmî dilekçe biçimini (makam, konu, açıklamalar, talep, saygı kalıbı, tarih ve imza)
+    kullanabilir. Bilmediği bilgiyi uydurmaz, köşeli parantezle bırakır. İkinci bir geçiş metni sizin verdiğiniz
+    olaylarla karşılaştırır, uydurma bilgi ya da fazla iddialı ifade varsa düzeltir. Hukuki tavsiye değildir.
+    Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Describe what happened and what you want in a few sentences; it writes a petition, a complaint, an
+    objection, a resignation or a general formal letter. In Turkish it can use the formal petition layout
+    (authority, subject, explanations, request, closing, date and signature). It does not invent facts: it
+    leaves placeholders in square brackets. A second pass compares the text with the facts you gave and fixes
+    anything invented or too strong. This is not legal advice. The result is a Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: kind
+    type: choice
+    label: {tr: "Belge türü", en: "Kind of letter"}
+    options:
+      - {value: petition, label: {tr: "Dilekçe (kuruma başvuru)", en: "Petition (request to an authority)"}}
+      - {value: complaint, label: {tr: "Şikâyet", en: "Complaint"}}
+      - {value: objection, label: {tr: "İtiraz", en: "Objection or appeal"}}
+      - {value: resignation, label: {tr: "İstifa", en: "Resignation"}}
+      - {value: general, label: {tr: "Genel resmî mektup", en: "General formal letter"}}
+    default: petition
+  - id: recipient
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Muhatap (makam / kişi)", en: "Recipient (authority or person)"}
+    description:
+      tr: "Örnek: 'İstanbul Büyükşehir Belediyesi Fen İşleri Müdürlüğü'. Bilinmiyorsa boş bırakın."
+      en: "For example: 'City Council, Roads Department'. Leave empty if unknown."
+  - id: facts
+    type: text
+    multiline: true
+    label: {tr: "Olay ve isteğiniz", en: "What happened and what you want"}
+    description:
+      tr: "Ne oldu, ne zaman, kimler; ve ne istiyorsunuz? Tarih, tutar, dosya/başvuru numarası gibi bilgileri yazın."
+      en: "What happened, when, who; and what do you want? Add dates, amounts, file or case numbers."
+  - id: sender
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Gönderen bilgileri", en: "Sender details"}
+    description:
+      tr: "Ad soyad, adres, telefon, (Türkiye için) T.C. kimlik no. Boşsa yer tutucu bırakılır."
+      en: "Name, address, phone. Left empty, placeholders are used."
+  - id: style
+    type: choice
+    label: {tr: "Biçim", en: "Layout"}
+    options:
+      - {value: tr_formal, label: {tr: "Türk resmî dilekçe biçimi", en: "Turkish formal petition layout"}}
+      - {value: international, label: {tr: "Genel resmî mektup biçimi", en: "General formal letter layout"}}
+    default: tr_formal
+  - id: language
+    type: language
+    label: {tr: "Belge dili", en: "Document language"}
+    default: tr
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: draft
+    type: ai.cli
+    label: {tr: "Taslak", en: "Draft"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write formal letters and petitions.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Kind: {{inputs.kind}}
+        Recipient (it may be empty): {{inputs.recipient}}
+        Layout: {{inputs.style}}
+
+        The facts and the request of the user:
+
+        {{inputs.facts}}
+
+        Sender details (it may be empty):
+
+        {{inputs.sender}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Put every missing detail in square brackets, for example [date], [file number], [full name], so that the user can fill it.
+        - Polite, firm, clear, no threats and no insults. State the request in one precise paragraph. Do not cite a law or article number unless the user gave it.
+        - For layout "tr_formal" and the language Turkish use this order: the authority in capitals and centred ("... MAKAMINA"), then "Konu:", then the explanations in numbered paragraphs, then the request starting with "Gereğini arz ederim." or "Gereğini saygılarımla arz ederim.", then the date, the name, the signature and the address. For other layouts or languages use the normal formal letter order of that language: sender, date, recipient, subject line, greeting, body, closing, signature.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Output only the letter, then a heading "## Notes" (translated) with the placeholders to fill and attachments to add (for example copies of documents).
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: review
+    type: ai.cli
+    label: {tr: "Kontrol", en: "Review"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You review a letter before it is sent, then give the final text.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The facts the user gave:
+
+        {{inputs.facts}}
+
+        The draft:
+
+        {{nodes.draft.text}}
+
+        Method: compare the draft with the facts. Remove or bracket every fact, number, date, law or accusation that the user did not give. Soften any claim that is stronger than the facts allow. Check that the request is clear and that the layout is complete. Give the corrected letter and the "## Notes" section, then a last section "## Changes" (translated) with a short list of what you changed, or "None.", and a last line with this meaning: This text was written by an AI as a starting point. It is not legal advice; check it, and ask a lawyer when the matter is serious.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Mektubu kaydet", en: "Save the letter"}
+    config:
+      source: "{{nodes.review.text}}"
+      title: "Letter"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: letter
+
+connections:
+  - {from: draft.text, to: review}
+  - {from: review.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Mektup (Markdown)", en: "Letter (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Mektup (Word)", en: "Letter (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Mektup (HTML)", en: "Letter (HTML)"}}

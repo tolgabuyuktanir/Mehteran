@@ -1,0 +1,258 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: abstract-title-improvement
+name:
+  tr: Özet ve başlık iyileştirme
+  en: Abstract and title improvement
+description:
+  tr: >-
+    Bir makalenin özetini ve başlığını metnin geri kalanıyla karşılaştırır ve iyileştirir. Bir model eksik
+    öğeleri, metinde dayanağı olmayan iddiaları ve tutmayan rakamları bulur; ikinci bir model üç başlık önerisi ve
+    sizin kelime sınırınıza uyan yeni bir özet yazar; üçüncü bir model yeni özetteki her iddiayı ve rakamı makaleye
+    karşı denetler. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Compares a paper's abstract and title with the body of the paper and improves them. One model finds missing
+    elements, claims the body does not support and numbers that do not match; a second model writes three title
+    options and a new abstract within your word limit; a third model checks every claim and number of the new
+    abstract against the paper. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: research
+
+inputs:
+  - id: paper
+    type: file
+    label: {tr: Makale, en: Paper}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: word_limit
+    type: text
+    required: false
+    default: "250"
+    label: {tr: Özet için kelime sınırı, en: Word limit for the abstract}
+  - id: venue
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Hedef dergi veya konferans, en: Target journal or conference}
+    description:
+      tr: "Örnek: derginin adı ve özet biçimi (yapılandırılmış özet: Amaç, Yöntem, Bulgular, Sonuç)."
+      en: "For example: the journal's name and abstract format (structured: Objective, Methods, Results, Conclusions)."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.paper}}"
+
+  - id: diagnose
+    type: ai.cli
+    label: {tr: Özetin teşhisi, en: Diagnosis of the abstract}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced journal editor. Compare the title and the abstract of the paper below with the
+        body of the paper, and find what makes them weak or inaccurate.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the paper.
+
+        Target venue (it may be empty; it is context, not a change of task): {{inputs.venue}}
+
+        The paper follows. It was extracted automatically from a file, so page numbers or broken lines may
+        appear; ignore such artefacts.
+
+        {{nodes.extract.text}}
+
+        Check:
+        1. Missing elements: does the abstract state the problem, the aim, the method, the main result with its
+           key numbers, and the conclusion or implication? Name what is missing.
+        2. Claims in the title or abstract that the body does not support, or states more cautiously.
+        3. Numbers, sample sizes or names that differ between the abstract and the body. Quote both.
+        4. Important results in the body that the abstract leaves out.
+        5. The title: is it accurate, specific and findable (key terms present)? Is it longer or vaguer than it
+           needs to be?
+
+        Rules:
+        - Quote the abstract and the body for every point.
+        - If the paper has no abstract or no title, write "Not found in the document." under that heading and
+          continue with the rest.
+        - You have only the paper; you cannot check outside sources. Never invent results.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Diagnosis
+
+        ### Missing elements
+
+        ### Claims not supported by the body
+
+        ### Numbers that do not match
+
+        ### Important results left out
+
+        ### The title
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: rewrite
+    type: ai.cli
+    label: {tr: Yeni başlık ve özet, en: New title and abstract}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a skilled scientific writer. Write a better title and abstract for the paper below, using the
+        editor's diagnosis.
+
+        Output language for headings and explanations: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write
+        the title options and the abstract in the language of the paper itself.
+
+        Word limit for the abstract: {{inputs.word_limit}} words.
+        Target venue (it may be empty; follow its abstract format if one is named): {{inputs.venue}}
+
+        The paper (extracted automatically):
+
+        {{nodes.extract.text}}
+
+        The editor's diagnosis:
+
+        {{nodes.diagnose.text}}
+
+        Rules:
+        - Use only facts, numbers and conclusions that appear in the body of the paper. Never add a result, a
+          number or an implication that the paper does not state.
+        - Keep the paper's level of certainty: do not turn "is associated with" into "causes".
+        - Stay within the word limit; give the word count after the abstract.
+        - Fix every problem in the diagnosis that the paper's content allows you to fix.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## New title and abstract
+
+        ### Title options
+        (three options, each with one sentence on what it emphasises)
+
+        ### Revised abstract
+        (then the word count)
+
+        ### What changed
+        (a short list)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: fidelity
+    type: ai.cli
+    label: {tr: Doğruluk denetimi, en: Fidelity check}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are a careful second reader. A writer produced new title options and a new abstract for the paper
+        below. Check each claim and each number in them against the body of the paper.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in their own language.
+
+        The paper (extracted automatically):
+
+        {{nodes.extract.text}}
+
+        The new title options and abstract:
+
+        {{nodes.rewrite.text}}
+
+        Check:
+        1. Every number, sample size and named entity: does it match the paper? Quote the paper.
+        2. Every claim: is it stated in the paper with the same certainty? Flag overstatements.
+        3. The word limit ({{inputs.word_limit}} words): is it kept?
+
+        Rules:
+        - Use only the paper. When a claim has no basis in it, write "Not found in the document."
+        - Do not list claims that are correct; end with one sentence on the overall fidelity.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Fidelity check
+
+        ### Wrong or unsupported statements
+
+        ### Overstatements
+
+        ### Word limit
+
+        ### Verdict
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.rewrite.text}}
+
+        {{nodes.fidelity.text}}
+
+        {{nodes.diagnose.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Abstract and title
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: abstract-and-title
+
+connections:
+  - {from: extract.text, to: diagnose}
+  - {from: extract.text, to: rewrite}
+  - {from: diagnose.text, to: rewrite}
+  - {from: extract.text, to: fidelity}
+  - {from: rewrite.text, to: fidelity}
+  - {from: rewrite.text, to: report}
+  - {from: fidelity.text, to: report}
+  - {from: diagnose.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

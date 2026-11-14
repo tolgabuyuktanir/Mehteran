@@ -1,0 +1,179 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: cv-and-cover-letter
+name:
+  tr: "Özgeçmiş ve ön yazı (ilana göre)"
+  en: "Tailored CV and cover letter"
+description:
+  tr: >-
+    Özgeçmişinizi ve iş ilanını okur; ilana göre uyarlanmış bir özgeçmiş ve bir ön yazı hazırlar. Özgeçmişte
+    olmayan deneyim, beceri ya da sayı eklemez; yalnızca vurguyu ve dili ilana uydurur, eksik kalan
+    gereklilikleri ayrı bir listede gösterir. İkinci bir model her iddianın özgeçmişte olup olmadığını denetler.
+    Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Reads your CV and a job posting and prepares a CV tailored to the posting and a cover letter. It adds no
+    experience, skill or number that is not in your CV; it only adjusts emphasis and wording, and it lists the
+    requirements that remain uncovered. A second model checks that every claim is in your CV. The result is a
+    Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: cv
+    type: file
+    label: {tr: "Özgeçmiş", en: "Your CV"}
+    formats: [pdf, docx, epub, md, txt, odt, rtf]
+  - id: posting
+    type: file
+    required: false
+    label: {tr: "İş ilanı", en: "Job posting"}
+    formats: [pdf, docx, md, txt, png, jpg, jpeg]
+  - id: posting_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "İş ilanı (yapıştır)", en: "Job posting (paste)"}
+    description:
+      tr: "Dosya yerine ilan metnini yapıştırabilirsiniz."
+      en: "Paste the posting instead of uploading a file."
+  - id: note
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Not", en: "Note"}
+    description:
+      tr: "Örnek: 'Kısa olsun', 'yönetici pozisyonuna geçmek istiyorum'."
+      en: "For example: 'keep it short', 'I want to move into management'."
+  - id: language
+    type: language
+    label: {tr: "Belge dili", en: "Document language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: cv
+    type: document.extract
+    label: {tr: "Özgeçmişi oku", en: "Read the CV"}
+    config:
+      file: "{{inputs.cv}}"
+
+  - id: posting
+    type: document.extract
+    label: {tr: "İlanı oku", en: "Read the posting"}
+    config:
+      file: "{{inputs.posting}}"
+
+  - id: draft
+    type: ai.cli
+    label: {tr: "Özgeçmiş ve ön yazı", en: "CV and cover letter"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced career coach and recruiter. Prepare a tailored CV and a cover letter.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The CV (extracted automatically):
+
+        {{nodes.cv.text}}
+
+        The job posting, from a file:
+
+        {{nodes.posting.text}}
+
+        The job posting, pasted:
+
+        {{inputs.posting_text}}
+
+        Note of the user (it may be empty): {{inputs.note}}
+
+        Rules:
+        - Truth first: use only the CV. Never add an employer, title, date, degree, skill, tool or number that the CV does not give. You may reorder, shorten, and reword with the posting's vocabulary when the CV really shows the same thing.
+        - Put the most relevant experience first. Use strong, specific bullet points with the results that the CV states.
+        - The cover letter has at most 250 words: why this role, two or three proofs from the CV, a closing. No clichés, no flattery. Leave the company or person's name in square brackets if the posting does not give it.
+        - If there is no posting in the data, write a general CV improvement and say so.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
+
+        # Tailored CV
+
+        (the CV in a clean structure: contact line as in the CV, profile, experience, education, skills)
+
+        # Cover letter
+
+        # Gaps to be aware of
+        (requirements of the posting that the CV does not show, and how to address each honestly)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Doğruluk denetimi", en: "Truthfulness check"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check a tailored CV and cover letter against the original CV.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The original CV:
+
+        {{nodes.cv.text}}
+
+        The tailored CV and cover letter:
+
+        {{nodes.draft.text}}
+
+        List every claim, number, title, date or skill in the new texts that the original CV does not support, quoting both. Also note any bullet that exaggerates. Do not list what is fine.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with the heading below (translated). Write "None found." under it if nothing is wrong.
+
+        ## Truthfulness check
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: report
+    type: text.merge
+    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    config:
+      template: |
+        {{nodes.draft.text}}
+
+        {{nodes.check.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "CV and cover letter"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: cv-cover-letter
+
+connections:
+  - {from: cv.text, to: draft}
+  - {from: posting.text, to: draft}
+  - {from: cv.text, to: check}
+  - {from: draft.text, to: check}
+  - {from: draft.text, to: report}
+  - {from: check.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Belge (Markdown)", en: "Document (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Belge (Word)", en: "Document (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Belge (HTML)", en: "Document (HTML)"}}

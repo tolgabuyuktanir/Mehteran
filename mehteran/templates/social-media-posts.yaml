@@ -1,0 +1,168 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: social-media-posts
+name:
+  tr: "Makale ya da rapordan sosyal medya paylaşımları"
+  en: "Social media posts from an article or report"
+description:
+  tr: >-
+    Bir makaleyi, raporu ya da duyuruyu okur ve LinkedIn, X (Twitter) ve Instagram için ayrı paylaşım metinleri
+    yazar: LinkedIn için uzun ve kısa bir gönderi, X için bir seri, Instagram için başlık ve kaydırmalı gönderi
+    planı, ayrıca etiket önerileri. İkinci bir geçiş her sayının ve iddianın kaynakta olduğunu denetler ve
+    karakter sınırlarını düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Reads an article, report or announcement and writes separate posts for LinkedIn, X (Twitter) and Instagram:
+    a long and a short LinkedIn post, an X thread, an Instagram caption with a carousel plan, and hashtag ideas.
+    A second pass checks that every number and claim is in the source and fixes character limits. The result is
+    a Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: source
+    type: file
+    required: false
+    label: {tr: "Makale ya da rapor", en: "Article or report"}
+    formats: [pdf, docx, epub, md, txt, odt, rtf]
+  - id: source_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Metin (yapıştır)", en: "Text (paste)"}
+    description:
+      tr: "Dosya yerine metni yapıştırabilirsiniz."
+      en: "Paste the text instead of uploading a file."
+  - id: tone
+    type: choice
+    label: {tr: "Ton", en: "Tone"}
+    options:
+      - {value: professional, label: {tr: "Profesyonel", en: "Professional"}}
+      - {value: friendly, label: {tr: "Samimi", en: "Friendly"}}
+      - {value: bold, label: {tr: "İddialı", en: "Bold"}}
+      - {value: playful, label: {tr: "Eğlenceli", en: "Playful"}}
+    default: professional
+  - id: goal
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Amaç ve hedef kitle", en: "Goal and audience"}
+    description:
+      tr: "Örnek: 'yeni raporumuzu duyurmak, sektör yöneticileri'."
+      en: "For example: 'announce our new report, industry managers'."
+  - id: language
+    type: language
+    label: {tr: "Paylaşım dili", en: "Language of the posts"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Dosyayı oku", en: "Read the file"}
+    config:
+      file: "{{inputs.source}}"
+
+  - id: posts
+    type: ai.cli
+    label: {tr: "Paylaşımlar", en: "Posts"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a social media editor. Write posts that promote the material below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Tone: {{inputs.tone}}
+        Goal and audience (it may be empty): {{inputs.goal}}
+
+        The material from a file (it may be empty; extracted automatically):
+
+        {{nodes.extract.text}}
+
+        The material, pasted (it may be empty):
+
+        {{inputs.source_text}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use a number only when the material gives it. No invented quotations. No hype words the material cannot support ("revolutionary", "guaranteed").
+        - Each post stands alone: a hook in the first line, one clear idea, one call to action. Fit each platform: LinkedIn (long: 120 to 200 words; short: at most 60 words), X thread (5 to 7 posts, each at most 270 characters, numbered 1/n), Instagram (caption at most 120 words; a carousel plan of 5 to 7 slides with a short title and one line of text each; say what image each slide needs).
+        - Give 5 hashtags per platform (none on X more than 2). No emojis unless the tone is playful, then at most 2 per post.
+        - If there is no material, say so in one sentence and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
+
+        # Social media posts
+
+        ## LinkedIn: long post
+
+        ## LinkedIn: short post
+
+        ## X thread
+
+        ## Instagram
+
+        ## Hashtags
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: "Doğrulama", en: "Fact and length check"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check social media posts against their source and give the corrected final posts.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The source:
+
+        {{nodes.extract.text}}
+
+        The source, pasted:
+
+        {{inputs.source_text}}
+
+        The posts:
+
+        {{nodes.posts.text}}
+
+        Method: check every number, name, date and claim against the source and fix or remove the ones it does not support. Count the characters of each X post and shorten any above 280. Keep the structure and headings. Give the corrected posts only, then a last section "## Corrections" (translated) with a short list of the changes, or "None.".
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Paylaşımları kaydet", en: "Save the posts"}
+    config:
+      source: "{{nodes.verify.text}}"
+      title: "Social media posts"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: social-posts
+
+connections:
+  - {from: extract.text, to: posts}
+  - {from: extract.text, to: verify}
+  - {from: posts.text, to: verify}
+  - {from: verify.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Paylaşımlar (Markdown)", en: "Posts (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Paylaşımlar (Word)", en: "Posts (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Paylaşımlar (HTML)", en: "Posts (HTML)"}}

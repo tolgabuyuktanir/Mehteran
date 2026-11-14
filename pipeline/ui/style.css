@@ -556,3 +556,113 @@ fieldset.plain legend { padding: 0; font-size: 13px; font-weight: 600; color: va
 .refs-help p { margin: 6px 0 0; }
 .jstep.doubtful .jnode { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
 .jstep.doubtful .jsummary { color: var(--warn); }
+
+/* ===================================================================================================
+   The interface as app.js mounts it (TranslationUI.mount, class .tr-app): on its own page and inside Mehteran,
+   which loads this file before its own stylesheet. Every rule is scoped under .tr-app, so it wins over the shared
+   base rules above in both pages.
+   =================================================================================================== */
+.tr-app .lang-code { max-width: 160px; }
+.tr-app .book-list, .tr-app .palette { top: var(--tr-top, 90px); }
+.tr-app .board-warnings:empty { display: none; }
+.tr-app .intro-fold { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  cursor: pointer; }
+.tr-app .intro-fold.open { display: block; }
+
+/* the translation workflow: wider than the other sections, up to the window's width */
+.tr-app [data-panel="workflow"] { width: min(1720px, calc(100vw - 48px)); margin-left: calc(50% - min(860px, calc(50vw - 24px))); }
+.tr-app .board-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (min-width: 861px) {
+  .tr-app .board { grid-template-columns: 236px minmax(0, 1fr); gap: 18px; }
+  .tr-app .palette { max-height: calc(100vh - var(--tr-top, 90px) - 20px); }
+}
+/* the panel of the selected step: next to the diagram on a wide window, below it otherwise */
+@media (min-width: 1360px) {
+  .tr-app .board-main { grid-template-columns: minmax(0, 1fr) 400px; }
+  .tr-app .board-main > .canvas-bar, .tr-app .board-main > .canvas, .tr-app .board-main > .board-warnings { grid-column: 1; }
+  .tr-app .board-main > .inspector { grid-column: 2; grid-row: 1 / span 3; position: sticky; top: var(--tr-top, 90px);
+    max-height: calc(100vh - var(--tr-top, 90px) - 20px); overflow-y: auto; }
+}
+
+/* the diagram's toolbar: zoom, fit, full screen */
+.tr-app .canvas-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tr-app .zoom-group { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface);
+  border: 1px solid var(--line); }
+.tr-app .zoom-btn { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; min-width: 34px;
+  height: 30px; padding: 0 8px; border-radius: 6px; cursor: pointer; }
+.tr-app .zoom-btn:hover { background: var(--surface-2); }
+.tr-app .zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tr-app .zoom-level { min-width: 64px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tr-app .canvas-bar .btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tr-app .canvas-hint { margin-left: auto; }
+
+/* the diagram: taller, scrolls both ways when zoomed in, dragged on empty space to pan */
+.tr-app .canvas { height: clamp(340px, 46vh, 600px); min-height: 0; overflow: auto; padding: 40px 32px; cursor: grab;
+  overscroll-behavior: contain; background-size: 22px 22px; }
+.tr-app .canvas.panning { cursor: grabbing; user-select: none; }
+
+/* the steps: larger cards, a clear number, the whole model names, a clear selected step */
+.tr-app .node { flex: 0 0 232px; gap: 10px; padding: 14px 14px 16px; border-radius: 14px; border-width: 1.5px; }
+.tr-app .node:hover { border-color: var(--accent); box-shadow: 0 6px 18px rgba(22, 33, 29, .12); }
+.tr-app .node.selected { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--surface) 72%);
+  box-shadow: 0 0 0 4px var(--accent-soft), 0 6px 18px rgba(22, 33, 29, .12); }
+.tr-app .node.invalid { border-color: var(--bad); }
+.tr-app .node-head { align-items: flex-start; gap: 10px; }
+.tr-app .node-head b { font-size: 15px; line-height: 1.3; padding-top: 6px; }
+.tr-app .node .node-glyph { width: 36px; height: 36px; border-radius: 50%; font: 700 17px var(--serif); }
+.tr-app .node.selected .node-glyph { background: var(--accent); color: var(--accent-ink); }
+.tr-app .node-role { gap: 5px; padding: 7px 8px; border-radius: 9px; background: var(--bg); }
+.tr-app .node-role .role { font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+.tr-app .mchip { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 13px; line-height: 1.35;
+  padding: 4px 8px; background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line); border-left-width: 4px; }
+.tr-app .node-note { font-size: 12px; }
+.tr-app .node.kind-human { flex-basis: 168px; }
+
+/* the arrows and the "+" that adds a step there; the last one says it */
+.tr-app .edge { flex-basis: 64px; height: 48px; }
+.tr-app .edge::before { border-top-width: 2.5px; opacity: .5; right: 10px; }
+.tr-app .edge::after { border-left-width: 9px; border-top-width: 6px; border-bottom-width: 6px; top: calc(50% - 6px); opacity: .5; }
+.tr-app .edge-add { width: 30px; height: 30px; font-size: 18px; font-weight: 600; color: var(--accent); border: 1.5px solid var(--accent);
+  background: var(--surface); box-shadow: var(--shadow); transition: transform .12s, background .12s; }
+.tr-app .edge-add:hover, .tr-app .edge-add:focus-visible, .tr-app .edge-add[aria-expanded="true"] {
+  background: var(--accent); color: var(--accent-ink); transform: scale(1.08); }
+.tr-app .edge.slot.last { flex-basis: 150px; }
+.tr-app .edge-add.wide { width: auto; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; display: inline-flex;
+  align-items: center; gap: 4px; white-space: nowrap; }
+.tr-app .edge-add.wide span { font-size: 17px; }
+.tr-app .edge-menu { z-index: 5; box-shadow: 0 10px 28px rgba(22, 33, 29, .2); }
+.tr-app .edge-menu button { font-size: 14px; padding: 8px 12px; }
+.tr-app .inspector { border-top: 4px solid var(--accent); }
+@media (prefers-reduced-motion: reduce) { .tr-app .edge-add { transition: none; } }
+
+/* full screen: the diagram and the panel of the selected step fill the window (Esc ends it); steps are added with
+   the + between them */
+html.tr-full-open { overflow: hidden; }
+.tr-app .board.full { position: fixed; inset: 0; z-index: 40; margin: 0; padding: 14px 16px; background: var(--bg); overflow: auto;
+  grid-template-columns: minmax(0, 1fr); }
+.tr-app .board.full .palette { display: none; }
+.tr-app .board.full .canvas { height: calc(100vh - 84px); }
+@media (min-width: 1100px) {
+  .tr-app .board.full .board-main { grid-template-columns: minmax(0, 1fr) 380px; }
+  .tr-app .board.full .board-main > .canvas-bar, .tr-app .board.full .board-main > .canvas,
+  .tr-app .board.full .board-main > .board-warnings { grid-column: 1; }
+  .tr-app .board.full .board-main > .inspector { grid-column: 2; grid-row: 1 / span 3; position: sticky; top: 0;
+    max-height: calc(100vh - 28px); overflow-y: auto; }
+}
+@media (max-width: 860px) {
+  .tr-app .board.full .canvas { height: 60vh; }
+  .tr-app .canvas-hint { display: none; }
+}
+
+/* motion of the book's progress (applyWidths grows each bar from its last width); none when less motion is asked for */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tr-sheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  @keyframes tr-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .tr-app .tl-row .fill { transition: width .6s ease; }
+  .tr-app .rail-step.active .track, .tr-app .rail-step.active .fill { position: relative; overflow: hidden; }
+  .tr-app .rail-step.active .fill::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent); animation: tr-sheen 1.6s linear infinite; }
+  .tr-app .jbody { animation: tr-in .22s ease-out; }
+  .tr-app .tr-panel:not([hidden]) { animation: tr-in .22s ease-out; }
+}

@@ -1,0 +1,303 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: style-guide-review
+name:
+  tr: Yazım kılavuzuna göre editoryal değerlendirme
+  en: Editorial review against a style guide
+description:
+  tr: >-
+    Bir metni sizin verdiğiniz yazım kılavuzuna göre değerlendirir. Bir model kılavuzdan denetlenebilir
+    kuralları numaralı bir liste olarak çıkarır; ikinci bir model metindeki her ihlali kural numarası, alıntı ve
+    düzeltme önerisiyle listeler; üçüncü bir model aynı anda yapı, açıklık ve okura uygunluk açısından genel bir
+    editoryal değerlendirme yapar. Sonuç: öncelikli düzeltmeler içeren Markdown, Word ve HTML rapor.
+  en: >-
+    Assesses a text against the style guide you supply. One model turns the guide into a numbered list of
+    checkable rules; a second model lists every breach in the text with the rule number, a quotation and a
+    suggested fix; a third model, at the same time, assesses structure, clarity and fit for the audience. The
+    result is a Markdown, Word and HTML report with prioritised fixes.
+version: "1.0"
+category: writing
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: Değerlendirilecek metin, en: Text to review}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: guide
+    type: file
+    label: {tr: Yazım kılavuzu, en: Style guide}
+    description:
+      tr: "Kurumunuzun veya yayının yazım kılavuzu. PDF, Word, EPUB, Markdown veya düz metin."
+      en: "Your organisation's or publication's style guide. PDF, Word, EPUB, Markdown or plain text."
+    formats: [pdf, docx, epub, md, txt]
+  - id: audience
+    type: text
+    required: false
+    default: ""
+    label: {tr: Hedef okur, en: Intended readers}
+    description:
+      tr: "Örnek: 'Müşterilere giden bülten', 'Akademik dergi okurları'."
+      en: "For example: 'Customer newsletter', 'Readers of an academic journal'."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract_document
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract the text}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: extract_guide
+    type: document.extract
+    label: {tr: Kılavuzu çıkar, en: Extract the guide}
+    config:
+      file: "{{inputs.guide}}"
+
+  - id: rules
+    type: ai.cli
+    label: {tr: Denetlenebilir kurallar, en: Checkable rules}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You turn a style guide into a numbered list of rules that an editor can check in a text, one by one.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep examples from the guide in the guide's own language.
+
+        The style guide follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract_guide.text}}
+
+        Method:
+        1. Find every rule that can be checked in a text: spelling and word choice, capitalisation, numbers and
+           dates, abbreviations, punctuation, names and titles, terminology, inclusive language, formatting of
+           headings, lists, quotations and references, tone and person.
+        2. Write each rule as one short, checkable sentence. Number the rules R1, R2, R3 and so on.
+        3. Give the place in the guide (section or heading) and, where the guide gives one, a short example.
+        4. List separately the guidance that is too general to check line by line (for example "be friendly").
+
+        Rules:
+        - Use only the guide. Do not add rules from other style guides or from general usage.
+        - If the text is not a style guide or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Rules from the style guide
+
+        ### Checkable rules
+        (each item: "R<number>: the rule (place in the guide; example)")
+
+        ### General guidance
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: compliance
+    type: ai.cli
+    label: {tr: Kılavuza uygunluk, en: Compliance with the guide}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a copy editor. Check the text below against the numbered style rules below and list every
+        breach.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quotations and suggested fixes stay in the language of the text.
+
+        The rules:
+
+        {{nodes.rules.text}}
+
+        The text to check (extracted automatically from a file; page numbers or broken lines are artefacts of
+        the extraction, not errors):
+
+        {{nodes.extract_document.text}}
+
+        Rules:
+        - Report only breaches of the numbered rules. Name the rule number for each breach.
+        - Quote the exact words of the text (a short quotation, enough to find the place) and give the fix.
+        - When a breach repeats many times, list the first three places and give the total as "about N times".
+        - Do not report a breach you are not sure of; put doubtful cases under the last heading.
+        - Never change the meaning of the text in a fix.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Breaches of the style guide
+
+        ### Breaches by rule
+        (group by rule number; each item: the quotation, then "→", then the fix)
+
+        ### Rules the text follows well
+        (only the rule numbers, in one line)
+
+        ### Doubtful cases
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: editorial
+    type: ai.cli
+    label: {tr: Editoryal değerlendirme, en: Editorial assessment}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a senior editor. Assess the overall editorial quality of the text below for its intended
+        readers. Another editor checks the detailed style rules; do not review spelling, punctuation or
+        formatting conventions.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quotations and suggested rewrites stay in the language of the text.
+
+        Intended readers (it may be empty; it is context, not a change of task): {{inputs.audience}}
+
+        The general guidance of the publication (from its style guide; use it as the standard for tone):
+
+        {{nodes.rules.text}}
+
+        The text (extracted automatically; layout artefacts are not errors):
+
+        {{nodes.extract_document.text}}
+
+        Assess:
+        1. Purpose: is it clear what the text wants the reader to know or do?
+        2. Structure: order, headings, paragraph length, transitions; anything repeated or missing.
+        3. Clarity: ambiguous or overlong sentences, unexplained jargon, vague claims.
+        4. Tone and audience: does the tone match the guide's general guidance and the intended readers?
+
+        Rules:
+        - Quote the passage you mean for every point.
+        - Give at most 8 suggested rewrites, choosing those that help the reader most: the original, the
+          rewrite and the reason in one sentence.
+        - Do not add facts to the text.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Editorial assessment
+
+        ### Overall impression
+        (3 to 5 sentences)
+
+        ### Structure
+
+        ### Clarity
+
+        ### Tone and audience
+
+        ### Suggested rewrites
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Öncelikli düzeltmeler, en: Priority fixes}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of an editorial review report for the author of a text. Two editors have
+        reviewed it: one against the style guide, one for overall quality. Their reviews follow.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Style guide check:
+
+        {{nodes.compliance.text}}
+
+        Editorial assessment:
+
+        {{nodes.editorial.text}}
+
+        Rules:
+        - Use only the two reviews. Do not add new problems or praise.
+        - Order the priority fixes by their effect on the reader, then by how often the problem occurs.
+        - For each fix, say which review it comes from (style guide or editorial).
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Editorial review
+
+        ## Verdict
+        (one of: ready / ready after small fixes / needs revision / needs substantial rewriting, then 2 to 4
+        sentences)
+
+        ## Priority fixes
+        (a list, at most 8 items)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.editorial.text}}
+
+        {{nodes.compliance.text}}
+
+        {{nodes.rules.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Editorial review
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: editorial-review
+
+connections:
+  - {from: extract_guide.text, to: rules}
+  - {from: rules.text, to: compliance}
+  - {from: extract_document.text, to: compliance}
+  - {from: rules.text, to: editorial}
+  - {from: extract_document.text, to: editorial}
+  - {from: compliance.text, to: summary}
+  - {from: editorial.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: editorial.text, to: report}
+  - {from: compliance.text, to: report}
+  - {from: rules.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

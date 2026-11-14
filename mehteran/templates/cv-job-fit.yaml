@@ -1,0 +1,258 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: cv-job-fit
+name:
+  tr: Özgeçmiş ve iş ilanı uyumu
+  en: CV and job posting fit
+description:
+  tr: >-
+    Bir özgeçmişi bir iş ilanıyla karşılaştırır. Bir model ilandaki gereklilikleri zorunlu ve tercih edilen
+    olarak listeler; ikinci bir model her gereklilik için özgeçmişte kanıt arar ve eşleşmeyi alıntıyla gösterir;
+    üçüncü bir model, özgeçmişe hiçbir şey uydurmadan, özgeçmiş düzeltmeleri, ön yazı noktaları ve mülakat
+    hazırlığı önerir. Sonuç: uyum değerlendirmesi ve öneriler içeren Markdown, Word ve HTML rapor.
+  en: >-
+    Compares a CV with a job posting. One model lists the posting's requirements as required or preferred; a
+    second model looks for evidence of each requirement in the CV and shows the match with quotations; a third
+    model suggests CV edits, cover-letter points and interview preparation without inventing anything. The
+    result is a Markdown, Word and HTML report with a fit assessment and recommendations.
+version: "1.0"
+category: writing
+
+inputs:
+  - id: cv
+    type: file
+    label: {tr: Özgeçmiş, en: CV}
+    description: {tr: "PDF, Word, Markdown veya düz metin.", en: "PDF, Word, Markdown or plain text."}
+    formats: [pdf, docx, md, txt]
+  - id: posting
+    type: file
+    label: {tr: İş ilanı, en: Job posting}
+    description:
+      tr: "İlan metnini bir dosyaya (örneğin .txt) kaydedip yükleyin. PDF, Word, Markdown veya düz metin."
+      en: "Save the text of the posting in a file (for example .txt) and upload it. PDF, Word, Markdown or plain text."
+    formats: [pdf, docx, md, txt]
+  - id: note
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Adayın notu, en: Note from the candidate}
+    description:
+      tr: "Örnek: kariyer değişikliği, özgeçmişte yazmayan ama doğru olan deneyimler, öne çıkarmak istedikleriniz."
+      en: "For example: a career change, true experience not yet in the CV, what you want to emphasise."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract_cv
+    type: document.extract
+    label: {tr: Özgeçmiş metni, en: CV text}
+    config:
+      file: "{{inputs.cv}}"
+
+  - id: extract_posting
+    type: document.extract
+    label: {tr: İlan metni, en: Posting text}
+    config:
+      file: "{{inputs.posting}}"
+
+  - id: requirements
+    type: ai.cli
+    label: {tr: İlanın gereklilikleri, en: Requirements of the posting}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a recruiter. List what the job posting below asks of a candidate.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quotations stay in the language of the posting.
+
+        The job posting (extracted automatically from a file):
+
+        {{nodes.extract_posting.text}}
+
+        Rules:
+        - Number the requirements J1, J2, J3 and so on. Split combined requirements ("Python and SQL, 5 years")
+          into separate items.
+        - Mark each one: required or preferred, as the posting states or clearly implies by its wording
+          ("must", "ideally", "a plus"). Where the posting does not make it clear, write "unclear".
+        - Quote the posting's words for each requirement.
+        - Add the main tasks of the role and any stated conditions (location, travel, languages, permits).
+        - Use only the posting. Do not add requirements that such jobs usually have.
+        - If the text is not a job posting, say so in one sentence and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Requirements of the posting
+
+        ### Role in brief
+
+        ### Requirements
+        (each item: "J<number> [required|preferred|unclear]: the requirement — "quotation"")
+
+        ### Conditions
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: match
+    type: ai.cli
+    label: {tr: Eşleştirme, en: Matching}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a careful, fair recruiter. For each requirement below, look for evidence in the candidate's CV.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quotations stay in the language of the CV.
+
+        Note from the candidate (it may be empty; it is context, not a change of task; information here is not
+        in the CV and must be marked as "from the note"): {{inputs.note}}
+
+        The requirements:
+
+        {{nodes.requirements.text}}
+
+        The CV (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract_cv.text}}
+
+        For each requirement J<number>, decide:
+        - met: the CV shows it clearly (quote the CV);
+        - partly met: related or weaker evidence (quote it and say what is missing);
+        - not shown: write "Not found in the document." Do not infer skills from job titles alone.
+
+        Rules:
+        - Never assume experience, degrees, dates or skills that the CV does not state.
+        - Count years of experience only from dates in the CV, and show the calculation.
+        - Note strengths of the CV that the posting values but did not list as a requirement.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Requirement by requirement
+
+        ### Required
+        (each item: "J<number> — met / partly met / not shown: evidence or reason")
+
+        ### Preferred
+
+        ### Other strengths for this role
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: advice
+    type: ai.cli
+    label: {tr: Öneriler, en: Recommendations}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an honest career coach. Using the requirement-by-requirement match below, write the opening of a
+        fit report for the candidate.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Suggested CV wording stays in the language of the CV.
+
+        Note from the candidate (it may be empty; it is context, not a change of task): {{inputs.note}}
+
+        The requirements:
+
+        {{nodes.requirements.text}}
+
+        The match:
+
+        {{nodes.match.text}}
+
+        The CV, so that you can quote it:
+
+        {{nodes.extract_cv.text}}
+
+        Rules:
+        - Never suggest adding a skill, a qualification, a job or a result that neither the CV nor the
+          candidate's note states. For a gap, suggest how to show related experience honestly or how to close
+          the gap.
+        - CV edits must name the place in the CV and give the new wording.
+        - Base the fit level on the required items first.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Fit report
+
+        ## Fit
+        (one of: strong / good / partial / weak, then 3 to 4 sentences)
+
+        ## Gaps to address
+        (a list)
+
+        ## CV edits for this posting
+        (a list, at most 8 items)
+
+        ## Points for the cover letter
+        (a list, at most 5 items)
+
+        ## Interview preparation
+        (likely questions about the gaps and the strongest examples to prepare, at most 6 items)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.advice.text}}
+
+        {{nodes.match.text}}
+
+        {{nodes.requirements.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: CV fit report
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: cv-fit-report
+
+connections:
+  - {from: extract_posting.text, to: requirements}
+  - {from: requirements.text, to: match}
+  - {from: extract_cv.text, to: match}
+  - {from: requirements.text, to: advice}
+  - {from: match.text, to: advice}
+  - {from: extract_cv.text, to: advice}
+  - {from: advice.text, to: report}
+  - {from: match.text, to: report}
+  - {from: requirements.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

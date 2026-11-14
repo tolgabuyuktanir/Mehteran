@@ -1,0 +1,328 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: business-plan-critique
+name:
+  tr: İş planı ve sunum eleştirisi
+  en: Business plan and pitch critique
+description:
+  tr: >-
+    Bir iş planını veya yatırımcı sunumunu üç bağımsız değerlendirici gözüyle inceler: pazar ve müşteri
+    (sorun, hedef müşteri, pazar büyüklüğü iddiaları, rekabet), finansallar (gelir modeli, varsayımlar, birim
+    ekonomisi, nakit ihtiyacı) ve uygulama (ekip, pazara giriş, kilometre taşları, riskler). Üç değerlendirme
+    aynı anda yapılır; bir model bunları güçlü yönler, kritik zayıflıklar, fon sağlayıcının soracağı sorular ve
+    göndermeden önce yapılacak düzeltmelerle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reviews a business plan or pitch deck through three independent reviewer lenses: market and customer
+    (problem, target customer, market size claims, competition), financials (revenue model, assumptions, unit
+    economics, cash needs) and execution (team, go-to-market, milestones, risks). The three reviews run at the
+    same time; a model combines them into strengths, critical weaknesses, questions a funder will ask, and fixes
+    to make before sending. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: business
+
+inputs:
+  - id: plan
+    type: file
+    label: {tr: İş planı veya sunum, en: Business plan or pitch deck}
+    description:
+      tr: "PDF, Word, EPUB, Markdown veya düz metin. Sunumu PDF olarak kaydedin."
+      en: "PDF, Word, EPUB, Markdown or plain text. Save a slide deck as PDF."
+    formats: [pdf, docx, epub, md, txt]
+  - id: context
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Bağlam, en: Context}
+    description:
+      tr: "Örnek: 'Tohum aşaması, melek yatırımcılara gönderilecek.' veya 'Banka kredisi başvurusu.'"
+      en: "For example: 'Seed stage, to be sent to angel investors.' or 'Bank loan application.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.plan}}"
+
+  - id: market
+    type: ai.cli
+    label: {tr: Pazar ve müşteri, en: Market and customer}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced investor assessing the MARKET AND CUSTOMER case of the business plan or pitch
+        deck below. Other reviewers cover the financials and the execution; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the plan.
+
+        Context from the author (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The plan follows. It was extracted automatically from a file; slide layouts may be flattened and page
+        numbers may appear.
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Problem: is it specific, and does the plan show evidence that customers have it?
+        2. Customer: who buys, who uses, who pays; how precisely the target segment is defined.
+        3. Market size: the figures claimed and the basis the plan gives for them (source named, method shown,
+           or none). Check that top-down and bottom-up figures, if both are given, are consistent.
+        4. Competition and alternatives as the plan describes them; obvious alternatives it does not mention
+           (name them only in general terms, for example "doing nothing" or "spreadsheets").
+        5. Differentiation: is the claimed advantage credible from what the plan shows?
+
+        Rules:
+        - You have only the material below; you cannot check outside sources, so do not confirm or deny market
+          figures. Judge only whether the plan supports them.
+        - Quote or locate (slide, page or section) every point.
+        - When the plan does not address something, write "Not found in the document."
+        - If the text is not a business plan or pitch deck, or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Market and customer
+
+        ### Problem and customer
+
+        ### Market size claims
+
+        ### Competition and differentiation
+
+        ### Assessment
+        (one of: convincing / partly convincing / weak, and one sentence of justification)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: financials
+    type: ai.cli
+    label: {tr: Finansallar, en: Financials}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a financial due-diligence reviewer assessing the FINANCIALS of the business plan or pitch deck
+        below. Other reviewers cover the market and the execution; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations and figures as they appear in the plan.
+
+        Context from the author (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The plan follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Revenue model: how the business earns money, pricing, recurring or one-off revenue.
+        2. Assumptions: growth, conversion, churn, pricing, costs. Which are stated, which are only implied,
+           which look unsupported.
+        3. Unit economics: customer acquisition cost, lifetime value, gross margin per unit, payback, as far as
+           the plan states the inputs. Compute only from stated figures and show the calculation.
+        4. Consistency: figures that contradict each other in different parts of the plan; totals that do not
+           add up (show the calculation).
+        5. Cash: funding requested, use of funds, runway, break-even; whether the request matches the plan.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Never invent or estimate figures.
+        - Quote or locate every figure you discuss.
+        - When the plan gives no figure for something, write "Not found in the document."
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Financials
+
+        ### Revenue model
+
+        ### Assumptions
+
+        ### Unit economics
+
+        ### Inconsistencies
+
+        ### Funding and cash
+
+        ### Assessment
+        (one of: convincing / partly convincing / weak, and one sentence of justification)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: execution
+    type: ai.cli
+    label: {tr: Uygulama, en: Execution}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced operator and mentor assessing the EXECUTION case of the business plan or pitch
+        deck below: whether this team can do what the plan says. Other reviewers cover the market and the
+        financials; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the plan.
+
+        Context from the author (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The plan follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Team: the roles and experience stated; gaps between the plan and the team's stated skills.
+        2. Go-to-market: channels, sales process, partnerships; how concrete the first customers are.
+        3. Traction: the evidence of progress the plan states (customers, pilots, revenue, letters of intent).
+        4. Milestones: are they specific, dated and linked to the funding?
+        5. Risks: the risks the plan names and its mitigations; major risks it does not name.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources, so do not assess people beyond
+          what the plan says about them.
+        - Quote or locate every point. When the plan does not address something, write
+          "Not found in the document."
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Execution
+
+        ### Team
+
+        ### Go-to-market and traction
+
+        ### Milestones
+
+        ### Risks
+
+        ### Assessment
+        (one of: convincing / partly convincing / weak, and one sentence of justification)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: memo
+    type: ai.cli
+    label: {tr: Değerlendirme notu, en: Review memo}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening memo of a business plan critique for its author, as a demanding funder would see
+        it. Three reviewers have assessed the same plan. Combine their reviews.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        Context from the author (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        Market review:
+
+        {{nodes.market.text}}
+
+        Financials review:
+
+        {{nodes.financials.text}}
+
+        Execution review:
+
+        {{nodes.execution.text}}
+
+        Rules:
+        - Use only what the reviewers wrote. Do not add facts, figures or criticism of your own.
+        - Order the fixes by their effect on a funding decision.
+        - For each weakness and each fix, name the review it comes from (market, financials, execution).
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Business plan critique
+
+        > (one sentence: this critique was produced by AI models from the plan's text alone; it is not
+        > investment or financial advice)
+
+        ## Overall impression
+        (3 to 5 sentences)
+
+        ## Strengths
+        (a list, at most 5 items)
+
+        ## Critical weaknesses
+        (a list, at most 6 items)
+
+        ## Questions a funder will ask
+        (a list, at most 8 items)
+
+        ## Fixes before sending
+        (a list, most important first)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.memo.text}}
+
+        {{nodes.market.text}}
+
+        {{nodes.financials.text}}
+
+        {{nodes.execution.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Business plan critique
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: business-plan-critique
+
+connections:
+  - {from: extract.text, to: market}
+  - {from: extract.text, to: financials}
+  - {from: extract.text, to: execution}
+  - {from: market.text, to: memo}
+  - {from: financials.text, to: memo}
+  - {from: execution.text, to: memo}
+  - {from: memo.text, to: report}
+  - {from: market.text, to: report}
+  - {from: financials.text, to: report}
+  - {from: execution.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

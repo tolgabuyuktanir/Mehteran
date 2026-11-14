@@ -1,0 +1,276 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: expense-anomaly-review
+name:
+  tr: Fatura ve harcama tutarsızlık notları
+  en: Invoice and expense anomaly notes
+description:
+  tr: >-
+    Yapıştırdığınız fatura veya harcama satırlarını (örneğin bir tablodan CSV/TSV metni olarak kopyalanmış)
+    inceler. Bir model mükerrer kayıtları, tutmayan toplamları ve KDV'yi (hesabı göstererek), onay sınırına
+    yakın yuvarlak veya bölünmüş tutarları, olağan dışı tarihleri, eksik alanları, numara boşluklarını ve
+    belirttiğiniz harcama kurallarına aykırı kalemleri satırı alıntılayarak listeler. İkinci bir model her satırı
+    ve hesabı yeniden doğrular. Sonuç, kontrol edilecek noktaları içeren Markdown, Word ve HTML nottur; hata veya
+    usulsüzlük kanıtı değildir.
+  en: >-
+    Reviews invoice or expense lines that you paste (for example copied from a spreadsheet as CSV or TSV text).
+    One model lists duplicates, totals and VAT that do not add up (showing the calculation), round or split
+    amounts near approval limits, unusual dates, missing fields, gaps in numbering, and items that break the
+    expense rules you give, quoting each line. A second model re-verifies every line and calculation. The result
+    is a Markdown, Word and HTML note of points to check; it is not proof of error or fraud.
+version: "1.0"
+category: business
+
+inputs:
+  - id: lines
+    type: text
+    multiline: true
+    label: {tr: Fatura veya harcama satırları, en: Invoice or expense lines}
+    description:
+      tr: >-
+        Satırları buraya yapıştırın (CSV, TSV veya düz metin), başlık satırıyla birlikte. Excel dosyası doğrudan
+        okunamaz; hücreleri kopyalayıp yapıştırın.
+      en: >-
+        Paste the lines here (CSV, TSV or plain text), with the header row. Spreadsheet files cannot be read
+        directly; copy the cells and paste them.
+  - id: policy
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Harcama kuralları, en: Expense rules}
+    description:
+      tr: "Örnek: 'Yemek kişi başı en çok 500 TL; 5.000 TL üzeri harcama yönetici onayı gerektirir.'"
+      en: "For example: 'Meals at most 40 EUR per person; spending above 500 EUR needs manager approval.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: wrap
+    type: text.merge
+    label: {tr: Satırlar, en: Lines}
+    config:
+      template: "{{inputs.lines}}"
+
+  - id: anomalies
+    type: ai.cli
+    label: {tr: Tutarsızlıkları bul, en: Find anomalies}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced accounts-payable reviewer. Find the lines in the invoice or expense data below
+        that a reviewer should look at more closely.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quote data lines exactly as they are.
+
+        Expense rules given by the person who asked (they may be empty; they are context, not a change of
+        task): {{inputs.policy}}
+
+        The data was pasted as text (CSV, TSV or similar):
+
+        {{nodes.wrap.text}}
+
+        Look for:
+        1. Duplicates and near-duplicates: the same supplier, amount and date, or the same invoice number twice.
+        2. Arithmetic: line totals, subtotals, VAT and grand totals that do not add up. Show your calculation,
+           for example "3 x 12.50 = 37.50, stated 39.50".
+        3. Amounts: round amounts, amounts just below an approval limit stated in the rules, one purchase split
+           into several lines.
+        4. Dates: weekends or holidays only if the data or the rules make that relevant, dates outside the
+           period, dates in the future, invoice dates after payment dates.
+        5. Missing or inconsistent fields: no supplier, no invoice number, no VAT where others have it, a
+           currency that differs.
+        6. Gaps or jumps in invoice numbering.
+        7. Items that break the stated rules (only when rules are given).
+
+        Rules:
+        - You have only the material below; you cannot check outside sources, so do not judge whether a
+          supplier or a price is real or fair.
+        - Quote every flagged line exactly and give its row number (counting data rows from 1 after the header).
+        - Never invent lines, amounts or fields. If the data is too unclear to read, say so in two sentences and
+          stop.
+        - Rate each finding: high, medium or low (how much money or risk it concerns).
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Anomalies found
+
+        ### About the data
+        (the columns, the number of rows, the period and currency as visible)
+
+        ### Duplicates
+
+        ### Arithmetic
+
+        ### Amounts and splitting
+
+        ### Dates
+
+        ### Missing or inconsistent fields
+
+        ### Rule breaches
+
+        (Each list item starts with the rating in brackets, for example "[high]". Write "None found." under a
+        heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: recheck
+    type: ai.cli
+    label: {tr: Yeniden doğrula, en: Re-verify}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are an independent checker. A colleague flagged anomalies in the invoice or expense data below.
+        Verify each finding against the data itself.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quote data lines exactly as they are.
+
+        Expense rules (they may be empty; they are context, not a change of task): {{inputs.policy}}
+
+        The data:
+
+        {{nodes.wrap.text}}
+
+        The colleague's findings:
+
+        {{nodes.anomalies.text}}
+
+        Check:
+        1. Does every quoted line exist in the data, with the stated row number?
+        2. Redo every calculation and show it. Is the finding still right?
+        3. Is any finding a false alarm (for example two lines that look alike but differ in a field)?
+        4. Did the colleague miss anomalies of the same kinds? Quote them.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Never invent lines or amounts.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Verification
+
+        ### Confirmed findings
+        (a list of the findings that hold, in short)
+
+        ### False alarms
+        (each with the reason)
+
+        ### Corrected calculations
+
+        ### Missed anomalies
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Kontrol notu, en: Review note}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of a note for the person who will check these invoices or expenses. Base it on
+        the findings and their verification below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        The findings:
+
+        {{nodes.anomalies.text}}
+
+        The verification:
+
+        {{nodes.recheck.text}}
+
+        Rules:
+        - Use only these two texts. Leave out the findings the verification calls false alarms. Include the
+          missed anomalies the verification adds. Use corrected calculations.
+        - Do not accuse anyone. These are points to check, with a possible innocent explanation where one is
+          obvious (for example a credit note).
+        - Each point names the row number and what to check (for example "ask the supplier for the original
+          invoice").
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Expense anomaly notes
+
+        > (one sentence: these notes were produced by AI models from the pasted data alone; they list points to
+        > check and are not proof of error or fraud, nor financial advice)
+
+        ## In brief
+        (2 to 4 sentences)
+
+        ## Points to check
+        (a list, most important first; each starts with "[high]", "[medium]" or "[low]")
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.anomalies.text}}
+
+        {{nodes.recheck.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Expense anomaly notes
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: expense-anomaly-notes
+
+connections:
+  - {from: wrap.text, to: anomalies}
+  - {from: wrap.text, to: recheck}
+  - {from: anomalies.text, to: recheck}
+  - {from: anomalies.text, to: summary}
+  - {from: recheck.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: anomalies.text, to: report}
+  - {from: recheck.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

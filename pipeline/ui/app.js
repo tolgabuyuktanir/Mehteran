@@ -1,6 +1,16 @@
 "use strict";
+// The translation app's interface: Setup, Books, the translation workflow and its instructions.
+// One file, two pages: index.html (./translate ui) mounts it on its own page; Mehteran's page mounts the same file
+// (served as /tr/app.js) inside its Workflows tab, with Mehteran's own Setup tab, language and session key:
+//   TranslationUI.mount(root, {apiBase, token, refreshToken, lang, strings, tabs, initial, onTab, onSetup, toast})
+// Everything the interface draws is inside root; every request goes to apiBase ("/api", or "/api/tr" in Mehteran).
+(() => {
 
 // ---------- interface texts (Turkish and English) ----------
+// Turkish and English are here, complete: the page of "./translate ui" has only this file. A host page (Mehteran)
+// may give the texts of another language (mount's "strings", setLang's second argument; the files are
+// pipeline/ui/locales/<code>.json, checked by "python3 -m mehteran.i18n_tools validate"). A key that such a language
+// lacks is shown in English. The server's own messages are Turkish or English: another language asks for English.
 const I18N = {
   tr: {
     app_title: "Tercüme Masası",
@@ -52,8 +62,8 @@ const I18N = {
     confirm_redo: "Seçili bölümlerde \"{stage}\" ve sonraki adımların çıktısı silinip yeniden üretilecek. Devam edilsin mi?",
     prompts_intro: "Modellere verilen yönergeler. Kendi kurallarınızı \"Yayın ilkeleri\" belgesine yazın; o belge bütün adımlarda geçerlidir. Adım talimatlarını yalnızca bir adımın işleyişini değiştirmek istediğinizde düzenleyin.",
     changed: "değiştirildi", restore_default: "Varsayılana dön",
-    required_placeholders: "Zorunlu yer tutucular: pipeline buralara kaynak metni, çeviriyi, sözlüğü ve diğer girdileri koyar",
-    prompts_note: "Adım talimatları İngilizcedir, çünkü modeller İngilizce talimatı daha tutarlı uygular. Cevap biçimini (JSON, etiketler) değiştirmeyin; pipeline cevabı bu biçimle okur. Yayın kurallarınızı buraya değil \"Yayın ilkeleri\" belgesine yazın.",
+    required_placeholders: "Zorunlu yer tutucular: uygulama buralara kaynak metni, çeviriyi, sözlüğü ve diğer girdileri koyar",
+    prompts_note: "Adım talimatları İngilizcedir, çünkü modeller İngilizce talimatı daha tutarlı uygular. Cevap biçimini (JSON, etiketler) değiştirmeyin; uygulama cevabı bu biçimle okur. Yayın kurallarınızı buraya değil \"Yayın ilkeleri\" belgesine yazın.",
     confirm_discard: "Kaydedilmemiş değişiklikler kaybolacak. Devam edilsin mi?",
     confirm_restore: "Yaptığınız değişiklikler silinip varsayılan talimat geri yüklenecek. Devam edilsin mi?",
     request_failed: "İstek başarısız ({status})",
@@ -77,7 +87,7 @@ const I18N = {
     awake_note: "Çeviri sürerken bilgisayar uyanık tutulur. Dizüstü bilgisayarda kapağı kapatmayın ve bilgisayarı prize takılı tutun; kapak kapanınca bilgisayar yine uyur ve çeviri durur.",
     awake_off: "Uyanık tutma kapalı (config.toml: keep_awake) veya bu bilgisayarda desteklenmiyor. Çeviri sürerken bilgisayarın uykuya geçmemesini siz sağlayın.",
     state_running: "Çalışıyor", state_waiting_quota: "Kullanım sınırı bekleniyor", state_finished: "Tamamlandı",
-    state_failed: "Hata ile durdu", state_stopped: "Durduruldu", state_interrupted: "Yarıda kesildi",
+    state_failed: "Hata ile durdu", state_stopped: "Durduruldu", state_interrupted: "Yarıda kaldı",
     hint_failed: "Hataları giderip \"Başlat\" düğmesine basın; tamamlanan bölümler korunur, kaldığı yerden devam eder.",
     hint_stopped: "\"Başlat\" düğmesine basınca kaldığı yerden devam eder.",
     hint_interrupted: "Çalıştırma kayıt bırakmadan kapandı. Bilgisayar uyumuş, kapanmış veya arayüzün terminal penceresi kapatılmış olabilir. \"Başlat\" düğmesine basınca kaldığı yerden devam eder.",
@@ -99,10 +109,10 @@ const I18N = {
     step_book: "İlk kitabınızı ekleyin", step_book_done: "{count} kitap", go_books: "Kitaplara git",
     all_done: "Hazırsınız. Kitaplar sekmesinden çeviri başlatabilirsiniz.",
     watching_signin: "Oturum açmanız bekleniyor; durum birkaç saniyede bir kendiliğinden yenileniyor.",
-    tab_workflow: "İş akışı", edit_workflow: "İş akışını düzenle",
-    workflow_title: "İş akışı",
+    tab_workflow: "Çeviri akışı", edit_workflow: "Çeviri akışını düzenle",
+    workflow_title: "Çeviri akışı",
     workflow_intro: "Adımlar soldan sağa birbirine bağlı kutulardır; her adım bir öncekinin metni üzerinde çalışır. Soldaki adım türlerini iki kutu arasındaki oka sürükleyin veya oktaki + düğmesine basın; istediğiniz kadar adım ekleyebilirsiniz. Tashih ve rapor yazan özel adımlar bulgu yazar, \u201cUygula\u201d bulguları metne işler. \u201cKontrol noktası\u201d ciddi sorun kalan bölümü seçtiğiniz önceki adıma geri gönderir. Kutuları sürükleyerek sırayı değiştirin; bir kutuya tıklayınca ayarlarını ve modellerini altta seçersiniz. Değişiklikler kendiliğinden kaydedilir.",
-    canvas_label: "İş akışı şeması", node_prep: "Hazırlık", prep_mark: "H",
+    canvas_label: "Çeviri akışı şeması", node_prep: "Hazırlık", prep_mark: "H",
     role_align: "Hizalama", role_glossary: "Sözlük", role_translate: "Tercüme eden", role_check: "Kontrol eden",
     insert_here: "Buraya adım ekle", drag_to_move: "Sırayı değiştirmek için sürükleyin",
     move_earlier: "Öne al", move_later: "Sonraya al", pick_one: "bir model",
@@ -122,7 +132,7 @@ const I18N = {
     problem_custom_title: "Bu özel adımın bir adı olmalı.",
     problem_unapplied: "Bu adımın bulguları uygulanmıyor: ondan sonra, metni değiştiren başka bir adımdan önce bir \u201cUygula\u201d adımı koyun.",
     problem_gate_target: "Bu kontrol noktasının geri göndereceği adımı seçin (kendinden önceki ve önceki kontrol noktasından sonraki bir adım).",
-    flow_has_problems: "İş akışında düzeltilmesi gereken {count} sorun var (kırmızı işaretli kutular). Düzeltilene kadar değişiklikler kaydedilmez.",
+    flow_has_problems: "Çeviri akışında düzeltilmesi gereken {count} sorun var (kırmızı işaretli kutular). Düzeltilene kadar değişiklikler kaydedilmez.",
     not_saved_problems: "Kaydedilmedi: kırmızı işaretli kutuları düzeltin",
     gate_note: "↺ {step} adımına, en çok {max} kez", loop_label: "↺ en çok {max} kez",
     type_round: "Tashih turu", type_review: "Tashih", type_apply: "Uygula", type_source_check: "Kaynak kontrolü", type_custom: "Özel adım", type_gate: "Kontrol noktası",
@@ -217,16 +227,16 @@ const I18N = {
     decide_wait: "Beklesin", decide_keep: "Böyle devam etsin", decide_stop: "Durdur",
     recover_switching: "Çeviri durduruluyor, ardından yeni modelle başlayacak…",
     stop_timeout: "Çeviri durdurulamadı. Biraz sonra tekrar deneyin.",
-    recover_done: "İş akışı güncellendi: {from} yerine {to}. Çeviri kaldığı yerden devam ediyor.",
+    recover_done: "Çeviri akışı güncellendi: {from} yerine {to}. Çeviri kaldığı yerden devam ediyor.",
     prompt_title_rules: "Yayın ilkeleri", prompt_title_translate: "İlk tercüme", prompt_title_review: "Tashih raporu",
     prompt_title_revise: "Bulguları uygulama", prompt_title_source_check: "Baştan kaynak kontrolü", prompt_title_custom_report: "Özel adım: rapor yazan", prompt_title_custom_rewrite: "Özel adım: metni düzelten", prompt_title_gate: "Kontrol noktası",
     prompt_title_glossary: "Terim sözlüğü", prompt_title_align: "Referans hizalama",
     all_steps: "Bütün adımlar",
     step_prompts: "Adım talimatları", step_prompts_hint: "İleri düzey. Her adımın görevini ve cevap biçimini tanımlar.",
     rules_intro: "Yayınevinizin kuralları. Bu belgenin tamamı bütün adımlarda modellere verilir ve önceliklidir. Türkçe yazabilirsiniz. Kuralları kısa ve kesin yazın: her madde tek bir şey söylesin; \"genellikle\", \"mümkünse\" gibi belirsiz sözlerden kaçının.",
-    prompt_used_in: "Kullanıldığı adımlar: {steps}", prompt_unused: "Şu anki iş akışında bu talimatı kullanan adım yok.", not_in_flow: "İş akışında yok",
-    prompt_custom_note: "Her özel adımın kendi görevi İş akışı sekmesinde, o adımın panelinde yazılır ve bu talimattaki {{instructions}} yerine konur. Burada bütün özel adımların ortak çerçevesi ve cevap biçimi var.",
-    ph_instructions: "özel adımın İş akışı sekmesinde yazılan görevi",
+    prompt_used_in: "Kullanıldığı adımlar: {steps}", prompt_unused: "Şu anki iş akışında bu talimatı kullanan adım yok.", not_in_flow: "Çeviri akışında yok",
+    prompt_custom_note: "Her özel adımın kendi görevi Çeviri akışı sekmesinde, o adımın panelinde yazılır ve bu talimattaki {{instructions}} yerine konur. Burada bütün özel adımların ortak çerçevesi ve cevap biçimi var.",
+    ph_instructions: "özel adımın Çeviri akışı sekmesinde yazılan görevi",
     prompts_apply: "Değişiklik, kaydettikten sonra işlenen bölümlerde geçerli olur. Daha önce işlenen bölümler, Kitaplar ekranında \"girdileri değişen bölümler\" olarak gösterilir ve oradan yeniden üretilebilir.",
     ph_target_lang: "hedef dilin adı", ph_source: "Türkçe kaynak bölüm", ph_translation: "denetlenen veya düzeltilen çeviri",
     ph_glossary: "bu bölümde geçen sözlük terimleri", ph_references: "referans tercümelerdeki karşılık pasajlar",
@@ -235,6 +245,9 @@ const I18N = {
     ph_rules: "Yayın ilkeleri belgesi", ph_segment: "hizalanacak Türkçe bölüm", ph_window: "referanstan numaralı paragraflar",
     ph_ref_lang: "referansın dili",
     setup_banner: "Araçlar henüz hazır değil. Çeviri başlatmadan önce kurulumu tamamlayın.", go_setup: "Kuruluma git",
+    zoom_toolbar: "Akış çiziminin görünümü", zoom_in: "Yakınlaştır", zoom_out: "Uzaklaştır", zoom_actual: "Gerçek boyut (%100)",
+    zoom_fit: "Sığdır", full_screen: "Tam ekran", full_screen_exit: "Tam ekrandan çık (Esc)", add_step: "Adım ekle",
+    zoom_hint: "Ctrl/⌘ + tekerlek ya da iki parmak: yakınlaştır · boş yeri sürükle: kaydır",
   },
   en: {
     app_title: "Translation Desk",
@@ -286,8 +299,8 @@ const I18N = {
     confirm_redo: "For the selected segments, the output of \"{stage}\" and of the later steps will be deleted and produced again. Continue?",
     prompts_intro: "The instructions given to the models. Write your own rules in the \"Publishing rules\" document; it applies to every step. Edit a step instruction only when you want to change how that step works.",
     changed: "changed", restore_default: "Restore default",
-    required_placeholders: "Required placeholders: the pipeline puts the source text, the translation, the glossary and the other inputs there",
-    prompts_note: "The step instructions are in English, because the models follow English instructions more consistently. Do not change the answer format (JSON, tags); the pipeline reads the answer in this format. Write your publishing rules in the \"Publishing rules\" document, not here.",
+    required_placeholders: "Required placeholders: the application puts the source text, the translation, the glossary and the other inputs there",
+    prompts_note: "The step instructions are in English, because the models follow English instructions more consistently. Do not change the answer format (JSON, tags); the application reads the answer in this format. Write your publishing rules in the \"Publishing rules\" document, not here.",
     confirm_discard: "Unsaved changes will be lost. Continue?",
     confirm_restore: "Your changes will be deleted and the default instructions restored. Continue?",
     request_failed: "Request failed ({status})",
@@ -310,7 +323,7 @@ const I18N = {
     quota_note: "For long books, the usage limits (quotas) of the subscriptions can run out. The translation does not stop then: requests to that tool wait, and continue by themselves when the limit resets. You see this below and on the Setup tab.",
     awake_note: "The computer is kept awake while the translation runs. On a laptop, keep the lid open and the computer plugged in; when the lid closes, the computer still sleeps and the translation stops.",
     awake_off: "Keeping awake is turned off (config.toml: keep_awake) or not supported on this computer. Make sure the computer does not sleep while the translation runs.",
-    state_running: "Running", state_waiting_quota: "Waiting for a usage limit", state_finished: "Finished",
+    state_running: "Running", state_waiting_quota: "Waiting for the usage limit", state_finished: "Finished",
     state_failed: "Stopped with errors", state_stopped: "Stopped", state_interrupted: "Interrupted",
     hint_failed: "Fix the errors, then click \"Start\"; finished segments are kept and the run continues where it stopped.",
     hint_stopped: "Click \"Start\" to continue where it stopped.",
@@ -333,10 +346,10 @@ const I18N = {
     step_book: "Add your first book", step_book_done: "{count} books", go_books: "Go to Books",
     all_done: "You are ready. Start a translation from the Books tab.",
     watching_signin: "Waiting for you to sign in; the status refreshes by itself every few seconds.",
-    tab_workflow: "Workflow", edit_workflow: "Edit workflow",
-    workflow_title: "Workflow",
+    tab_workflow: "Translation workflow", edit_workflow: "Edit the translation workflow",
+    workflow_title: "Translation workflow",
     workflow_intro: "The steps are boxes joined from left to right; each step works on the text of the step before it. Drag a step type from the left onto an arrow between two boxes, or press the + on an arrow; add as many steps as you like. Reviews and reporting custom steps write findings; \u201cApply\u201d puts the findings into the text. A \u201cCheckpoint\u201d sends a segment with serious problems back to an earlier step you choose. Drag the boxes to change the order; click a box to set its options and models below. Changes are saved automatically.",
-    canvas_label: "Workflow diagram", node_prep: "Preparation", prep_mark: "P",
+    canvas_label: "Translation workflow diagram", node_prep: "Preparation", prep_mark: "P",
     role_align: "Alignment", role_glossary: "Glossary", role_translate: "Translator", role_check: "Checker",
     insert_here: "Add a step here", drag_to_move: "Drag to change the order",
     move_earlier: "Move earlier", move_later: "Move later", pick_one: "one model",
@@ -356,7 +369,7 @@ const I18N = {
     problem_custom_title: "This custom step needs a name.",
     problem_unapplied: "The findings of this step are not applied: put an \u201cApply\u201d step after it, before any other step that changes the text.",
     problem_gate_target: "Choose the step this checkpoint sends back to (one before it, after the checkpoint before it).",
-    flow_has_problems: "The workflow has {count} problems to fix (boxes marked red). Changes are not saved until they are fixed.",
+    flow_has_problems: "The translation workflow has {count} problems to fix (boxes marked red). Changes are not saved until they are fixed.",
     not_saved_problems: "Not saved: fix the boxes marked red",
     gate_note: "↺ to {step}, at most {max} times", loop_label: "↺ at most {max} times",
     type_round: "Review round", type_review: "Review", type_apply: "Apply", type_source_check: "Source check", type_custom: "Custom step", type_gate: "Checkpoint",
@@ -451,16 +464,16 @@ const I18N = {
     decide_wait: "Let it wait", decide_keep: "Let it go on", decide_stop: "Stop",
     recover_switching: "Stopping the translation; it then starts with the new model…",
     stop_timeout: "The translation could not be stopped. Try again in a moment.",
-    recover_done: "Workflow updated: {to} instead of {from}. The translation continues where it stopped.",
+    recover_done: "Translation workflow updated: {to} instead of {from}. The translation continues where it stopped.",
     prompt_title_rules: "Publishing rules", prompt_title_translate: "First translation", prompt_title_review: "Review report",
     prompt_title_revise: "Applying the findings", prompt_title_source_check: "Source check from the start", prompt_title_custom_report: "Custom step: reporting", prompt_title_custom_rewrite: "Custom step: correcting", prompt_title_gate: "Checkpoint",
     prompt_title_glossary: "Terminology glossary", prompt_title_align: "Reference alignment",
     all_steps: "All steps",
     step_prompts: "Step instructions", step_prompts_hint: "Advanced. They define the task and the answer format of each step.",
     rules_intro: "The rules of your publishing house. This whole document is given to the models in every step and takes priority. You can write it in Turkish. Write short, exact rules: each item says one thing; avoid vague words such as \"usually\" or \"if possible\".",
-    prompt_used_in: "Used in: {steps}", prompt_unused: "No step of the current workflow uses this instruction.", not_in_flow: "Not in the workflow",
-    prompt_custom_note: "The task of each custom step is written in the Workflow tab, in the panel of that step, and replaces {{instructions}} in this instruction. This instruction holds the common frame and the answer format of all custom steps.",
-    ph_instructions: "the task of the custom step, written in the Workflow tab",
+    prompt_used_in: "Used in: {steps}", prompt_unused: "No step of the current workflow uses this instruction.", not_in_flow: "Not in the translation workflow",
+    prompt_custom_note: "The task of each custom step is written in the Translation workflow tab, in the panel of that step, and replaces {{instructions}} in this instruction. This instruction holds the common frame and the answer format of all custom steps.",
+    ph_instructions: "the task of the custom step, written in the Translation workflow tab",
     prompts_apply: "A change applies to the segments processed after you save it. Segments processed earlier are shown on the Books screen as \"segments with changed inputs\", and you can produce them again from there.",
     ph_target_lang: "name of the target language", ph_source: "the Turkish source segment", ph_translation: "the translation that is checked or corrected",
     ph_glossary: "the glossary terms that occur in this segment", ph_references: "the matching passages of the reference translations",
@@ -469,6 +482,9 @@ const I18N = {
     ph_rules: "the Publishing rules document", ph_segment: "the Turkish segment to align", ph_window: "numbered paragraphs from the reference",
     ph_ref_lang: "language of the reference",
     setup_banner: "The tools are not ready yet. Complete the setup before you start a translation.", go_setup: "Go to Setup",
+    zoom_toolbar: "View of the workflow diagram", zoom_in: "Zoom in", zoom_out: "Zoom out", zoom_actual: "Actual size (100 %)",
+    zoom_fit: "Fit", full_screen: "Full screen", full_screen_exit: "Exit full screen (Esc)", add_step: "Add step",
+    zoom_hint: "Ctrl/⌘ + wheel or pinch: zoom · drag empty space: pan",
   },
 };
 
@@ -481,14 +497,212 @@ let uiLang = (() => {
   return (navigator.language || "").toLowerCase().startsWith("tr") ? "tr" : "en";
 })();
 
+const serverLang = () => (LANGS.includes(uiLang) ? uiLang : "en");
+
 function L(key, vars = {}) {
-  const text = I18N[uiLang][key] ?? I18N.en[key] ?? key;
+  const text = (I18N[uiLang] || I18N.en)[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? vars[name] : `{${name}}`));
 }
 
+// After the interface was restarted, the page of the earlier start has an old session key. The page reads the
+// new key from its own address (the same origin), so that the work on the page goes on without a reload.
+async function ownRefreshToken() {
+  try {
+    const html = await (await fetch("/", { cache: "no-store" })).text();
+    const m = html.match(/window\.TOKEN = "([^"]+)"/);
+    if (!m || m[1] === window.TOKEN) return false;
+    window.TOKEN = m[1];
+    return true;
+  } catch { return false; }
+}
+
+// ---------- the panels (fixed markup; the texts come from I18N through data-i18n) ----------
+// The ids start with "tr-": the page that mounts the interface (Mehteran's) has ids of its own.
+const SETUP_PANEL = `
+  <section id="tr-setup" class="panel tr-panel" data-panel="setup" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="setup_title"></h2>
+        <p class="muted" data-i18n="setup_intro"></p>
+      </div>
+      <button type="button" class="btn" id="tr-tools-refresh" data-i18n="refresh_status"></button>
+    </div>
+    <section class="card box onboarding" id="tr-onboarding"></section>
+    <div id="tr-tools" class="tool-grid"></div>
+    <details class="sub flow-box">
+      <summary data-i18n="flow_title"></summary>
+      <div id="tr-flow" class="flow"></div>
+      <button type="button" class="btn small" data-goto="workflow" data-i18n="edit_workflow"></button>
+    </details>
+  </section>`;
+
+const PANELS = `
+  <section id="tr-workflow" class="panel tr-panel" data-panel="workflow" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="workflow_title"></h2>
+        <p class="muted intro-fold" data-i18n="workflow_intro"></p>
+      </div>
+      <div class="row">
+        <span id="tr-board-status" class="muted small" role="status" aria-live="polite"></span>
+        <button type="button" class="btn" id="tr-board-preset" data-i18n="preset"></button>
+      </div>
+    </div>
+    <div class="board" id="tr-board">
+      <aside class="palette" id="tr-palette"></aside>
+      <div class="board-main">
+        <div class="canvas-bar" role="toolbar" data-i18n-label="zoom_toolbar">
+          <span class="zoom-group">
+            <button type="button" class="zoom-btn" data-zoom="out" data-i18n-label="zoom_out" data-i18n-title="zoom_out">−</button>
+            <button type="button" class="zoom-btn zoom-level" data-zoom="actual" data-i18n-title="zoom_actual">100 %</button>
+            <button type="button" class="zoom-btn" data-zoom="in" data-i18n-label="zoom_in" data-i18n-title="zoom_in">+</button>
+          </span>
+          <button type="button" class="btn small" data-zoom="fit" data-i18n="zoom_fit"></button>
+          <button type="button" class="btn small" data-zoom="full" aria-pressed="false" data-i18n="full_screen"></button>
+          <span class="canvas-hint muted small" data-i18n="zoom_hint"></span>
+        </div>
+        <div class="canvas" id="tr-canvas" role="group"></div>
+        <div id="tr-board-warnings" class="board-warnings"></div>
+        <section class="card inspector" id="tr-inspector" aria-live="polite"></section>
+      </div>
+    </div>
+  </section>
+
+  <section id="tr-books" class="panel tr-panel" data-panel="books" role="tabpanel" hidden>
+    <div class="notice warn banner" id="tr-setup-banner" hidden>
+      <span data-i18n="setup_banner"></span>
+      <button type="button" class="btn small" data-goto="setup" data-i18n="go_setup"></button>
+    </div>
+    <div class="books">
+      <aside class="book-list">
+        <h2 data-i18n="tab_books"></h2>
+        <ul id="tr-book-list"></ul>
+        <form id="tr-new-book" class="stack">
+          <label for="tr-new-book-name" data-i18n="new_book"></label>
+          <div class="row">
+            <input id="tr-new-book-name" data-i18n-placeholder="new_book_placeholder" required>
+            <button type="submit" class="btn primary" data-i18n="add"></button>
+          </div>
+        </form>
+      </aside>
+      <div id="tr-book" class="book-detail"></div>
+    </div>
+  </section>
+
+  <section id="tr-prompts" class="panel tr-panel" data-panel="prompts" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="tab_prompts"></h2>
+        <p class="muted" data-i18n="prompts_intro"></p>
+      </div>
+    </div>
+    <div class="prompts">
+      <ul id="tr-prompt-list" class="prompt-list"></ul>
+      <div id="tr-prompt" class="prompt-editor"></div>
+    </div>
+  </section>
+
+  <dialog id="tr-reader" aria-labelledby="tr-reader-title">
+    <div class="dialog-head">
+      <h3 id="tr-reader-title"></h3>
+      <div class="row">
+        <a id="tr-reader-download" class="btn" href="#" data-i18n="download"></a>
+        <button type="button" class="btn" id="tr-reader-close" data-i18n="close"></button>
+      </div>
+    </div>
+    <pre id="tr-reader-text" class="reader"></pre>
+  </dialog>
+
+  <dialog id="tr-layout" aria-labelledby="tr-layout-title">
+    <form method="dialog" id="tr-layout-form">
+      <div class="dialog-head">
+        <h3 id="tr-layout-title" data-i18n="layout_title"></h3>
+        <button type="button" class="btn" data-act="layout-close" data-i18n="close"></button>
+      </div>
+      <div class="layout-body">
+        <p class="muted small" data-i18n="layout_intro"></p>
+        <section class="layout-part">
+          <h4 data-i18n="layout_template"></h4>
+          <p class="small" data-role="template-state"></p>
+          <div class="row">
+            <input type="file" id="tr-layout-template" accept=".docx,.dotx" aria-labelledby="tr-layout-template-label">
+            <span id="tr-layout-template-label" hidden data-i18n="layout_template"></span>
+            <button type="button" class="btn small" data-act="template-upload" data-i18n="upload"></button>
+            <button type="button" class="btn small danger" data-act="template-remove" data-i18n="layout_template_remove"></button>
+          </div>
+        </section>
+        <section class="layout-part">
+          <h4 data-i18n="layout_settings"></h4>
+          <p class="muted small" data-role="layout-scope"></p>
+          <div class="layout-grid">
+            <div class="stack"><label for="tr-layout-page_size" data-i18n="layout_page_size"></label><select id="tr-layout-page_size" name="page_size"></select></div>
+            <div class="stack"><label for="tr-layout-font_size" data-i18n="layout_font_size"></label><input id="tr-layout-font_size" name="font_size" type="number" min="8" max="16" step="0.5" required></div>
+            <div class="stack"><label for="tr-layout-line_spacing" data-i18n="layout_line_spacing"></label><input id="tr-layout-line_spacing" name="line_spacing" type="number" min="1" max="3" step="0.05" required></div>
+            <div class="stack"><label for="tr-layout-margin_top" data-i18n="layout_margin_top"></label><input id="tr-layout-margin_top" name="margin_top" type="number" min="0.5" max="5" step="0.1" required></div>
+            <div class="stack"><label for="tr-layout-margin_bottom" data-i18n="layout_margin_bottom"></label><input id="tr-layout-margin_bottom" name="margin_bottom" type="number" min="0.5" max="5" step="0.1" required></div>
+            <div class="stack"><label for="tr-layout-margin_side" data-i18n="layout_margin_side"></label><input id="tr-layout-margin_side" name="margin_side" type="number" min="0.5" max="5" step="0.1" required></div>
+            <div class="stack"><label for="tr-layout-font" data-i18n="layout_font"></label><input id="tr-layout-font" name="font" maxlength="60" data-i18n-placeholder="layout_automatic"></div>
+            <div class="stack"><label for="tr-layout-arabic_font" data-i18n="layout_arabic_font"></label><input id="tr-layout-arabic_font" name="arabic_font" maxlength="60" data-i18n-placeholder="layout_automatic"></div>
+          </div>
+          <label class="check"><input type="checkbox" name="justify"> <span data-i18n="layout_justify"></span></label>
+          <label class="check"><input type="checkbox" name="chapter_new_page"> <span data-i18n="layout_chapter_new_page"></span></label>
+          <p class="muted small" data-i18n="layout_fonts_note"></p>
+        </section>
+      </div>
+      <div class="dialog-foot row">
+        <button type="button" class="btn" data-act="layout-defaults" data-i18n="layout_defaults"></button>
+        <button type="submit" class="btn primary" data-i18n="save"></button>
+      </div>
+    </form>
+  </dialog>`;
+
+const ALL_TABS = ["setup", "books", "workflow", "prompts"];
+let mounted = false;
+
+// root: the element that gets the interface. options (all optional):
+//   apiBase       "/api" (its own server) or the prefix under which the host serves the same API ("/api/tr")
+//   token()       the session key; refreshToken(): reads a new one after a restart (true when it changed)
+//   lang          "tr" | "en", or another language with its texts in "strings" ({key: text}; English where a key
+//                 is missing); later changes come through setLang(lang, strings)
+//   tabs          the sections to show (Setup is left out when the host has its own); initial: the first one
+//   onTab(name)   called when a section is shown; onSetup(): a link to Setup when there is no Setup section
+//   toast(message, bad)   the host's message line
+// Returns {show(tab), setLang(lang), tab(), dirty()}. One interface per page.
+function mount(root, options = {}) {
+  if (mounted) throw new Error("TranslationUI is already mounted");
+  mounted = true;
+  const OPTS = { apiBase: "/api", token: () => window.TOKEN, refreshToken: ownRefreshToken, tabs: ALL_TABS,
+    onTab: () => {}, onSetup: null, toast: null, ...options };
+  if (OPTS.lang && OPTS.strings && !LANGS.includes(OPTS.lang)) I18N[OPTS.lang] = { ...OPTS.strings };
+  if (Object.hasOwn(I18N, OPTS.lang)) uiLang = OPTS.lang;
+  const TABS = ALL_TABS.filter((name) => OPTS.tabs.includes(name));
+  root.classList.add("tr-app");
+  root.innerHTML = (TABS.includes("setup") ? SETUP_PANEL : "") + PANELS
+    + (OPTS.toast ? "" : `<div id="tr-toast" class="toast" role="status" hidden></div>`);
+  const refreshToken = OPTS.refreshToken;
+  // A request path of the API ("/api/books") at the address where this page reaches it.
+  const apiUrl = (path) => OPTS.apiBase + path.slice("/api".length);
+
 // ---------- helpers ----------
-const $ = (sel, root = document) => root.querySelector(sel);
+const $ = (sel, scope = root) => scope.querySelector(sel);
+const $$ = (sel) => root.querySelectorAll(sel);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+// The width of progress bars: set from here, never as a style attribute (Mehteran's page forbids those).
+// A bar with a key (data-k) grows from the width it had at the last drawing (the book screen is drawn anew while a
+// translation runs); without one, or when the system asks for less motion, it is set at once.
+const lastWidths = new Map();
+function applyWidths(scope) {
+  if (!scope) return;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  scope.querySelectorAll("[data-w]").forEach((el) => {
+    const key = el.dataset.k, to = `${el.dataset.w}%`, from = key ? lastWidths.get(key) : null;
+    if (key) lastWidths.set(key, to);
+    if (!from || from === to || still) { el.style.width = to; return; }
+    el.style.width = from;
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.width = to; }));
+  });
+}
+const visible = () => root.isConnected && root.getClientRects().length > 0;
 
 function languageName(code) {
   try {
@@ -499,15 +713,15 @@ function languageName(code) {
 }
 
 async function api(method, path, body) {
-  const opts = { method, headers: { "X-Token": window.TOKEN, "X-Lang": uiLang } };
+  const opts = { method, headers: { "X-Token": OPTS.token(), "X-Lang": serverLang() } };
   if (body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
   }
-  let res = await fetch(path, opts);
+  let res = await fetch(apiUrl(path), opts);
   if (res.status === 403 && await refreshToken()) {
-    opts.headers["X-Token"] = window.TOKEN;
-    res = await fetch(path, opts);
+    opts.headers["X-Token"] = OPTS.token();
+    res = await fetch(apiUrl(path), opts);
   }
   let data = {};
   try { data = await res.json(); } catch { /* empty answer */ }
@@ -515,21 +729,10 @@ async function api(method, path, body) {
   return data;
 }
 
-// After the interface was restarted, the page of the earlier start has an old session key. The page reads the
-// new key from its own address (the same origin), so that the work on the page goes on without a reload.
-async function refreshToken() {
-  try {
-    const html = await (await fetch("/", { cache: "no-store" })).text();
-    const m = html.match(/window\.TOKEN = "([^"]+)"/);
-    if (!m || m[1] === window.TOKEN) return false;
-    window.TOKEN = m[1];
-    return true;
-  } catch { return false; }
-}
-
 let toastTimer;
 function toast(message, bad = false) {
-  const el = $("#toast");
+  if (OPTS.toast) return OPTS.toast(message, bad);
+  const el = $("#tr-toast");
   el.textContent = message;
   el.className = "toast" + (bad ? " bad" : "");
   el.hidden = false;
@@ -620,49 +823,56 @@ function textInput(stage) {
   const order = numberedSteps();
   return order.slice(0, order.indexOf(nodeOf(stage))).filter((s) => s === "translate" || nodeRole(s) === "text").pop();
 }
-const state = { settings: null, books: [], current: null, poll: null, prompts: [], prompt: null, toolPoll: null, tab: "setup",
-  openStep: {}, skipRefs: new Set(), toolsReady: null, dismissed: new Set(), recoverChoice: {} };
+const ZOOM_MIN = 0.4, ZOOM_MAX = 1.6;
+const state = { settings: null, books: [], current: null, poll: null, prompts: [], prompt: null, toolPoll: null, tab: "",
+  openStep: {}, skipRefs: new Set(), toolsReady: null, dismissed: new Set(), recoverChoice: {},
+  zoom: readZoom(), full: false };  // zoom: the diagram's zoom the user chose (null: fit to the width)
 
 // ---------- language and tabs ----------
 function applyStaticTexts() {
-  document.documentElement.lang = uiLang;
-  document.title = L("app_title");
-  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = L(el.dataset.i18n)));
-  document.querySelectorAll("[data-i18n-html]").forEach((el) => (el.innerHTML = L(el.dataset.i18nHtml)));  // fixed texts from I18N only
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => (el.placeholder = L(el.dataset.i18nPlaceholder)));
-  document.querySelectorAll("[data-ui-lang]").forEach((b) => b.classList.toggle("active", b.dataset.uiLang === uiLang));
+  $$("[data-i18n]").forEach((el) => (el.textContent = L(el.dataset.i18n)));
+  $$("[data-i18n-placeholder]").forEach((el) => (el.placeholder = L(el.dataset.i18nPlaceholder)));
+  $$("[data-i18n-label]").forEach((el) => el.setAttribute("aria-label", L(el.dataset.i18nLabel)));
+  $$("[data-i18n-title]").forEach((el) => el.setAttribute("title", L(el.dataset.i18nTitle)));
+  updateZoomTools();
 }
 
-document.querySelectorAll("[data-ui-lang]").forEach((b) => b.addEventListener("click", () => {
-  uiLang = b.dataset.uiLang;
-  try { localStorage.setItem("ui-lang", uiLang); } catch { /* storage unavailable */ }
+// A new interface language: the fixed texts at once, the shown section drawn again.
+function setLang(lang, strings) {
+  if (strings && !LANGS.includes(lang)) I18N[lang] = { ...strings };
+  if (!Object.hasOwn(I18N, lang)) return;
+  uiLang = lang;
   applyStaticTexts();
   if (state.tab === "workflow" && state.board) return renderBoard();
   if (state.tab === "prompts" && promptDirty()) return;  // keep the text that is being edited
   showTab(state.tab);
-}));
+}
 
 function showTab(name) {
+  if (!TABS.includes(name)) name = TABS.includes("books") ? "books" : TABS[0];
   if (state.tab === "prompts" && name !== "prompts" && promptDirty() && !confirm(L("confirm_discard"))) return;
+  if (name !== "workflow") setFull(false);
   state.tab = name;
-  document.querySelectorAll(".tab").forEach((t) => {
-    t.classList.toggle("active", t.dataset.tab === name);
-    t.setAttribute("aria-selected", String(t.dataset.tab === name));
-  });
-  document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== name));
-  history.replaceState(null, "", "#" + name);
+  $$(".tr-panel").forEach((p) => (p.hidden = p.dataset.panel !== name));
+  OPTS.onTab(name);
   if (name === "setup") loadTools();
   if (name === "workflow") loadBoard();
   if (name === "books") loadBooks();
   if (name === "prompts") loadPrompts();
 }
-document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
-document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
+// A link to another section; Setup is the host's when this interface has none.
+function goTo(name) {
+  if (name === "setup" && !TABS.includes("setup") && OPTS.onSetup) return OPTS.onSetup();
+  showTab(name);
+}
+$$("[data-goto]").forEach((b) => b.addEventListener("click", () => goTo(b.dataset.goto)));
+// The long introduction shows two lines; a click shows all of it.
+$$(".intro-fold").forEach((p) => p.addEventListener("click", () => p.classList.toggle("open")));
 
 // ---------- setup ----------
 async function loadTools() {
   clearTimeout(state.toolPoll);
-  if (!$("#tools").children.length) $("#tools").innerHTML = `<p class="muted">${esc(L("loading"))}</p>`;
+  if (!$("#tr-tools").children.length) $("#tr-tools").innerHTML = `<p class="muted">${esc(L("loading"))}</p>`;
   let data;
   try {
     [data, state.settings] = await Promise.all([api("GET", "/api/tools"), api("GET", "/api/settings")]);
@@ -671,9 +881,9 @@ async function loadTools() {
     else toast(e.message, true);
     return;
   }
-  $("#onboarding").innerHTML = onboardingHtml(data);
+  $("#tr-onboarding").innerHTML = onboardingHtml(data);
   setToolsReady(toolsReady(data));
-  $("#tools").innerHTML = data.tools.map((tool) => toolCard(tool, data.terminal)).join("");
+  $("#tr-tools").innerHTML = data.tools.map((tool) => toolCard(tool, data.terminal)).join("");
   renderFlow();
   state.toolsBusy = data.tools.some((tool) => tool.job && tool.job.running) || Boolean(data.all_job && data.all_job.running);
   // Keep refreshing while something installs, and for two minutes after a sign-in window was opened.
@@ -715,7 +925,7 @@ function onboardingHtml(data) {
       </li>`).join("")}</ol>`;
 }
 
-$("#onboarding").addEventListener("click", async (ev) => {
+if (TABS.includes("setup")) $("#tr-onboarding").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button");
   if (!b) return;
   if (b.dataset.gotoTab) return showTab(b.dataset.gotoTab);
@@ -776,7 +986,7 @@ function quotaLine(quota) {
     : `<div class="small muted">${esc(L("quota_last", { time: fmtTime(quota.since) }))}</div>`;
 }
 
-$("#tools").addEventListener("click", async (ev) => {
+if (TABS.includes("setup")) $("#tr-tools").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   const id = encodeURIComponent(b.dataset.id);
@@ -797,7 +1007,7 @@ $("#tools").addEventListener("click", async (ev) => {
     b.textContent = L("test");
   }
 });
-$("#tools").addEventListener("submit", async (ev) => {
+if (TABS.includes("setup")) $("#tr-tools").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const form = ev.target;
   const input = $("input", form);
@@ -805,7 +1015,7 @@ $("#tools").addEventListener("submit", async (ev) => {
   input.value = "";
   loadTools();
 });
-$("#tools-refresh").addEventListener("click", loadTools);
+if (TABS.includes("setup")) $("#tr-tools-refresh").addEventListener("click", loadTools);
 
 function renderFlow() {
   if (!state.settings) return;
@@ -814,7 +1024,7 @@ function renderFlow() {
     const providers = stages[stage] || [];
     return `<div class="step ${providers.length === 1 ? esc(providerOf(providers[0])) : ""}"><b>${esc(stageName(stage, true))}</b>${providers.map((p) => esc(modelLabel(p))).join(" + ")}</div>`;
   };
-  $("#flow").innerHTML = ["align", "glossary", ...numberedSteps()].map(step).join("")
+  $("#tr-flow").innerHTML = ["align", "glossary", ...numberedSteps()].map(step).join("")
     + `<div class="step human"><b>${numberedSteps().length + 1} · ${esc(L("human_step"))}</b>${esc(L("human_who"))}</div>`;
 }
 
@@ -825,7 +1035,7 @@ const toolsReady = (data) => data.tools.every((tool) => !tool.required || tool.i
 function setToolsReady(ready) {
   state.toolsReady = ready;
   try { localStorage.setItem("setup-ready", ready ? "1" : ""); } catch { /* storage unavailable */ }
-  $("#setup-banner").hidden = ready;
+  $("#tr-setup-banner").hidden = ready;
 }
 
 // ---------- books ----------
@@ -842,7 +1052,7 @@ async function loadBooks(soft = false) {
   if (!state.current && state.books.length) state.current = state.books[0].name;
   renderBookList();
   const book = state.books.find((b) => b.name === state.current);
-  const root = $("#book");
+  const root = $("#tr-book");
   if (soft && book && root.dataset.book === book.name && root.dataset.sig === bookSignature(book)) {
     // Only the live parts change: the form keeps its values, open sections and chosen files.
     const parts = { refs: refsHtml, live: liveHtml, results: resultsHtml };
@@ -851,6 +1061,7 @@ async function loadBooks(soft = false) {
       // A drop-down that the user is choosing from is not replaced under the pointer.
       if (el && !(el.contains(document.activeElement) && document.activeElement.tagName === "SELECT")) el.innerHTML = html(book);
     }
+    applyWidths(root);
     return loadLog(book);
   }
   renderBook();
@@ -861,21 +1072,21 @@ const bookSignature = (b) => JSON.stringify([b.running, b.prepared, b.source, b.
 
 function renderBookList() {
   $(".books").classList.toggle("no-books", !state.books.length);
-  $("#book-list").innerHTML = state.books.length
+  $("#tr-book-list").innerHTML = state.books.length
     ? state.books.map((b) => `<li><button type="button" data-book="${esc(b.name)}" class="${b.name === state.current ? "active" : ""}">
         <span>${esc(b.name)}</span>${b.running ? `<span class="dot" title="${esc(L("running"))}"></span>` : ""}</button></li>`).join("")
     : `<li class="muted small">${esc(L("no_books"))}</li>`;
 }
-$("#book-list").addEventListener("click", (ev) => {
+$("#tr-book-list").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-book]");
   if (!b) return;
   state.current = b.dataset.book;
   renderBookList();
   renderBook();
 });
-$("#new-book").addEventListener("submit", async (ev) => {
+$("#tr-new-book").addEventListener("submit", async (ev) => {
   ev.preventDefault();
-  const input = $("#new-book-name");
+  const input = $("#tr-new-book-name");
   const r = await act($("button", ev.target), () => api("POST", "/api/books", { name: input.value }));
   if (r) { input.value = ""; state.current = r.name; loadBooks(); }
 });
@@ -911,7 +1122,7 @@ function bookSteps(book) {
 function renderBook(keepOpen = false) {
   clearTimeout(state.poll);
   const book = state.books.find((b) => b.name === state.current);
-  const root = $("#book");
+  const root = $("#tr-book");
   if (!book) {
     root.dataset.book = "";
     root.innerHTML = state.books.length ? `<div class="empty">${esc(L("pick_book"))}</div>` : firstBookHtml();
@@ -951,6 +1162,7 @@ function renderBook(keepOpen = false) {
       <pre class="log" data-role="log">${esc(L("loading"))}</pre>
     </details>
     <section class="timeline" data-role="timeline" hidden></section>`;
+  applyWidths(root);
   loadLog(book);
   if (open === "run" && !book.running) loadEstimate(book);
 }
@@ -959,7 +1171,7 @@ function firstBookHtml() {
   return `<section class="welcome">
       <h2>${esc(L("first_book_title"))}</h2>
       <p>${esc(L("first_book_intro"))}</p>
-      <form id="first-book" class="row">
+      <form id="tr-first-book" class="row">
         <input name="name" placeholder="${esc(L("new_book_placeholder"))}" aria-label="${esc(L("new_book"))}" required>
         <button type="submit" class="btn primary">${esc(L("create_book"))}</button>
       </form>
@@ -1017,7 +1229,7 @@ function refsStepHtml(book) {
     <details>
       <summary>${esc(L("add_language"))}</summary>
       <form class="row" data-form="language">
-        <input name="code" placeholder="${esc(L("language_code"))}" maxlength="12" required style="max-width:160px">
+        <input name="code" placeholder="${esc(L("language_code"))}" maxlength="12" required class="lang-code">
         <input name="name" placeholder="${esc(L("language_name"))}" required>
         <button type="submit" class="btn">${esc(L("add_language_btn"))}</button>
       </form>
@@ -1053,8 +1265,8 @@ function runStepHtml(book, keep) {
     <p class="muted">${esc(L("run_intro"))}</p>
     <form data-form="run">
       <div class="run-grid">
-        <div class="stack"><label for="run-lang">${esc(L("target_language"))}</label><select id="run-lang" name="lang" required>${langOptions(["tr"], keep?.lang || "")}</select></div>
-        <div class="stack"><label for="run-segments">${esc(L("segments"))}</label><input id="run-segments" name="segments" placeholder="${esc(L("segments_placeholder"))}" value="${esc(keep?.segments || "")}"></div>
+        <div class="stack"><label for="tr-run-lang">${esc(L("target_language"))}</label><select id="tr-run-lang" name="lang" required>${langOptions(["tr"], keep?.lang || "")}</select></div>
+        <div class="stack"><label for="tr-run-segments">${esc(L("segments"))}</label><input id="tr-run-segments" name="segments" placeholder="${esc(L("segments_placeholder"))}" value="${esc(keep?.segments || "")}"></div>
       </div>
       ${book.references.length ? `<fieldset class="stack plain"><legend>${esc(L("use_refs"))}</legend>
         <div class="checks">${book.references.map((r) => `
@@ -1063,10 +1275,10 @@ function runStepHtml(book, keep) {
       <details data-role="advanced" ${keep?.advanced ? "open" : ""}>
         <summary>${esc(L("advanced"))}</summary>
         <div class="run-grid">
-          <div class="stack"><label for="run-until">${esc(L("until"))}</label>
-            <select id="run-until" name="until">${state.settings.stage_order.map((s) => `<option value="${esc(s)}" ${s === (keep?.until || "assemble") ? "selected" : ""}>${esc(stageName(s))}</option>`).join("")}</select></div>
-          <div class="stack"><label for="run-redo">${esc(L("redo"))}</label>
-            <select id="run-redo" name="redo"><option value="">—</option>${state.settings.stage_order.slice(1, -1).map((s) => `<option value="${esc(s)}" ${s === keep?.redo ? "selected" : ""}>${esc(stageName(s))}</option>`).join("")}</select></div>
+          <div class="stack"><label for="tr-run-until">${esc(L("until"))}</label>
+            <select id="tr-run-until" name="until">${state.settings.stage_order.map((s) => `<option value="${esc(s)}" ${s === (keep?.until || "assemble") ? "selected" : ""}>${esc(stageName(s))}</option>`).join("")}</select></div>
+          <div class="stack"><label for="tr-run-redo">${esc(L("redo"))}</label>
+            <select id="tr-run-redo" name="redo"><option value="">—</option>${state.settings.stage_order.slice(1, -1).map((s) => `<option value="${esc(s)}" ${s === keep?.redo ? "selected" : ""}>${esc(stageName(s))}</option>`).join("")}</select></div>
         </div>
         <p class="muted small">${L("first_book_hint")}</p>
       </details>
@@ -1115,7 +1327,7 @@ function railHtml(book, lang) {
         <span class="node" aria-hidden="true"></span>
         <div class="rail-body">
           <div class="rail-head"><span>${esc(stageName(stage))}</span><span class="muted small">${providers.map((p) => esc(modelLabel(p))).join(" + ")}</span><span class="count">${n}/${m}</span></div>
-          <div class="track"><div class="fill" style="width:${m ? Math.round((100 * n) / m) : 0}%"></div></div>
+          <div class="track"><div class="fill" data-k="rail:${esc(book.name)}:${esc(lang)}:${esc(stage)}" data-w="${m ? Math.round((100 * n) / m) : 0}"></div></div>
           ${reviews.map((r) => reviewLine(r)).join("")}
         </div>
       </li>`;
@@ -1292,7 +1504,7 @@ function loadEstimate(book) {
 }
 
 const exportUrl = (book, lang, kind, fmt) =>
-  `/api/books/${encodeURIComponent(book)}/export/${encodeURIComponent(lang)}/${kind}/${fmt}?token=${encodeURIComponent(window.TOKEN)}&lang=${uiLang}`;
+  apiUrl(`/api/books/${encodeURIComponent(book)}/export/${encodeURIComponent(lang)}/${kind}/${fmt}?token=${encodeURIComponent(OPTS.token())}&lang=${serverLang()}`);
 
 function exportLinks(book, lang) {
   const links = (kind, formats) => formats.map((fmt) =>
@@ -1310,7 +1522,7 @@ const LAYOUT_DEFAULTS = { page_size: "A4", margin_top: 2.5, margin_bottom: 2.5, 
   font_size: 12, line_spacing: 1.15, justify: true, chapter_new_page: true };
 
 function fillLayout(values, template) {
-  const form = $("#layout-form");
+  const form = $("#tr-layout-form");
   form.page_size.innerHTML = state.settings.page_sizes.map((s) => `<option value="${esc(s)}">${esc(L("page_" + s))}</option>`).join("");
   for (const [key, value] of Object.entries(values)) {
     if (!form[key]) continue;
@@ -1325,10 +1537,10 @@ function fillLayout(values, template) {
 async function openLayout() {
   try { state.settings = await api("GET", "/api/settings"); } catch (e) { return toast(e.message, true); }
   fillLayout(state.settings.export, state.settings.word_template);
-  $("#layout").showModal();
+  $("#tr-layout").showModal();
 }
 
-$("#layout-form").addEventListener("submit", async (ev) => {
+$("#tr-layout-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const form = ev.target;
   const body = {};
@@ -1337,13 +1549,13 @@ $("#layout-form").addEventListener("submit", async (ev) => {
     body[key] = el.type === "checkbox" ? el.checked : el.type === "number" ? Number(el.value) : el.value;
   }
   const r = await act(form.querySelector('[type="submit"]'), () => api("PUT", "/api/export", body));
-  if (r) $("#layout").close();
+  if (r) $("#tr-layout").close();
 });
 
-$("#layout").addEventListener("click", async (ev) => {
+$("#tr-layout").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
-  if (b.dataset.act === "layout-close") return $("#layout").close();
+  if (b.dataset.act === "layout-close") return $("#tr-layout").close();
   if (b.dataset.act === "layout-defaults") return fillLayout(LAYOUT_DEFAULTS, state.settings.word_template);
   if (b.dataset.act === "template-remove") {
     if (!confirm(L("layout_confirm_remove"))) return;
@@ -1351,17 +1563,17 @@ $("#layout").addEventListener("click", async (ev) => {
     return;
   }
   if (b.dataset.act === "template-upload") {
-    const file = $("#layout-template").files[0];
+    const file = $("#tr-layout-template").files[0];
     if (!file) return toast(L("layout_pick_file"), true);
     await refreshToken();
     const r = await act(b, async () => {
-      const res = await fetch(`/api/export/template?file=${encodeURIComponent(file.name)}`,
-        { method: "PUT", headers: { "X-Token": window.TOKEN, "X-Lang": uiLang }, body: file });
+      const res = await fetch(apiUrl(`/api/export/template?file=${encodeURIComponent(file.name)}`),
+        { method: "PUT", headers: { "X-Token": OPTS.token(), "X-Lang": serverLang() }, body: file });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || L("upload_failed"));
       return data;
     });
-    if (r) { $("#layout-template").value = ""; openLayout(); }
+    if (r) { $("#tr-layout-template").value = ""; openLayout(); }
   }
 });
 
@@ -1385,7 +1597,7 @@ function readRunForm() {
 }
 
 const outputUrl = (book, lang, kind, download) =>
-  `/api/books/${encodeURIComponent(book)}/output/${encodeURIComponent(lang)}/${kind}?token=${encodeURIComponent(window.TOKEN)}&lang=${uiLang}${download ? "&download=1" : ""}`;
+  apiUrl(`/api/books/${encodeURIComponent(book)}/output/${encodeURIComponent(lang)}/${kind}?token=${encodeURIComponent(OPTS.token())}&lang=${serverLang()}${download ? "&download=1" : ""}`);
 
 // The steps of the last run as bars, read from the log: done (green), failed (red), still to do (grey).
 function renderTimeline(steps) {
@@ -1400,11 +1612,12 @@ function renderTimeline(steps) {
       return `<li class="tl-row ${state}">
           <span class="tl-name">${esc(stageName(s.stage))}</span>
           <div class="track" role="img" aria-label="${s.done}/${s.total}">
-            <div class="fill" style="width:${pct(s.done)}%"></div><div class="fill failed" style="width:${pct(s.failed)}%"></div>
+            <div class="fill" data-k="tl:${esc(s.stage)}" data-w="${pct(s.done)}"></div><div class="fill failed" data-k="tlf:${esc(s.stage)}" data-w="${pct(s.failed)}"></div>
           </div>
           <span class="tl-count">${s.done}/${s.total}${s.failed ? ` <span class="badge bad">${esc(L("timeline_failed", { count: s.failed }))}</span>` : ""}</span>
         </li>`;
     }).join("")}</ol>`;
+  applyWidths(box);
 }
 
 async function loadLog(book) {
@@ -1449,9 +1662,9 @@ async function upload(container, book) {
   const button = $('[data-act="upload"]', container);
   const xhr = new XMLHttpRequest();
   await refreshToken();  // the interface may have been restarted since the page was opened
-  xhr.open("PUT", `${path}?file=${encodeURIComponent(file.name)}`);
-  xhr.setRequestHeader("X-Token", window.TOKEN);
-  xhr.setRequestHeader("X-Lang", uiLang);
+  xhr.open("PUT", apiUrl(`${path}?file=${encodeURIComponent(file.name)}`));
+  xhr.setRequestHeader("X-Token", OPTS.token());
+  xhr.setRequestHeader("X-Lang", serverLang());
   xhr.upload.onprogress = (e) => { bar.hidden = false; bar.value = e.lengthComputable ? (100 * e.loaded) / e.total : 50; };
   xhr.onloadend = () => {
     button.disabled = false;
@@ -1465,7 +1678,7 @@ async function upload(container, book) {
   xhr.send(file);
 }
 
-$("#book").addEventListener("click", async (ev) => {
+$("#tr-book").addEventListener("click", async (ev) => {
   const b = ev.target.closest("[data-act]");
   if (!b) return;
   const book = state.current;
@@ -1539,22 +1752,22 @@ $("#book").addEventListener("click", async (ev) => {
   }
 });
 
-$("#book").addEventListener("change", (ev) => {
+$("#tr-book").addEventListener("change", (ev) => {
   if (ev.target.dataset.role === "recover-to") state.recoverChoice[ev.target.closest(".recover").dataset.from] = ev.target.value;
   if (!ev.target.closest('form[data-form="run"]')) return;
   const book = state.books.find((b) => b.name === state.current);
   if (book && !book.running) loadEstimate(book);
 });
-$("#book").addEventListener("input", (ev) => {
+$("#tr-book").addEventListener("input", (ev) => {
   if (ev.target.name !== "segments") return;
   const book = state.books.find((b) => b.name === state.current);
   if (book && !book.running) loadEstimate(book);
 });
 
-$("#book").addEventListener("submit", async (ev) => {
+$("#tr-book").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const f = ev.target;
-  if (f.id === "first-book") {
+  if (f.id === "tr-first-book") {
     const r = await act($("button", f), () => api("POST", "/api/books", { name: f.elements.name.value }));
     if (r) { state.current = r.name; loadBooks(); }
     return;
@@ -1578,24 +1791,24 @@ async function openOutput(book, lang, kind) {
   try {
     const res = await fetch(outputUrl(book, lang, kind, false));
     if (!res.ok) throw new Error(L("output_unreadable"));
-    $("#reader-title").textContent = `${book} · ${languageName(lang)} · ${L(kind)}`;
-    $("#reader-text").textContent = await res.text();
-    $("#reader-download").href = exportUrl(book, lang, kind, "md");
-    $("#reader-download").hidden = false;
-    $("#reader").showModal();
+    $("#tr-reader-title").textContent = `${book} · ${languageName(lang)} · ${L(kind)}`;
+    $("#tr-reader-text").textContent = await res.text();
+    $("#tr-reader-download").href = exportUrl(book, lang, kind, "md");
+    $("#tr-reader-download").hidden = false;
+    $("#tr-reader").showModal();
   } catch (e) { toast(e.message, true); }
 }
 // The source as the pipeline reads it. The first call prepares the book (it splits the text; no model is called).
 async function openPreview(button, book) {
   const r = await act(button, () => api("POST", `/api/books/${encodeURIComponent(book)}/preview`));
   if (!r) return;
-  $("#reader-title").textContent = `${book} · ${L("preview_title", { count: r.segments })}`;
-  $("#reader-text").textContent = r.text;
-  $("#reader-download").hidden = true;
-  $("#reader").showModal();
+  $("#tr-reader-title").textContent = `${book} · ${L("preview_title", { count: r.segments })}`;
+  $("#tr-reader-text").textContent = r.text;
+  $("#tr-reader-download").hidden = true;
+  $("#tr-reader").showModal();
   loadBooks(true);
 }
-$("#reader-close").addEventListener("click", () => $("#reader").close());
+$("#tr-reader-close").addEventListener("click", () => $("#tr-reader").close());
 
 // ---------- workflow board ----------
 const PRESET_FLOW = ["review1", "revise1", "source_check", "review2", "reconcile"];
@@ -1769,8 +1982,10 @@ function edgeHtml(at) {
   const menu = open ? `<div class="edge-menu" role="menu">${STEP_TYPES.map(([kind, mark]) =>
     `<button type="button" role="menuitem" data-act="insert" data-kind="${kind}" data-at="${at}"><span aria-hidden="true">${mark}</span> ${esc(L("type_" + kind))}</button>`).join("")}
     </div>` : "";
-  return `<div class="edge slot" data-at="${at}">${full ? "" : `<button type="button" class="edge-add" data-act="edge-add"
-      data-at="${at}" aria-label="${esc(L("insert_here"))}" title="${esc(L("insert_here"))}" aria-expanded="${open}">+</button>`}${menu}</div>`;
+  // The place before the delivery says what the + does; the places between the steps show only the +.
+  const last = at === state.flow.length;
+  return `<div class="edge slot${last ? " last" : ""}" data-at="${at}">${full ? "" : `<button type="button" class="edge-add${last ? " wide" : ""}"
+      data-act="edge-add" data-at="${at}" aria-label="${esc(L("insert_here"))}" title="${esc(L("insert_here"))}" aria-expanded="${open}"><span aria-hidden="true">+</span>${last ? ` ${esc(L("add_step"))}` : ""}</button>`}${menu}</div>`;
 }
 
 // The arcs of the checkpoints: from the checkpoint back to the node it sends segments to.
@@ -1865,7 +2080,7 @@ function renderInspector() {
   const notes = [state.problems[node] && `<div class="notice bad">${esc(state.problems[node])}</div>`,
     ...(state.warn[node] || []).map((text) => `<div class="notice warn">${esc(text)}</div>`)].filter(Boolean).join("");
   const fixed = node === "prep" || node === "translate" ? `<p class="muted small">${esc(L("node_locked"))}</p>` : "";
-  $("#inspector").innerHTML = `
+  $("#tr-inspector").innerHTML = `
     <div class="inspector-head">
       <div><h3>${esc(node === "human" ? nodeTitle(node) : `${nodeMark(node)} · ${nodeTitle(node)}`)}</h3>
         <p class="muted small">${esc(nodeDescription(node))}</p>${fixed}</div>
@@ -1888,7 +2103,7 @@ function renderPalette() {
       <p class="muted small">${esc(L("flow_changed_note"))}</p>
     </section>
     <div><h3 class="palette-title">${esc(L("palette_models"))}</h3><p class="muted small">${esc(L("palette_models_hint"))}</p></div>`;
-  $("#palette").innerHTML = steps + Object.keys(state.palette).map((provider) => {
+  $("#tr-palette").innerHTML = steps + Object.keys(state.palette).map((provider) => {
     const auto = state.auto[provider] || [];
     const card = (name, custom) => `
       <div class="model-card ${esc(provider)}" draggable="true" data-name="${esc(name)}">
@@ -1916,7 +2131,7 @@ function renderPalette() {
 
 // The element that has the focus, found again after the board is drawn anew.
 function focusKey(el) {
-  if (!el?.dataset || !el.closest?.("#workflow")) return null;
+  if (!el?.dataset || !el.closest?.("#tr-workflow")) return null;
   if (el.dataset.node) return `.node[data-node="${el.dataset.node}"]`;
   if (el.dataset.field) return `[data-field="${el.dataset.field}"]${el.type === "radio" ? `[value="${CSS.escape(el.value)}"]` : ""}`;
   if (!el.dataset.act && !el.dataset.kind) return null;
@@ -1932,28 +2147,155 @@ function renderBoard(keepPanel = false) {
   state.warn = {};
   for (const [, text, step] of boardWarnings(state.board)) if (step) (state.warn[step] ||= []).push(text);
   renderPalette();
-  const canvas = $("#canvas");
-  const scroll = canvas.scrollLeft;
+  const canvas = $("#tr-canvas");
+  const scroll = [canvas.scrollLeft, canvas.scrollTop];
   canvas.setAttribute("aria-label", L("canvas_label"));
   canvas.innerHTML = `<div class="canvas-track">${[nodeHtml("prep"), edgeHtml(null), nodeHtml("translate"), edgeHtml(0),
     ...state.flow.flatMap((step, i) => [nodeHtml(step, i), edgeHtml(i + 1)]), nodeHtml("human")].join("")}</div>`;
-  // A long workflow is drawn smaller to fit (down to 80 %); beyond that the canvas scrolls sideways.
   const track = $(".canvas-track", canvas);
   track.classList.toggle("has-loops", state.flow.some((n) => stageKind(n) === "gate"));
-  track.style.zoom = Math.max(0.8, Math.min(1, (canvas.clientWidth - 40) / track.scrollWidth));
-  drawLoops(track);
-  canvas.scrollLeft = scroll;
+  applyZoom(track);
+  [canvas.scrollLeft, canvas.scrollTop] = scroll;
   if (state.reveal) {
     state.reveal = false;
     $(`.node[data-node="${state.selected}"]`, canvas)?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
   // A step's warnings are on its node and in the panel below; here only those of the whole workflow.
   const problems = Object.keys(state.problems).length;
-  $("#board-warnings").innerHTML = (problems ? `<div class="notice bad">${esc(L("flow_has_problems", { count: problems }))}</div>` : "")
+  $("#tr-board-warnings").innerHTML = (problems ? `<div class="notice bad">${esc(L("flow_has_problems", { count: problems }))}</div>` : "")
     + boardWarnings(state.board).filter(([, , step]) => !step).map(([tone, text]) => `<div class="notice ${tone}">${esc(text)}</div>`).join("");
   if (keepPanel) return;
   renderInspector();
-  if (focus) document.querySelector(`#workflow ${focus}`)?.focus({ preventScroll: true });
+  if (focus) $(`#tr-workflow ${focus}`)?.focus({ preventScroll: true });
+}
+
+// ---------- the diagram's view: zoom, pan, full screen ----------
+// The zoom the user chose (buttons, Ctrl/⌘ + wheel, a trackpad pinch) is kept in this browser; without one the
+// diagram fits the width of the canvas. Every redraw keeps it; the arcs of the checkpoints are drawn in the
+// diagram's own units, so they follow.
+const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
+function readZoom() {
+  try {
+    const z = Number(localStorage.getItem("tr-zoom"));
+    return z >= ZOOM_MIN && z <= ZOOM_MAX ? z : null;
+  } catch { return null; }
+}
+function saveZoom() {
+  try {
+    if (state.zoom) localStorage.setItem("tr-zoom", String(state.zoom)); else localStorage.removeItem("tr-zoom");
+  } catch { /* storage unavailable: kept until the page is reloaded */ }
+}
+const currentZoom = () => Number($("#tr-canvas .canvas-track")?.style.zoom) || state.zoom || 1;
+
+// The zoom at which the whole diagram fits the canvas (its width; in full screen its height too).
+function fitZoom(canvas, track) {
+  const before = track.style.zoom;
+  track.style.zoom = 1;
+  const width = track.scrollWidth, height = track.scrollHeight;
+  track.style.zoom = before;
+  return clampZoom(Math.min((canvas.clientWidth - 56) / width, (canvas.clientHeight - 56) / height, 1.1));
+}
+
+// Without a chosen zoom: fit, but never smaller than readable (85 %); a longer workflow scrolls sideways.
+function applyZoom(track) {
+  track.style.zoom = String(state.zoom || Math.max(0.85, fitZoom($("#tr-canvas"), track)));
+  drawLoops(track);
+  updateZoomTools();
+}
+
+// A new zoom around a point of the canvas (the pointer), so that this point stays where it is.
+function setZoom(z, at) {
+  const canvas = $("#tr-canvas"), track = $(".canvas-track", canvas);
+  if (!track) return;
+  const before = currentZoom();
+  z = clampZoom(z);
+  const box = canvas.getBoundingClientRect();
+  const px = at ? at.x - box.left : canvas.clientWidth / 2, py = at ? at.y - box.top : canvas.clientHeight / 2;
+  const fx = (canvas.scrollLeft + px) / before, fy = (canvas.scrollTop + py) / before;
+  state.zoom = z;
+  saveZoom();
+  track.style.zoom = String(z);
+  drawLoops(track);
+  canvas.scrollLeft = fx * z - px;
+  canvas.scrollTop = fy * z - py;
+  updateZoomTools();
+}
+
+function updateZoomTools() {
+  const level = $('.canvas-bar [data-zoom="actual"]');
+  if (level) level.textContent = `${Math.round(currentZoom() * 100)} %`;
+  const full = $('.canvas-bar [data-zoom="full"]');
+  if (full) {
+    full.textContent = L(state.full ? "full_screen_exit" : "full_screen");
+    full.setAttribute("aria-pressed", String(state.full));
+  }
+}
+
+// Full screen: the diagram and the panel of the selected step fill the window; Esc ends it.
+function setFull(on) {
+  if (state.full === on) return;
+  state.full = on;
+  $("#tr-board").classList.toggle("full", on);
+  document.documentElement.classList.toggle("tr-full-open", on);
+  updateZoomTools();
+  if (state.board && state.tab === "workflow") renderBoard(true);
+}
+
+$(".canvas-bar").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-zoom]");
+  if (!b) return;
+  const action = b.dataset.zoom;
+  if (action === "full") return setFull(!state.full);
+  if (action === "in") return setZoom(currentZoom() * 1.2);
+  if (action === "out") return setZoom(currentZoom() / 1.2);
+  if (action === "actual") return setZoom(1);
+  const canvas = $("#tr-canvas"), track = $(".canvas-track", canvas);
+  if (!track) return;
+  setZoom(fitZoom(canvas, track));  // the whole diagram in view
+  canvas.scrollLeft = canvas.scrollTop = 0;
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && state.full && !ev.defaultPrevented && !document.querySelector("dialog[open]")) setFull(false);
+});
+{
+  const canvas = $("#tr-canvas");
+  // Ctrl/⌘ + wheel and a trackpad pinch (a wheel event with ctrlKey) zoom; a plain wheel scrolls.
+  canvas.addEventListener("wheel", (ev) => {
+    if (!(ev.ctrlKey || ev.metaKey)) return;
+    ev.preventDefault();
+    setZoom(currentZoom() * Math.min(1.25, Math.max(0.8, Math.exp(-ev.deltaY * 0.01))), { x: ev.clientX, y: ev.clientY });
+  }, { passive: false });
+  let pinch = null;  // Safari's own pinch events
+  canvas.addEventListener("gesturestart", (ev) => { ev.preventDefault(); pinch = currentZoom(); });
+  canvas.addEventListener("gesturechange", (ev) => {
+    ev.preventDefault();
+    if (pinch) setZoom(pinch * ev.scale, { x: ev.clientX, y: ev.clientY });
+  });
+  canvas.addEventListener("gestureend", () => (pinch = null));
+  // Dragging empty space pans; the steps, the + buttons and their menus keep their own clicks and drags.
+  let pan = null;
+  canvas.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0 || ev.target.closest(".node, button, .edge-menu, input, select, textarea, a")) return;
+    pan = { x: ev.clientX, y: ev.clientY, left: canvas.scrollLeft, top: canvas.scrollTop, moved: false };
+  });
+  window.addEventListener("pointermove", (ev) => {
+    if (!pan) return;
+    const dx = ev.clientX - pan.x, dy = ev.clientY - pan.y;
+    if (!pan.moved && Math.hypot(dx, dy) < 4) return;
+    pan.moved = true;
+    canvas.classList.add("panning");
+    canvas.scrollLeft = pan.left - dx;
+    canvas.scrollTop = pan.top - dy;
+  });
+  window.addEventListener("pointerup", () => {
+    if (pan?.moved) {  // the click that ends a pan selects nothing
+      const swallow = (e) => e.stopPropagation();
+      canvas.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => canvas.removeEventListener("click", swallow, true));
+    }
+    pan = null;
+    canvas.classList.remove("panning");
+  });
 }
 
 function selectNode(node) {
@@ -2063,7 +2405,7 @@ function changed(keepPanel = false) {
   saveTimer = setTimeout(saveBoard, 250);
 }
 async function saveBoard() {
-  const status = $("#board-status");
+  const status = $("#tr-board-status");
   status.textContent = L("saving");
   status.className = "muted small";
   if (Object.keys(state.problems || {}).length) {
@@ -2091,7 +2433,7 @@ let dragging = null;  // { index } | { kind } | { model }
 
 function endDrag() {
   dragging = null;
-  const canvas = $("#canvas");
+  const canvas = $("#tr-canvas");
   canvas.classList.remove("dragging-step");
   canvas.querySelectorAll(".over, .dragging").forEach((el) => el.classList.remove("over", "dragging"));
 }
@@ -2108,7 +2450,7 @@ function dropPlace(ev) {
   return node.dataset.node === "human" ? state.flow.length : 0;
 }
 
-$("#palette").addEventListener("dragstart", (ev) => {
+$("#tr-palette").addEventListener("dragstart", (ev) => {
   const type = ev.target.closest(".step-type");
   const card = ev.target.closest(".model-card");
   if (type) {
@@ -2116,26 +2458,26 @@ $("#palette").addEventListener("dragstart", (ev) => {
     dragging = { kind: type.dataset.kind };
     ev.dataTransfer.effectAllowed = "copy";
     ev.dataTransfer.setData("text/plain", type.dataset.kind);
-    $("#canvas").classList.add("dragging-step");
+    $("#tr-canvas").classList.add("dragging-step");
   } else if (card) {
     dragging = { model: card.dataset.name };
     ev.dataTransfer.effectAllowed = "copy";
     ev.dataTransfer.setData("text/plain", card.dataset.name);
   }
 });
-$("#canvas").addEventListener("dragstart", (ev) => {
+$("#tr-canvas").addEventListener("dragstart", (ev) => {
   const node = ev.target.closest(".node[data-index]");
   if (!node) return;
   dragging = { index: Number(node.dataset.index) };
   ev.dataTransfer.effectAllowed = "move";
   ev.dataTransfer.setData("text/plain", node.dataset.node);
   node.classList.add("dragging");
-  $("#canvas").classList.add("dragging-step");
+  $("#tr-canvas").classList.add("dragging-step");
 });
 document.addEventListener("dragend", endDrag);
-$("#canvas").addEventListener("dragover", (ev) => {
+$("#tr-canvas").addEventListener("dragover", (ev) => {
   if (!dragging) return;
-  const canvas = $("#canvas");
+  const canvas = $("#tr-canvas");
   canvas.querySelectorAll(".over").forEach((el) => el.classList.remove("over"));
   if (dragging.model) {
     const role = ev.target.closest(".node-role");
@@ -2150,7 +2492,7 @@ $("#canvas").addEventListener("dragover", (ev) => {
   ev.dataTransfer.dropEffect = dragging.kind ? "copy" : "move";
   canvas.querySelector(`.edge.slot[data-at="${at}"]`)?.classList.add("over");
 });
-$("#canvas").addEventListener("drop", (ev) => {
+$("#tr-canvas").addEventListener("drop", (ev) => {
   if (!dragging) return;
   ev.preventDefault();
   const drag = dragging;
@@ -2165,13 +2507,13 @@ $("#canvas").addEventListener("drop", (ev) => {
   }
 });
 
-$("#canvas").addEventListener("click", (ev) => {
+$("#tr-canvas").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (b?.dataset.act === "edge-add") {
     const at = Number(b.dataset.at);
     state.addAt = state.addAt === at ? null : at;
     renderBoard();
-    if (state.addAt !== null) $(`#canvas .edge-menu button`)?.focus();
+    if (state.addAt !== null) $(`#tr-canvas .edge-menu button`)?.focus();
     return;
   }
   if (b?.dataset.act === "insert") return addStep(b.dataset.kind, Number(b.dataset.at));
@@ -2182,12 +2524,13 @@ $("#canvas").addEventListener("click", (ev) => {
     renderBoard();
   }
 });
-$("#canvas").addEventListener("keydown", (ev) => {
+$("#tr-canvas").addEventListener("keydown", (ev) => {
   if (ev.key === "Escape" && state.addAt !== null && state.addAt !== undefined) {
+    ev.preventDefault();  // not the end of the full screen
     const at = state.addAt;
     state.addAt = null;
     renderBoard();
-    $(`#canvas .edge-add[data-at="${at}"]`)?.focus();
+    $(`#tr-canvas .edge-add[data-at="${at}"]`)?.focus();
     return;
   }
   const node = ev.target.closest(".node");
@@ -2196,7 +2539,7 @@ $("#canvas").addEventListener("keydown", (ev) => {
     selectNode(node.dataset.node);
   }
 });
-$("#inspector").addEventListener("click", (ev) => {
+$("#tr-inspector").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   const index = state.flow.indexOf(state.selected);
@@ -2206,7 +2549,7 @@ $("#inspector").addEventListener("click", (ev) => {
 });
 // The fields of a custom node or a checkpoint. Text is saved after a pause in typing, without drawing the panel anew.
 let typing;
-$("#inspector").addEventListener("input", (ev) => {
+$("#tr-inspector").addEventListener("input", (ev) => {
   const field = ev.target.dataset?.field;
   const node = state.selected;
   if (!field || !state.flow.includes(node)) return;
@@ -2216,7 +2559,7 @@ $("#inspector").addEventListener("input", (ev) => {
   clearTimeout(typing);
   typing = setTimeout(() => changed(true), 600);
 });
-$("#inspector").addEventListener("change", (ev) => {
+$("#tr-inspector").addEventListener("change", (ev) => {
   if (ev.target.dataset?.act === "effort") return setEffort(ev.target.dataset.stage, ev.target.dataset.name, ev.target.value);
   const field = ev.target.dataset?.field;
   const node = state.selected;
@@ -2227,14 +2570,14 @@ $("#inspector").addEventListener("change", (ev) => {
 });
 
 // A step type from the palette can also be clicked (or chosen with the keyboard): it is put at the end.
-$("#palette").addEventListener("keydown", (ev) => {
+$("#tr-palette").addEventListener("keydown", (ev) => {
   const type = ev.target.closest(".step-type");
   if (type && (ev.key === "Enter" || ev.key === " ")) {
     ev.preventDefault();
     addStep(type.dataset.kind);
   }
 });
-$("#palette").addEventListener("submit", (ev) => {
+$("#tr-palette").addEventListener("submit", (ev) => {
   ev.preventDefault();
   const form = ev.target;
   const input = $("input", form);
@@ -2245,7 +2588,7 @@ $("#palette").addEventListener("submit", (ev) => {
   input.value = "";
   changed();
 });
-$("#palette").addEventListener("click", async (ev) => {
+$("#tr-palette").addEventListener("click", async (ev) => {
   const type = ev.target.closest(".step-type");
   if (type) return addStep(type.dataset.kind);
   const b = ev.target.closest("button[data-act]");
@@ -2265,7 +2608,7 @@ $("#palette").addEventListener("click", async (ev) => {
 // Only the models that the user added by name are saved; the tools list the others themselves.
 const customModels = () => Object.fromEntries(Object.entries(state.palette)
   .map(([provider, models]) => [provider, models.filter((m) => !(state.auto[provider] || []).includes(m))]));
-$("#board-preset").addEventListener("click", () => {
+$("#tr-board-preset").addEventListener("click", () => {
   if (!confirm(L("confirm_preset"))) return;
   state.flow = [...PRESET_FLOW];
   state.nodes = {};
@@ -2295,7 +2638,7 @@ async function loadPrompts() {
 
 const promptDirty = () => {
   const p = state.prompts.find((x) => x.name === state.prompt);
-  const text = $("#prompt textarea");
+  const text = $("#tr-prompt textarea");
   return Boolean(p && text && text.value !== p.text);
 };
 
@@ -2308,14 +2651,14 @@ function renderPrompts() {
       <span class="pl-steps">${esc(p.name === "rules" ? L("all_steps") : usedIn(p) || L("not_in_flow"))}</span></button></li>`;
   const rules = state.prompts.filter((p) => p.name === "rules");
   const steps = state.prompts.filter((p) => p.name !== "rules");
-  $("#prompt-list").innerHTML = `${rules.map(item).join("")}
+  $("#tr-prompt-list").innerHTML = `${rules.map(item).join("")}
     <li class="pl-group">${esc(L("step_prompts"))}<span>${esc(L("step_prompts_hint"))}</span></li>
     ${steps.map(item).join("")}`;
 
   const p = state.prompts.find((x) => x.name === state.prompt);
   const isRules = p.name === "rules";
-  $("#prompt").className = "card prompt-editor";
-  $("#prompt").innerHTML = `
+  $("#tr-prompt").className = "card prompt-editor";
+  $("#tr-prompt").innerHTML = `
     <div class="row prompt-head">
       <div>
         <h3>${esc(L("prompt_title_" + p.name))}</h3>
@@ -2336,21 +2679,21 @@ function renderPrompts() {
     <p class="small muted">${esc(L("prompts_apply"))}</p>`;
 }
 
-$("#prompt-list").addEventListener("click", (ev) => {
+$("#tr-prompt-list").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-name]");
   if (!b) return;
   if (promptDirty() && !confirm(L("confirm_discard"))) return;
   state.prompt = b.dataset.name;
   renderPrompts();
 });
-$("#prompt").addEventListener("input", (ev) => {
+$("#tr-prompt").addEventListener("input", (ev) => {
   if (ev.target.matches("textarea")) $('[data-role="prompt-dirty"]').hidden = !promptDirty();
 });
 async function savePrompt(button) {
-  const r = await act(button, () => api("PUT", `/api/prompts/${encodeURIComponent(state.prompt)}`, { text: $("#prompt textarea").value }));
+  const r = await act(button, () => api("PUT", `/api/prompts/${encodeURIComponent(state.prompt)}`, { text: $("#tr-prompt textarea").value }));
   if (r) loadPrompts();
 }
-$("#prompt").addEventListener("click", async (ev) => {
+$("#tr-prompt").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   if (b.dataset.act === "save") return savePrompt(b);
@@ -2361,16 +2704,59 @@ $("#prompt").addEventListener("click", async (ev) => {
   }
 });
 document.addEventListener("keydown", (ev) => {
-  if (state.tab === "prompts" && (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") {
+  if (state.tab === "prompts" && visible() && (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") {
     ev.preventDefault();
-    savePrompt($('#prompt [data-act="save"]'));
+    savePrompt($('#tr-prompt [data-act="save"]'));
   }
 });
 
 // ---------- start ----------
 applyStaticTexts();
-const startReady = (() => { try { return localStorage.getItem("setup-ready") === "1"; } catch { return false; } })();
-showTab(["setup", "workflow", "books", "prompts"].includes(location.hash.slice(1)) ? location.hash.slice(1) : startReady ? "books" : "setup");
+showTab(OPTS.initial);
 if (state.tab !== "setup") {
   api("GET", "/api/tools").then((data) => setToolsReady(toolsReady(data))).catch(() => {});
 }
+return {
+  show: showTab,
+  setLang,
+  tab: () => state.tab,
+  dirty: () => state.tab === "prompts" && promptDirty(),
+};
+}
+
+// ---------- its own page (./translate ui): the header with the tabs and the language switch ----------
+function standalone() {
+  const main = document.querySelector("main[data-translation-app]");
+  if (!main) return;
+  const tabs = [...document.querySelectorAll(".top .tab[data-tab]")];
+  const langButtons = [...document.querySelectorAll("[data-ui-lang]")];
+  const headerTexts = () => {
+    document.documentElement.lang = uiLang;
+    document.title = L("app_title");
+    document.querySelectorAll(".top [data-i18n]").forEach((el) => (el.textContent = L(el.dataset.i18n)));
+    langButtons.forEach((b) => b.classList.toggle("active", b.dataset.uiLang === uiLang));
+  };
+  headerTexts();
+  const ready = (() => { try { return localStorage.getItem("setup-ready") === "1"; } catch { return false; } })();
+  const hash = location.hash.slice(1);
+  const ui = mount(main, {
+    initial: ALL_TABS.includes(hash) ? hash : ready ? "books" : "setup",
+    onTab: (name) => {
+      tabs.forEach((t) => {
+        t.classList.toggle("active", t.dataset.tab === name);
+        t.setAttribute("aria-selected", String(t.dataset.tab === name));
+      });
+      history.replaceState(null, "", "#" + name);
+    },
+  });
+  tabs.forEach((t) => t.addEventListener("click", () => ui.show(t.dataset.tab)));
+  langButtons.forEach((b) => b.addEventListener("click", () => {
+    try { localStorage.setItem("ui-lang", b.dataset.uiLang); } catch { /* storage unavailable */ }
+    ui.setLang(b.dataset.uiLang);
+    headerTexts();
+  }));
+}
+
+window.TranslationUI = { mount };
+standalone();
+})();

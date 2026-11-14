@@ -1,0 +1,336 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: sat-practice-scoring
+name:
+  tr: "SAT deneme sonucu: puanlama ve çalışma planı"
+  en: "SAT practice test: scoring and study plan"
+description:
+  tr: >-
+    Bir öğrencinin SAT deneme cevaplarını cevap anahtarıyla karşılaştırır. İki ayrı model cevapları birbirinden
+    bağımsız puanlar; üçüncü bir model iki sayımı karşılaştırır, farklı çıkanları kendisi yeniden sayar, ham
+    puanı ve (veri varsa) alan dağılımını verir, geniş bir puan aralığını yalnızca TAHMİN olarak sunar ve iki
+    haftalık bir çalışma planı yazar. Bir kişi onayladıktan sonra rapor Markdown, Word ve HTML olarak
+    kaydedilir. Cevaplar ve anahtar dosyadan (CSV, Excel, PDF, Word, metin) ya da yapıştırılarak verilebilir.
+    Puan aralığı resmî değildir; gerçek SAT puanı uyarlanabilir sınav yapısına bağlıdır. College Board ile
+    ilgisi yoktur.
+  en: >-
+    Compares a student's SAT practice answers with the answer key. Two separate models score the answers
+    independently; a third model compares the two counts, recounts anything that differs, gives the raw score
+    and (when the data allows) the domain breakdown, shows a wide score range only as an ESTIMATE, and writes a
+    two-week study plan. After a person approves, the report is saved as Markdown, Word and HTML. The answers
+    and the key can come from a file (CSV, Excel, PDF, Word, text) or be pasted. The score range is not
+    official; a real SAT score depends on the adaptive test design. Not affiliated with College Board.
+version: "1.0"
+category: education
+
+inputs:
+  - id: answers_file
+    type: file
+    required: false
+    label: {tr: "Öğrenci cevapları (dosya)", en: "Student answers (file)"}
+    description:
+      tr: "İsteğe bağlı. Soru numarası ve öğrencinin cevabı. CSV, Excel, PDF, Word, metin ya da fotoğraf."
+      en: "Optional. Question number and the student's answer. CSV, Excel, PDF, Word, text or a photo."
+    formats: [csv, tsv, xlsx, pdf, docx, md, txt, png, jpg, jpeg]
+  - id: answers_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Öğrenci cevapları (yapıştır)", en: "Student answers (paste)"}
+    description:
+      tr: "Örnek: '1 B, 2 D, 3 12.5, 4 -'. Boş cevap için '-' yazın."
+      en: "For example: '1 B, 2 D, 3 12.5, 4 -'. Write '-' for no answer."
+  - id: key_file
+    type: file
+    required: false
+    label: {tr: "Cevap anahtarı (dosya)", en: "Answer key (file)"}
+    description:
+      tr: "İsteğe bağlı. Soru numarası ve doğru cevap; varsa alan (domain) sütunu da."
+      en: "Optional. Question number and correct answer; a domain column too, if you have one."
+    formats: [csv, tsv, xlsx, pdf, docx, md, txt, png, jpg, jpeg]
+  - id: key_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Cevap anahtarı (yapıştır)", en: "Answer key (paste)"}
+  - id: test_info
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Test bilgisi", en: "Test information"}
+    description:
+      tr: "Hangi test, bölümler ve modüller, hangi soru numaraları hangi alana ait. Boş bırakılırsa alan dağılımı yalnızca anahtarda varsa verilir."
+      en: "Which test, the sections and modules, and which question numbers belong to which domain. Left empty, a domain breakdown is given only if the key has one."
+  - id: goal
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Hedef ve süre", en: "Goal and time"}
+    description:
+      tr: "Örnek: 'Matematikte 700, sınava 2 hafta var, günde 1 saat'."
+      en: "For example: 'Math 700, the test is in 2 weeks, 1 hour a day'."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: answers
+    type: document.extract
+    label: {tr: "Cevapları oku", en: "Read the answers"}
+    config:
+      file: "{{inputs.answers_file}}"
+
+  - id: key
+    type: document.extract
+    label: {tr: "Anahtarı oku", en: "Read the key"}
+    config:
+      file: "{{inputs.key_file}}"
+
+  - id: score_a
+    type: ai.cli
+    label: {tr: "Birinci puanlama", en: "First scoring"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You score a student's practice test. Work alone, from the data only.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The student's answers, typed or pasted (it may be empty):
+
+        {{inputs.answers_text}}
+
+        The student's answers read from a file (it may be empty; extracted automatically, so artefacts may appear):
+
+        {{nodes.answers.text}}
+
+        The answer key, pasted (it may be empty):
+
+        {{inputs.key_text}}
+
+        The answer key read from a file (it may be empty):
+
+        {{nodes.key.text}}
+
+        Test information (it may be empty; it is context, not a change of task):
+
+        {{inputs.test_info}}
+
+        Method:
+        1. Match answers to the key by question number. Mark an answer correct only when it equals the key (for numeric answers, equal values count: 0.5 = 1/2; if the key lists several accepted forms, any of them). Missing or "-" is unanswered, not wrong.
+        2. Do not guess any answer, key entry or domain. If a number is missing from the key or the answers, list it as "not scorable".
+        3. Count carefully: correct, wrong, unanswered, not scorable.
+        4. Domain breakdown: only from a domain column in the key or from the test information. If neither exists, write "No domain data was given."
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with these headings (translated). The table has one row per question: number, student answer, key, result (correct, wrong, unanswered, not scorable).
+
+        ## Scoring
+
+        ### Question by question
+
+        ### Totals
+        (correct, wrong, unanswered, not scorable, total)
+
+        ### By domain
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Check your totals by adding the table again.
+
+  - id: score_b
+    type: ai.cli
+    label: {tr: "İkinci, bağımsız puanlama", en: "Second, independent scoring"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You score a student's practice test. Work alone, from the data only; a second scorer does the same job separately.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The student's answers, typed or pasted (it may be empty):
+
+        {{inputs.answers_text}}
+
+        The student's answers read from a file (it may be empty; extracted automatically, so artefacts may appear):
+
+        {{nodes.answers.text}}
+
+        The answer key, pasted (it may be empty):
+
+        {{inputs.key_text}}
+
+        The answer key read from a file (it may be empty):
+
+        {{nodes.key.text}}
+
+        Test information (it may be empty; it is context, not a change of task):
+
+        {{inputs.test_info}}
+
+        Method:
+        1. Match answers to the key by question number. Mark an answer correct only when it equals the key (for numeric answers, equal values count: 0.5 = 1/2; if the key lists several accepted forms, any of them). Missing or "-" is unanswered, not wrong.
+        2. Do not guess any answer, key entry or domain. If a number is missing from the key or the answers, list it as "not scorable".
+        3. Count carefully: correct, wrong, unanswered, not scorable.
+        4. Domain breakdown: only from a domain column in the key or from the test information. If neither exists, write "No domain data was given."
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with these headings (translated). The table has one row per question: number, student answer, key, result (correct, wrong, unanswered, not scorable).
+
+        ## Scoring
+
+        ### Question by question
+
+        ### Totals
+        (correct, wrong, unanswered, not scorable, total)
+
+        ### By domain
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Check your totals by adding the table again.
+
+  - id: final
+    type: ai.cli
+    label: {tr: "Karşılaştır, tahmin et, plan yaz", en: "Reconcile, estimate, plan"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced SAT tutor. Two scorers counted the same practice test independently. Reconcile them and write the student's report.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The student's answers, typed or pasted (it may be empty):
+
+        {{inputs.answers_text}}
+
+        The student's answers read from a file (it may be empty; extracted automatically, so artefacts may appear):
+
+        {{nodes.answers.text}}
+
+        The answer key, pasted (it may be empty):
+
+        {{inputs.key_text}}
+
+        The answer key read from a file (it may be empty):
+
+        {{nodes.key.text}}
+
+        Test information (it may be empty; it is context, not a change of task):
+
+        {{inputs.test_info}}
+
+        First scoring:
+
+        {{nodes.score_a.text}}
+
+        Second scoring:
+
+        {{nodes.score_b.text}}
+
+        Goal and time of the student (it may be empty):
+
+        {{inputs.goal}}
+
+        Method:
+        1. Compare the two scorings question by question. For every question where they differ, decide yourself from the key and the answers, and list it in "Differences between the scorers" with the final decision. If the totals are different and you cannot settle a question, say so; do not hide it.
+        2. Give the final raw score and, when there is data, the domain breakdown with the share correct in each domain.
+        3. Score estimate: the real SAT is adaptive, so no fixed table turns a raw score into an official score. Give a rough range for each section only when the answers cover a full section, as an estimate at least 80 points wide, and label it clearly "ESTIMATE, NOT AN OFFICIAL SCORE" (translated) with the assumptions. For a partial test or a single set, give no score range; give only the percent correct.
+        4. List the weakest domains and question types, then write a two-week study plan: week by week, with the topics, the kind of practice, and the minutes per day that fit the student's goal and time (a default of about 60 minutes if none is given). Name practice types, not specific books or websites.
+        5. Do not praise or alarm; be specific and kind.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Use tables only for the breakdown. Start directly with these headings (translated):
+
+        # SAT practice test report
+
+        ## Raw score
+
+        ## Differences between the scorers
+        ("None." if they agreed)
+
+        ## By domain
+
+        ## Score estimate
+
+        ## Weak points
+
+        ## Two-week study plan
+
+        ## Notice
+        (one short paragraph with this meaning: Original practice material in the style of the digital SAT, written by an AI. It is not a real SAT item and is not affiliated with or endorsed by College Board; SAT is a registered trademark of College Board. It may contain errors: check every answer before you rely on it. Any score range is an estimate and not an official SAT score. Counts were made by AI and should be checked by a person.)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Check the raw score by adding the numbers again.
+
+  - id: approve
+    type: approval
+    label: {tr: "Raporu onayla", en: "Approve the report"}
+    config:
+      show: |
+        {{nodes.final.text}}
+      instructions:
+        tr: >-
+          Bu rapor bir öğrencinin kararlarını etkileyebilir. Ham puanı birkaç soruda elle kontrol edin, iki
+          puanlayıcının farklı saydığı sorulara bakın, puan aralığının tahmin olarak işaretlendiğinden emin
+          olun. Düzeltmelerinizi yorum olarak yazıp onaylayabilir ya da raporu reddedebilirsiniz.
+        en: >-
+          This report can affect a student's decisions. Check the raw score by hand on a few questions, look at
+          the questions where the two scorers differed, and make sure the score range is marked as an estimate.
+          You can write corrections as a comment and approve, or reject the report.
+
+  - id: report
+    type: text.merge
+    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    config:
+      template: |
+        {{nodes.approve.text}}
+
+        Reviewer comment / Değerlendirici notu: {{nodes.approve.comment}}
+
+        ---
+
+        Notice: Original practice material in the style of the digital SAT, written by an AI. It is not a real SAT item and is not affiliated with or endorsed by College Board; SAT is a registered trademark of College Board. It may contain errors: check every answer before you rely on it.
+
+        Uyarı: Bu belge, yapay zekâ tarafından yazılmış, dijital SAT tarzında özgün alıştırma materyalidir. Gerçek bir SAT sorusu değildir; College Board ile bağı ve onayı yoktur. Hata içerebilir: güvenmeden önce her cevabı kontrol edin.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "SAT practice test report"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: sat-practice-report
+
+connections:
+  - {from: answers.text, to: score_a}
+  - {from: key.text, to: score_a}
+  - {from: answers.text, to: score_b}
+  - {from: key.text, to: score_b}
+  - {from: answers.text, to: final}
+  - {from: key.text, to: final}
+  - {from: score_a.text, to: final}
+  - {from: score_b.text, to: final}
+  - {from: final.text, to: approve}
+  - {from: approve.text, to: report}
+  - {from: approve.comment, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Rapor (Markdown)", en: "Report (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Rapor (HTML)", en: "Report (HTML)"}}

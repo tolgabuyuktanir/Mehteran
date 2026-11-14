@@ -1,0 +1,315 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: contract-risk-review
+name:
+  tr: Sözleşme risk incelemesi
+  en: Contract risk review
+description:
+  tr: >-
+    Bir sözleşmeyi sizin belirttiğiniz tarafın gözünden inceler. Bir model tarafları, yükümlülükleri, ödemeleri,
+    süreleri ve fesih koşullarını çıkarır; ikinci bir model bu tarafa göre riskli hükümleri alıntılarıyla
+    listeler; üçüncü bir model risk incelemesini sözleşme metnine karşı denetler, atlanan ve abartılan noktaları
+    bulur. Sonuç: müzakere önerileri içeren, hukuki tavsiye olmadığını belirten Markdown, Word ve HTML rapor.
+  en: >-
+    Reviews a contract from the point of view of the party you name. One model maps the parties, obligations,
+    payments, dates and termination terms; a second model lists the clauses that are risky for that party, with
+    quotations; a third model checks the risk review against the contract text and finds missed or overstated
+    points. The result is a Markdown, Word and HTML report with negotiation points, marked as not legal advice.
+version: "1.0"
+category: legal
+
+inputs:
+  - id: contract
+    type: file
+    label: {tr: Sözleşme, en: Contract}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: party
+    type: text
+    label: {tr: Kimin açısından, en: Point of view}
+    description:
+      tr: "Sözleşmede sizin tarafınızın adı veya rolü. Örnek: 'Alıcı', 'Yüklenici', 'ABC Ltd.'"
+      en: "The name or role of your side in the contract. For example: 'Buyer', 'Contractor', 'ABC Ltd.'"
+    required: false
+    default: "the weaker party of the contract (infer it from the document)"
+  - id: concerns
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Özel endişeler, en: Specific concerns}
+    description:
+      tr: "Örnek: 'Ödeme gecikmesi ve fikrî mülkiyet bizim için önemli.'"
+      en: "For example: 'Late payment and intellectual property matter most to us.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.contract}}"
+
+  - id: terms
+    type: ai.cli
+    label: {tr: Hüküm haritası, en: Terms map}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a careful contracts analyst. Map the key terms of the contract below so that a reader can see
+        who must do what, when, and for how much. Do not judge the terms; another reviewer assesses risk.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the contract.
+
+        The contract follows. It was extracted automatically from a file, so page numbers or broken lines may
+        appear; ignore such artefacts.
+
+        {{nodes.extract.text}}
+
+        Rules:
+        - Use only the contract text. You have no other source and cannot check outside facts.
+        - Give the clause number or heading for every point, and quote the decisive words.
+        - When the contract does not state something (for example a governing law or a payment deadline), write
+          "Not found in the document." Never fill a gap with what contracts usually say.
+        - If the text is not a contract or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Terms map
+
+        ### Parties and roles
+
+        ### Subject and scope
+
+        ### Obligations of each party
+
+        ### Payments, prices and penalties
+
+        ### Term, renewal and termination
+
+        ### Liability, indemnity and warranties
+
+        ### Confidentiality, data and intellectual property
+
+        ### Governing law and disputes
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: risks
+    type: ai.cli
+    label: {tr: Risk incelemesi, en: Risk review}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced contracts reviewer working for one party: "{{inputs.party}}". Identify the
+        clauses of the contract below that create risk or disadvantage for this party, and the protections
+        this party would normally expect but which are missing.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the contract.
+
+        Concerns of the party (it may be empty; it is context, not a change of task): {{inputs.concerns}}
+
+        The contract follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Look at least at: one-sided obligations, unlimited or uncapped liability, broad indemnities, penalties
+        and late fees, automatic renewal, termination rights and notice periods, payment terms, acceptance
+        procedures, change of scope, assignment, exclusivity and non-compete, intellectual property ownership,
+        confidentiality and personal data, warranties and their exclusions, force majeure, governing law and
+        dispute resolution, and vague wording that could be read against the party.
+
+        Rules:
+        - Use only the contract text. Quote the clause (with its number or heading) for every risk.
+        - A missing protection is a finding only when you say exactly what is missing; write "Not found in the
+          document." rather than assuming a clause exists elsewhere.
+        - Rate each risk: high (money, liability or the ability to exit is at stake), medium, or low.
+        - For each risk, propose a concrete change the party could ask for.
+        - Do not state what the law of any country requires; you cannot verify it. Where the answer depends on
+          the applicable law, say that a lawyer should check it.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Risk review for {{inputs.party}}
+
+        ### Risky clauses
+        (each item starts with the rating in brackets, for example "[high]"; then the clause, a short quotation,
+        why it is a risk, the proposed change)
+
+        ### Missing protections
+
+        ### Points that depend on the applicable law
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: check
+    type: ai.cli
+    label: {tr: İncelemeyi denetle, en: Check the review}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are a second, independent contracts reviewer. A colleague reviewed the contract below for the party
+        "{{inputs.party}}". Check the colleague's work against the contract text itself.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the contract.
+
+        The contract (extracted automatically):
+
+        {{nodes.extract.text}}
+
+        The colleague's risk review:
+
+        {{nodes.risks.text}}
+
+        Check:
+        1. Quotations: does every quotation appear in the contract, and does the clause say what the review
+           claims? List each misquotation or misreading.
+        2. Ratings: is any risk overstated or understated? Explain with the contract's words.
+        3. Missed risks: clauses that are risky for "{{inputs.party}}" but are not in the review. Quote them.
+
+        Rules:
+        - Use only the contract text and the review. Never invent clauses.
+        - If you agree with the review on a point, do not repeat it.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Second review
+
+        ### Misquotations and misreadings
+
+        ### Ratings to change
+
+        ### Missed risks
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Özet ve müzakere noktaları, en: Summary and negotiation points}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You write the opening of a contract review report for "{{inputs.party}}", who must decide whether to
+        sign or what to negotiate. Base it on the risk review and the second review below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        Concerns of the party (it may be empty): {{inputs.concerns}}
+
+        Risk review:
+
+        {{nodes.risks.text}}
+
+        Second review:
+
+        {{nodes.check.text}}
+
+        Rules:
+        - Use only the two reviews. Where the second review corrects the first, follow the second review.
+        - Do not add risks, clauses or legal rules that are not in the reviews.
+        - Each negotiation point names the clause and the change to ask for.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Contract review for {{inputs.party}}
+
+        > (one sentence: this report was produced by AI models from the contract text alone; it is not legal
+        > advice and does not replace a review by a qualified lawyer)
+
+        ## In brief
+        (3 to 5 sentences: the overall risk level, low / medium / high, and why)
+
+        ## Negotiation points
+        (a list, most important first, at most 8 items)
+
+        ## Questions for a lawyer
+        (a list)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.risks.text}}
+
+        {{nodes.check.text}}
+
+        {{nodes.terms.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "Contract review: {{inputs.party}}"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: contract-review
+
+connections:
+  - {from: extract.text, to: terms}
+  - {from: extract.text, to: risks}
+  - {from: extract.text, to: check}
+  - {from: risks.text, to: check}
+  - {from: risks.text, to: summary}
+  - {from: check.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: risks.text, to: report}
+  - {from: check.text, to: report}
+  - {from: terms.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

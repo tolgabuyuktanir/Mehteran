@@ -1,0 +1,270 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: dataset-documentation-review
+name:
+  tr: Veri seti belgelendirme incelemesi
+  en: Dataset documentation review
+description:
+  tr: >-
+    Bir veri sözlüğünü veya veri seti belgesini, isterseniz yapıştırdığınız örnek satırlarla birlikte inceler.
+    Bir model her değişken (tanım, tür, birim, izin verilen değerler, eksik değer kodları) ve veri seti geneli
+    (amaç, kaynak, toplama yöntemi, kapsam, lisans, sürüm, kişisel veri notları, sınırlılıklar) için neyin
+    belgelendiğini çıkarır; ikinci bir model aynı anda sözlüğü örnek satırlarla karşılaştırır. Bir model
+    bunları öncelikli iyileştirme listesiyle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reviews a data dictionary or dataset documentation, optionally with sample rows that you paste. One model
+    checks what is documented for each variable (definition, type, unit, allowed values, missing-value codes) and
+    for the dataset as a whole (purpose, provenance, collection method, coverage, licence, version, personal-data
+    notes, limitations); a second model at the same time compares the dictionary with the sample rows. A model
+    combines both into a prioritised list of improvements. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: data
+
+inputs:
+  - id: documentation
+    type: file
+    label: {tr: Belge veya veri sözlüğü, en: Documentation or data dictionary}
+    description:
+      tr: "PDF, Word, EPUB, Markdown veya düz metin. CSV biçimindeki bir sözlüğü .txt olarak kaydedin."
+      en: "PDF, Word, EPUB, Markdown or plain text. Save a dictionary in CSV form as .txt."
+    formats: [pdf, docx, epub, md, txt]
+  - id: sample
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Örnek satırlar, en: Sample rows}
+    description:
+      tr: >-
+        İsteğe bağlı: veri setinden başlık satırıyla birlikte birkaç satır (CSV, TSV veya düz metin). Boş
+        bırakılırsa yalnızca belgenin kendi içindeki tutarlılık incelenir.
+      en: >-
+        Optional: a few rows of the dataset with the header row (CSV, TSV or plain text). When empty, only the
+        internal consistency of the documentation is checked.
+  - id: purpose
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Amaç, en: Purpose}
+    description:
+      tr: "Örnek: 'Veri seti açık erişimli bir depoya yüklenecek.' veya 'Ekip içinde yeniden kullanım.'"
+      en: "For example: 'The dataset will be deposited in an open repository.' or 'Reuse within the team.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.documentation}}"
+
+  - id: wrap_sample
+    type: text.merge
+    label: {tr: Örnek satırlar, en: Sample rows}
+    config:
+      template: "{{inputs.sample}}"
+
+  - id: completeness
+    type: ai.cli
+    label: {tr: Eksiksizlik, en: Completeness}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a data curator. Check how completely the dataset documentation below describes the dataset, so
+        that a person who has never seen the data could use it correctly. Another reviewer compares the
+        documentation with sample rows; do not do that.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep variable names exactly as they are.
+
+        Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}
+
+        The documentation follows (extracted automatically from a file; tables may be flattened):
+
+        {{nodes.extract.text}}
+
+        Check:
+        1. Each variable: definition, data type, unit, allowed values or codes and their meaning, missing-value
+           codes, how it was measured or derived.
+        2. The dataset: purpose, provenance and collection method, time and geographic coverage, number of
+           records, licence and access conditions, version and change history, personal or sensitive data and
+           how it was protected, known limitations and errors, citation, contact.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources.
+        - Mark each item as present, partial or missing. For present and partial, quote or locate the passage.
+          For missing, write "Not found in the document."
+        - Never fill a gap with what such datasets usually contain.
+        - If the text is not dataset documentation or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Completeness
+
+        ### Dataset-level information
+        (one list item per element above, starting with "[present]", "[partial]" or "[missing]")
+
+        ### Variables
+        (one list item per variable: the name, then what is missing; variables that are fully documented can be
+        grouped in one item)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: consistency
+    type: ai.cli
+    label: {tr: Tutarlılık, en: Consistency}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a data quality reviewer. Check whether the dataset documentation below agrees with the sample
+        rows, and whether the documentation agrees with itself. Another reviewer checks completeness; do not
+        do that.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep variable names and values exactly as they are.
+
+        Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}
+
+        The documentation (extracted automatically; tables may be flattened):
+
+        {{nodes.extract.text}}
+
+        The sample rows (this may be empty; then check only the documentation's internal consistency and say
+        that no sample was given):
+
+        {{nodes.wrap_sample.text}}
+
+        Check:
+        1. Columns in the sample that the documentation does not describe, and documented variables that the
+           sample does not contain.
+        2. Values outside the documented codes or ranges; types and units that differ from the documentation;
+           missing-value codes that are used but not documented. Quote the row (counting data rows from 1 after
+           the header).
+        3. Inside the documentation: the same variable described differently in two places, counts that
+           contradict each other, codes defined twice with different meanings.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources.
+        - Quote both sides of every inconsistency. Never invent rows, values or variables.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Consistency
+
+        ### Columns and variables that do not match
+
+        ### Values, types and units
+
+        ### Contradictions inside the documentation
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: synthesis
+    type: ai.cli
+    label: {tr: İyileştirme listesi, en: Improvement list}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of a dataset documentation review for the person who maintains the
+        documentation. Two reviewers have assessed it. Combine their findings into actions.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}
+
+        Completeness review:
+
+        {{nodes.completeness.text}}
+
+        Consistency review:
+
+        {{nodes.consistency.text}}
+
+        Rules:
+        - Use only what the reviewers wrote. Do not add findings of your own.
+        - Put first what could lead a user to misread the data (wrong units, undocumented codes,
+          contradictions), then what blocks reuse (licence, provenance), then the rest.
+        - Each action names the variable or section and what to write.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Dataset documentation review
+
+        ## In brief
+        (3 to 5 sentences: is the documentation fit for its purpose?)
+
+        ## Priority improvements
+        (a list, at most 10 items, most important first)
+
+        ## Other improvements
+        (a list)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.synthesis.text}}
+
+        {{nodes.completeness.text}}
+
+        {{nodes.consistency.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Dataset documentation review
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: dataset-documentation-review
+
+connections:
+  - {from: extract.text, to: completeness}
+  - {from: extract.text, to: consistency}
+  - {from: wrap_sample.text, to: consistency}
+  - {from: completeness.text, to: synthesis}
+  - {from: consistency.text, to: synthesis}
+  - {from: synthesis.text, to: report}
+  - {from: completeness.text, to: report}
+  - {from: consistency.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

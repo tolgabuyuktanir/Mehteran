@@ -179,8 +179,9 @@ def cmd_install(proj: Project, args) -> int:
 # What a shared copy contains. Everything else in the folder stays on this computer: books and translations,
 # installed tools (.runtime), logs (.jobs) and session notes.
 PACKAGE_FILES = ["README.md", "README.tr.md", "config.default.toml", "config.toml", ".gitignore", "translate", "translate.cmd",
-                 "Open Interface.command", "Open Interface.bat"]
-PACKAGE_FOLDERS = ["docs", "pipeline", "prompts", "scripts", "tests", "glossary"]
+                 "Open Interface.command", "Open Interface.bat", "mehter", "mehter.cmd", "Open Mehteran.command",
+                 "Open Mehteran.bat"]
+PACKAGE_FOLDERS = ["docs", "pipeline", "mehteran", "prompts", "scripts", "tests", "glossary"]
 PACKAGE_SKIP = {"__pycache__", ".DS_Store", "Thumbs.db"}
 
 

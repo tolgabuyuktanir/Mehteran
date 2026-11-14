@@ -1,0 +1,160 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: customer-feedback-insights
+name:
+  tr: "Müşteri yorumlarından içgörü"
+  en: "Insights from customer reviews"
+description:
+  tr: >-
+    Müşteri yorumlarını ya da anket cevaplarını (CSV, Excel, PDF ya da yapıştırılmış metin) okur ve ana
+    temaları, tekrar eden sorunları, övülen yönleri ve somut iyileştirme önerilerini çıkarır; her tema için
+    yaklaşık sayı ve birebir örnek alıntı verir. İkinci bir model sayıları ve alıntıları yorumlarla
+    karşılaştırır. Çok büyük tablolar kısaltılır ve rapor bunu söyler. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reads customer reviews or survey answers (CSV, Excel, PDF or pasted text) and extracts the main themes,
+    recurring problems, what people praise and concrete suggestions to improve; each theme has an approximate
+    count and exact example quotations. A second model checks the counts and quotations against the reviews.
+    Very large tables are cut and the report says so. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: reviews
+    type: file
+    required: false
+    label: {tr: "Yorumlar", en: "Reviews"}
+    formats: [csv, tsv, xlsx, pdf, docx, md, txt]
+  - id: reviews_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Yorumlar (yapıştır)", en: "Reviews (paste)"}
+    description:
+      tr: "Dosya yerine yapıştırabilirsiniz."
+      en: "Paste them instead of uploading a file."
+  - id: product
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Ürün ya da hizmet", en: "Product or service"}
+    description:
+      tr: "İsteğe bağlı bağlam."
+      en: "Optional context."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Dosyayı oku", en: "Read the file"}
+    config:
+      file: "{{inputs.reviews}}"
+
+  - id: analyse
+    type: ai.cli
+    label: {tr: "Analiz", en: "Analysis"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a customer insight analyst. Analyse the reviews below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations stay in their original language.
+
+        Product or service (it may be empty): {{inputs.product}}
+
+        The reviews from a file (a note in square brackets says when rows were cut):
+
+        {{nodes.extract.text}}
+
+        The reviews, pasted:
+
+        {{inputs.reviews_text}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Every theme has an approximate count ("about 12 of 40 reviews"; count carefully and say "about"), one or two exact quotations copied from the reviews, and the sentiment.
+        - Separate what is said many times from one-off remarks. Do not turn one remark into a trend.
+        - Suggestions must follow from the reviews and be concrete and actionable, ordered by likely impact; say which theme each answers.
+        - If the data has a rating column, report the average and the distribution you can compute exactly.
+        - If there are no reviews, say so in one sentence and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Use a table for the themes. Start directly with these headings (translated):
+
+        # Review insights
+
+        ## Summary
+        (three to five sentences, including how many reviews were read)
+
+        ## Themes
+        (a table: theme, sentiment, about how many, example quotation)
+
+        ## Problems to fix
+        (ranked)
+
+        ## What customers praise
+
+        ## Suggestions
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: "Sayı ve alıntı denetimi", en: "Counts and quotations check"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check an analysis of customer reviews against the reviews and give the corrected final report.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations stay in their original language.
+
+        The reviews:
+
+        {{nodes.extract.text}}
+
+        {{inputs.reviews_text}}
+
+        The analysis:
+
+        {{nodes.analyse.text}}
+
+        Method: check that every quotation appears in the reviews word for word (replace or remove it otherwise); recount each theme's count and correct it; remove any trend that rests on one or two remarks, or call it a one-off. Keep the structure. Give the corrected report only, then a last section "## Corrections" (translated) with a short list of the changes, or "None.".
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: "{{nodes.verify.text}}"
+      title: "Review insights"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: review-insights
+
+connections:
+  - {from: extract.text, to: analyse}
+  - {from: extract.text, to: verify}
+  - {from: analyse.text, to: verify}
+  - {from: verify.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Rapor (Markdown)", en: "Report (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Rapor (HTML)", en: "Report (HTML)"}}

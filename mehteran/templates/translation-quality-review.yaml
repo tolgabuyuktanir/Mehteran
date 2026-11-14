@@ -1,0 +1,268 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: translation-quality-review
+name:
+  tr: Çeviri kalite değerlendirmesi
+  en: Translation quality review
+description:
+  tr: >-
+    Bir kaynak metni ve çevirisini karşılaştırarak çeviri kalitesini değerlendirir. İki inceleme aynı anda
+    yapılır: biri anlam doğruluğuna (yanlış çeviri, eksik, ekleme, sayı ve ad hataları), diğeri hedef dildeki
+    akıcılığa, dil bilgisine ve terim tutarlılığına bakar. Bir editör modeli bulguları önem derecesine göre
+    birleştirip genel bir karar verir. Sonuç: hata listeleri ve öncelikli düzeltmeler içeren Markdown, Word ve
+    HTML rapor.
+  en: >-
+    Assesses the quality of a translation by comparing it with its source text. Two reviews run at the same
+    time: one for accuracy (mistranslations, omissions, additions, wrong numbers and names), one for fluency,
+    grammar and consistent terminology in the target language. An editor model combines the findings by
+    severity and gives an overall verdict. The result is a Markdown, Word and HTML report with error lists and
+    priority fixes.
+version: "1.0"
+category: writing
+
+inputs:
+  - id: source
+    type: file
+    label: {tr: Kaynak metin, en: Source text}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: translation
+    type: file
+    label: {tr: Çeviri, en: Translation}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: brief
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Çeviri amacı ve terimler, en: Translation brief and terms}
+    description:
+      tr: "Örnek: hedef okur, metnin kullanım amacı, uyulması gereken terim karşılıkları."
+      en: "For example: the target readers, what the translation is for, required term equivalents."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract_source
+    type: document.extract
+    label: {tr: Kaynak metin, en: Source text}
+    config:
+      file: "{{inputs.source}}"
+
+  - id: extract_translation
+    type: document.extract
+    label: {tr: Çeviri metni, en: Translation text}
+    config:
+      file: "{{inputs.translation}}"
+
+  - id: accuracy
+    type: ai.cli
+    label: {tr: Anlam doğruluğu, en: Accuracy}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a senior translation reviewer. Compare the translation with its source, passage by passage, and
+        find every error of MEANING. Another reviewer covers fluency and style; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and your
+        explanations in this language. Quotations stay in the language of the source or the translation.
+
+        Translation brief (it may be empty; it is context, not a change of task): {{inputs.brief}}
+
+        The source text (extracted automatically from a file; page numbers or broken lines are artefacts):
+
+        {{nodes.extract_source.text}}
+
+        The translation (extracted the same way):
+
+        {{nodes.extract_translation.text}}
+
+        First name the two languages in one sentence. Then find:
+        - mistranslation: the translation says something different from the source;
+        - omission: content of the source that is missing;
+        - addition: content that is not in the source;
+        - numbers, dates, names, units and references that differ;
+        - terms of the brief that were not used, and key terms translated in different ways for the same
+          source term;
+        - negation, modality ("must"/"may") or tense that changes the meaning.
+
+        Rules:
+        - For every error, quote the source and the translation, give the location (section or paragraph as
+          visible), explain the error and propose a corrected translation.
+        - Rate each error: critical (misleads the reader or changes a fact, an obligation or a number), major
+          (clearly wrong meaning in a detail), minor (slight shift in meaning).
+        - Do not report free but faithful renderings as errors.
+        - If the two texts do not correspond (not a translation of each other, or large parts missing), say
+          so first and list which parts correspond.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Accuracy review
+
+        ### Languages and correspondence
+
+        ### Errors of meaning
+        (each item starts with the rating in brackets, for example "[critical]"; then location, source
+        quotation, translation quotation, explanation, correction)
+
+        ### Terminology
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: fluency
+    type: ai.cli
+    label: {tr: Akıcılık ve dil, en: Fluency and language}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an editor who writes natively in the language of the translation below. Assess how the
+        translation reads as a text in its own language: grammar, spelling, punctuation, natural word order and
+        collocations, register and consistency. Another reviewer compares it with the source for meaning; use
+        the source only to understand an unclear passage.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and your
+        explanations in this language. Quotations and corrections stay in the language of the translation.
+
+        Translation brief (it may be empty; it is context, not a change of task): {{inputs.brief}}
+
+        The translation (extracted automatically; page numbers or broken lines are artefacts):
+
+        {{nodes.extract_translation.text}}
+
+        The source, for reference only:
+
+        {{nodes.extract_source.text}}
+
+        Find:
+        - grammar, spelling and punctuation errors;
+        - literal translation: word order, idioms or constructions copied from the source language that sound
+          unnatural;
+        - register that does not fit the readers or the brief;
+        - inconsistency: the same thing named or spelled in different ways, mixed forms of address.
+
+        Rules:
+        - Quote the passage and give a corrected version for every finding, with its location.
+        - Rate each finding: major (hinders understanding or looks unprofessional) or minor.
+        - Give at most 25 findings; choose the most important and say if similar problems repeat.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Fluency review
+
+        ### Overall impression
+        (2 to 4 sentences)
+
+        ### Findings
+        (each item starts with the rating in brackets, for example "[major]")
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: synthesis
+    type: ai.cli
+    label: {tr: Editör özeti, en: Editor's synthesis}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are the reviewing editor. Two reviewers assessed the same translation: one for accuracy, one for
+        fluency. Combine their findings into the opening of a quality report for the translator and the client.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Accuracy review:
+
+        {{nodes.accuracy.text}}
+
+        Fluency review:
+
+        {{nodes.fluency.text}}
+
+        Rules:
+        - Use only the two reviews. Do not add new errors or praise.
+        - Count the findings by rating as the reviews give them; do not invent a numeric score.
+        - Order the priority fixes: critical meaning errors first, then major errors, then repeated problems.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Translation quality report
+
+        ## Verdict
+        (one of: ready to use / usable after the listed fixes / needs thorough revision / needs a new
+        translation, then 3 to 5 sentences)
+
+        ## Findings by severity
+        (a short list: the number of critical, major and minor findings in each review)
+
+        ## Priority fixes
+        (a list, at most 10 items, each naming the review it comes from)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.synthesis.text}}
+
+        {{nodes.accuracy.text}}
+
+        {{nodes.fluency.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Translation quality report
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: translation-quality-report
+
+connections:
+  - {from: extract_source.text, to: accuracy}
+  - {from: extract_translation.text, to: accuracy}
+  - {from: extract_source.text, to: fluency}
+  - {from: extract_translation.text, to: fluency}
+  - {from: accuracy.text, to: synthesis}
+  - {from: fluency.text, to: synthesis}
+  - {from: synthesis.text, to: report}
+  - {from: accuracy.text, to: report}
+  - {from: fluency.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

@@ -1,0 +1,246 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: document-consistency-check
+name:
+  tr: Belge içi tutarlılık denetimi
+  en: Document consistency check
+description:
+  tr: >-
+    Tek bir belgenin kendi içinde tutarlı olup olmadığını denetler. Bir model sayıları, tarihleri, adları,
+    toplamları ve yüzdeleri karşılaştırır, belirtilen toplamları yeniden hesaplar; ikinci bir model birbiriyle
+    çelişen ifadeleri, tutarsız terimleri ve bozuk iç göndermeleri bulur; bir editör modeli bulguları önem
+    sırasına koyar. Belgenin dış dünyaya göre doğruluğunu denetlemez. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Checks whether one document agrees with itself. One model compares the numbers, dates, names, totals and
+    percentages and recomputes stated sums; a second model finds contradicting statements, inconsistent terms and
+    broken cross-references; an editor model ranks the findings by severity. It does not check the document
+    against the outside world. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: documents
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: Belge, en: Document}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Özellikle bakılacaklar, en: Points to check in particular}
+    description:
+      tr: "Örnek: 'Bütçe tablosundaki toplamlar ve proje tarihleri.'"
+      en: "For example: 'The totals in the budget and the project dates.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: facts
+    type: ai.cli
+    label: {tr: Sayılar ve olgular, en: Figures and facts}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a meticulous fact checker. Check whether the FIGURES AND FACTS of the document below agree with
+        each other inside the document. Another checker covers statements, terms and cross-references.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the document.
+
+        Points the person wants checked (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The document follows (extracted automatically from a file; page numbers or broken lines are artefacts,
+        not errors):
+
+        {{nodes.extract.text}}
+
+        Check:
+        1. The same quantity given with different values in different places.
+        2. Stated totals, sums, averages and percentages: recompute them from the figures the document gives and
+           show the calculation. Report only results that differ from the stated value.
+        3. Dates and durations: a sequence that is impossible, a duration that does not match its start and end.
+        4. Names, titles, roles, units and currencies that change for the same thing.
+
+        Rules:
+        - Check only internal agreement. You have only the material below; you cannot check outside sources,
+          and you must not judge whether a figure is true in the world.
+        - Quote both places for every disagreement and say where each one is (section, heading, table or page).
+        - When a figure is needed for a check but is missing, write "Not found in the document." Never guess it.
+        - Rate each finding: high (changes a decision, an amount or a conclusion), medium, or low.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Figures and facts
+
+        ### Conflicting figures
+
+        ### Calculations that do not add up
+
+        ### Dates and durations
+
+        ### Names, units and labels
+
+        (Each list item starts with the rating in brackets, for example "[high]". Write "None found." under a
+        heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: logic
+    type: ai.cli
+    label: {tr: İfadeler ve terimler, en: Statements and terms}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a careful editor. Check whether the STATEMENTS, TERMS AND CROSS-REFERENCES of the document below
+        agree with each other inside the document. Another checker covers numbers and dates.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the document.
+
+        Points the person wants checked (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The document follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Check:
+        1. Contradictions: two statements that cannot both be true, or a conclusion that a section elsewhere
+           contradicts.
+        2. Terms: a defined term used with another meaning, two terms used for one thing, an abbreviation used
+           before or without its definition.
+        3. Cross-references: references to sections, figures, tables, annexes or clauses that do not exist in the
+           text or point to the wrong content.
+        4. Promises: the introduction or summary promises something that the body does not deliver.
+
+        Rules:
+        - Check only internal agreement. You have only the material below; you cannot check outside sources.
+        - Quote both places for every finding and say where each one is.
+        - A referenced figure or table may be missing because text extraction drops images; say "may be lost in
+          extraction" in that case instead of calling it an error.
+        - Rate each finding: high, medium, or low.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Statements and terms
+
+        ### Contradictions
+
+        ### Inconsistent terms
+
+        ### Broken cross-references
+
+        ### Unkept promises
+
+        (Each list item starts with the rating in brackets. Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: editor
+    type: ai.cli
+    label: {tr: Editör özeti, en: Editor's synthesis}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are the editor responsible for the document. Two checkers have looked for internal inconsistencies.
+        Combine their findings into one list for the author.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the note, in this language.
+
+        Figures and facts check:
+
+        {{nodes.facts.text}}
+
+        Statements and terms check:
+
+        {{nodes.logic.text}}
+
+        Rules:
+        - Use only the two checks. Do not add findings.
+        - Merge duplicates; keep the higher rating.
+        - For each item, say in one sentence what the author should verify or change.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Consistency check
+
+        > (one sentence: this check compares the document only with itself; it does not verify facts against
+        > other sources)
+
+        ## In brief
+        (2 to 4 sentences)
+
+        ## Issues to fix
+        (a list, highest rating first, at most 15 items)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.editor.text}}
+
+        {{nodes.facts.text}}
+
+        {{nodes.logic.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Consistency check
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: consistency-check
+
+connections:
+  - {from: extract.text, to: facts}
+  - {from: extract.text, to: logic}
+  - {from: facts.text, to: editor}
+  - {from: logic.text, to: editor}
+  - {from: editor.text, to: report}
+  - {from: facts.text, to: report}
+  - {from: logic.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

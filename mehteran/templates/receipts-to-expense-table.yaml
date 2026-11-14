@@ -1,0 +1,171 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: receipts-to-expense-table
+name:
+  tr: "Fiş ve faturalardan gider tablosu"
+  en: "Expense table from receipts and invoices"
+description:
+  tr: >-
+    Fiş, fatura ya da hesap özeti dosyalarını (PDF, fotoğraf, CSV, Excel) okur; taranmış sayfalar için metin
+    tanıma kullanılır. Her dosyadan tarih, satıcı, kategori, para birimi, KDV ve toplam alanlarını bir tabloya
+    çıkarır (dosyalar aynı anda işlenir). Sonra toplamları kategori ve para birimine göre hesaplar, olağan dışı
+    kalemleri (tekrar, eksik alan, toplamı tutmayan satır) işaretler. Tablolar Word ve HTML'de gerçek tablo
+    olur. Fotoğraflardan okunan sayıları mutlaka kontrol edin.
+  en: >-
+    Reads receipt, invoice or statement files (PDF, photos, CSV, Excel); scanned pages are read by text
+    recognition. From each file it extracts date, vendor, category, currency, VAT and total into a table (the
+    files run at the same time). Then it computes totals by category and currency and flags unusual items
+    (duplicates, missing fields, lines whose total does not add up). The tables become real tables in Word and
+    HTML. Always check numbers read from photos.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: receipts
+    type: file
+    multiple: true
+    label: {tr: "Fiş, fatura ya da hesap özeti dosyaları", en: "Receipt, invoice or statement files"}
+    description:
+      tr: "En çok 20 dosya."
+      en: "Up to 20 files."
+    formats: [pdf, png, jpg, jpeg, tif, tiff, csv, tsv, xlsx, md, txt]
+  - id: categories
+    type: text
+    required: false
+    default: "Travel, Meals, Office, Software, Utilities, Other"
+    label: {tr: "Kategoriler", en: "Categories"}
+    description:
+      tr: "Virgülle ayırın. Varsayılan listeyi değiştirebilirsiniz."
+      en: "Separated by commas. You can change the default list."
+  - id: rules
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Gider kuralları", en: "Expense rules"}
+    description:
+      tr: "Örnek: 'Yemek en çok 500 TL'. Boş bırakılabilir."
+      en: "For example: 'Meals at most 40 EUR'. May be left empty."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: receipts
+    type: document.extract
+    label: {tr: "Dosyaları oku", en: "Read the files"}
+    config:
+      file: "{{inputs.receipts}}"
+
+  - id: rows
+    type: ai.map
+    label: {tr: "Dosya başına satırlar", en: "Rows per file"}
+    retries: 2
+    config:
+      source: "{{nodes.receipts.text}}"
+      split: files
+      max_items: 20
+      provider: "{{inputs.model}}"
+      prompt: |
+        Extract the expense data from one file.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep vendor names and item names as written in the file.
+
+        Categories to use: {{inputs.categories}}
+
+        The file ({{item.index}} of {{item.count}}, name: {{item.title}}), read automatically (photos are read by text recognition and may contain mistakes):
+
+        {{item.text}}
+
+        Rules:
+        - One table row per receipt or invoice; for a statement or spreadsheet, one row per line item. Columns, in this order (translated): Date (YYYY-MM-DD), Vendor, Category, Currency, Net, VAT, Total, Document number, Note.
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Write "?" in a cell that the file does not show or that is unreadable. Never compute a missing number silently: if you derive Net or VAT from the others, say so in Note.
+        - Note: a short remark such as "total does not equal net plus VAT", "photo unclear" or "possible duplicate of ...".
+        - If the file is not an expense document, write one line saying so instead of a table.
+
+        Format: Markdown, no headings (the file name is the heading). Output one Markdown table with a header row.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: "Toplamlar ve işaretler", en: "Totals and flags"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check expense data and summarise it.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Categories: {{inputs.categories}}
+        Expense rules (it may be empty): {{inputs.rules}}
+
+        The extracted tables, one per file:
+
+        {{nodes.rows.text}}
+
+        Do:
+        1. Totals by category and by currency (leave out categories that have no rows; never add different currencies together). Show the calculation briefly: the amounts that make each total.
+        2. Flag: duplicates (same vendor, date and total), rows with "?" in Date, Vendor or Total, totals that do not equal net plus VAT, amounts that break the rules above, dates far from the others.
+        3. Give a grand total per currency.
+        Compute only from the tables; recount each sum once more before you write it.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Use tables for the totals. Start directly with these headings (translated):
+
+        ## Totals
+
+        ### By category
+
+        ### Grand total
+
+        ## Items to check
+        ("None found." if nothing)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: report
+    type: text.merge
+    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    config:
+      template: |
+        # Expense report
+
+        {{nodes.summary.text}}
+
+        # Extracted lines
+
+        {{nodes.rows.text}}
+
+        ---
+
+        Note: extracted by AI from the files; check the numbers against the originals, especially those read from photos. / Not: Dosyalardan yapay zekâ ile çıkarılmıştır; özellikle fotoğraftan okunan sayıları orijinallerle karşılaştırın.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "Expense report"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: expense-report
+
+connections:
+  - {from: receipts.text, to: rows}
+  - {from: rows.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: rows.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Rapor (Markdown)", en: "Report (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Rapor (HTML)", en: "Report (HTML)"}}

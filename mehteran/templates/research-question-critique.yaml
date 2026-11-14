@@ -1,0 +1,238 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: research-question-critique
+name:
+  tr: Araştırma sorusu ve hipotez eleştirisi
+  en: Research question and hypothesis critique
+description:
+  tr: >-
+    Yazdığınız araştırma sorularını ve hipotezleri iki bağımsız gözle inceler. Bir yöntembilimci açıklığı,
+    kapsamı, uygulanabilirliği, değişkenlerin nasıl ölçüleceğini ve hipotezlerin yanlışlanabilirliğini
+    değerlendirir; ikinci bir model alternatif açıklamaları, karıştırıcı değişkenleri ve karşı hipotezleri yazar.
+    Üçüncü bir model iki incelemeye dayanarak düzeltilmiş sorular ve hipotezler önerir. Sonuç Markdown, Word ve
+    HTML rapordur.
+  en: >-
+    Examines the research questions and hypotheses you write through two independent lenses. A methodologist
+    assesses clarity, scope, feasibility, how the variables would be measured and whether the hypotheses can be
+    falsified; a second model writes alternative explanations, confounders and counter-hypotheses. A third model
+    proposes revised questions and hypotheses based on both reviews. The result is a Markdown, Word and HTML
+    report.
+version: "1.0"
+category: research
+
+inputs:
+  - id: questions
+    type: text
+    multiline: true
+    label: {tr: Sorular ve hipotezler, en: Questions and hypotheses}
+    description:
+      tr: "Araştırma sorularınız, hipotezleriniz ve kısa bir bağlam: alan, planlanan yöntem, veri, katılımcılar."
+      en: "Your research questions, hypotheses and a short context: the field, the planned method, the data, the participants."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: wrap
+    type: text.merge
+    label: {tr: Metni al, en: Take the text}
+    config:
+      template: "{{inputs.questions}}"
+
+  - id: critique
+    type: ai.cli
+    label: {tr: Yöntem eleştirisi, en: Methodological critique}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced research methodologist. Critique the research questions and hypotheses below so
+        that the researcher can sharpen them before designing the study.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the text.
+
+        The researcher's questions, hypotheses and context:
+
+        {{nodes.wrap.text}}
+
+        For each question and hypothesis, assess:
+        1. Clarity: is every key term defined or definable? Is the population, setting and time frame clear?
+        2. Scope: is it too broad to answer or too narrow to matter?
+        3. Feasibility: can it be answered with the method, data and resources described? Say what is missing.
+        4. Relevance and novelty: judge relevance from the stated context only. You have only the text below and
+           cannot check the literature, so say plainly that novelty cannot be verified here.
+        5. Operationalisation: how would each variable or construct be measured? Name the variables that have no
+           clear measure.
+        6. Hypotheses: is each one falsifiable and directional where it should be? Does it follow from the
+           question?
+        7. Hidden assumptions behind the question.
+
+        Rules:
+        - Quote the question or hypothesis you discuss.
+        - Never invent facts about the field, studies or data. When the text does not say something (for example
+          the sample), write "Not found in the document." and say why it matters.
+        - Be concrete: every weakness comes with a suggested fix.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Methodological critique
+
+        ### Overview
+        (2 to 4 sentences)
+
+        ### Question by question
+        (one sub-heading per question or hypothesis, with the points above that apply)
+
+        ### Hidden assumptions
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: alternatives
+    type: ai.cli
+    label: {tr: Alternatif açıklamalar, en: Alternative explanations}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an independent, sceptical reviewer. For the research questions and hypotheses below, think about
+        what else could explain the expected results and how the hypotheses could fail. Another reviewer covers
+        clarity and feasibility; do not repeat that.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the text.
+
+        The researcher's questions, hypotheses and context:
+
+        {{nodes.wrap.text}}
+
+        For each hypothesis (or each question, if there are no hypotheses):
+        1. Alternative explanations for the result the researcher expects.
+        2. Likely confounders, reverse causation, selection effects and measurement artefacts, given the design
+           described.
+        3. At least one counter-hypothesis that a fair critic could propose.
+        4. The observation or result that would refute the hypothesis. If none could, say that the hypothesis is
+           not testable as written.
+        5. What the design needs (a control group, a covariate, a different sample) to rule out the main
+           alternatives.
+
+        Rules:
+        - Quote the hypothesis or question you discuss.
+        - Reason from the text and general methodological knowledge only. You cannot check outside sources; do
+          not cite studies or invent findings.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Alternative explanations and refutation
+
+        (one sub-heading per hypothesis or question, with the five points above)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: revise
+    type: ai.cli
+    label: {tr: Düzeltilmiş sorular, en: Revised questions}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You help the researcher improve their research questions and hypotheses. Two reviewers have critiqued
+        them. Propose revised versions that answer the reviewers' main points while keeping what the researcher
+        wants to find out.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Write the revised questions and hypotheses in the language of the
+        researcher's original text.
+
+        The researcher's original text:
+
+        {{nodes.wrap.text}}
+
+        Methodological critique:
+
+        {{nodes.critique.text}}
+
+        Alternative explanations:
+
+        {{nodes.alternatives.text}}
+
+        Rules:
+        - Keep the researcher's intent and topic. Do not swap in a different study.
+        - Each revision says which reviewer point it answers.
+        - Do not add facts about the field. Where a choice depends on information the researcher did not give,
+          ask for it instead of assuming.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Research question critique
+
+        ## In brief
+        (3 to 5 sentences: the main strengths and the main problems)
+
+        ## Revised questions and hypotheses
+        (for each: the original, the revision, the reason)
+
+        ## Variables and how to measure them
+
+        ## Questions for the researcher
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.revise.text}}
+
+        {{nodes.critique.text}}
+
+        {{nodes.alternatives.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Research question critique
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: research-question-critique
+
+connections:
+  - {from: wrap.text, to: critique}
+  - {from: wrap.text, to: alternatives}
+  - {from: wrap.text, to: revise}
+  - {from: critique.text, to: revise}
+  - {from: alternatives.text, to: revise}
+  - {from: revise.text, to: report}
+  - {from: critique.text, to: report}
+  - {from: alternatives.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

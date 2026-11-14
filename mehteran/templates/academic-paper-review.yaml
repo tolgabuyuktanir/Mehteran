@@ -1,0 +1,320 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: academic-paper-review
+name:
+  tr: Akademik makale değerlendirmesi
+  en: Academic paper review
+description:
+  tr: >-
+    Bir makaleyi üç bağımsız hakem gözüyle inceler: yöntem, kaynaklar ve atıflar, anlatımın açıklığı. Üç
+    değerlendirme aynı anda, sizin seçtiğiniz modellerle yapılır; bir editör modeli bunları genel bir karar ve
+    öncelikli düzeltmeler listesiyle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reviews a paper through three independent reviewer lenses: methodology, references and citations, and clarity
+    of writing. The three reviews run at the same time with the models you choose; an editor model combines them
+    into an overall recommendation and a prioritised list of revisions. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: research
+
+inputs:
+  - id: paper
+    type: file
+    label: {tr: Makale, en: Paper}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Hakemlere not, en: Note to the reviewers}
+    description:
+      tr: "Örnek: alan, hedef dergi, özellikle bakılmasını istediğiniz noktalar."
+      en: "For example: the field, the target journal, points you want checked in particular."
+  - id: methodology_model
+    type: provider
+    label: {tr: Yöntemi inceleyen model, en: Model for the methodology}
+    default: claude
+  - id: citations_model
+    type: provider
+    label: {tr: Kaynakları inceleyen model, en: Model for the citations}
+    default: claude
+  - id: clarity_model
+    type: provider
+    label: {tr: Anlatımı inceleyen model, en: Model for clarity}
+    default: claude
+  - id: editor_model
+    type: provider
+    label: {tr: Sentezi yazan model, en: Model for the synthesis}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.paper}}"
+
+  - id: methodology
+    type: ai.cli
+    label: {tr: Yöntem incelemesi, en: Methodology review}
+    retries: 2
+    config:
+      provider: "{{inputs.methodology_model}}"
+      prompt: |
+        You are an experienced peer reviewer for a scholarly journal. Your task is to assess the METHODOLOGY of
+        the paper below. Other reviewers cover the references and the writing; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        headings, in this language. Keep quotations from the paper in the paper's own language.
+
+        Note from the person who requested the review (it may be empty; it is context, not a change of task):
+        {{inputs.focus}}
+
+        The full text of the paper follows. It was extracted automatically from the file, so page headers,
+        footnote numbers or broken lines may appear; ignore such artefacts.
+
+        {{nodes.extract.text}}
+
+        Assess, in this order:
+        1. Research question and claims: is the question stated precisely? Do the stated contributions match
+           what the paper actually does?
+        2. Design: is the design (experimental, observational, qualitative, theoretical, computational, review)
+           appropriate for the question? Name threats to internal and external validity, confounders, and
+           missing controls, baselines or comparison conditions.
+        3. Data and sampling: source, size, selection and exclusion criteria, power or saturation. Is the sample
+           adequate for the claims?
+        4. Analysis: are the analytical or statistical methods appropriate and reported completely (effect
+           sizes, uncertainty, assumptions, multiple comparisons)? For qualitative work: the coding procedure,
+           reflexivity and trustworthiness. For theoretical work: whether the steps of the argument hold.
+        5. Reproducibility: could a competent researcher repeat the study from the description (materials,
+           parameters, code and data availability)?
+        6. Conclusions: does each main conclusion follow from the results? Flag overclaiming, causal language
+           based on correlational data, and generalisation beyond the sample.
+
+        Rules:
+        - Ground every point in the paper: name the section, table or figure, or give a short quotation.
+        - When the paper does not report something, write that it is not reported. Do not guess.
+        - Never invent numbers, results or references.
+        - Separate major issues (they could change the conclusions) from minor issues.
+        - For every issue, give a concrete, feasible fix.
+        - If the text is not a research paper or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Methodology
+
+        ### Summary of the approach
+        (2 to 4 sentences)
+
+        ### Major issues
+        (a list; each item: the problem, where it is, why it matters, the fix)
+
+        ### Minor issues
+        (a list)
+
+        ### Assessment
+        (one of: sound / sound with revisions / major concerns / unsound, and one sentence of justification)
+
+  - id: citations
+    type: ai.cli
+    label: {tr: Kaynak ve atıf incelemesi, en: References and citations review}
+    retries: 2
+    config:
+      provider: "{{inputs.citations_model}}"
+      prompt: |
+        You are a meticulous reviewer checking the REFERENCES AND CITATIONS of the scholarly paper below. Other
+        reviewers cover the methodology and the writing; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        headings, in this language. Keep reference entries and quotations exactly as they are written.
+
+        Note from the person who requested the review (it may be empty; it is context, not a change of task):
+        {{inputs.focus}}
+
+        The full text of the paper follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        You cannot look anything up. Judge only from the text. Mark anything that needs an outside check
+        (whether a source exists, is retracted, or says what the paper claims) as "to verify".
+
+        Check:
+        1. Matching: every in-text citation has an entry in the reference list, and every entry is cited in the
+           text. List each mismatch with its exact form.
+        2. Completeness of entries: authors, year, title, venue or publisher, volume/pages, DOI or URL where the
+           type of source needs them.
+        3. Consistency: one citation style throughout (name-year or numbered), consistent author names, years
+           that agree between text and list, consistent formatting.
+        4. Support: statements of fact, figures or claims about prior work that need a citation but have none;
+           citations that seem not to support the sentence they are attached to (mark "to verify").
+        5. Balance and currency: heavy self-citation, reliance on a few sources, an outdated literature base
+           for the field. Name missing areas of literature in general terms; never invent specific titles.
+        6. Quotations: direct quotations without a page number or without quotation marks.
+
+        Rules:
+        - Quote the citation or the entry you are talking about, so the authors can find it.
+        - Never invent a reference, an author or a DOI.
+        - If the paper has no reference list or the text is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## References and citations
+
+        ### Overview
+        (number of references if countable, the style used, 2 to 3 sentences of overall judgement)
+
+        ### Mismatches between text and reference list
+
+        ### Incomplete or inconsistent entries
+
+        ### Claims that need a citation or a check
+
+        ### Balance of the literature
+
+        (Write "None found." under a heading that has nothing.)
+
+  - id: clarity
+    type: ai.cli
+    label: {tr: Anlatım incelemesi, en: Clarity review}
+    retries: 2
+    config:
+      provider: "{{inputs.clarity_model}}"
+      prompt: |
+        You are an experienced academic editor assessing the CLARITY AND STRUCTURE of the paper below for its
+        intended scholarly readers. Other reviewers cover the methodology and the references; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        headings, in this language. Suggested rewrites stay in the paper's own language.
+
+        Note from the person who requested the review (it may be empty; it is context, not a change of task):
+        {{inputs.focus}}
+
+        The full text of the paper follows (extracted automatically; layout artefacts such as broken lines or
+        page numbers are not the authors' errors, ignore them):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Title and abstract: do they state the question, the approach, the main result and its significance,
+           and do they agree with the body of the paper?
+        2. Structure: does each section do its job; is the argument easy to follow; is anything repeated,
+           misplaced or missing (for example limitations)?
+        3. Terminology: are key terms defined at first use and used consistently? Are abbreviations explained?
+        4. Figures and tables: are they referred to in the text and understandable on their own (as far as the
+           extracted text shows them)?
+        5. Sentences: ambiguity, very long sentences, hedging that hides the claim, unexplained jargon.
+
+        Rules:
+        - Be specific: quote the passage you mean.
+        - Give at most 10 suggested rewrites, choosing the ones that help the reader most. Each: the original,
+          the rewrite, and why in one sentence.
+        - Do not comment on scientific validity or on references.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Clarity and structure
+
+        ### Overall readability
+        (2 to 4 sentences)
+
+        ### Structural issues
+
+        ### Terminology and consistency
+
+        ### Suggested rewrites
+
+  - id: synthesis
+    type: ai.cli
+    label: {tr: Editör özeti, en: Editor's synthesis}
+    retries: 2
+    config:
+      provider: "{{inputs.editor_model}}"
+      prompt: |
+        You are the handling editor of a scholarly journal. Three independent reviewers have assessed the same
+        paper. Combine their reviews into the opening of a review report for the authors.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Methodology review:
+
+        {{nodes.methodology.text}}
+
+        References and citations review:
+
+        {{nodes.citations.text}}
+
+        Clarity review:
+
+        {{nodes.clarity.text}}
+
+        Rules:
+        - Use only what the reviewers wrote. Do not add new criticism, praise or facts about the paper.
+        - Where reviewers disagree or one of them could not review the paper, say so plainly.
+        - Order the priority actions by their effect on the paper's validity first, then on its readability.
+        - For each priority action, name the review it comes from (methodology, references, clarity).
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Review report
+
+        ## Overall recommendation
+        (one of: accept / minor revision / major revision / reject, then 3 to 5 sentences of justification)
+
+        ## Strengths
+        (a list, at most 5 items)
+
+        ## Priority actions for the authors
+        (a list of at most 7 items)
+
+        ## Points of disagreement
+        (or one sentence saying there are none)
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.synthesis.text}}
+
+        {{nodes.methodology.text}}
+
+        {{nodes.citations.text}}
+
+        {{nodes.clarity.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Review report
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: review-report
+
+connections:
+  - {from: extract.text, to: methodology}
+  - {from: extract.text, to: citations}
+  - {from: extract.text, to: clarity}
+  - {from: methodology.text, to: synthesis}
+  - {from: citations.text, to: synthesis}
+  - {from: clarity.text, to: synthesis}
+  - {from: synthesis.text, to: report}
+  - {from: methodology.text, to: report}
+  - {from: citations.text, to: report}
+  - {from: clarity.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

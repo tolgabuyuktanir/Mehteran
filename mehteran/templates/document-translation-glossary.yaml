@@ -1,0 +1,189 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: document-translation-glossary
+name:
+  tr: "Belge çevirisi (sözlük ve tutarlılık denetimiyle)"
+  en: "Document translation with glossary and consistency check"
+description:
+  tr: >-
+    Genel bir belgeyi (sözleşme, rapor, kılavuz, e-posta) başka bir dile çevirir. İsterseniz bir sözlük dosyası
+    ya da terim listesi verin: listedeki terimler her yerde aynı karşılıkla kullanılır. Belge bölümlere ayrılır
+    ve bölümler aynı anda çevrilir. İkinci bir model çeviriyi kaynakla karşılaştırır: atlanan cümleler, sayı ve
+    tarih hataları, sözlükten sapma ve tutarsız terimler. Çeviri ve denetim raporu ayrı belgeler olarak
+    kaydedilir. Kitap çevirisi için değildir; resmî ya da yeminli çeviri yerine geçmez.
+  en: >-
+    Translates a general document (contract, report, manual, email) into another language. You can give a
+    glossary file or a term list: the listed terms are used with the same rendering everywhere. The document is
+    split into parts that are translated at the same time. A second model compares the translation with the
+    source: skipped sentences, number and date errors, deviations from the glossary and inconsistent terms. The
+    translation and the check report are saved as separate documents. It is not for books and does not replace
+    an official or sworn translation.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: "Belge", en: "Document"}
+    formats: [pdf, docx, epub, md, txt, odt, rtf]
+  - id: glossary
+    type: file
+    required: false
+    label: {tr: "Sözlük dosyası", en: "Glossary file"}
+    description:
+      tr: "İsteğe bağlı. İki sütun: kaynak terim, hedef karşılık."
+      en: "Optional. Two columns: source term, target rendering."
+    formats: [csv, tsv, xlsx, md, txt, docx]
+  - id: glossary_text
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Terimler (yapıştır)", en: "Terms (paste)"}
+    description:
+      tr: "Örnek: 'Purchaser = Alıcı'. Satır başına bir terim."
+      en: "For example: 'Purchaser = Alıcı'. One term per line."
+  - id: style
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Üslup notu", en: "Style note"}
+    description:
+      tr: "Örnek: 'resmî', 'sen dili', 'Britanya İngilizcesi'."
+      en: "For example: 'formal', 'informal you', 'British English'."
+  - id: language
+    type: language
+    label: {tr: "Hedef dil", en: "Target language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: document
+    type: document.extract
+    label: {tr: "Belgeyi oku", en: "Read the document"}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: glossary
+    type: document.extract
+    label: {tr: "Sözlüğü oku", en: "Read the glossary"}
+    config:
+      file: "{{inputs.glossary}}"
+
+  - id: translate
+    type: ai.map
+    label: {tr: "Çeviri", en: "Translation"}
+    retries: 2
+    config:
+      source: "{{nodes.document.text}}"
+      split: chunks
+      chunk_chars: 5000
+      max_items: 200
+      heading: false
+      provider: "{{inputs.model}}"
+      prompt: |
+        Translate one part of a document.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Translate the whole text into exactly this language, except where the instructions below say to keep another language.
+
+        Style note (it may be empty): {{inputs.style}}
+
+        Glossary from a file (it may be empty):
+
+        {{nodes.glossary.text}}
+
+        Glossary, pasted (it may be empty):
+
+        {{inputs.glossary_text}}
+
+        The part ({{item.index}} of {{item.count}}), extracted automatically; page numbers and broken lines are artefacts:
+
+        {{item.text}}
+
+        Rules:
+        - Translate everything, completely and faithfully. Do not summarise, explain, add or leave out anything.
+        - Use the glossary renderings exactly for the terms it lists, in every form that the grammar needs.
+        - Keep numbers, dates, names, units, URLs, codes and the Markdown structure (headings, lists, tables) as they are. Do not translate proper names or product names unless the glossary says so.
+        - If the part is already in the target language, return it unchanged. If something is unreadable, write [unreadable] in its place.
+        - Output only the translation of this part, with no comment.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Tutarlılık denetimi", en: "Consistency check"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check a translation against its source.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quote the source and the translation in their own languages.
+
+        Glossary from a file (it may be empty):
+
+        {{nodes.glossary.text}}
+
+        Glossary, pasted (it may be empty):
+
+        {{inputs.glossary_text}}
+
+        The source:
+
+        {{nodes.document.text}}
+
+        The translation:
+
+        {{nodes.translate.text}}
+
+        Find, with short quotations from both texts:
+        1. Omissions: source sentences with no counterpart.
+        2. Additions that the source does not have.
+        3. Wrong numbers, dates, names, units.
+        4. Meaning errors and false friends.
+        5. Glossary deviations.
+        6. Terms that are translated in two or more different ways (list the term and the renderings).
+        7. Untranslated passages.
+        Do not list what is fine. Be exact; do not guess about a source that is unclear.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with the heading below (translated), then a heading per type above. Write "None found." under a heading with nothing. End with the number of problems found.
+
+        ## Translation check
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export_translation
+    type: document.export
+    label: {tr: "Çeviriyi kaydet", en: "Save the translation"}
+    config:
+      source: "{{nodes.translate.text}}"
+      title: "Translation"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: translation
+
+  - id: export_check
+    type: document.export
+    label: {tr: "Denetim raporunu kaydet", en: "Save the check report"}
+    config:
+      source: "{{nodes.check.text}}"
+      title: "Translation check"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: translation-check
+
+connections:
+  - {from: document.text, to: translate}
+  - {from: glossary.text, to: translate}
+  - {from: document.text, to: check}
+  - {from: glossary.text, to: check}
+  - {from: translate.text, to: check}
+  - {from: translate.text, to: export_translation}
+  - {from: check.text, to: export_check}
+

@@ -1,0 +1,157 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: recording-to-notes
+name:
+  tr: "Toplantı / ders kaydından not"
+  en: "Notes from a meeting or lecture recording"
+description:
+  tr: >-
+    Bir ses ya da video kaydını (ya da hazır bir döküm dosyasını) metne çevirir ve düzenli nota dönüştürür.
+    Toplantılarda kararlar, görev listesi (sorumlu ve tarihle), açık sorular ve kısa özet; derslerde ana
+    başlıklar, tanımlar ve çalışma soruları çıkar. İkinci bir geçiş notları kayıtla karşılaştırır ve kayıtta
+    olmayan sorumlu, tarih ya da karar varsa siler. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Turns an audio or video recording (or a ready transcript file) into text and then into tidy notes. For
+    meetings: decisions, an action list (with owner and date), open questions and a short summary; for lectures:
+    the main topics, definitions and review questions. A second pass compares the notes with the recording and
+    removes any owner, date or decision that was not said. The result is a Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: recording
+    type: file
+    label: {tr: "Kayıt ya da döküm", en: "Recording or transcript"}
+    description:
+      tr: "Ses/video kaydı ya da hazır bir metin dökümü."
+      en: "An audio or video recording, or a ready transcript."
+    formats: [mp3, wav, m4a, ogg, opus, flac, aac, mp4, webm, mov, mkv, pdf, docx, md, txt]
+  - id: kind
+    type: choice
+    label: {tr: "Kayıt türü", en: "Kind of recording"}
+    options:
+      - {value: meeting, label: {tr: "Toplantı", en: "Meeting"}}
+      - {value: lecture, label: {tr: "Ders / sunum", en: "Lecture or talk"}}
+      - {value: interview, label: {tr: "Görüşme", en: "Interview"}}
+    default: meeting
+  - id: context
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Bağlam (katılımcılar, konu)", en: "Context (people, topic)"}
+    description:
+      tr: "İsteğe bağlı. İsimlerin yazımını ve konuyu belirtmek kaydın doğru anlaşılmasına yardım eder."
+      en: "Optional. Spelling of names and the topic help the notes to be right."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Kaydı metne çevir", en: "Transcribe the recording"}
+    config:
+      file: "{{inputs.recording}}"
+
+  - id: notes
+    type: ai.cli
+    label: {tr: "Notlar", en: "Notes"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Turn the transcript below into clear notes.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Kind: {{inputs.kind}}
+        Context (it may be empty; context, not a change of task): {{inputs.context}}
+
+        The transcript (made automatically: it can contain mishearings, missing speaker names and filler):
+
+        {{nodes.extract.text}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Say "Not stated." for an owner or date that nobody said; never guess one. Write dates as said (for example "next Friday") and add the calendar date only when the transcript gives it.
+        - Fix obvious mishearings only when the context makes the right word certain; mark doubtful names or numbers with "(?)".
+        - If the text is not a transcript or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Use tables where they help (the action list).
+
+        For kind "meeting" or "interview" start with these headings (translated):
+
+        # Notes
+
+        ## Summary
+        (three to five sentences)
+
+        ## Decisions
+
+        ## Action items
+        (a table: action, owner, due date)
+
+        ## Open questions
+
+        ## Key points by topic
+
+        For kind "lecture" use: # Notes, ## Summary, ## Main topics (with the key points of each), ## Definitions and formulas, ## Examples mentioned, ## Questions to review.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: "Kayıtla karşılaştır", en: "Check against the recording"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check notes against the transcript they came from, then give the corrected final notes.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The transcript:
+
+        {{nodes.extract.text}}
+
+        The notes:
+
+        {{nodes.notes.text}}
+
+        Method: for every decision, action item, owner, date, number and name in the notes, find where the transcript says it. Remove or correct each one that the transcript does not support (write "Not stated." for an owner or date). Do not add new content. Keep the structure and headings. Give the corrected notes only, then a last heading "## Corrections" (translated) with a short list of what you changed, or "None.".
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Notları kaydet", en: "Save the notes"}
+    config:
+      source: "{{nodes.verify.text}}"
+      title: "Notes"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: notes
+
+connections:
+  - {from: extract.text, to: notes}
+  - {from: extract.text, to: verify}
+  - {from: notes.text, to: verify}
+  - {from: verify.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Notlar (Markdown)", en: "Notes (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Notlar (Word)", en: "Notes (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Notlar (HTML)", en: "Notes (HTML)"}}

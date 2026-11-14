@@ -1,0 +1,344 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: sat-math-solver
+name:
+  tr: "SAT Matematik: soru çözümü ve çift kontrol"
+  en: "SAT Math: worked solution with a double check"
+description:
+  tr: >-
+    Bir SAT tarzı matematik sorusunu (yazarak ya da dosyadan) iki ayrı model çağrısıyla birbirinden bağımsız
+    çözer. Üçüncü bir adım iki nihai cevabı karşılaştırır. Cevaplar uyuşmazsa bir model soruyu yeniden, farklı
+    bir yolla çözer ve hangi cevabın doğru olduğuna karar verir; uyuşuyorsa temiz bir çözüm yazılır. Sonuç adım
+    adım çözüm, cevap, yaygın tuzaklar ve ölçülen becerilerdir (Markdown, Word, HTML). Yapay zekâ çözümü hata
+    yapabilir, bu yüzden iki modelin uyuşması doğruluğun kanıtı değildir. College Board ile ilgisi yoktur.
+  en: >-
+    Solves an SAT-style math question (typed or from a file) in two separate, independent model calls. A third
+    step compares the two final answers. If they differ, a model solves the question again by a different route
+    and decides which answer is right; if they agree, a clean solution is written. The result is a step-by-step
+    solution, the answer, common traps and the skill tested (Markdown, Word, HTML). An AI solution can be wrong,
+    so two models agreeing is not proof. Not affiliated with College Board.
+version: "1.0"
+category: education
+
+inputs:
+  - id: question
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Soru (yazın veya yapıştırın)", en: "Question (type or paste)"}
+    description:
+      tr: "Şıkları da yazın. Şekil gerekiyorsa sözle tarif edin. Dosya yüklüyorsanız boş bırakabilirsiniz."
+      en: "Include the answer choices. Describe any figure in words. May be left empty if you upload a file."
+  - id: question_file
+    type: file
+    required: false
+    label: {tr: "Soru dosyası", en: "Question file"}
+    description:
+      tr: "İsteğe bağlı. Metin içeren PDF, Word, Markdown, düz metin ya da fotoğraf (OCR ile okunur)."
+      en: "Optional. A PDF, Word, Markdown or text file, or a photo (read by OCR)."
+    formats: [pdf, docx, md, txt, png, jpg, jpeg]
+  - id: language
+    type: language
+    label: {tr: "Açıklama dili", en: "Explanation language"}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Dosyadan soruyu oku", en: "Read the question file"}
+    config:
+      file: "{{inputs.question_file}}"
+
+  - id: solve_a
+    type: ai.cli
+    label: {tr: "Birinci çözüm", en: "First solution"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced SAT math tutor. Solve the question below on your own.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question. It was typed or pasted by the user (it may be empty):
+
+        {{inputs.question}}
+
+        The question as read from an uploaded file (it may be empty; the file was read automatically, so page numbers or broken lines may appear):
+
+        {{nodes.extract.text}}
+
+        Rules:
+        - The question is in the data above. If both parts are empty, or the question depends on a figure, graph or table that you cannot see in the text, say in two sentences what is missing and stop. Never guess or invent the missing data.
+        - It is an SAT-style math question: a multiple-choice question has four choices; otherwise the answer is a number (a student-produced response). A calculator is allowed.
+        - Use the most direct method.
+        - Work step by step. Then check the result by substituting it back or by a second method, and say what the check showed.
+        - Do not write long teaching text: this is a working solution that another examiner will compare.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated):
+
+        ## Solution
+
+        (the steps, the check, then one last line that starts with "Final answer:" (translated) and gives only the answer; for a multiple-choice question give the letter and its value)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Do not write any number you did not compute.
+
+  - id: solve_b
+    type: ai.cli
+    label: {tr: "İkinci, bağımsız çözüm", en: "Second, independent solution"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are an experienced SAT math tutor. Solve the question below on your own.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question. It was typed or pasted by the user (it may be empty):
+
+        {{inputs.question}}
+
+        The question as read from an uploaded file (it may be empty; the file was read automatically, so page numbers or broken lines may appear):
+
+        {{nodes.extract.text}}
+
+        Rules:
+        - The question is in the data above. If both parts are empty, or the question depends on a figure, graph or table that you cannot see in the text, say in two sentences what is missing and stop. Never guess or invent the missing data.
+        - It is an SAT-style math question: a multiple-choice question has four choices; otherwise the answer is a number (a student-produced response). A calculator is allowed.
+        - Use a different method from the most obvious one when one exists (for example plug in the choices, graph it in your head, or work backwards).
+        - Work step by step. Then check the result by substituting it back or by a second method, and say what the check showed.
+        - Do not write long teaching text: this is a working solution that another examiner will compare.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated):
+
+        ## Solution
+
+        (the steps, the check, then one last line that starts with "Final answer:" (translated) and gives only the answer; for a multiple-choice question give the letter and its value)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Do not write any number you did not compute.
+
+  - id: compare
+    type: ai.cli
+    label: {tr: "Cevapları karşılaştır", en: "Compare the answers"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You compare two independent solutions of one SAT math question. Do not solve the question yourself yet.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question. It was typed or pasted by the user (it may be empty):
+
+        {{inputs.question}}
+
+        The question as read from an uploaded file (it may be empty; the file was read automatically, so page numbers or broken lines may appear):
+
+        {{nodes.extract.text}}
+
+        Solution A:
+
+        {{nodes.solve_a.text}}
+
+        Solution B:
+
+        {{nodes.solve_b.text}}
+
+        Rules:
+        - Compare only the final answers. Equivalent forms are the same answer (1/2 and 0.5; x = 3 and 3). For a multiple-choice question compare the chosen choice.
+        - If either solution says the question cannot be solved, or gives no final answer, the answers differ.
+        - If they differ, name the first step where the two reasonings split.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated):
+
+        ## Comparison
+
+        - Answer A:
+        - Answer B:
+        - Same final answer: (yes or no)
+        - Where the reasoning splits: (or "Not applicable.")
+
+        Then, as the very last line of your answer, write exactly "Answers differ: yes" or exactly "Answers differ: no". This last line stays in English whatever the output language is; a program reads it.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: gate
+    type: condition
+    label: {tr: "Cevaplar farklıysa", en: "If the answers differ"}
+    config:
+      value: "{{nodes.compare.text}}"
+      operator: regex
+      match: 'Answers differ:\W*yes'
+
+  - id: reconcile
+    type: ai.cli
+    label: {tr: "Uzlaştırma: yeniden çöz", en: "Reconcile: solve again"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Two independent solutions of one SAT math question gave different answers. Decide which one is right.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question. It was typed or pasted by the user (it may be empty):
+
+        {{inputs.question}}
+
+        The question as read from an uploaded file (it may be empty; the file was read automatically, so page numbers or broken lines may appear):
+
+        {{nodes.extract.text}}
+
+        Solution A:
+
+        {{nodes.solve_a.text}}
+
+        Solution B:
+
+        {{nodes.solve_b.text}}
+
+        The comparison:
+
+        {{nodes.gate.true}}
+
+        Method:
+        1. Solve the question again from the start, with a method that is different from both solutions. Do not just pick one of them and do not decide by majority.
+        2. Verify your answer by substitution.
+        3. Find the mistake in the wrong solution (or in both).
+        4. If you cannot settle the answer with confidence, write "Could not be settled" (translated) as the answer, say what blocks you, and give the most likely answer with a clear warning.
+
+        Write the final result for a student.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with these headings (translated):
+
+        # Solution
+
+        ## Answer
+        (the answer, one line)
+
+        ## Worked solution
+        (numbered steps)
+
+        ## Why the two solutions differed
+        (the mistake, in one or two sentences)
+
+        ## Common traps
+        (two or three, each a wrong answer that a student could reach and the slip behind it)
+
+        ## Skill tested
+        (one line)
+
+        ## Notice
+        (one short paragraph with this meaning: This solution was written by an AI for a question in the style of the digital SAT, which is a trademark of College Board; this is not affiliated with or endorsed by College Board. It may contain errors: check the answer. Two models disagreed on this question, so check the answer yourself.)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Do not write any number you did not compute.
+
+  - id: agreed
+    type: ai.cli
+    label: {tr: "Temiz çözümü yaz", en: "Write the clean solution"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Two independent solutions of one SAT math question gave the same final answer. Write the final solution for a student.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question. It was typed or pasted by the user (it may be empty):
+
+        {{inputs.question}}
+
+        The question as read from an uploaded file (it may be empty; the file was read automatically, so page numbers or broken lines may appear):
+
+        {{nodes.extract.text}}
+
+        Solution A:
+
+        {{nodes.solve_a.text}}
+
+        Solution B:
+
+        {{nodes.solve_b.text}}
+
+        The comparison:
+
+        {{nodes.gate.false}}
+
+        Rules:
+        - Use the clearer of the two solutions and make it complete and easy to follow. Check every step again; fix an error if you find one and say so.
+        - Do not claim that the answer is certainly right: two models agreeing is not proof.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with these headings (translated):
+
+        # Solution
+
+        ## Answer
+        (the answer, one line)
+
+        ## Worked solution
+        (numbered steps)
+
+        ## Check
+        (how to verify the answer)
+
+        ## Common traps
+        (two or three, each a wrong answer that a student could reach and the slip behind it)
+
+        ## Skill tested
+        (one line)
+
+        ## Notice
+        (one short paragraph with this meaning: This solution was written by an AI for a question in the style of the digital SAT; it is not affiliated with or endorsed by College Board, and it may contain errors, so check the answer. Two models agreed on the answer, which makes it more likely to be right, but it is not proof.)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Do not write any number you did not compute.
+
+  - id: export
+    type: document.export
+    label: {tr: "Çözümü kaydet", en: "Save the solution"}
+    config:
+      source: "{{nodes.reconcile.text}}{{nodes.agreed.text}}"
+      title: "SAT Math solution"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: sat-math-solution
+
+connections:
+  - {from: extract.text, to: solve_a}
+  - {from: extract.text, to: solve_b}
+  - {from: solve_a.text, to: compare}
+  - {from: solve_b.text, to: compare}
+  - {from: extract.text, to: compare}
+  - {from: compare.text, to: gate}
+  - {from: gate.true, to: reconcile}
+  - {from: gate.false, to: agreed}
+  - {from: solve_a.text, to: reconcile}
+  - {from: solve_b.text, to: reconcile}
+  - {from: extract.text, to: reconcile}
+  - {from: solve_a.text, to: agreed}
+  - {from: solve_b.text, to: agreed}
+  - {from: extract.text, to: agreed}
+  - {from: reconcile.text, to: export}
+  - {from: agreed.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Çözüm (Markdown)", en: "Solution (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Çözüm (Word)", en: "Solution (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Çözüm (HTML)", en: "Solution (HTML)"}}

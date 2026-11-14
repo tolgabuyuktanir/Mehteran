@@ -38,3 +38,7 @@ Zip dosyası indirdiyseniz yeni zip'i indirin ve eski klasördeki şunları yeni
 ## Daha fazlası
 
 [Kullanım kılavuzu](docs/guide.tr.md); arayüzü ayrıntılı olarak, iş akışını, dışa aktarma biçimini, komut satırını, klasörleri, ayarları, sınırları ve geliştirmeyi anlatır.
+
+## Mehteran (yerel yapay zekâ iş akışları)
+
+Aynı klasörde **Mehteran** da bulunur: yapay zekâ iş akışlarını bu bilgisayarda çalıştıran bir program (örneğin üç modelle akademik makale değerlendirmesi ya da iki belgenin karşılaştırılması). Çeviri uygulamasının araçlarını ve oturumlarını kullanır. Çeviri uygulaması onun arayüzünün bir parçasıdır: İş akışları sekmesinin en üstündeki "İslami kitap çevirisi" kartı onu bütün özellikleriyle açar. `./translate ui` kendi başına çalışmayı sürdürür. Mehteran'ı `./mehter ui` (Windows: `mehter ui`) ile başlatın; `http://127.0.0.1:8766/` adresinde açılır. Ayrıntılar: [Mehteran kılavuzu](docs/mehteran.tr.md).

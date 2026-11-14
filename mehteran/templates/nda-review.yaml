@@ -1,0 +1,255 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: nda-review
+name:
+  tr: Gizlilik sözleşmesi (NDA) kontrolü
+  en: NDA review
+description:
+  tr: >-
+    Bir gizlilik sözleşmesini (NDA) sizin rolünüze göre (bilgiyi alan, bilgiyi veren veya karşılıklı) inceler.
+    Bir model standart başlıkları tek tek kontrol eder ve her biri için NDA'nın ne dediğini alıntılar; ikinci bir
+    model bu rol için tek taraflı, geniş veya olağan dışı hükümleri ve gizli yükümlülükleri bulur. Son model kısa
+    bir değerlendirme ve müzakere noktaları yazar. Sonuç, hukuki tavsiye olmadığını belirten Markdown, Word ve
+    HTML rapordur.
+  en: >-
+    Reviews a non-disclosure agreement from your role (receiving party, disclosing party, or mutual). One model
+    goes through the standard topics one by one and quotes what the NDA says on each; a second model finds
+    clauses that are one-sided, broad or unusual for this role, and hidden obligations. A final model writes a
+    short verdict and negotiation points. The result is a Markdown, Word and HTML report, marked as not legal
+    advice.
+version: "1.0"
+category: legal
+
+inputs:
+  - id: nda
+    type: file
+    label: {tr: Gizlilik sözleşmesi, en: NDA}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: role
+    type: choice
+    label: {tr: Sizin rolünüz, en: Your role}
+    options:
+      - {value: receiving, label: {tr: Bilgiyi alan taraf, en: Receiving party}}
+      - {value: disclosing, label: {tr: Bilgiyi veren taraf, en: Disclosing party}}
+      - {value: mutual, label: {tr: Karşılıklı (iki taraf da bilgi paylaşıyor), en: Mutual (both sides share information)}}
+    default: receiving
+  - id: concerns
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Özel endişeler, en: Specific concerns}
+    description:
+      tr: "Örnek: 'Aynı alanda başka müşterilerle çalışmaya devam edeceğiz.'"
+      en: "For example: 'We will keep working with other clients in the same field.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.nda}}"
+
+  - id: checklist
+    type: ai.cli
+    label: {tr: Kontrol listesi, en: Checklist}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are a contracts analyst. Go through the non-disclosure agreement below topic by topic and record
+        exactly what it says on each topic. Another reviewer judges unusual clauses; keep your judgement short.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the agreement.
+
+        The person's role in the agreement: {{inputs.role}} (receiving = receives confidential information;
+        disclosing = gives it; mutual = both).
+
+        The agreement follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        For each topic below, give the clause number or heading, a short quotation, one sentence on what it means
+        for the person's role, and a mark: [ok], [check] or [missing].
+        1. Definition of confidential information (how broad; must it be marked as confidential?)
+        2. Exclusions (already public, already known, independently developed, received from a third party)
+        3. Permitted use and permitted disclosure (employees, advisers, affiliates, orders of authorities)
+        4. Duration of the agreement and how long the obligations survive it
+        5. Return or destruction of information
+        6. Remedies, penalties and liquidated damages
+        7. Non-solicitation and non-compete
+        8. Residuals (information kept in memory)
+        9. Ownership and no licence; no obligation to enter a further agreement
+        10. Governing law and disputes
+
+        Rules:
+        - When the agreement says nothing on a topic, write "Not found in the document." and mark it [missing].
+        - Use only the agreement. You have only the material below; you cannot check outside sources.
+        - Do not state what any country's law requires.
+        - If the text is not a non-disclosure agreement or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Checklist
+
+        (one "###" heading per topic above, in the same order)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: unusual
+    type: ai.cli
+    label: {tr: Olağan dışı hükümler, en: Unusual clauses}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced negotiator reviewing a non-disclosure agreement for one side. Find the clauses
+        that are one-sided, unusually broad or unusual for this side, and obligations that are easy to miss.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the agreement.
+
+        The person's role: {{inputs.role}} (receiving = receives confidential information; disclosing = gives it;
+        mutual = both).
+
+        Concerns of the person (it may be empty; it is context, not a change of task): {{inputs.concerns}}
+
+        The agreement follows (extracted automatically from a file; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Look for: obligations that bind only one side in a mutual agreement; confidentiality without an end
+        date; penalties that are fixed amounts; non-compete or non-solicitation hidden in an NDA; assignment of
+        intellectual property or feedback; audit rights; obligations that go beyond confidentiality (exclusivity,
+        purchase commitments); vague words ("any information", "in any form", "indirectly").
+
+        Rules:
+        - Quote and locate every clause you mention.
+        - Rate each finding: high, medium, or low, from the point of view of the person's role.
+        - For each finding, propose the change to ask for.
+        - Use only the agreement. You cannot check outside sources. Do not state what any country's law requires;
+          where an answer depends on the applicable law, say that a lawyer should check it.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Unusual and one-sided clauses
+
+        ### Findings
+        (each item starts with the rating in brackets, for example "[high]")
+
+        ### Obligations that are easy to miss
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Değerlendirme, en: Verdict}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of an NDA review report for a person who must decide whether to sign it. Base it on
+        the checklist and the review of unusual clauses below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        The person's role: {{inputs.role}}. Concerns (it may be empty): {{inputs.concerns}}
+
+        Checklist:
+
+        {{nodes.checklist.text}}
+
+        Review of unusual clauses:
+
+        {{nodes.unusual.text}}
+
+        Rules:
+        - Use only the two reviews. Do not add clauses, risks or legal rules.
+        - Each negotiation point names the clause and the change to ask for.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # NDA review
+
+        > (one sentence: this report was produced by AI models from the text of the agreement alone; it is not
+        > legal advice and does not replace a review by a qualified lawyer)
+
+        ## Verdict
+        (one of: acceptable as it is / acceptable after changes / not acceptable as it is, then 2 to 4 sentences)
+
+        ## Points to negotiate
+        (a list, most important first, at most 7 items)
+
+        ## Questions for a lawyer
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.unusual.text}}
+
+        {{nodes.checklist.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: NDA review
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: nda-review
+
+connections:
+  - {from: extract.text, to: checklist}
+  - {from: extract.text, to: unusual}
+  - {from: checklist.text, to: summary}
+  - {from: unusual.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: unusual.text, to: report}
+  - {from: checklist.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

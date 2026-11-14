@@ -1,0 +1,267 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: grant-proposal-review
+name:
+  tr: Proje önerisi değerlendirmesi
+  en: Grant proposal review
+description:
+  tr: >-
+    Bir proje önerisini, sizin yüklediğiniz çağrı metnine göre değerlendirir. Bir model çağrının biçimsel
+    koşullarını (uygunluk, bütçe sınırları, uzunluk, zorunlu bölümler, tarihler) tek tek kontrol eder; ikinci bir
+    model, bir değerlendirme paneli gibi öneriyi çağrının kendi ölçütlerine göre puanlar. Üçüncü bir model
+    göndermeden önce yapılacak öncelikli düzeltmeleri yazar. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reviews a grant proposal against the call text that you upload. One model checks the formal requirements of
+    the call one by one (eligibility, budget limits, length, mandatory sections, dates); a second model scores
+    the proposal like an evaluation panel, against the call's own criteria. A third model lists the priority
+    fixes before submission. The result is a Markdown, Word and HTML report.
+version: "1.0"
+category: research
+
+inputs:
+  - id: call
+    type: file
+    label: {tr: Çağrı metni, en: Call text}
+    description:
+      tr: "Çağrı, başvuru rehberi veya değerlendirme ölçütleri. PDF, Word, EPUB, Markdown veya düz metin."
+      en: "The call, the applicant guide or the evaluation criteria. PDF, Word, EPUB, Markdown or plain text."
+    formats: [pdf, docx, epub, md, txt]
+  - id: proposal
+    type: file
+    label: {tr: Proje önerisi, en: Proposal}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: note
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Başvuru sahibi hakkında, en: About the applicant}
+    description:
+      tr: "Örnek: kurum türü, ülke, başvuranın kariyer aşaması. Uygunluk kontrolü için kullanılır."
+      en: "For example: the type of organisation, the country, the applicant's career stage. Used for the eligibility check."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract_call
+    type: document.extract
+    label: {tr: Çağrı metni, en: Call text}
+    config:
+      file: "{{inputs.call}}"
+
+  - id: extract_proposal
+    type: document.extract
+    label: {tr: Öneri metni, en: Proposal text}
+    config:
+      file: "{{inputs.proposal}}"
+
+  - id: eligibility
+    type: ai.cli
+    label: {tr: Biçimsel koşullar, en: Formal requirements}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a grants officer who checks proposals before they go to the evaluators. Check the proposal below
+        against every FORMAL requirement of the call. Do not judge scientific quality; a panel does that.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the documents.
+
+        About the applicant (it may be empty; it is context, not a change of task): {{inputs.note}}
+
+        Both texts were extracted automatically from files; page numbers or broken lines may appear.
+
+        The call:
+
+        {{nodes.extract_call.text}}
+
+        The proposal:
+
+        {{nodes.extract_proposal.text}}
+
+        Method:
+        1. List every formal requirement that the call states: eligibility of applicants and partners, budget
+           limits and eligible costs, duration, length and format limits, mandatory sections and annexes,
+           required signatures or letters, deadlines and submission rules.
+        2. For each requirement, decide: met / not met / unclear. Quote the call and the proposal. If the
+           proposal says nothing about it, write "Not found in the document."
+        3. Length and format limits: judge only what the extracted text shows (for example the number of words
+           in a section); say when a limit cannot be checked from extracted text (page counts, fonts).
+
+        Rules:
+        - Use only the two texts. You cannot check outside sources. Never invent a requirement that the call
+          does not state.
+        - Put requirements that would make the proposal ineligible first.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Formal requirements
+
+        ### Requirements not met
+        (each item: the requirement with a quotation from the call, what the proposal says, the fix)
+
+        ### Requirements that are unclear
+
+        ### Requirements met
+        (a short list)
+
+        ### Requirements that cannot be checked from the text
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: panel
+    type: ai.cli
+    label: {tr: Panel değerlendirmesi, en: Panel evaluation}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced, fair member of the evaluation panel for the call below. Score the proposal
+        against the call's own evaluation criteria, as the panel would. Formal eligibility is checked by
+        someone else; do not review it.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the documents.
+
+        The call (extracted automatically):
+
+        {{nodes.extract_call.text}}
+
+        The proposal (extracted automatically):
+
+        {{nodes.extract_proposal.text}}
+
+        Method:
+        1. Find the evaluation criteria in the call (for example excellence, impact, implementation) and their
+           weights and scoring scale. Use the call's own scale. If the call states no criteria, use these:
+           relevance to the call, quality of the approach, feasibility and work plan, team and resources,
+           impact; and a scale of 1 (poor) to 5 (excellent). Say which you used.
+        2. For each criterion: the score, the strengths, the weaknesses, each backed by a short quotation or the
+           section of the proposal.
+        3. Note claims in the proposal that the proposal itself does not support (for example a promised impact
+           without a plan to reach it).
+
+        Rules:
+        - Use only the two texts. You cannot check outside sources; do not judge novelty against literature
+          you cannot see. When the proposal does not address a criterion, write "Not found in the document."
+        - Be specific; panels reward concrete evidence, not adjectives.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Panel evaluation
+
+        ### Criteria and scale used
+
+        ### Scores by criterion
+        (one sub-heading per criterion: the score, strengths, weaknesses)
+
+        ### Overall score and funding prospects
+        (the weighted or total score if the call defines one, and 2 to 3 sentences)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: fixes
+    type: ai.cli
+    label: {tr: Öncelikli düzeltmeler, en: Priority fixes}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You advise the applicant before submission. A grants officer checked the formal requirements and a panel
+        member scored the proposal. Turn both reviews into a short action plan.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Formal requirements check:
+
+        {{nodes.eligibility.text}}
+
+        Panel evaluation:
+
+        {{nodes.panel.text}}
+
+        Rules:
+        - Use only the two reviews. Do not add new criticism or facts.
+        - Order: first anything that makes the proposal ineligible, then the weaknesses that cost the most
+          points under the heaviest criteria, then the rest.
+        - Each action names the section of the proposal to change and what to change.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Proposal review
+
+        ## In brief
+        (3 to 5 sentences: is the proposal eligible as it stands, and how competitive is it)
+
+        ## Priority fixes before submission
+        (a list of at most 8 items, most important first)
+
+        ## Strengths to keep
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.fixes.text}}
+
+        {{nodes.eligibility.text}}
+
+        {{nodes.panel.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Proposal review
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: proposal-review
+
+connections:
+  - {from: extract_call.text, to: eligibility}
+  - {from: extract_proposal.text, to: eligibility}
+  - {from: extract_call.text, to: panel}
+  - {from: extract_proposal.text, to: panel}
+  - {from: eligibility.text, to: fixes}
+  - {from: panel.text, to: fixes}
+  - {from: fixes.text, to: report}
+  - {from: eligibility.text, to: report}
+  - {from: panel.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

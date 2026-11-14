@@ -1,0 +1,297 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: financial-period-comparison
+name:
+  tr: İki dönemin finansal karşılaştırması
+  en: Two-period financial comparison
+description:
+  tr: >-
+    Aynı şirketin iki dönemine ait finansal raporlarını (örneğin 2024 ve 2025 ya da iki çeyrek) karşılaştırır.
+    Bir model değişen kalemleri mutlak ve yüzde değişimleriyle, hesaplamayı göstererek listeler ve
+    karşılaştırmayı sınırlayan muhasebe ya da tanım değişikliklerini belirtir. İkinci bir model her rakamı
+    kaynakta arar ve her hesabı yeniden yapar. Üçüncü adım düzeltilmiş ana değişiklikleri ve raporların
+    belirttiği nedenleri özetler. Sonuç Markdown, Word ve HTML rapordur; yatırım tavsiyesi değildir.
+  en: >-
+    Compares the financial reports of the same company for two periods (for example 2024 and 2025, or two
+    quarters). One model lists the changed line items with absolute and percentage change, showing each
+    calculation, and notes accounting or definition changes that limit the comparison. A second model looks up
+    every figure in the sources and redoes every calculation. A third step summarises the corrected key changes
+    and the drivers the reports state. The result is a Markdown, Word and HTML report; it is not investment advice.
+version: "1.0"
+category: business
+
+inputs:
+  - id: first
+    type: file
+    label: {tr: Önceki dönem raporu, en: Earlier period report}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: second
+    type: file
+    label: {tr: Sonraki dönem raporu, en: Later period report}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: first_name
+    type: text
+    label: {tr: Önceki dönemin adı, en: Name of the earlier period}
+    description: {tr: "Örnek: 2024, 2025-Ç1", en: "For example: 2024, Q1 2025"}
+    default: "2024"
+    required: false
+  - id: second_name
+    type: text
+    label: {tr: Sonraki dönemin adı, en: Name of the later period}
+    description: {tr: "Örnek: 2025, 2025-Ç2", en: "For example: 2025, Q2 2025"}
+    default: "2025"
+    required: false
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Odak noktası, en: Focus}
+    description:
+      tr: "Örnek: 'Marjlardaki düşüşün nedeni nedir?'"
+      en: "For example: 'Why did the margins fall?'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: extract_first
+    type: document.extract
+    label: {tr: Önceki dönem metni, en: Earlier period text}
+    config:
+      file: "{{inputs.first}}"
+
+  - id: extract_second
+    type: document.extract
+    label: {tr: Sonraki dönem metni, en: Later period text}
+    config:
+      file: "{{inputs.second}}"
+
+  - id: compare
+    type: ai.cli
+    label: {tr: Kalem kalem karşılaştırma, en: Line-by-line comparison}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a financial analyst comparing the reports of the same company for two periods,
+        "{{inputs.first_name}}" (earlier) and "{{inputs.second_name}}" (later). Report every change in the
+        financial figures that matters to a reader.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep line-item names and quotations as they appear in the reports.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        Report for "{{inputs.first_name}}" (extracted automatically from its file; tables may be flattened and
+        page numbers or broken lines may appear):
+
+        {{nodes.extract_first.text}}
+
+        Report for "{{inputs.second_name}}" (extracted the same way):
+
+        {{nodes.extract_second.text}}
+
+        Method:
+        1. Check comparability first: same company, same currency and unit, same scope of consolidation, the
+           same definitions. Name every change in accounting policy, segment structure, definition or
+           restatement that limits the comparison.
+        2. Compare the main line items: revenue, cost of sales, gross profit, operating expenses, operating
+           profit, net profit, total assets, equity, debt, cash, operating cash flow, and the segments.
+        3. For each line item give both figures with their source (statement, note or section), the absolute
+           change and the percentage change, and show the calculation, for example
+           "(130 - 100) / 100 = 30%".
+        4. Note the drivers of each change only as the reports state them, with a quotation.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources.
+        - A figure stated in only one report: give it and write "Not found in the document." for the other.
+        - Never estimate or invent figures. If a figure cannot be read reliably from a flattened table, say so.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Line-by-line comparison
+
+        ### Comparability
+
+        ### Income statement
+
+        ### Balance sheet and cash flow
+
+        ### Segments
+
+        ### Drivers stated by the reports
+
+        (Each line-item entry: the name, the figure for "{{inputs.first_name}}", the figure for
+        "{{inputs.second_name}}", the change with the calculation, the sources. Write "None found." under a
+        heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: check
+    type: ai.cli
+    label: {tr: Rakam denetimi, en: Figure check}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You are an independent checker. An analyst compared two financial reports, "{{inputs.first_name}}" and
+        "{{inputs.second_name}}". Verify every figure and every calculation in the analyst's comparison against
+        the reports themselves.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Report for "{{inputs.first_name}}":
+
+        {{nodes.extract_first.text}}
+
+        Report for "{{inputs.second_name}}":
+
+        {{nodes.extract_second.text}}
+
+        The analyst's comparison:
+
+        {{nodes.compare.text}}
+
+        Check:
+        1. Every figure: does it appear in the named report with the same value, unit, currency and period?
+        2. Every calculation: redo it and show your calculation. Report each difference larger than rounding.
+        3. Comparability: changes in policy or definition that the analyst missed.
+        4. Drivers: is each stated driver really in the report quoted?
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Never invent figures.
+        - List only problems. Do not repeat figures that are correct; give the count of figures you confirmed.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Figure check
+
+        ### Figures not found or misquoted
+
+        ### Calculation errors
+
+        ### Comparability issues missed
+
+        ### Confirmed
+        (one sentence with the number of figures and calculations confirmed)
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Özet, en: Summary}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of a two-period financial comparison for a busy reader. An analyst compared the
+        periods "{{inputs.first_name}}" and "{{inputs.second_name}}", and a checker verified the figures.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The analyst's comparison:
+
+        {{nodes.compare.text}}
+
+        The checker's findings:
+
+        {{nodes.check.text}}
+
+        Rules:
+        - Use only these two texts. Where the checker corrects the analyst, use the corrected figure and do not
+          repeat the wrong one.
+        - Do not add figures, drivers or judgements of your own.
+        - Mention limits to comparability before the changes.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Financial comparison: {{inputs.first_name}} and {{inputs.second_name}}
+
+        > (one sentence: this comparison was produced by AI models from the report texts alone; it is not
+        > investment or financial advice)
+
+        ## In brief
+        (3 to 5 sentences)
+
+        ## Key changes
+        (a list, at most 8 items, most important first; each with the corrected figures and the change)
+
+        ## Drivers stated by the reports
+
+        ## Limits of the comparison
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.compare.text}}
+
+        {{nodes.check.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "{{inputs.first_name}} / {{inputs.second_name}}"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: financial-comparison
+
+connections:
+  - {from: extract_first.text, to: compare}
+  - {from: extract_second.text, to: compare}
+  - {from: extract_first.text, to: check}
+  - {from: extract_second.text, to: check}
+  - {from: compare.text, to: check}
+  - {from: compare.text, to: summary}
+  - {from: check.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: compare.text, to: report}
+  - {from: check.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

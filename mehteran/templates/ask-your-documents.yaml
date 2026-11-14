@@ -1,0 +1,136 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: ask-your-documents
+name:
+  tr: "Belgelerinize soru sorun"
+  en: "Ask your documents"
+description:
+  tr: >-
+    Birden çok belge yükleyin ve bir soru sorun. Her belge ayrı bir model çağrısıyla taranır (belgeler aynı anda
+    işlenir) ve soruyla ilgili bölümler birebir alıntıyla çıkarılır. Sonra bir model yalnızca bu alıntılardan
+    cevabı yazar: her cümlede hangi belgeden geldiğini gösterir, belgeler çelişiyorsa bunu söyler, cevap
+    belgelerde yoksa 'belgelerde bulunamadı' der. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Upload several documents and ask a question. Each document is scanned in its own model call (the documents
+    run at the same time) and the passages that bear on the question are taken out as exact quotations. Then a
+    model writes the answer from those quotations only: every statement shows which document it comes from,
+    conflicts between documents are named, and if the answer is not in the documents it says so. The result is a
+    Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: documents
+    type: file
+    multiple: true
+    label: {tr: "Belgeler", en: "Documents"}
+    description:
+      tr: "En çok 20 dosya."
+      en: "Up to 20 files."
+    formats: [pdf, docx, epub, md, txt, odt, rtf, csv, tsv, xlsx, png, jpg, jpeg]
+  - id: question
+    type: text
+    multiline: true
+    label: {tr: "Sorunuz", en: "Your question"}
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+
+nodes:
+  - id: documents
+    type: document.extract
+    label: {tr: "Belgeleri oku", en: "Read the documents"}
+    config:
+      file: "{{inputs.documents}}"
+
+  - id: find
+    type: ai.map
+    label: {tr: "Belge başına ilgili bölümler", en: "Relevant passages per document"}
+    retries: 2
+    config:
+      source: "{{nodes.documents.text}}"
+      split: files
+      max_items: 20
+      provider: "{{inputs.model}}"
+      prompt: |
+        You search one document for what bears on a question.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations stay in the document's own language.
+
+        The question:
+
+        {{inputs.question}}
+
+        The document ({{item.index}} of {{item.count}}, file: {{item.title}}), extracted automatically:
+
+        {{item.text}}
+
+        List every passage that helps to answer the question: an exact quotation (copy the words; do not paraphrase inside the quotation marks), where it is (page, section or heading if visible), and one sentence on what it says about the question. If nothing in this document bears on the question, write only "Nothing relevant." (translated). Do not answer the question yourself and do not use knowledge from outside the document.
+
+        Format: Markdown, no headings. Use "- " for list items.
+
+  - id: answer
+    type: ai.cli
+    label: {tr: "Cevap", en: "Answer"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Answer a question from the passages that were found in several documents.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The question:
+
+        {{inputs.question}}
+
+        The passages, grouped by document:
+
+        {{nodes.find.text}}
+
+        Rules:
+        - Use only these passages. Use only what the material in this message says. Do not invent names, numbers, dates or quotations. After every statement write the file name in brackets, for example [contract.pdf].
+        - If documents disagree, say so and show both quotations; do not choose silently.
+        - If the passages do not answer the question, or only in part, say clearly what is missing. Do not fill the gap from general knowledge.
+        - Give the direct answer first, in one to three sentences.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
+
+        # Answer
+
+        ## Short answer
+
+        ## Details
+
+        ## Where the documents disagree or are silent
+
+        ## Sources
+        (each document used, with the quotations that support the answer)
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Cevabı kaydet", en: "Save the answer"}
+    config:
+      source: "{{nodes.answer.text}}"
+      title: "Answer"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: answer
+
+connections:
+  - {from: documents.text, to: find}
+  - {from: find.text, to: answer}
+  - {from: answer.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Cevap (Markdown)", en: "Answer (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Cevap (Word)", en: "Answer (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Cevap (HTML)", en: "Answer (HTML)"}}

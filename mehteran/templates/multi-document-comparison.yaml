@@ -1,0 +1,155 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: multi-document-comparison
+name:
+  tr: Çok belgeli karşılaştırma
+  en: Multi-document comparison
+description:
+  tr: >-
+    İkiden fazla belgeyi (en çok 20; örneğin üç teklif, birkaç politika ya da bir dizi makale) aynı ölçütlerle
+    karşılaştırır. Önce her belge için ayrı bir model çağrısıyla yapılandırılmış bir özet çıkarılır (belgeler
+    aynı anda işlenir); sonra bir model özetleri karşılaştırır: bir karşılaştırma tablosu, ortak noktalar,
+    farklar, çelişkiler ve öneriler. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Compares more than two documents (at most 20; for example three proposals, several policies or a set of
+    papers) on the same criteria. First a structured digest of each document is made, one model call per
+    document (the documents are processed at the same time); then a model compares the digests: a comparison
+    table, what they share, how they differ, contradictions and recommendations. The result is a Markdown, Word
+    and HTML report.
+version: "1.0"
+category: documents
+
+inputs:
+  - id: documents
+    type: file
+    multiple: true
+    label: {tr: Belgeler, en: Documents}
+    description:
+      tr: "İki ya da daha fazla belge seçin (en çok 20)."
+      en: "Choose two or more documents (at most 20)."
+    formats: [pdf, docx, epub, md, txt]
+  - id: criteria
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Karşılaştırma ölçütleri, en: Comparison criteria}
+    description:
+      tr: "Örnek: 'fiyat, teslim süresi, garanti, riskler'. Boş bırakılırsa ölçütleri model belirler."
+      en: "For example: 'price, delivery time, warranty, risks'. Left empty, the model chooses the criteria."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Belgeleri oku, en: Read the documents}
+    config:
+      file: "{{inputs.documents}}"
+
+  - id: digests
+    type: ai.map
+    label: {tr: Her belgenin özeti, en: Digest of each document}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: files
+      max_items: 20
+      provider: "{{inputs.model}}"
+      prompt: |
+        You make a structured digest of one document ({{item.index}} of {{item.count}}) so that it can later be
+        compared with the others. The file name of the document:
+
+        {{item.title}}
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the digest in this language;
+        quotations stay in the language of the document.
+
+        Criteria for the comparison (they may be empty; then cover purpose, scope, main claims or provisions,
+        numbers, dates, obligations and risks): {{inputs.criteria}}
+
+        The document (extracted automatically; page numbers or broken lines are artefacts):
+
+        {{item.text}}
+
+        Rules:
+        - Use only this document. For a criterion the document does not address, write "not addressed".
+        - Quote short passages for the most important points.
+
+        Format: Markdown, a list with one item per criterion ("- **criterion**: what the document says"), then
+        one line "Summary:" with two or three sentences. No headings.
+
+  - id: compare
+    type: ai.cli
+    label: {tr: Karşılaştırma, en: Comparison}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You compare several documents on the same criteria. Below is a digest of each document, under the
+        document's file name. The digests were made from the full documents with the same instructions.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
+        the headings and the table, in this language. Keep the file names as they are.
+
+        Criteria (they may be empty; then use the criteria the digests cover): {{inputs.criteria}}
+
+        {{nodes.digests.text}}
+
+        Rules:
+        - Use only the digests. Never invent content; "not addressed" in a digest means the document is silent.
+        - Name the documents by their file names.
+
+        Format: Markdown. Put an empty line before and after every heading, list and table. Use "- " for list
+        items. Start directly with these headings (translated into the output language):
+
+        # Comparison of the documents
+
+        ## Comparison table
+        (a Markdown table: one row per criterion, one column per document, short entries)
+
+        ## What the documents share
+
+        ## How they differ
+
+        ## Contradictions and open questions
+
+        ## Recommendations
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.compare.text}}
+
+        ## Digests
+
+        {{nodes.digests.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Comparison of the documents
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: multi-document-comparison
+
+connections:
+  - {from: extract.text, to: digests}
+  - {from: digests.text, to: compare}
+  - {from: compare.text, to: report}
+  - {from: digests.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

@@ -1,0 +1,328 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: financial-report-analysis
+name:
+  tr: Finansal rapor analizi
+  en: Financial report analysis
+description:
+  tr: >-
+    Bir yıllık veya çeyreklik faaliyet raporunu üç bağımsız analist gözüyle inceler: performans (gelir,
+    büyüme, kâr marjları, bölümler), finansal durum (bilanço, nakit akışı, likidite, borç) ve yönetimin anlatımı
+    (iddiaların rakamlarla uyumu, riskler, beklentiler). Hesaplamalar yalnızca raporda yazan rakamlarla ve
+    gösterilerek yapılır. Bir model bulguları ana sonuçlar, uyarı işaretleri ve yönetime sorulacak sorularla
+    birleştirir. Sonuç Markdown, Word ve HTML rapordur; yatırım tavsiyesi değildir.
+  en: >-
+    Analyses an annual or quarterly report through three independent analyst lenses: performance (revenue,
+    growth, margins, segments), financial position (balance sheet, cash flow, liquidity, debt) and the management
+    narrative (whether claims match the figures, risks, outlook). Calculations use only the figures stated in the
+    report and are shown. A model combines the findings into key conclusions, red flags and questions for
+    management. The result is a Markdown, Word and HTML report; it is not investment advice.
+version: "1.0"
+category: business
+
+inputs:
+  - id: report_file
+    type: file
+    label: {tr: Finansal rapor, en: Financial report}
+    description:
+      tr: "Yıllık veya çeyreklik rapor, finansal tablolar. PDF, Word, EPUB, Markdown veya düz metin."
+      en: "Annual or quarterly report, financial statements. PDF, Word, EPUB, Markdown or plain text."
+    formats: [pdf, docx, epub, md, txt]
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Odak noktası, en: Focus}
+    description:
+      tr: "Örnek: 'Borç yapısı ve nakit üretimi bizim için önemli.'"
+      en: "For example: 'Debt structure and cash generation matter most to us.'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.report_file}}"
+
+  - id: performance
+    type: ai.cli
+    label: {tr: Performans, en: Performance}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a financial analyst assessing the OPERATING PERFORMANCE shown in the report below: revenue,
+        growth, margins, profit and segments. Other analysts cover the balance sheet and cash flow, and the
+        management narrative; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations and line-item names as they appear in the report.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The report follows. It was extracted automatically from a file, so tables may be flattened, and page
+        numbers or broken lines may appear. Read flattened tables with care and say so when a figure cannot be
+        read reliably.
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Revenue: level, growth against the prior period stated in the report, drivers named by the report.
+        2. Margins: gross, operating and net margin where the needed figures are stated.
+        3. Profit: operating and net result, one-off items the report names.
+        4. Segments or product lines, where reported.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Use only figures stated in the
+          report, with the period, the unit and the currency, and say where each comes from (statement, note,
+          page or section heading).
+        - When you compute a ratio or a change, show the calculation from the quoted figures, for example
+          "(120 - 100) / 100 = 20%".
+        - When a figure is not reported, write "Not found in the document." Never estimate or invent figures.
+        - If the text is not a financial report or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Performance
+
+        ### Revenue and growth
+
+        ### Margins and profit
+
+        ### Segments
+
+        ### Observations
+        (a list of at most 6 points that a reader should notice)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: position
+    type: ai.cli
+    label: {tr: Finansal durum, en: Financial position}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a credit and balance-sheet analyst assessing the FINANCIAL POSITION shown in the report below:
+        balance sheet, cash flow, liquidity, debt and working capital. Other analysts cover the operating
+        performance and the management narrative; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations and line-item names as they appear in the report.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The report follows (extracted automatically; tables may be flattened, layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Balance sheet: total assets, equity, the main asset and liability items, changes against the prior
+           period stated in the report.
+        2. Cash flow: operating, investing and financing cash flows; whether operating cash flow covers
+           investment and dividends.
+        3. Liquidity: current ratio, cash position, short-term obligations.
+        4. Debt: total and net debt, maturities, interest, covenants, as far as the report states them.
+        5. Working capital: receivables, inventories, payables and their changes.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Use only figures stated in the
+          report, with the period, unit and currency, and name where each comes from.
+        - Show every calculation from the quoted figures.
+        - When a figure is not reported, write "Not found in the document." Never estimate or invent figures.
+        - If the text is not a financial report or is unreadable, say so in two sentences and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Financial position
+
+        ### Balance sheet
+
+        ### Cash flow
+
+        ### Liquidity and debt
+
+        ### Working capital
+
+        ### Observations
+        (a list of at most 6 points)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: narrative
+    type: ai.cli
+    label: {tr: Yönetimin anlatımı, en: Management narrative}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a sceptical equity analyst reading the MANAGEMENT NARRATIVE of the report below: what management
+        claims, the risks it states, its outlook and the accounting notes that matter. Other analysts cover the
+        detailed figures; refer to figures only to test a claim.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the report.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The report follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Claims: the main claims of management (growth, profitability, strategy, success). For each, quote it
+           and say whether the figures in the same report support it, contradict it, or do not address it.
+        2. Risks: the risks the report states, and risks that its own figures suggest but its text does not
+           discuss.
+        3. Outlook and guidance: what management expects, with quotations; how specific it is.
+        4. Tone: confident, cautious or evasive, with examples.
+        5. Accounting notes: changes in accounting policy, restatements, one-off items, auditor remarks,
+           related-party transactions, as far as the report contains them.
+
+        Rules:
+        - You have only the material below; you cannot check outside sources. Quote the passage for every point
+          and name its section.
+        - When something is not in the report, write "Not found in the document." Never invent figures, events
+          or statements.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Management narrative
+
+        ### Claims tested against the figures
+
+        ### Stated and unstated risks
+
+        ### Outlook and tone
+
+        ### Accounting notes
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: synthesis
+    type: ai.cli
+    label: {tr: Ana bulgular, en: Key findings}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write the opening of a financial report analysis for a reader who must understand the company's
+        situation quickly. Three analysts have reviewed the same report. Combine their work.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings and the notice, in this language.
+
+        Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        Performance analysis:
+
+        {{nodes.performance.text}}
+
+        Financial position analysis:
+
+        {{nodes.position.text}}
+
+        Management narrative analysis:
+
+        {{nodes.narrative.text}}
+
+        Rules:
+        - Use only what the analysts wrote. Do not add figures, facts or judgements of your own.
+        - Where analysts disagree or a figure is missing, say so plainly.
+        - Every red flag names the analysis it comes from (performance, position, narrative).
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Financial report analysis
+
+        > (one sentence: this analysis was produced by AI models from the report text alone; it is not
+        > investment or financial advice)
+
+        ## In brief
+        (3 to 5 sentences)
+
+        ## Key findings
+        (a list, at most 7 items)
+
+        ## Red flags
+        (a list, or one sentence saying there are none)
+
+        ## Questions for management
+        (a list, at most 7 items)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.synthesis.text}}
+
+        {{nodes.performance.text}}
+
+        {{nodes.position.text}}
+
+        {{nodes.narrative.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Financial report analysis
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: financial-analysis
+
+connections:
+  - {from: extract.text, to: performance}
+  - {from: extract.text, to: position}
+  - {from: extract.text, to: narrative}
+  - {from: performance.text, to: synthesis}
+  - {from: position.text, to: synthesis}
+  - {from: narrative.text, to: synthesis}
+  - {from: synthesis.text, to: report}
+  - {from: performance.text, to: report}
+  - {from: position.text, to: report}
+  - {from: narrative.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

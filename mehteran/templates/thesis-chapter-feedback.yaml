@@ -1,0 +1,314 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: thesis-chapter-feedback
+name:
+  tr: Tez bölümü geri bildirimi
+  en: Thesis chapter feedback
+description:
+  tr: >-
+    Bir yüksek lisans veya doktora tezinin bir bölümünü üç bağımsız okuyucu gözüyle inceler: argüman ve yapı, kanıt, kaynak
+    kullanımı ve yöntem, akademik yazım. Üç inceleme aynı anda yapılır; bir danışman modeli bunları öncelik
+    sırasına konmuş bir düzeltme planında birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+  en: >-
+    Reviews a thesis or dissertation chapter through three independent readers: argument and structure,
+    evidence, use of sources and method, and academic writing. The three reviews run at the same time; a
+    supervisor model combines them into a prioritised revision plan. The result is a Markdown, Word and HTML
+    report.
+version: "1.0"
+category: research
+
+inputs:
+  - id: chapter
+    type: file
+    label: {tr: Bölüm, en: Chapter}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: context
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Tez hakkında bilgi, en: About the thesis}
+    description:
+      tr: "Örnek: tezin konusu, araştırma sorusu, derece (yüksek lisans, doktora), bu bölümün hangi bölüm olduğu."
+      en: "For example: the thesis topic, the research question, the degree (master's, PhD), which chapter this is."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.chapter}}"
+
+  - id: argument
+    type: ai.cli
+    label: {tr: Argüman ve yapı, en: Argument and structure}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced thesis examiner. Assess the ARGUMENT AND STRUCTURE of the thesis chapter below.
+        Other readers cover the evidence and method, and the writing; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations in the language of the chapter.
+
+        About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The chapter follows. It was extracted automatically from a file, so page numbers or broken lines may
+        appear; ignore such artefacts.
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Purpose: does the chapter state what it does and how it serves the thesis and its research question?
+        2. Line of argument: can a reader follow the steps from the opening to the conclusion? Name gaps,
+           jumps, circular reasoning and claims that the chapter never supports.
+        3. Structure: does each section do one job in a sensible order? Is anything repeated, misplaced or
+           missing (an introduction, signposting, a conclusion that links to the next chapter)?
+        4. Contribution: does the chapter make clear what is the author's own contribution and what comes
+           from others?
+
+        Rules:
+        - Name the section or quote the passage for every point.
+        - You have only the chapter; you cannot check outside sources. When something is not in the chapter,
+          write "Not found in the document." instead of guessing.
+        - Separate major issues (they weaken the chapter's argument) from minor ones, and give a concrete fix
+          for each.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Argument and structure
+
+        ### The chapter's argument in brief
+        (2 to 4 sentences)
+
+        ### Major issues
+
+        ### Minor issues
+
+        ### Strengths
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: evidence
+    type: ai.cli
+    label: {tr: "Kanıt, kaynaklar ve yöntem", en: "Evidence, sources and method"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced thesis examiner. Assess the EVIDENCE, THE USE OF SOURCES AND THE METHOD in the
+        thesis chapter below. Other readers cover the argument structure and the writing; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Keep quotations and reference entries exactly as written.
+
+        About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The chapter follows (extracted automatically; layout artefacts may appear):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Evidence: is each main claim backed by data, analysis, sources or reasoning in the chapter? List
+           claims that lack support.
+        2. Use of sources: does the chapter engage critically with its sources or only report them? Are
+           sources cited where facts, figures or others' ideas are used? Are citations consistent with the
+           reference list, as far as the chapter shows it?
+        3. Method (if the chapter reports or depends on a method): is it described well enough to judge and
+           repeat? Are its limits acknowledged? Do the conclusions stay within what the method can show?
+        4. Interpretation: overclaiming, causal language without causal evidence, generalisation beyond the data.
+
+        Rules:
+        - Quote the claim or the citation you mean, with its section.
+        - You have only the chapter; you cannot check whether a cited source exists or says what the chapter
+          claims. Mark such points "to verify".
+        - Never invent references, numbers or results. When something is not reported, write "Not found in the
+          document."
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Evidence, sources and method
+
+        ### Unsupported claims
+
+        ### Use of sources
+
+        ### Method
+
+        ### Interpretation
+
+        (Write "None found." under a heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: writing
+    type: ai.cli
+    label: {tr: Akademik yazım, en: Academic writing}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are an experienced academic writing tutor. Assess the WRITING of the thesis chapter below for its
+        readers: examiners in the field. Other readers cover the argument and the evidence; do not review those.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Suggested rewrites stay in the chapter's own language.
+
+        About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
+
+        The chapter follows (extracted automatically; layout artefacts such as broken lines are not the
+        author's errors, ignore them):
+
+        {{nodes.extract.text}}
+
+        Assess:
+        1. Academic register: informal phrases, unsupported value judgements, unclear hedging.
+        2. Clarity: long or ambiguous sentences, unexplained jargon, terms not defined at first use or used
+           inconsistently, unexplained abbreviations.
+        3. Paragraphs: does each paragraph have one clear point and a link to the next?
+        4. Mechanics: recurring grammar, punctuation or spelling problems (give examples, not every instance).
+
+        Rules:
+        - Quote the passage you mean.
+        - Give at most 10 suggested rewrites, choosing the ones that help most. Each: the original, the rewrite,
+          and why in one sentence. A rewrite must keep the meaning exactly.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Academic writing
+
+        ### Overall impression
+        (2 to 4 sentences)
+
+        ### Recurring problems
+
+        ### Suggested rewrites
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: plan
+    type: ai.cli
+    label: {tr: Düzeltme planı, en: Revision plan}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are the student's thesis supervisor. Three readers have assessed the same chapter. Turn their
+        reviews into feedback the student can act on.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        About the thesis (it may be empty): {{inputs.context}}
+
+        Argument and structure review:
+
+        {{nodes.argument.text}}
+
+        Evidence, sources and method review:
+
+        {{nodes.evidence.text}}
+
+        Academic writing review:
+
+        {{nodes.writing.text}}
+
+        Rules:
+        - Use only what the readers wrote. Do not add new criticism or facts about the chapter.
+        - Order the revision plan: first what affects the argument and its support, then structure, then
+          writing. For each step, name the review it comes from.
+        - Where readers disagree, say so plainly.
+        - Be encouraging but honest.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Chapter feedback
+
+        ## Overall assessment
+        (one of: ready / ready after minor revision / needs substantial revision / needs rethinking, then 3 to 5
+        sentences)
+
+        ## What works well
+        (a list, at most 5 items)
+
+        ## Revision plan
+        (a list of at most 8 steps, in order)
+
+        ## Points of disagreement
+        (or one sentence saying there are none)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.plan.text}}
+
+        {{nodes.argument.text}}
+
+        {{nodes.evidence.text}}
+
+        {{nodes.writing.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Chapter feedback
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: chapter-feedback
+
+connections:
+  - {from: extract.text, to: argument}
+  - {from: extract.text, to: evidence}
+  - {from: extract.text, to: writing}
+  - {from: argument.text, to: plan}
+  - {from: evidence.text, to: plan}
+  - {from: writing.text, to: plan}
+  - {from: plan.text, to: report}
+  - {from: argument.text, to: report}
+  - {from: evidence.text, to: report}
+  - {from: writing.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

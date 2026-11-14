@@ -1,0 +1,133 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: pdf-to-slide-outline
+name:
+  tr: "Uzun belgeden sunum taslağı"
+  en: "Slide outline from a long document"
+description:
+  tr: >-
+    Uzun bir belgeyi (rapor, tez, kitap bölümü) başlıklarına göre bölümlere ayırır; her bölümden sunuma girecek
+    ana noktaları ayrı bir model çağrısıyla çıkarır (bölümler aynı anda işlenir). Sonra bir model süre ve hedef
+    kitleye göre slayt slayt bir taslak yazar: başlık, 3-5 madde, konuşmacı notu ve görsel önerisi; belgede
+    olmayan bilgi eklemez. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Splits a long document (a report, a thesis, a book chapter) into sections by its headings; a separate model
+    call extracts the points that belong in a presentation from each section (the sections run at the same
+    time). Then a model writes a slide-by-slide outline for your time and audience: a title, 3 to 5 bullets,
+    speaker notes and a visual suggestion; it adds no information that the document does not have. The result is
+    a Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: "Belge", en: "Document"}
+    formats: [pdf, docx, epub, md, txt, odt, rtf]
+  - id: audience
+    type: text
+    required: false
+    default: "a general professional audience"
+    label: {tr: "Hedef kitle", en: "Audience"}
+    description:
+      tr: "Örnek: 'yönetim kurulu', 'birinci sınıf öğrencileri'."
+      en: "For example: 'the board', 'first-year students'."
+  - id: minutes
+    type: text
+    required: false
+    default: "15"
+    label: {tr: "Süre (dakika)", en: "Time (minutes)"}
+  - id: language
+    type: language
+    label: {tr: "Sunum dili", en: "Presentation language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Belgeyi oku", en: "Read the document"}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: sections
+    type: ai.map
+    label: {tr: "Bölüm noktaları", en: "Points per section"}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: headings
+      max_items: 100
+      provider: "{{inputs.model}}"
+      prompt: |
+        You prepare material for a presentation. Read one section of a long document.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The audience (it may be empty): {{inputs.audience}}
+
+        The section ({{item.index}} of {{item.count}}, title: {{item.title}}), extracted automatically (page numbers and broken lines are artefacts):
+
+        {{item.text}}
+
+        List, in the order of the section: the 3 to 6 points that a presentation to this audience needs (each one sentence), the key numbers or facts with their exact values, and one possible visual (a chart, a diagram, a table) if the section supports it. Use only this section; do not guess what other sections say. Format: Markdown, no headings. Use "- " for list items.
+
+  - id: deck
+    type: ai.cli
+    label: {tr: "Slayt taslağı", en: "Slide outline"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a presentation coach. Write a slide-by-slide outline from the points of each section of a document.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Audience: {{inputs.audience}}
+        Time: {{inputs.minutes}} minutes (15 if it is empty or not a number). Plan about one slide per 1.5 to 2 minutes, plus a title slide and a closing slide.
+
+        The points of each section, in order:
+
+        {{nodes.sections.text}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Keep numbers exactly. Give each slide one message, as a statement title ("Costs fell by 12%" rather than "Costs"). Merge or drop minor sections to fit the time; say what you dropped.
+        - Each slide: title, 3 to 5 short bullets, speaker notes (two or three sentences), and a visual suggestion.
+        - End with a closing slide that states the take-away and the next step.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated), then "### Slide N: <title>" for each slide:
+
+        # Presentation outline
+
+        ## Storyline
+        (three sentences)
+
+        ## Slides
+
+        ## What was left out
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Taslağı kaydet", en: "Save the outline"}
+    config:
+      source: "{{nodes.deck.text}}"
+      title: "Presentation outline"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: slide-outline
+
+connections:
+  - {from: extract.text, to: sections}
+  - {from: sections.text, to: deck}
+  - {from: deck.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Taslak (Markdown)", en: "Outline (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Taslak (Word)", en: "Outline (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Taslak (HTML)", en: "Outline (HTML)"}}

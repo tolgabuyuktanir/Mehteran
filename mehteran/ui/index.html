@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="token" content="__TOKEN__">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<title>Mehteran</title>
+<!-- the translation app's stylesheet first: Mehteran's own copy of the same base rules comes after it -->
+<link rel="stylesheet" href="/tr/style.css">
+<link rel="stylesheet" href="/style.css">
+<script src="/tr/app.js" defer></script>
+<script src="/langpicker.js" defer></script>
+<script src="/canvas.js" defer></script>
+<script src="/editor.js" defer></script>
+<script src="/live.js" defer></script>
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top" id="top">
+  <a class="brand" href="#" id="brand">
+    <img class="brand-icon" src="/icon.svg" alt="" width="40" height="40">
+    <div>
+      <h1 data-i18n="app_title"></h1>
+      <p data-i18n="app_subtitle"></p>
+    </div>
+  </a>
+  <div class="top-right">
+    <!-- what runs now (live.js): hidden while nothing runs -->
+    <div class="activity">
+      <button type="button" id="activity" class="activity-btn" aria-haspopup="true" aria-expanded="false" aria-controls="activity-pop" hidden></button>
+      <div id="activity-pop" class="activity-pop card" hidden></div>
+    </div>
+    <nav class="tabs" role="tablist" data-i18n-label="main_nav">
+      <button type="button" class="tab" role="tab" aria-controls="workflows" data-tab="workflows" data-i18n="tab_workflows"></button>
+      <button type="button" class="tab" role="tab" aria-controls="runs" data-tab="runs" data-i18n="tab_runs"></button>
+      <span class="tab-sep" aria-hidden="true"></span>
+      <button type="button" class="tab quiet" role="tab" aria-controls="setup" data-tab="setup" data-i18n="tab_setup"></button>
+    </nav>
+    <!-- the interface language: a flag picker (langpicker.js), filled by app.js from the language registry -->
+    <div class="lang-switch" id="lang-switch"></div>
+  </div>
+</header>
+
+<main>
+  <div class="notice warn banner stale-banner" id="stale-banner" role="alert" hidden>
+    <div><b data-i18n="stale_title"></b> <span data-i18n="stale_how"></span></div>
+  </div>
+  <div class="notice warn banner" id="setup-banner" hidden>
+    <span data-i18n="setup_banner"></span>
+    <button type="button" class="btn small" data-goto="setup" data-i18n="go_setup"></button>
+  </div>
+
+  <!-- WORKFLOWS: the library, and the visual editor -->
+  <section id="workflows" class="panel" role="tabpanel" hidden>
+    <div id="library">
+      <div class="panel-head">
+        <div>
+          <h2 data-i18n="library_title"></h2>
+          <p class="muted" data-i18n="library_intro"></p>
+        </div>
+        <div class="row">
+          <button type="button" class="btn" id="template-import" data-i18n="import"></button>
+          <button type="button" class="btn primary" data-goto="workflows/new" data-i18n="new_workflow"></button>
+        </div>
+      </div>
+      <div class="lib-tools">
+        <input type="search" id="template-search" data-i18n-placeholder="search_templates" data-i18n-label="search_templates">
+        <div id="template-filters"></div>
+        <span id="library-count" class="small muted" role="status" aria-live="polite"></span>
+      </div>
+      <div id="template-grid"></div>
+    </div>
+    <!-- the book translation: the translation app's own interface (/tr/app.js), mounted here by app.js -->
+    <section id="translation" class="translation-view" hidden>
+      <div class="subnav">
+        <button type="button" class="btn small" data-goto="workflows" data-i18n="back_to_workflows"></button>
+        <span class="subnav-title"><span data-icon="translation"></span><b data-i18n="translation_card_title"></b></span>
+        <nav class="subtabs" role="tablist" data-i18n-label="translation_sections">
+          <button type="button" class="subtab" role="tab" data-sub="books" aria-controls="tr-books" data-i18n="tr_books"></button>
+          <button type="button" class="subtab" role="tab" data-sub="workflow" aria-controls="tr-workflow" data-i18n="tr_workflow"></button>
+          <button type="button" class="subtab" role="tab" data-sub="prompts" aria-controls="tr-prompts" data-i18n="tr_prompts"></button>
+        </nav>
+      </div>
+      <div id="translation-body" class="tr-body"></div>
+    </section>
+    <div id="workflow-editor" class="editor-shell" hidden>
+      <div id="workflow-body" class="editor-body"></div>
+    </div>
+  </section>
+
+  <!-- RUNS: the history and one run -->
+  <section id="runs" class="panel" role="tabpanel" hidden>
+    <div class="books runs-layout">
+      <aside class="book-list">
+        <div class="row run-side-head">
+          <h2 data-i18n="tab_runs"></h2>
+          <button type="button" class="btn small primary" data-goto="workflows" data-i18n="new_run"></button>
+        </div>
+        <ul id="run-list"></ul>
+      </aside>
+      <div id="run" class="book-detail"></div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup" class="panel" role="tabpanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 data-i18n="setup_title"></h2>
+        <p class="muted" data-i18n="setup_intro"></p>
+      </div>
+      <button type="button" class="btn" id="tools-refresh" data-i18n="refresh_status"></button>
+    </div>
+    <section class="card box onboarding" id="onboarding"></section>
+    <div id="tools" class="tool-grid"></div>
+    <p class="small muted config-note" id="config-note"></p>
+    <section id="local-tools" class="local-tools"></section>
+  </section>
+</main>
+
+<!-- the footer (live.js): the name, the version, the data folder, the guide; hidden in the editor and in full screen -->
+<footer class="site-footer" id="footer"></footer>
+
+<dialog id="drawer" class="drawer" aria-labelledby="drawer-title">
+  <div id="drawer-body" class="drawer-body"></div>
+</dialog>
+
+<dialog id="run-dialog" class="run-dialog" aria-labelledby="run-title"></dialog>
+<dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"></dialog>
+
+<dialog id="reader" aria-labelledby="reader-title">
+  <div class="dialog-head">
+    <h3 id="reader-title"></h3>
+    <div class="row">
+      <a id="reader-download" class="btn" href="#" data-i18n="download"></a>
+      <button type="button" class="btn" id="reader-close" data-i18n="close"></button>
+    </div>
+  </div>
+  <pre id="reader-text" class="reader"></pre>
+</dialog>
+
+<dialog id="new-dialog" aria-labelledby="new-title">
+  <form id="new-form">
+    <div class="dialog-head"><h3 id="new-title" data-i18n="new_workflow"></h3></div>
+    <div class="layout-body stack">
+      <p class="muted small" data-i18n="new_intro"></p>
+      <label for="new-id" data-i18n="workflow_id"></label>
+      <input id="new-id" class="mono" autocomplete="off" spellcheck="false" required placeholder="my-review">
+      <label for="new-name" data-i18n="workflow_name"></label>
+      <input id="new-name" autocomplete="off" required>
+      <p class="small warn-text" id="new-problem" role="alert"></p>
+    </div>
+    <div class="dialog-foot row">
+      <button type="button" class="btn" id="new-cancel" data-i18n="cancel_action"></button>
+      <button type="submit" class="btn primary" data-i18n="create"></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

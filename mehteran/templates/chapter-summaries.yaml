@@ -1,0 +1,145 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: chapter-summaries
+name:
+  tr: Uzun belge, bölüm bölüm özet
+  en: Long document, chapter by chapter
+description:
+  tr: >-
+    Uzun bir belgeyi (kitap, tez, rapor) başlıklarına göre bölümlere ayırır ve her bölümü ayrı bir model
+    çağrısıyla özetler; bölümler aynı anda işlenir, bitenler saklanır, yarıda kalan bir çalıştırma devam
+    ettirildiğinde yalnızca eksik bölümler yeniden sorulur. Sonra bir model bölüm özetlerinden bütünün genel
+    özetini ve ana fikirlerini yazar. Başlığı olmayan bir belge tek bölüm sayılır. Sonuç Markdown, Word ve HTML
+    rapordur.
+  en: >-
+    Splits a long document (a book, a thesis, a report) into chapters by its headings and summarises each chapter
+    in its own model call; the chapters are processed at the same time, finished ones are kept, and a resumed run
+    asks again only for the missing chapters. Then a model writes an overview of the whole and its main ideas
+    from the chapter summaries. A document without headings counts as one chapter. The result is a Markdown, Word
+    and HTML report.
+version: "1.0"
+category: documents
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: Belge, en: Document}
+    formats: [pdf, docx, epub, md, txt]
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Odak, en: Focus}
+    description:
+      tr: "Örnek: 'yöntem ve bulgular' ya da 'karakterlerin gelişimi'. Boş bırakılabilir."
+      en: "For example: 'method and findings' or 'how the characters develop'. May be left empty."
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Belge metni, en: Document text}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: chapters
+    type: ai.map
+    label: {tr: Bölüm özetleri, en: Chapter summaries}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: headings
+      max_items: 150
+      provider: "{{inputs.model}}"
+      prompt: |
+        You summarise one chapter ({{item.index}} of {{item.count}}) of a long document. Its title (it may be
+        empty for the text before the first heading):
+
+        {{item.title}}
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the summary in this language.
+
+        The reader's focus (it may be empty): {{inputs.focus}}
+
+        The chapter (extracted automatically; page numbers or broken lines are artefacts):
+
+        {{item.text}}
+
+        Write 5 to 10 sentences: what the chapter is about, its main points or events, and anything the focus
+        asks for. Then a list of at most five key terms, names or numbers from the chapter. Use only this chapter;
+        do not guess what other chapters say.
+
+        Format: Markdown, no headings (the report adds the chapter title). Use "- " for list items.
+
+  - id: overview
+    type: ai.cli
+    label: {tr: Genel özet, en: Overview}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Below are the summaries of every chapter of one document, in order, each under its chapter title. Write an
+        overview of the whole document for a reader who has not read it.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        The reader's focus (it may be empty): {{inputs.focus}}
+
+        {{nodes.chapters.text}}
+
+        Rules:
+        - Use only the chapter summaries. Do not add facts.
+        - Show how the chapters build on each other.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Start directly with these headings (translated into the output language):
+
+        # Overview
+
+        ## The document in brief
+        (one paragraph)
+
+        ## Main ideas
+        (a list)
+
+        ## How the document is built
+        (one sentence per chapter or group of chapters)
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.overview.text}}
+
+        {{nodes.chapters.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Chapter summaries
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: chapter-summaries
+
+connections:
+  - {from: extract.text, to: chapters}
+  - {from: chapters.text, to: overview}
+  - {from: overview.text, to: report}
+  - {from: chapters.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

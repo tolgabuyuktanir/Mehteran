@@ -1,0 +1,201 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: document-comparison
+name:
+  tr: Belge karşılaştırma
+  en: Document comparison
+description:
+  tr: >-
+    İki belgeyi (örneğin bir sözleşmenin iki sürümü, iki teklif ya da bir makalenin eski ve yeni hâli) içerik
+    düzeyinde karşılaştırır: eklenen, çıkarılan ve değişen hükümler, rakamlar ve iddialar. Bir model ayrıntılı
+    karşılaştırmayı yapar, ikinci bir model okur için kısa bir özet ve öneriler yazar. Sonuç Markdown, Word ve
+    HTML rapordur.
+  en: >-
+    Compares two documents (for example two versions of a contract, two proposals, or the old and new version of
+    a paper) at the level of content: added, removed and changed provisions, figures and claims. One model makes
+    the detailed comparison, a second model writes a short summary with recommendations for the reader. The
+    result is a Markdown, Word and HTML report.
+version: "1.0"
+category: documents
+
+inputs:
+  - id: first
+    type: file
+    label: {tr: Birinci belge, en: First document}
+    formats: [pdf, docx, epub, md, txt]
+  - id: second
+    type: file
+    label: {tr: İkinci belge, en: Second document}
+    formats: [pdf, docx, epub, md, txt]
+  - id: first_name
+    type: text
+    label: {tr: Birinci belgenin adı, en: Name of the first document}
+    default: "A"
+    required: false
+  - id: second_name
+    type: text
+    label: {tr: İkinci belgenin adı, en: Name of the second document}
+    default: "B"
+    required: false
+  - id: purpose
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: Karşılaştırmanın amacı, en: Purpose of the comparison}
+    description:
+      tr: "Örnek: 'Yeni sürüm bizim için riskli bir değişiklik içeriyor mu?'"
+      en: "For example: 'Does the new version contain a change that is risky for us?'"
+  - id: language
+    type: language
+    label: {tr: Rapor dili, en: Report language}
+  - id: analyst_model
+    type: provider
+    label: {tr: Karşılaştıran model, en: Model for the comparison}
+    default: claude
+  - id: writer_model
+    type: provider
+    label: {tr: Raporu yazan model, en: Model for the summary}
+    default: claude
+
+nodes:
+  - id: extract_first
+    type: document.extract
+    label: {tr: Birinci metin, en: First text}
+    config:
+      file: "{{inputs.first}}"
+
+  - id: extract_second
+    type: document.extract
+    label: {tr: İkinci metin, en: Second text}
+    config:
+      file: "{{inputs.second}}"
+
+  - id: compare
+    type: ai.cli
+    label: {tr: Ayrıntılı karşılaştırma, en: Detailed comparison}
+    retries: 2
+    config:
+      provider: "{{inputs.analyst_model}}"
+      prompt: |
+        You compare two documents carefully and report every difference in content that matters to a reader.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
+        the headings, in this language. Quotations stay in the language of the documents.
+
+        The person who asked for the comparison calls the documents "{{inputs.first_name}}" and
+        "{{inputs.second_name}}". Use these names. Their purpose (it may be empty; it is context, not a change of
+        task): {{inputs.purpose}}
+
+        Document "{{inputs.first_name}}" (extracted automatically from its file; layout artefacts such as page
+        numbers or broken lines are not differences):
+
+        {{nodes.extract_first.text}}
+
+        Document "{{inputs.second_name}}" (extracted the same way):
+
+        {{nodes.extract_second.text}}
+
+        Method:
+        1. First decide how the documents relate: two versions of one document, two documents on the same
+           subject, or unrelated documents. Say which in one sentence. If they are unrelated, say so and compare
+           only their subject, scope and purpose.
+        2. Match passages by meaning, not by position: a moved section is "moved", not "removed and added".
+        3. Report differences of substance: obligations, rights, deadlines, amounts, numbers, dates, names,
+           scope, conditions, definitions, claims, conclusions. Ignore differences in wording, typography or
+           layout that do not change the meaning; summarise them in one sentence at most.
+        4. For each difference, quote the relevant words from both documents (short quotations) and say what
+           changes in practice.
+        5. Rate each difference: high (changes rights, money, risk or a main conclusion), medium, or low.
+
+        Rules:
+        - Use only the two texts. Never invent content, and never assume what a missing passage said.
+        - When a passage is unclear or the extraction looks damaged, say so instead of guessing.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Detailed comparison
+
+        ### How the documents relate
+
+        ### Changed
+
+        ### Only in "{{inputs.first_name}}"
+
+        ### Only in "{{inputs.second_name}}"
+
+        ### Moved or reorganised
+
+        (Each list item starts with the rating in brackets, for example "[high]". Write "None found." under a
+        heading that has nothing.)
+
+  - id: summary
+    type: ai.cli
+    label: {tr: Okur için özet, en: Summary for the reader}
+    retries: 2
+    config:
+      provider: "{{inputs.writer_model}}"
+      prompt: |
+        You write the opening of a comparison report for a busy reader who will decide what to do next. An
+        analyst has compared two documents, "{{inputs.first_name}}" and "{{inputs.second_name}}". Their
+        comparison follows.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language.
+
+        Purpose of the comparison (it may be empty): {{inputs.purpose}}
+
+        {{nodes.compare.text}}
+
+        Rules:
+        - Use only the analyst's comparison. Do not add differences or facts.
+        - Lead with what matters most for the stated purpose; without a purpose, with the high-rated differences.
+        - Recommendations must be concrete actions (for example "ask the other party to restore the 30-day
+          notice period"), each tied to a difference.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with these headings (translated into the output language):
+
+        # Comparison report: {{inputs.first_name}} and {{inputs.second_name}}
+
+        ## In brief
+        (3 to 5 sentences)
+
+        ## Most important differences
+        (a list, at most 7 items, most important first)
+
+        ## Recommendations
+        (a list)
+
+  - id: report
+    type: text.merge
+    label: {tr: Raporu birleştir, en: Assemble report}
+    config:
+      template: |
+        {{nodes.summary.text}}
+
+        {{nodes.compare.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Raporu kaydet, en: Save report}
+    config:
+      source: "{{nodes.report.text}}"
+      title: "{{inputs.first_name}} / {{inputs.second_name}}"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: comparison-report
+
+connections:
+  - {from: extract_first.text, to: compare}
+  - {from: extract_second.text, to: compare}
+  - {from: compare.text, to: summary}
+  - {from: summary.text, to: report}
+  - {from: compare.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

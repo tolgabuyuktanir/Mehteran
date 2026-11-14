@@ -1,0 +1,148 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: document-explainer
+name:
+  tr: "Belgeyi herkes için anlaşılır anlat"
+  en: "Explain a document in plain language"
+description:
+  tr: >-
+    Sözleşme, kira kontratı, resmî yazı, sigorta poliçesi ya da hesap koşulları gibi belgeyi uzman olmayan biri
+    için sade bir dille anlatır: bu belge ne, sizden ne istiyor, ne kadar ve ne zaman ödüyorsunuz, nelere dikkat
+    etmelisiniz, imzalamadan önce hangi soruları sormalısınız. İkinci bir model açıklamayı belgeyle
+    karşılaştırıp yanlış ya da belgede olmayan her cümleyi düzeltir. Hukuki, mali ya da tıbbi tavsiye değildir.
+    Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Explains a document such as a contract, lease, official letter, insurance policy or account terms to a non-
+    expert in plain language: what it is, what it asks of you, what you pay and when, what to watch for, and
+    which questions to ask before you sign. A second model compares the explanation with the document and
+    corrects every sentence that is wrong or not in it. This is not legal, financial or medical advice. The
+    result is a Markdown, Word and HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: "Belge", en: "Document"}
+    formats: [pdf, docx, epub, md, txt, odt, rtf, png, jpg, jpeg]
+  - id: reader
+    type: text
+    required: false
+    default: "a person with no legal or technical background"
+    label: {tr: "Okuyucu", en: "Reader"}
+    description:
+      tr: "Örnek: 'ilk kez ev kiralayan bir öğrenci'."
+      en: "For example: 'a student renting a home for the first time'."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Belgeyi oku", en: "Read the document"}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: explain
+    type: ai.cli
+    label: {tr: "Sade anlatım", en: "Plain-language explanation"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Explain the document below to a non-expert, in plain language.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The reader: {{inputs.reader}}
+
+        The document (extracted automatically; page numbers and broken lines are artefacts):
+
+        {{nodes.extract.text}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Say "The document does not say." for anything that the document leaves open. Never guess what the law says; you may say that a topic is usually regulated by law and that the reader should ask.
+        - Short sentences, everyday words; explain every technical term the first time it appears. Keep all amounts, dates, periods and names exactly as in the document, and give the section or clause where each is found.
+        - Do not tell the reader to sign or not to sign. Point out what is unusual or one-sided, and say whom it affects.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Start directly with these headings (translated):
+
+        # In plain words
+
+        ## What this document is
+        (two or three sentences)
+
+        ## What it asks of you
+
+        ## Money and dates
+        (a table: what, amount, when, where in the document)
+
+        ## What can go wrong
+        (including how to end it, penalties, automatic renewals)
+
+        ## Points to look at more closely
+
+        ## Questions to ask before you agree
+
+        ## Words explained
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: "Belgeyle karşılaştır", en: "Check against the document"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check a plain-language explanation against the document and give the corrected final text.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The document:
+
+        {{nodes.extract.text}}
+
+        The explanation:
+
+        {{nodes.explain.text}}
+
+        Method: check every amount, date, period, name and statement against the document. Correct or remove each one that is wrong or not in the document. Check that nothing important in the document (fees, penalties, renewal, termination) was left out; add it briefly if so. Keep the structure. Give the corrected explanation, then a section "## Corrections" (translated) with a short list of the changes, or "None.", and a last line with this meaning: This explanation was written by an AI to help you understand the document. It is not legal, financial or medical advice, and it can contain mistakes. For an important decision ask a qualified professional.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Anlatımı kaydet", en: "Save the explanation"}
+    config:
+      source: "{{nodes.verify.text}}"
+      title: "Document in plain words"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: plain-words
+
+connections:
+  - {from: extract.text, to: explain}
+  - {from: extract.text, to: verify}
+  - {from: explain.text, to: verify}
+  - {from: verify.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Anlatım (Markdown)", en: "Explanation (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Anlatım (Word)", en: "Explanation (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Anlatım (HTML)", en: "Explanation (HTML)"}}

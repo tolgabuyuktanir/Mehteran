@@ -1,0 +1,262 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: answer-key-verification
+name:
+  tr: "Cevap anahtarı doğrulama"
+  en: "Answer key verification"
+description:
+  tr: >-
+    Bir sınav dosyasını ve cevap anahtarını okur. Önce sınav, anahtar olmadan sorulara ayrılır; sonra bir model
+    her soruyu anahtarı görmeden tek tek çözer (sorular aynı anda işlenir). Başka bir model anahtarla kör
+    çözümleri karşılaştırır ve uyuşmayanları listeler. Uyuşmazlık varsa üçüncü bir adım her tartışmalı soruyu
+    yeniden çözer ve anahtarın mı, çözücünün mü yoksa sorunun mu hatalı olduğuna karar verir. Bir öğretmen
+    onaylamadan sonuç kaydedilmez. Yapay zekâ da hata yapar: son kararı öğretmen verir.
+  en: >-
+    Reads an exam file and its answer key. First the exam is split into questions without the key; then a model
+    solves every question on its own without seeing the key (the questions run at the same time). Another model
+    compares the key with the blind solutions and lists every mismatch. If there is a mismatch, a third step
+    solves each disputed question again and decides whether the key, the solver or the question is at fault.
+    Nothing is saved until a teacher approves. AI makes mistakes too: the teacher decides.
+version: "1.0"
+category: education
+
+inputs:
+  - id: exam
+    type: file
+    label: {tr: "Sınav", en: "Exam"}
+    description:
+      tr: "Soruların olduğu dosya. Cevap anahtarı bu dosyada olmamalı."
+      en: "The file with the questions. The key should not be in this file."
+    formats: [pdf, docx, epub, md, txt, png, jpg, jpeg]
+  - id: key
+    type: file
+    label: {tr: "Cevap anahtarı", en: "Answer key"}
+    description:
+      tr: "Soru numarası ve doğru cevap."
+      en: "Question number and the correct answer."
+    formats: [pdf, docx, md, txt, csv, tsv, xlsx, png, jpg, jpeg]
+  - id: subject
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Ders ve düzey", en: "Subject and level"}
+    description:
+      tr: "Örnek: 'lise fizik 11. sınıf', 'SAT matematik'."
+      en: "For example: 'grade 11 physics', 'SAT math'."
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: exam
+    type: document.extract
+    label: {tr: "Sınavı oku", en: "Read the exam"}
+    config:
+      file: "{{inputs.exam}}"
+
+  - id: key
+    type: document.extract
+    label: {tr: "Anahtarı oku", en: "Read the key"}
+    config:
+      file: "{{inputs.key}}"
+
+  - id: prepare
+    type: ai.cli
+    label: {tr: "Soruları ayır", en: "Split into questions"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Split the exam below into separate questions. Do not solve anything.
+
+        The exam (extracted automatically; page numbers, headers or broken lines are artefacts):
+
+        {{nodes.exam.text}}
+
+        Rules:
+        - For each question write the heading "## Question N" (N is the number the exam gives; number them 1, 2, 3 if it has none), then the full text of the question exactly as the exam words it: stem, choices, table, and any passage or data it relies on. When several questions share a passage or a figure description, repeat it under each of them.
+        - Copy the words; do not change, shorten, translate or correct anything. Mark text that cannot be read as "[unreadable]".
+        - If the file also contains answers, a key or a solution, leave them out.
+        - Start directly with "## Question 1". Write no title, introduction or other heading, and do not use a top-level heading.
+
+        Format: Markdown. Put an empty line before and after every heading and every list.
+
+  - id: solve
+    type: ai.map
+    label: {tr: "Kör çözüm", en: "Blind solutions"}
+    retries: 2
+    config:
+      source: "{{nodes.prepare.text}}"
+      split: headings
+      max_items: 150
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You take an exam question as a careful student. Solve it on your own.
+
+        Subject and level (it may be empty): {{inputs.subject}}
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the reasoning in this language; keep the question's own words as they are.
+
+        The question ({{item.index}} of {{item.count}}):
+
+        {{item.text}}
+
+        Rules:
+        - Solve step by step and check the result. Do not guess. If the question cannot be answered from its text (a figure is missing, the wording is broken), write "Cannot be answered:" and say why.
+        - If more than one choice could be right, say so and name them.
+        - Keep it short: the steps, then one last line that starts with "Answer:" (translated) and gives only the answer.
+
+        Format: Markdown, no headings. Write mathematics in plain text with Unicode symbols, never in LaTeX.
+
+  - id: compare
+    type: ai.cli
+    label: {tr: "Anahtarla karşılaştır", en: "Compare with the key"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check an answer key. Compare the key with blind solutions, question by question.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The questions:
+
+        {{nodes.prepare.text}}
+
+        The answer key (extracted automatically):
+
+        {{nodes.key.text}}
+
+        The blind solutions (each solver did not see the key):
+
+        {{nodes.solve.text}}
+
+        For every question where the key's answer and the blind answer differ, or the solver said "Cannot be answered" or found several possible choices, or the key has no entry, write one block: the question number, the key's answer, the blind answer, and what you think the cause is. Do not decide yet who is right, but say what must be checked. Do not list questions that agree.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated). Write "None found." under "### Mismatches" if everything agrees. Under "### Result" write the number of questions, the number that agree and the number of mismatches.
+
+        ## Comparison
+
+        ### Mismatches
+
+        ### Result
+
+        As the very last line of your answer, write exactly "Disagreements: N", where N is the number of mismatches. This last line stays in English whatever the output language is; a program reads it.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: gate
+    type: condition
+    label: {tr: "Uyuşmazlık varsa", en: "If there is a mismatch"}
+    config:
+      value: "{{nodes.compare.text}}"
+      operator: regex
+      match: 'Disagreements:\W*[1-9]'
+
+  - id: adjudicate
+    type: ai.cli
+    label: {tr: "Tartışmalı soruları çöz", en: "Resolve the disputed questions"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Some questions have a mismatch between the answer key and an independent solution. Decide each one.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The questions:
+
+        {{nodes.prepare.text}}
+
+        The answer key:
+
+        {{nodes.key.text}}
+
+        The blind solutions:
+
+        {{nodes.solve.text}}
+
+        The mismatches found:
+
+        {{nodes.gate.true}}
+
+        For every mismatch: solve the question yourself from the start, check by substitution or by a second method, then decide which of these is true: "the key is wrong" (give the right answer), "the blind solver was wrong" (the key is right), "the question is flawed or ambiguous" (say how), or "cannot be settled" (say what is missing). Give the reasoning in a few lines. Do not choose by majority or by authority.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Write mathematics in plain text with Unicode symbols (x², √, ≤, π), never in LaTeX. Start directly with the heading below (translated), then one "### Question N" per mismatch:
+
+        ## Decisions on the mismatches
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give. Do not write any number you did not compute.
+
+  - id: bundle
+    type: text.merge
+    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    config:
+      template: |
+        # Answer key verification
+
+        {{nodes.compare.text}}
+
+        {{nodes.adjudicate.text}}
+
+        ---
+
+        Notice: This is original practice material written by an AI. It is not a real exam item, it was not made by or checked by the body that runs any exam, and it may contain errors. A teacher should check it before use.
+
+        Uyarı: Bu belge, yapay zekâ tarafından yazılmış özgün alıştırma materyalidir. Gerçek bir sınav sorusu değildir; hiçbir sınav kurumu tarafından hazırlanmamış ya da denetlenmemiştir ve hata içerebilir. Kullanmadan önce bir öğretmen kontrol etmelidir.
+
+  - id: approve
+    type: approval
+    label: {tr: "Sonucu onayla", en: "Approve the result"}
+    config:
+      show: |
+        {{nodes.bundle.text}}
+      instructions:
+        tr: >-
+          Her tartışmalı soru için kararı kendiniz doğrulayın; yapay zekâ da hata yapabilir. Anahtarda
+          değişiklik yapmadan önce soruyu kendiniz çözün. Raporu kaydetmek için onaylayın ya da reddedin.
+        en: >-
+          Verify the decision on each disputed question yourself; AI can be wrong. Solve the question yourself
+          before you change the key. Approve to save the report, or reject.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: "{{nodes.approve.text}}"
+      title: "Answer key verification"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: key-verification
+
+connections:
+  - {from: exam.text, to: prepare}
+  - {from: prepare.text, to: solve}
+  - {from: prepare.text, to: compare}
+  - {from: key.text, to: compare}
+  - {from: solve.text, to: compare}
+  - {from: compare.text, to: gate}
+  - {from: gate.true, to: adjudicate}
+  - {from: prepare.text, to: adjudicate}
+  - {from: key.text, to: adjudicate}
+  - {from: solve.text, to: adjudicate}
+  - {from: compare.text, to: bundle}
+  - {from: adjudicate.text, to: bundle}
+  - {from: bundle.text, to: approve}
+  - {from: approve.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Rapor (Markdown)", en: "Report (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Rapor (HTML)", en: "Report (HTML)"}}

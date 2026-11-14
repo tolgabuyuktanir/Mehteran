@@ -1,0 +1,163 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: product-description-seo
+name:
+  tr: "Ürün açıklaması ve SEO metni"
+  en: "Product descriptions and SEO text"
+description:
+  tr: >-
+    Ürün bilgisinden (yapıştırılan metin, teknik özellik tablosu ya da CSV/Excel) satış sitesi ve pazaryeri için
+    ürün açıklamaları yazar: kısa açıklama, uzun açıklama, madde madde özellikler, arama sonuçları için başlık
+    (en çok 60 karakter) ve meta açıklama (en çok 155 karakter), anahtar kelime önerileri. Ürün bilgisinde
+    olmayan özellik ya da iddia eklemez; ikinci bir geçiş bunu denetler. Sonuç Markdown, Word ve HTML belgedir.
+  en: >-
+    Writes product descriptions for a shop or marketplace from product information (pasted text, a spec table,
+    or CSV/Excel): a short description, a long description, bullet features, a title for search results (at most
+    60 characters), a meta description (at most 155 characters) and keyword ideas. It adds no feature or claim
+    that the product information does not give; a second pass checks this. The result is a Markdown, Word and
+    HTML document.
+version: "1.0"
+category: everyday
+
+inputs:
+  - id: info_file
+    type: file
+    required: false
+    label: {tr: "Ürün bilgisi dosyası", en: "Product information file"}
+    formats: [csv, tsv, xlsx, pdf, docx, md, txt]
+  - id: info
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Ürün bilgisi (yapıştır)", en: "Product information (paste)"}
+    description:
+      tr: "Ad, özellikler, ölçüler, malzeme, fiyat aralığı vb."
+      en: "Name, features, dimensions, material, price range and so on."
+  - id: channel
+    type: choice
+    label: {tr: "Kanal", en: "Channel"}
+    options:
+      - {value: shop, label: {tr: "Kendi mağaza sitesi", en: "Own shop site"}}
+      - {value: marketplace, label: {tr: "Pazaryeri", en: "Marketplace"}}
+    default: shop
+  - id: audience
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Hedef kitle", en: "Audience"}
+    description:
+      tr: "Örnek: 'ilk kez koşmaya başlayanlar'."
+      en: "For example: 'first-time runners'."
+  - id: tone
+    type: choice
+    label: {tr: "Ton", en: "Tone"}
+    options:
+      - {value: clear, label: {tr: "Net ve bilgilendirici", en: "Clear and informative"}}
+      - {value: warm, label: {tr: "Sıcak", en: "Warm"}}
+      - {value: premium, label: {tr: "Premium", en: "Premium"}}
+    default: clear
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Dosyayı oku", en: "Read the file"}
+    config:
+      file: "{{inputs.info_file}}"
+
+  - id: write
+    type: ai.cli
+    label: {tr: "Açıklamalar", en: "Descriptions"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You write product copy for a shop or marketplace.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        Channel: {{inputs.channel}}
+        Audience (it may be empty): {{inputs.audience}}
+        Tone: {{inputs.tone}}
+
+        Product information from a file (it may be empty):
+
+        {{nodes.extract.text}}
+
+        Product information, pasted (it may be empty):
+
+        {{inputs.info}}
+
+        Rules:
+        - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Use only features, materials, sizes and claims that the information gives. Where something customers will ask is missing, list it under "Missing information" instead of guessing.
+        - No medical, safety, legal or "best" claims that the information does not support.
+        - Write for the reader's benefit: lead with what the product does for them, then the facts.
+        - If the information lists several products, write one full block for each, with the product name as a heading.
+        - Search title: at most 60 characters. Meta description: at most 155 characters, with a reason to click. Count the characters.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. For each product, headings (translated): ## <Product name>, ### Short description (at most 40 words), ### Long description (120 to 200 words), ### Features (bullets), ### Search title, ### Meta description, ### Keywords (8 to 12, as a list), ### Missing information.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: verify
+    type: ai.cli
+    label: {tr: "Doğrulama", en: "Claims and length check"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check product copy against the product information and give the corrected final copy.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+
+        The product information:
+
+        {{nodes.extract.text}}
+
+        {{inputs.info}}
+
+        The copy:
+
+        {{nodes.write.text}}
+
+        Method: remove or fix every feature, number, material or claim that the information does not give. Recount the characters of every search title and meta description and shorten those that are too long. Keep the structure. Give the corrected copy only, then a last section "## Corrections" (translated) with a short list of changes, or "None.".
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items.
+
+        Final check before you answer:
+        1. Language: write in the language with the code "{{inputs.language}}", as set above. Translate every heading and every fixed phrase from this message. Keep in the original language only what the instructions above say to keep.
+        2. Honesty: do not invent facts, sources or exam content that the material does not give.
+
+  - id: export
+    type: document.export
+    label: {tr: "Metni kaydet", en: "Save the copy"}
+    config:
+      source: "{{nodes.verify.text}}"
+      title: "Product descriptions"
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: product-descriptions
+
+connections:
+  - {from: extract.text, to: write}
+  - {from: extract.text, to: verify}
+  - {from: write.text, to: verify}
+  - {from: verify.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: "Metin (Markdown)", en: "Copy (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Metin (Word)", en: "Copy (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Metin (HTML)", en: "Copy (HTML)"}}

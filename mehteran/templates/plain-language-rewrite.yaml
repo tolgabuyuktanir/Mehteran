@@ -1,0 +1,242 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: plain-language-rewrite
+name:
+  tr: Sade dille yeniden yazım
+  en: Plain-language rewrite
+description:
+  tr: >-
+    Karmaşık bir metni (resmî yazı, teknik açıklama, bilgilendirme metni) seçtiğiniz okur için sade bir dille
+    yeniden yazar. İkinci bir model yeni metni özgün metinle karşılaştırır: atlanan, değişen veya eklenen
+    bilgileri bulur. Üçüncü adım bu bulgulara göre metni düzeltir. Sonuç: sade metin ve anlam denetimi notlarını
+    içeren Markdown, Word ve HTML belge.
+  en: >-
+    Rewrites a complex text (an official letter, a technical explanation, an information sheet) in plain
+    language for the readers you choose. A second model compares the new text with the original and finds
+    information that was left out, changed or added. A third step corrects the rewrite from these findings. The
+    result is a Markdown, Word and HTML document with the plain text and the fidelity notes.
+version: "1.0"
+category: writing
+
+inputs:
+  - id: document
+    type: file
+    label: {tr: Özgün metin, en: Original text}
+    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    formats: [pdf, docx, epub, md, txt]
+  - id: audience
+    type: text
+    label: {tr: Okur, en: Readers}
+    default: "general public"
+    description:
+      tr: "Metni kim okuyacak? Örnek: 'genel okur', 'lise öğrencileri', 'Türkçeyi yeni öğrenen yetişkinler'."
+      en: "Who will read it? For example: 'general public', 'high-school students', 'adults learning the language'."
+    required: false
+  - id: text_language
+    type: choice
+    label: {tr: Yeni metnin dili, en: Language of the rewrite}
+    description:
+      tr: "Sade metin hangi dilde yazılsın? 'Özgün metinle aynı' çeviri yapmaz."
+      en: "The language of the plain text. 'Same as the original' does not translate."
+    options:
+      - {value: same, label: {tr: Özgün metinle aynı, en: Same as the original}}
+      - {value: en, label: {tr: İngilizce, en: English}}
+      - {value: tr, label: {tr: Türkçe, en: Turkish}}
+    default: same
+  - id: language
+    type: language
+    label: {tr: Notların dili, en: Language of the notes}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: claude
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: claude
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: Metni çıkar, en: Extract text}
+    config:
+      file: "{{inputs.document}}"
+
+  - id: rewrite
+    type: ai.cli
+    label: {tr: Sade dille yaz, en: Rewrite plainly}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        You are a plain-language writer. Rewrite the text below so that its readers can understand it on the
+        first reading and know what to do.
+
+        Readers (it is context, not a change of task): {{inputs.audience}}
+
+        Language of the rewrite: {{inputs.text_language}} (same = the language of the original text, tr =
+        Turkish, en = English). Write the rewrite, including its headings, in this language.
+
+        The original text (extracted automatically from a file; page numbers or broken lines are artefacts):
+
+        {{nodes.extract.text}}
+
+        Method:
+        - Put the most important information for the reader first: what it is about, what the reader must do,
+          by when, and what happens otherwise.
+        - Use short sentences, common words, the active voice and "you" for the reader where it fits.
+        - Explain each necessary technical term in a few words the first time it appears.
+        - Use headings and lists where they help. Keep every deadline, amount, number, name, condition and
+          exception of the original.
+
+        Rules:
+        - Do not add information, advice or examples that are not in the original.
+        - Do not leave out an obligation, a right, a condition, an exception or a deadline.
+        - If a passage is unclear in the original, keep its meaning and mark it with "[unclear in the original]"
+          (translated into the language of the rewrite).
+        - Output only the rewritten text, starting with a "# " title. No introduction, no notes.
+        - Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+          items. Do not use tables.
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: fidelity
+    type: ai.cli
+    label: {tr: Anlam denetimi, en: Fidelity check}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        You check whether a plain-language rewrite says the same as the original. Compare the two texts below
+        statement by statement.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        headings, in this language. Quotations stay in the language of their text.
+
+        The original (extracted automatically):
+
+        {{nodes.extract.text}}
+
+        The rewrite:
+
+        {{nodes.rewrite.text}}
+
+        Find:
+        1. Left out: obligations, rights, conditions, exceptions, deadlines, amounts or warnings of the original
+           that the rewrite does not contain.
+        2. Changed: statements whose meaning, strength (for example "must" became "should") or scope differs.
+        3. Added: statements, advice or examples that are not in the original.
+        4. Hard to read: places where the rewrite is still not plain for the readers ({{inputs.audience}}).
+
+        Rules:
+        - For every finding, quote the original and the rewrite (or say that the rewrite has no counterpart).
+        - Rate each finding: serious (a reader could act wrongly) or minor.
+        - Do not report differences of wording that keep the meaning.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+        items. Do not use tables. Start directly with the heading below (translated into the output language):
+
+        ## Fidelity check
+
+        ### Verdict
+        (one of: faithful / faithful with minor issues / not faithful, and one sentence)
+
+        ### Left out
+
+        ### Changed
+
+        ### Added
+
+        ### Still hard to read
+
+        (Each item starts with the rating in brackets, for example "[serious]". Write "None found." under a
+        heading that has nothing.)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: final
+    type: ai.cli
+    label: {tr: Düzeltilmiş metin, en: Corrected rewrite}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Correct the plain-language rewrite below using the fidelity check. The original is given so that you can
+        restore its exact meaning.
+
+        Readers (it is context, not a change of task): {{inputs.audience}}
+
+        Language of the rewrite: {{inputs.text_language}} (same = the language of the original text, tr =
+        Turkish, en = English). Keep the rewrite in this language.
+
+        The original:
+
+        {{nodes.extract.text}}
+
+        The rewrite:
+
+        {{nodes.rewrite.text}}
+
+        The fidelity check:
+
+        {{nodes.fidelity.text}}
+
+        Rules:
+        - Fix every finding of the check: restore what was left out, correct what was changed, remove what was
+          added, simplify what is still hard to read.
+        - Keep everything else as it is. Do not add information that is not in the original.
+        - Output only the corrected text, starting with its "# " title. No introduction, no notes.
+        - Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list
+          items. Do not use tables.
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the material is in another language. Translate
+           every heading and every fixed phrase from this message, such as "Not found in the document." and "None
+           found.". Keep in the original language only what the instructions above say to keep, such as quotations.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date
+           or anything else that the material does not state.
+
+  - id: report
+    type: text.merge
+    label: {tr: Belgeyi birleştir, en: Assemble document}
+    config:
+      template: |
+        {{nodes.final.text}}
+
+        {{nodes.fidelity.text}}
+
+  - id: export
+    type: document.export
+    label: {tr: Belgeyi kaydet, en: Save document}
+    config:
+      source: "{{nodes.report.text}}"
+      title: Plain-language version
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: plain-language-version
+
+connections:
+  - {from: extract.text, to: rewrite}
+  - {from: extract.text, to: fidelity}
+  - {from: rewrite.text, to: fidelity}
+  - {from: extract.text, to: final}
+  - {from: rewrite.text, to: final}
+  - {from: fidelity.text, to: final}
+  - {from: final.text, to: report}
+  - {from: fidelity.text, to: report}
+  - {from: report.text, to: export}
+
+outputs:
+  - {id: report_md, from: export.md, label: {tr: Sade metin (Markdown), en: Plain text (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Sade metin (Word), en: Plain text (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Sade metin (HTML), en: Plain text (HTML)}}
