@@ -4,7 +4,7 @@
 
 <p align="center"><b>Kendi bilgisayarınızda, zaten sahip olduğunuz yapay zekâ abonelikleriyle iş akışları.</b></p>
 
-<p align="center"><a href="README.md">English</a> · <a href="https://tolgabuyuktanir.github.io/TranslationPipeline/?lang=tr">Web sitesi</a> · <a href="https://tolgabuyuktanir.github.io/TranslationPipeline/docs.html?lang=tr">Belgeler</a> · <a href="docs/mehteran.tr.md">Ayrıntılı başvuru</a></p>
+<p align="center"><a href="README.md">English</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">Web sitesi</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr">Belgeler</a> · <a href="docs/mehteran.tr.md">Ayrıntılı başvuru</a></p>
 
 ![Mehteran iş akışı kütüphanesi](docs/assets/screens/tr-library.png)
 
@@ -74,7 +74,7 @@ Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurul
 
 ## Belgeler
 
-- [Web sitesi](https://tolgabuyuktanir.github.io/TranslationPipeline/?lang=tr) ve [belgeler](https://tolgabuyuktanir.github.io/TranslationPipeline/docs.html?lang=tr): kurulum, yapay zekâ araçlarını bağlama, iş akışı çalıştırma ve oluşturma, yerel modeller, iş akışı dosyası, sorun giderme.
+- [Web sitesi](https://tolgabuyuktanir.github.io/Mehteran/?lang=tr) ve [belgeler](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr): kurulum, yapay zekâ araçlarını bağlama, iş akışı çalıştırma ve oluşturma, yerel modeller, iş akışı dosyası, sorun giderme.
 - [Mehteran ayrıntılı başvuru](docs/mehteran.tr.md): her ekran, ayar, API yolu ve sınır.
 - [Kitap çevirisi kullanım kılavuzu](docs/guide.tr.md).
 

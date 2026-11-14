@@ -4,7 +4,7 @@
 
 <p align="center"><b>AI workflows on your own computer, with the AI subscriptions you already have.</b></p>
 
-<p align="center"><a href="README.tr.md">Türkçe</a> · <a href="https://tolgabuyuktanir.github.io/TranslationPipeline/">Website</a> · <a href="https://tolgabuyuktanir.github.io/TranslationPipeline/docs.html">Docs</a> · <a href="docs/mehteran.md">Full reference</a></p>
+<p align="center"><a href="README.tr.md">Türkçe</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/">Website</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html">Docs</a> · <a href="docs/mehteran.md">Full reference</a></p>
 
 ![The Mehteran workflow library](docs/assets/screens/en-library.png)
 
@@ -74,7 +74,7 @@ Codex, Node.js and the PDF reader go into the application's own folder (`.runtim
 
 ## Documentation
 
-- [Website](https://tolgabuyuktanir.github.io/TranslationPipeline/) and [docs](https://tolgabuyuktanir.github.io/TranslationPipeline/docs.html): install, connect your AI tools, run and build workflows, local models, the workflow file, troubleshooting.
+- [Website](https://tolgabuyuktanir.github.io/Mehteran/) and [docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html): install, connect your AI tools, run and build workflows, local models, the workflow file, troubleshooting.
 - [Mehteran full reference](docs/mehteran.md): every screen, setting, API route and limit.
 - [Book translation user guide](docs/guide.md).
 
