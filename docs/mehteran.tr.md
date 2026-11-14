@@ -368,7 +368,7 @@ Mehteran iş akışları için `Project` nesnesini okunan ayarlardan kendisi olu
 
 ## Bu dilimde olmayanlar
 
-Bilerek dışarıda bırakılanlar: eklentiler ve eklenti kaydı, iş akışlarını yapay zekâyla oluşturma, arayüzden herhangi bir komut satırı aracını kaydetme, kabuk ya da Python kodu çalıştıran düğümler, zamanlama ve kullanıcılar arası paylaşım. PDF raporu: çeviri uygulaması PDF'i HTML sayfasını tarayıcıda yazdırarak yapar (bir PDF yazıcısı yoktur); bu yüzden Mehteran HTML (PDF olarak yazdırılabilir) ve Word verir.
+Bilerek dışarıda bırakılanlar: eklentiler ve eklenti kaydı, arayüzden herhangi bir komut satırı aracını kaydetme, kabuk ya da Python kodu çalıştıran düğümler, zamanlama ve iş akışlarını paylaşmak için çevrimiçi bir yer (paylaşım bir dosyadır: "Paylaş" ve "İçe aktar").
 
 ## Geliştirme
 

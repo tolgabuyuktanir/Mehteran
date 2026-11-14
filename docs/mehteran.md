@@ -556,7 +556,7 @@ For its workflows, Mehteran builds its `Project` object directly from the read s
 
 ## Not in this slice
 
-Deliberately left out: plugins and a plugin registry, generating workflows with AI, registering any command-line tool from the interface, shell or Python code nodes, scheduling, and sharing between users. PDF reports: the translation app makes its PDF by printing the HTML page in a browser (it has no PDF writer), so Mehteran offers HTML (print it to PDF) and Word.
+Deliberately left out: plugins and a plugin registry, registering any command-line tool from the interface, shell or Python code nodes, scheduling, and an online place to share workflows (sharing is a file: "Share" and "Import").
 
 ## Development
 

@@ -834,12 +834,14 @@ function renderLibrary() {
     const recent = searching ? [] : recentTemplates();
     if (book) { sections.push(group("lib-pinned", S("translation_group"), [translationCard])); total += 1; }
     if (favs.length) { sections.push(group("lib-favorites", "★ " + S("favorites"), favs)); total += favs.length; }
+    // Like the cards: "Open" goes to the workflow's page, where it is run.
     if (recent.length) sections.push(h("section", {class: "lib-recent"}, h("h3", {class: "lib-group-title"}, S("recently_used")),
-      h("div", {class: "recent-row"}, recent.map(({item, at}) => h("span", {class: "recent-chip"},
-        h("button", {type: "button", class: "linkish", onclick: () => go(`workflows/${item.source}/${item.id}`)}, L(item.name) || item.id,
-          h("span", {class: "small muted"}, " · " + fmtTime(at))),
-        h("button", {type: "button", class: "icon-btn", disabled: !item.valid, "aria-label": S("run") + ": " + (L(item.name) || item.id),
-          title: S("run"), onclick: () => openRun(item.source, item.id)}, "▶"))))));
+      h("div", {class: "recent-row"}, recent.map(({item, at}) => {
+        const open = () => go(`workflows/${item.source}/${item.id}`), name = L(item.name) || item.id;
+        return h("span", {class: "recent-chip"},
+          h("button", {type: "button", class: "linkish", onclick: open}, name, h("span", {class: "small muted"}, " · " + fmtTime(at))),
+          h("button", {type: "button", class: "btn small", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
+      }))));
     if (own.length) { sections.push(group("", S("my_templates"), own)); total += own.length; }
     if (drafts.length) { sections.push(group("", S("drafts"), drafts)); total += drafts.length; }
     if (!sections.length) sections.push(h("div", {class: "empty"}, searching ? S("no_templates_match") : S("mine_empty"),
@@ -881,9 +883,16 @@ function translationCard() {
       h("span", {class: "tpl-name"}, S("translation_card_title")),
       h("span", {class: "tpl-desc"}, S("translation_card_text"))),
     h("div", {class: "tpl-foot"}, h("span", {class: "small muted"}, S("translation_card_meta")),
-      h("span", {class: "row"},
-        favoriteButton(item, () => { INFO.translation.favorite = item.favorite; renderLibrary(); }),  // live.js
-        h("button", {type: "button", class: "btn small primary", onclick: open}, S("open")))));
+      cardActions(favoriteButton(item, () => { INFO.translation.favorite = item.favorite; renderLibrary(); }),  // live.js
+        () => go("workflows/translation/workflow"), open, S("translation_card_title"))));
+}
+
+// The same buttons on every card of the library: the star, "Edit" (the workflow's steps and instructions) and "Open"
+// (the workflow's page; a run starts there). Running is never a card button, so every card reads the same way.
+function cardActions(star, edit, open, name) {
+  return h("span", {class: "row"}, star,
+    h("button", {type: "button", class: "btn small", onclick: edit, "aria-label": S("edit") + ": " + name}, S("edit")),
+    h("button", {type: "button", class: "btn small primary", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
 }
 
 // The live state of the book translation on its card: how many books, how many are being translated now.
@@ -917,11 +926,8 @@ function templateCard(item) {
       h("span", {class: "tpl-desc"}, L(item.description) || item.id)),
     h("div", {class: "tpl-foot"},
       h("span", {class: "small muted"}, needsLine(item)),
-      h("span", {class: "row"},
-        favoriteButton(item, renderLibrary),  // live.js
-        h("button", {type: "button", class: "btn small", onclick: open}, S("details")),
-        h("button", {type: "button", class: "btn small primary", disabled: !item.valid, title: item.valid ? null : S("run_blocked", {count: (item.problems || []).length}),
-          onclick: () => openRun(item.source, item.id)}, "▶ " + S("run")))));
+      cardActions(favoriteButton(item, renderLibrary),  // live.js
+        () => go(`workflows/edit/${item.source}/${item.id}`), open, L(item.name) || item.id)));
 }
 
 // --- the first-start welcome: three choices above the library, until something was run or it was closed ----------

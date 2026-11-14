@@ -1149,7 +1149,7 @@ details.advanced > .node-settings { gap: 12px; }
 .lib-favorites { margin-bottom: 8px; }
 .lib-recent { margin: 0 0 22px; }
 .recent-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.recent-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+.recent-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border: 1px solid var(--line); border-radius: 999px;
   background: var(--surface); font-size: 14px; }
 .last-run { gap: 8px; align-items: center; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; }
 

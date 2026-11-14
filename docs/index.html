@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mehteran · AI workflows on your own computer</title>
+<meta name="title-en" content="Mehteran · AI workflows on your own computer">
+<meta name="title-tr" content="Mehteran · Kendi bilgisayarınızda yapay zekâ iş akışları">
+<meta name="description" content="Mehteran runs repeatable AI workflows on your computer with the AI tools you already use: Claude Code, Codex, Antigravity CLI and local models. No API bill, no account of its own.">
+<meta name="description-en" content="Mehteran runs repeatable AI workflows on your computer with the AI tools you already use: Claude Code, Codex, Antigravity CLI and local models. No API bill, no account of its own.">
+<meta name="description-tr" content="Mehteran, tekrar tekrar kullanılabilen yapay zekâ iş akışlarını bilgisayarınızda, zaten kullandığınız araçlarla çalıştırır: Claude Code, Codex, Antigravity CLI ve yerel modeller. API faturası yok, kendi hesabı yok.">
+<meta property="og:title" content="Mehteran">
+<meta property="og:description" content="AI workflows on your own computer, with the subscriptions you already have and local models.">
+<meta property="og:image" content="assets/screens/en-library.png">
+<meta name="theme-color" content="#0d5644">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="34" height="34"><b>Mehteran</b></a>
+    <nav class="nav" aria-label="Main">
+      <a href="#features"><span data-l="en">Features</span><span data-l="tr">Özellikler</span></a>
+      <a href="#how"><span data-l="en">How it works</span><span data-l="tr">Nasıl çalışır</span></a>
+      <a href="#templates"><span data-l="en">Templates</span><span data-l="tr">Şablonlar</span></a>
+      <a href="docs.html"><span data-l="en">Docs</span><span data-l="tr">Belgeler</span></a>
+      <a href="https://github.com/tolgabuyuktanir/TranslationPipeline">GitHub</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language / Dil">
+      <button type="button" data-set="en" aria-pressed="true">EN</button>
+      <button type="button" data-set="tr" aria-pressed="false">TR</button>
+    </div>
+    <button type="button" class="menu-toggle" aria-expanded="false"><span data-l="en">Menu</span><span data-l="tr">Menü</span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ======================================================================= hero -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><span data-l="en">Local-first AI workflows</span><span data-l="tr">Yerel öncelikli yapay zekâ iş akışları</span></span>
+        <h1>
+          <span data-l="en">Your AI workflows, on <em>your</em> computer.</span>
+          <span data-l="tr">Yapay zekâ iş akışlarınız, <em>kendi</em> bilgisayarınızda.</span>
+        </h1>
+        <p class="lede" data-l="en">Mehteran turns the AI tools you already use into repeatable workflows. Read a document, ask a model, check the answer, let a person approve, save a Word or PDF file. It runs on Claude Code, Codex, Antigravity CLI and local models, so it costs nothing on top of the subscriptions you already have.</p>
+        <p class="lede" data-l="tr">Mehteran, zaten kullandığınız yapay zekâ araçlarını tekrar tekrar kullanılabilen iş akışlarına dönüştürür. Bir belgeyi okur, modele sorar, cevabı kontrol eder, bir kişinin onayını alır ve sonucu Word ya da PDF olarak kaydeder. Claude Code, Codex, Antigravity CLI ve yerel modellerle çalışır. Mevcut aboneliklerinizin üstüne ek bir ücret çıkmaz.</p>
+        <div class="cta">
+          <a class="btn primary" href="#start">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>
+            <span data-l="en">Get started</span><span data-l="tr">Başlayın</span>
+          </a>
+          <a class="btn" href="docs.html"><span data-l="en">Read the docs</span><span data-l="tr">Belgeleri okuyun</span></a>
+        </div>
+        <p class="hero-note" data-l="en">macOS, Windows and Linux · 72 ready-made templates · 18 interface languages</p>
+        <p class="hero-note" data-l="tr">macOS, Windows ve Linux · 72 hazır şablon · 18 arayüz dili</p>
+      </div>
+      <figure class="shot" style="margin:0">
+        <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8766</span></div>
+        <img data-l="en" src="assets/screens/en-library.png" alt="The Mehteran workflow library with its ready-made templates" width="1360" height="860" loading="lazy">
+        <img data-l="tr" src="assets/screens/tr-library.png" alt="Mehteran iş akışı kütüphanesi ve hazır şablonlar" width="1360" height="860" loading="lazy">
+      </figure>
+    </div>
+  </section>
+
+  <div class="tools">
+    <div class="wrap">
+      <span class="label" data-l="en">Works with</span><span class="label" data-l="tr">Birlikte çalıştığı araçlar</span>
+      <span class="chip"><span class="dot"></span>Claude Code</span>
+      <span class="chip"><span class="dot"></span>Codex CLI</span>
+      <span class="chip"><span class="dot"></span>Antigravity CLI</span>
+      <span class="chip"><span class="dot pen"></span>Ollama</span>
+      <span class="chip"><span class="dot pen"></span>LM Studio</span>
+      <span class="chip"><span class="dot pen"></span>llama.cpp</span>
+      <span class="chip"><span class="dot gold"></span>Gemini CLI <small data-l="en">API key</small><small data-l="tr">API anahtarı</small></span>
+    </div>
+  </div>
+
+  <!-- ======================================================================= features -->
+  <section class="band" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span data-l="en">Why Mehteran</span><span data-l="tr">Neden Mehteran</span></span>
+        <h2 data-l="en">One good prompt is a start. A workflow does the job every time.</h2>
+        <h2 data-l="tr">İyi bir istem bir başlangıçtır. İş akışı ise işi her seferinde yapar.</h2>
+        <p data-l="en">Chat windows forget the steps. Mehteran keeps them: which document to read, which model to ask, what to check, who approves, and which file to deliver.</p>
+        <p data-l="tr">Sohbet pencereleri adımları unutur. Mehteran onları saklar: hangi belge okunacak, hangi modele sorulacak, ne kontrol edilecek, kim onaylayacak, hangi dosya teslim edilecek.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M14.8 9.2c-.6-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.8-2.8 2.1 0 3 5.8 1.5 5.8 4.3 0 1.3-1.3 2.1-3 2.1-1.3 0-2.4-.6-3-1.5M12 6v1.8m0 8.4V18"/></svg></div>
+          <h3 data-l="en">No extra bill</h3><h3 data-l="tr">Ek fatura yok</h3>
+          <p data-l="en">Mehteran calls the command-line tools of your Claude, ChatGPT or Google subscription, or a model on this computer. It removes API keys from every call, so nothing is billed by accident.</p>
+          <p data-l="tr">Mehteran, Claude, ChatGPT ya da Google aboneliğinizin komut satırı araçlarını veya bu bilgisayardaki bir modeli çağırır. Her çağrıdan API anahtarlarını çıkarır, böylece yanlışlıkla hiçbir şey faturalanmaz.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="11" rx="1.8"/><path d="M8.5 19.5h7M12 15.5v4M9.5 10l1.8 1.8L15 8"/></svg></div>
+          <h3 data-l="en">Your files stay with you</h3><h3 data-l="tr">Dosyalarınız sizde kalır</h3>
+          <p data-l="en">The interface runs only on 127.0.0.1. Runs, results and settings are folders on your disk. Mark a workflow "local only" and no text leaves the computer.</p>
+          <p data-l="tr">Arayüz yalnızca 127.0.0.1 üzerinde çalışır. Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. Bir iş akışını "yalnızca yerel" yaparsanız hiçbir metin bilgisayardan çıkmaz.</p>
+        </article>
+        <article class="card">
+          <div class="icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="6" height="5" rx="1.2"/><rect x="15.5" y="4" width="6" height="5" rx="1.2"/><rect x="9" y="15" width="6" height="5" rx="1.2"/><path d="M8.5 6.5h7M5.5 9v3.5c0 1.4 1.1 2.5 2.5 2.5h1M18.5 9v3.5c0 1.4-1.1 2.5-2.5 2.5h-1"/></svg></div>
+          <h3 data-l="en">Visual, but real files</h3><h3 data-l="tr">Görsel, ama gerçek dosyalar</h3>
+          <p data-l="en">Draw steps on a canvas: AI steps, conditions, loops over chapters, human approvals. Each workflow is one readable YAML file that you can share.</p>
+          <p data-l="tr">Adımları bir tuvale çizin: yapay zekâ adımları, koşullar, bölümler üzerinde döngüler, kişi onayları. Her iş akışı, paylaşabileceğiniz okunaklı tek bir YAML dosyasıdır.</p>
+        </article>
+        <article class="card">
+          <div class="icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></svg></div>
+          <h3 data-l="en">Real documents in and out</h3><h3 data-l="tr">Gerçek belgeler girer, çıkar</h3>
+          <p data-l="en">Reads PDF, Word, EPUB, Excel, web pages, scans (OCR) and recordings (speech to text). Saves Markdown, Word, HTML, PDF, EPUB, e-mail drafts, JSON and CSV.</p>
+          <p data-l="tr">PDF, Word, EPUB, Excel, web sayfaları, taranmış belgeler (OCR) ve ses kayıtlarını (konuşmayı yazıya çevirme) okur. Markdown, Word, HTML, PDF, EPUB, e-posta taslağı, JSON ve CSV olarak kaydeder.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= how it works -->
+  <section class="band alt" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span data-l="en">How it works</span><span data-l="tr">Nasıl çalışır</span></span>
+        <h2 data-l="en">Pick it, run it, keep the result.</h2>
+        <h2 data-l="tr">Seçin, çalıştırın, sonucu saklayın.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3 data-l="en">Choose or describe</h3><h3 data-l="tr">Seçin ya da anlatın</h3>
+          <p data-l="en">Start from one of 72 templates, or write in a sentence what you need. "Describe it, I will build it" drafts the workflow for you to check.</p>
+          <p data-l="tr">72 şablondan biriyle başlayın ya da ne istediğinizi bir cümleyle yazın. "Anlat, oluşturayım" iş akışının ilk taslağını sizin kontrolünüz için hazırlar.</p>
+        </div>
+        <div class="step">
+          <h3 data-l="en">Run with any model</h3><h3 data-l="tr">İstediğiniz modelle çalıştırın</h3>
+          <p data-l="en">Before the run, Mehteran shows how many model calls it makes and where each text goes. "Automatic" picks a signed-in tool for you.</p>
+          <p data-l="tr">Çalıştırmadan önce Mehteran kaç model çağrısı yapacağını ve her metnin nereye gideceğini gösterir. "Otomatik", oturum açılmış bir aracı sizin için seçer.</p>
+        </div>
+        <div class="step">
+          <h3 data-l="en">Read, compare, export</h3><h3 data-l="tr">Okuyun, karşılaştırın, dışa aktarın</h3>
+          <p data-l="en">Read the result formatted, compare it with an earlier run, edit it and export it. Every run stays in the history with its inputs and prompts.</p>
+          <p data-l="tr">Sonucu biçimlendirilmiş hâliyle okuyun, önceki bir çalıştırmayla karşılaştırın, düzenleyin ve dışa aktarın. Her çalıştırma girdileri ve istemleriyle birlikte geçmişte kalır.</p>
+        </div>
+      </div>
+
+      <div class="split" style="margin-top:64px">
+        <div>
+          <h3 style="font-size:26px" data-l="en">A workflow is a drawing of the real data flow</h3>
+          <h3 style="font-size:26px" data-l="tr">İş akışı, verinin gerçek yolunun çizimidir</h3>
+          <ul class="ticks">
+            <li data-l="en"><span><b>Steps run in parallel</b> when they do not depend on each other.</span></li>
+            <li data-l="tr"><span><b>Adımlar paralel çalışır</b>, birbirlerine bağlı olmadıklarında.</span></li>
+            <li data-l="en"><span><b>Conditions</b> branch on a model's yes or no, or on the text itself.</span></li>
+            <li data-l="tr"><span><b>Koşullar</b>, modelin evet ya da hayır cevabına veya metnin kendisine göre dallanır.</span></li>
+            <li data-l="en"><span><b>Loops</b> split a long document into chapters and ask the model once per part.</span></li>
+            <li data-l="tr"><span><b>Döngüler</b> uzun bir belgeyi bölümlere ayırır ve modele her parça için bir kez sorar.</span></li>
+            <li data-l="en"><span><b>Approvals</b> stop a branch until a person approves, also after a restart.</span></li>
+            <li data-l="tr"><span><b>Onaylar</b>, bir kişi onaylayana kadar dalı bekletir. Program yeniden başlasa da bekler.</span></li>
+            <li data-l="en"><span><b>Usage limits</b> do not fail a run: it waits for the reset, or continues with another model.</span></li>
+            <li data-l="tr"><span><b>Kullanım sınırları</b> çalıştırmayı bozmaz: sıfırlanmayı bekler ya da başka bir modelle devam eder.</span></li>
+          </ul>
+        </div>
+        <div class="flow" role="img" aria-label="A workflow: read a contract, review risks with AI, a condition, a person approves, save as Word and PDF">
+          <svg viewBox="0 0 640 280" aria-hidden="true">
+            <path class="wire" d="M170 60 H 220"/>
+            <path class="wire" d="M380 60 H 430"/>
+            <path class="wire t" d="M560 90 V 200"/>
+            <path class="wire" d="M470 90 C 470 150, 300 140, 300 200" stroke-dasharray="4 5"/>
+            <path class="wire" d="M430 230 H 380"/>
+            <text class="tag" x="568" y="150" data-l="en">yes</text><text class="tag" x="568" y="150" data-l="tr">evet</text>
+            <text class="tag" x="350" y="146" data-l="en">no</text><text class="tag" x="342" y="146" data-l="tr">hayır</text>
+            <g class="node"><rect x="20" y="30" width="150" height="60" rx="10"/><text class="k" x="36" y="53">EXTRACT</text>
+              <text x="36" y="75" data-l="en">Read the contract</text><text x="36" y="75" data-l="tr">Sözleşmeyi oku</text></g>
+            <g class="node ai"><rect x="220" y="30" width="160" height="60" rx="10"/><text class="k" x="236" y="53">AI · AUTO:STRONG</text>
+              <text x="236" y="75" data-l="en">Review the risks</text><text x="236" y="75" data-l="tr">Riskleri incele</text></g>
+            <g class="node cond"><rect x="430" y="30" width="190" height="60" rx="10"/><text class="k" x="446" y="53">CONDITION · AI</text>
+              <text x="446" y="75" data-l="en">A high risk?</text><text x="446" y="75" data-l="tr">Yüksek risk var mı?</text></g>
+            <g class="node person"><rect x="430" y="200" width="190" height="60" rx="10"/><text class="k" x="446" y="223">APPROVAL</text>
+              <text x="446" y="245" data-l="en">A lawyer checks</text><text x="446" y="245" data-l="tr">Avukat kontrol eder</text></g>
+            <g class="node"><rect x="220" y="200" width="160" height="60" rx="10"/><text class="k" x="236" y="223">EXPORT</text>
+              <text x="236" y="245">DOCX · PDF</text></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="split flip" style="margin-top:64px">
+        <div>
+          <h3 style="font-size:26px" data-l="en">Build it on a canvas, or in plain words</h3>
+          <h3 style="font-size:26px" data-l="tr">Tuvalde kurun ya da düz cümlelerle anlatın</h3>
+          <p class="muted" style="margin-top:12px" data-l="en">The editor connects new steps for you and warns you about steps whose result nobody uses. "Test this step" runs a single step with your unsaved changes, so you can tune one instruction without running the whole workflow.</p>
+          <p class="muted" style="margin-top:12px" data-l="tr">Düzenleyici yeni adımları sizin için bağlar ve sonucunu kimsenin kullanmadığı adımlar için uyarır. "Bu adımı dene", kaydedilmemiş değişikliklerinizle tek bir adımı çalıştırır. Böylece bütün akışı çalıştırmadan tek bir talimatı ayarlayabilirsiniz.</p>
+        </div>
+        <figure class="shot" style="margin:0">
+          <div class="bar"><i></i><i></i><i></i><span>#workflows/edit</span></div>
+          <img data-l="en" src="assets/screens/en-editor.png" alt="The visual workflow editor" width="1360" height="860" loading="lazy">
+          <img data-l="tr" src="assets/screens/tr-editor.png" alt="Görsel iş akışı düzenleyicisi" width="1360" height="860" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="split" style="margin-top:64px">
+        <div>
+          <h3 style="font-size:26px" data-l="en">See the cost before you start</h3>
+          <h3 style="font-size:26px" data-l="tr">Başlamadan önce maliyeti görün</h3>
+          <p class="muted" style="margin-top:12px" data-l="en">The run window counts the model calls, shows each tool's current usage and lists where every step sends its text. Run one workflow for up to 50 files in one go, and copy the results into a folder of your choice.</p>
+          <p class="muted" style="margin-top:12px" data-l="tr">Çalıştırma penceresi model çağrılarını sayar, her aracın güncel kullanımını gösterir ve her adımın metnini nereye gönderdiğini listeler. Bir iş akışını tek seferde en fazla 50 dosya için çalıştırın ve sonuçları seçtiğiniz bir klasöre kopyalayın.</p>
+        </div>
+        <figure class="shot" style="margin:0">
+          <div class="bar"><i></i><i></i><i></i><span>#workflows/run</span></div>
+          <img data-l="en" src="assets/screens/en-runform.png" alt="The run window with the estimate of model calls" width="1360" height="860" loading="lazy">
+          <img data-l="tr" src="assets/screens/tr-runform.png" alt="Model çağrısı tahmini ile çalıştırma penceresi" width="1360" height="860" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= AI tools and cost -->
+  <section class="band" id="tools">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span data-l="en">AI tools</span><span data-l="tr">Yapay zekâ araçları</span></span>
+        <h2 data-l="en">Use what you already pay for. Or pay nothing.</h2>
+        <h2 data-l="tr">Zaten ödediğinizi kullanın. Ya da hiç ödemeyin.</h2>
+        <p data-l="en">Mehteran keeps no keys and no accounts of its own. Each tool keeps its own sign-in. The Setup tab installs the tools and signs you in.</p>
+        <p data-l="tr">Mehteran'ın kendi anahtarı ve hesabı yoktur. Her araç kendi oturumunu saklar. Kurulum sekmesi araçları kurar ve oturum açmanızı sağlar.</p>
+      </div>
+      <div class="cost">
+        <div class="row"><span data-l="en">Tool</span><span data-l="tr">Araç</span><span data-l="en">How it is paid</span><span data-l="tr">Nasıl ödenir</span><span data-l="en">Where the text goes</span><span data-l="tr">Metin nereye gider</span></div>
+        <div class="row"><span>Claude Code</span><span><span class="pill" data-l="en">Subscription</span><span class="pill" data-l="tr">Abonelik</span></span><span>Anthropic</span></div>
+        <div class="row"><span>Codex CLI</span><span><span class="pill" data-l="en">Subscription</span><span class="pill" data-l="tr">Abonelik</span></span><span>OpenAI</span></div>
+        <div class="row"><span>Antigravity CLI</span><span><span class="pill" data-l="en">Free account</span><span class="pill" data-l="tr">Ücretsiz hesap</span></span><span>Google</span></div>
+        <div class="row"><span>Ollama</span><span><span class="pill gold" data-l="en">Local</span><span class="pill gold" data-l="tr">Yerel</span></span><span data-l="en">Stays on this computer</span><span data-l="tr">Bu bilgisayarda kalır</span></div>
+        <div class="row"><span>LM Studio · llama.cpp · vLLM</span><span><span class="pill gold" data-l="en">Local</span><span class="pill gold" data-l="tr">Yerel</span></span><span data-l="en">Stays on this computer</span><span data-l="tr">Bu bilgisayarda kalır</span></div>
+        <div class="row"><span>Gemini CLI</span><span><span class="pill warn" data-l="en">API key (billed)</span><span class="pill warn" data-l="tr">API anahtarı (ücretli)</span></span><span>Google</span></div>
+      </div>
+      <p class="muted" style="margin-top:16px;font-size:14px" data-l="en">A billed API key is used only when you allow it for that tool on the Setup tab. "Automatic" never picks a tool that bills an API key.</p>
+      <p class="muted" style="margin-top:16px;font-size:14px" data-l="tr">Ücretli bir API anahtarı yalnızca Kurulum sekmesinde o araç için izin verirseniz kullanılır. "Otomatik" seçimi, API anahtarıyla ücret alan bir aracı hiçbir zaman seçmez.</p>
+    </div>
+  </section>
+
+  <!-- ======================================================================= templates -->
+  <section class="band alt" id="templates">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span data-l="en">72 templates · 10 categories</span><span data-l="tr">72 şablon · 10 kategori</span></span>
+        <h2 data-l="en">Start from a template that already works.</h2>
+        <h2 data-l="tr">Zaten çalışan bir şablonla başlayın.</h2>
+        <p data-l="en">Each template is a normal workflow: open it, change its instructions, save it as your own.</p>
+        <p data-l="tr">Her şablon sıradan bir iş akışıdır: açın, talimatlarını değiştirin, kendi akışınız olarak kaydedin.</p>
+      </div>
+      <div class="cats">
+        <div class="cat"><h3><span data-l="en">Everyday</span><span data-l="tr">Günlük işler</span><small>12</small></h3>
+          <ul data-l="en"><li>Explain a document in plain language</li><li>Email reply draft</li><li>Expense table from receipts and invoices</li><li>Notes from a meeting or lecture recording</li></ul>
+          <ul data-l="tr"><li>Belgeyi herkes için anlaşılır anlat</li><li>E-posta yanıt taslağı</li><li>Fiş ve faturalardan gider tablosu</li><li>Toplantı / ders kaydından not</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Documents</span><span data-l="tr">Belgeler</span><small>6</small></h3>
+          <ul data-l="en"><li>Document summary</li><li>Document comparison</li><li>Meeting minutes and action items</li><li>Policy gap analysis</li></ul>
+          <ul data-l="tr"><li>Belge özeti</li><li>Belge karşılaştırma</li><li>Toplantı tutanağı ve aksiyonlar</li><li>Politika boşluk analizi</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Business</span><span data-l="tr">İş</span><small>11</small></h3>
+          <ul data-l="en"><li>Proposal from a client brief</li><li>Financial report analysis</li><li>RFP compliance matrix</li><li>Weekly report from notes</li></ul>
+          <ul data-l="tr"><li>Müşteri brifinden teklif</li><li>Finansal rapor analizi</li><li>İhale şartnamesi uyum matrisi</li><li>Notlardan haftalık rapor</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Legal</span><span data-l="tr">Hukuk</span><small>3</small></h3>
+          <ul data-l="en"><li>Contract risk review</li><li>NDA review</li><li>Regulatory compliance checklist</li></ul>
+          <ul data-l="tr"><li>Sözleşme risk incelemesi</li><li>Gizlilik sözleşmesi (NDA) kontrolü</li><li>Mevzuata uyum kontrol listesi</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Education</span><span data-l="tr">Eğitim</span><small>13</small></h3>
+          <ul data-l="en"><li>Lesson plan</li><li>A/B exam from lecture notes</li><li>Essay grading with your rubric</li><li>Flashcards (Anki)</li></ul>
+          <ul data-l="tr"><li>Ders planı</li><li>Ders notundan A/B sınav</li><li>Kompozisyon değerlendirme (rubrikle)</li><li>Ezber kartları (Anki)</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Exams</span><span data-l="tr">Sınavlar</span><small>5</small></h3>
+          <ul data-l="en"><li>Exam practice set (SAT, LGS, YKS)</li><li>AP question generator</li><li>AP FRQ grading</li></ul>
+          <ul data-l="tr"><li>Sınav alıştırma seti (SAT, LGS, YKS)</li><li>AP soru üretici</li><li>AP FRQ değerlendirme (çift puanlama)</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Research</span><span data-l="tr">Araştırma</span><small>6</small></h3>
+          <ul data-l="en"><li>Academic paper review</li><li>Literature synthesis</li><li>Response letter to reviewers</li></ul>
+          <ul data-l="tr"><li>Akademik makale değerlendirmesi</li><li>Literatür sentezi</li><li>Hakemlere cevap mektubu</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Writing</span><span data-l="tr">Yazı</span><small>6</small></h3>
+          <ul data-l="en"><li>Writing polish</li><li>Plain-language writing</li><li>Translation quality review</li></ul>
+          <ul data-l="tr"><li>Metin düzeltme ve özet iyileştirme</li><li>Sade dille yazım</li><li>Çeviri kalite değerlendirmesi</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Data</span><span data-l="tr">Veri</span><small>4</small></h3>
+          <ul data-l="en"><li>Spreadsheet (CSV / Excel) analysis</li><li>Survey free-text themes</li><li>Data analysis plan</li></ul>
+          <ul data-l="tr"><li>Tablo (CSV / Excel) analizi</li><li>Anket açık uçlu yanıt temaları</li><li>Veri analizi planı ve yorum</li></ul></div>
+        <div class="cat"><h3><span data-l="en">Software</span><span data-l="tr">Yazılım</span><small>6</small></h3>
+          <ul data-l="en"><li>Code review</li><li>Pull request description</li><li>Log and stack trace explainer</li></ul>
+          <ul data-l="tr"><li>Kod incelemesi</li><li>Pull request açıklaması</li><li>Günlük ve hata izi açıklayıcı</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= results -->
+  <section class="band" id="results">
+    <div class="wrap">
+      <div class="split flip">
+        <div>
+          <span class="eyebrow"><span data-l="en">Results and history</span><span data-l="tr">Sonuçlar ve geçmiş</span></span>
+          <h2 style="font-size:clamp(28px,3.4vw,38px);margin-top:10px" data-l="en">Every run is kept, readable and repeatable.</h2>
+          <h2 style="font-size:clamp(28px,3.4vw,38px);margin-top:10px" data-l="tr">Her çalıştırma saklanır, okunur ve tekrarlanır.</h2>
+          <ul class="ticks">
+            <li data-l="en"><span>Watch each step live, with its log and the prompt sent to the model.</span></li>
+            <li data-l="tr"><span>Her adımı günlüğü ve modele gönderilen istemle birlikte canlı izleyin.</span></li>
+            <li data-l="en"><span>Stop any run, resume it later, retry one step or switch its model.</span></li>
+            <li data-l="tr"><span>Her çalıştırmayı durdurun, sonra devam ettirin, tek bir adımı yeniden deneyin ya da modelini değiştirin.</span></li>
+            <li data-l="en"><span>Compare two runs paragraph by paragraph. Edit a result and export the edited version.</span></li>
+            <li data-l="tr"><span>İki çalıştırmayı paragraf paragraf karşılaştırın. Bir sonucu düzenleyin ve düzenlenmiş hâlini dışa aktarın.</span></li>
+            <li data-l="en"><span>Search, name and annotate runs. Delete old ones in one step.</span></li>
+            <li data-l="tr"><span>Çalıştırmaları arayın, adlandırın, not ekleyin. Eskileri tek adımda silin.</span></li>
+          </ul>
+        </div>
+        <figure class="shot" style="margin:0">
+          <div class="bar"><i></i><i></i><i></i><span>#runs</span></div>
+          <img data-l="en" src="assets/screens/en-reader.png" alt="A result of a run, open formatted in the reader" width="1360" height="860" loading="lazy">
+          <img data-l="tr" src="assets/screens/tr-reader.png" alt="Okuyucuda biçimlendirilmiş açılan bir çalıştırma sonucu" width="1360" height="860" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= book translation -->
+  <section class="band alt" id="translation">
+    <div class="wrap">
+      <div class="feature-book">
+        <div>
+          <span class="eyebrow"><span data-l="en">Built in</span><span data-l="tr">Yerleşik</span></span>
+          <h2 data-l="en">Islamic book translation</h2>
+          <h2 data-l="tr">İslami kitap çevirisi</h2>
+          <p data-l="en">Mehteran grew out of a book translation pipeline, and it is still inside, as one of the workflows. It translates Turkish Islamic books into new languages. The Turkish source decides. Published translations in related languages serve as references. Several models translate, review and check the text in turn, and the human translator gets the book and a report.</p>
+          <p data-l="tr">Mehteran bir kitap çevirisi hattından doğdu ve o hat hâlâ içinde, iş akışlarından biri olarak duruyor. Türkçe İslami kitapları yeni dillere çevirir. Türkçe kaynak belirleyicidir. Yakın dillerdeki yayımlanmış çeviriler referans olarak kullanılır. Birden çok model metni sırayla çevirir, inceler ve kontrol eder. İnsan çevirmen kitabı ve bir rapor alır.</p>
+        </div>
+        <ul class="ticks" style="margin:0">
+          <li data-l="en"><span>Upload the Turkish source and optional reference translations.</span></li>
+          <li data-l="tr"><span>Türkçe kaynağı ve isteğe bağlı referans çevirileri yükleyin.</span></li>
+          <li data-l="en"><span>Choose the model of each step of the translation workflow.</span></li>
+          <li data-l="tr"><span>Çeviri akışının her adımının modelini seçin.</span></li>
+          <li data-l="en"><span>Read the result and export it as Markdown, Word, PDF or HTML.</span></li>
+          <li data-l="tr"><span>Sonucu okuyun ve Markdown, Word, PDF ya da HTML olarak dışa aktarın.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= privacy and languages -->
+  <section class="band" id="privacy">
+    <div class="wrap">
+      <div class="grid">
+        <article class="card">
+          <h3 style="margin-top:0" data-l="en">Private by design</h3><h3 style="margin-top:0" data-l="tr">Tasarımı gereği gizli</h3>
+          <ul class="ticks" style="margin-top:12px">
+            <li data-l="en"><span>Listens only on 127.0.0.1, with a new session key at each start.</span></li>
+            <li data-l="tr"><span>Yalnızca 127.0.0.1 üzerinde dinler, her başlangıçta yeni bir oturum anahtarı kullanır.</span></li>
+            <li data-l="en"><span>Document text reaches a model as data, between data tags, never as instructions.</span></li>
+            <li data-l="tr"><span>Belge metni modele talimat olarak değil, veri etiketleri arasında veri olarak gider.</span></li>
+            <li data-l="en"><span>Web page inputs read only public addresses, never your local network.</span></li>
+            <li data-l="tr"><span>Web sayfası girdileri yalnızca herkese açık adresleri okur, yerel ağınızı asla okumaz.</span></li>
+            <li data-l="en"><span>Workflow files that contain anything like a password or API key are refused.</span></li>
+            <li data-l="tr"><span>Parola ya da API anahtarına benzeyen bir şey içeren iş akışı dosyaları reddedilir.</span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3 style="margin-top:0" data-l="en">In your language</h3><h3 style="margin-top:0" data-l="tr">Sizin dilinizde</h3>
+          <p style="margin-top:12px" data-l="en">The interface speaks 18 languages, right to left included. Each workflow writes its result in the language you choose.</p>
+          <p style="margin-top:12px" data-l="tr">Arayüz, sağdan sola yazılanlar dahil 18 dilde çalışır. Her iş akışı sonucunu seçtiğiniz dilde yazar.</p>
+          <div class="langs">
+            <span>Türkçe</span><span>English</span><span>العربية</span><span>Deutsch</span><span>Français</span><span>Español</span><span>Português</span><span>Italiano</span><span>Русский</span><span>فارسی</span><span>اردو</span><span>Bahasa Indonesia</span><span>Bahasa Melayu</span><span>Azərbaycanca</span><span>Bosanski</span><span>Shqip</span><span>简体中文</span><span>日本語</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= get started -->
+  <section class="band" id="start" style="padding-top:0">
+    <div class="wrap">
+      <div class="start">
+        <h2 data-l="en">Get started in three steps</h2>
+        <h2 data-l="tr">Üç adımda başlayın</h2>
+        <p data-l="en">You do not need to install anything first. If the computer has no suitable Python, Mehteran installs a private one for itself.</p>
+        <p data-l="tr">Önceden hiçbir şey kurmanız gerekmez. Bilgisayarda uygun bir Python yoksa Mehteran kendine özel bir Python kurar.</p>
+        <ol>
+          <li data-l="en">On GitHub, click <b>Code</b>, then <b>Download ZIP</b>, and unpack it into a folder.</li>
+          <li data-l="tr">GitHub'da <b>Code</b>, sonra <b>Download ZIP</b> düğmesine tıklayın ve zip dosyasını bir klasöre açın.</li>
+          <li data-l="en">Double-click <code>Open Mehteran.command</code> (macOS) or <code>Open Mehteran.bat</code> (Windows). On Linux, run <code>./mehter ui</code>.</li>
+          <li data-l="tr"><code>Open Mehteran.command</code> (macOS) ya da <code>Open Mehteran.bat</code> (Windows) dosyasına çift tıklayın. Linux'ta <code>./mehter ui</code> komutunu çalıştırın.</li>
+          <li data-l="en">On the <b>Setup</b> tab, install the AI tools you want and sign in. Then pick a workflow and run it.</li>
+          <li data-l="tr"><b>Kurulum</b> sekmesinde istediğiniz yapay zekâ araçlarını kurun ve oturum açın. Sonra bir iş akışı seçip çalıştırın.</li>
+        </ol>
+        <a class="btn" href="docs.html#install" data-l="en">Read the install guide</a>
+        <a class="btn" href="docs.html#tr-kurulum" data-l="tr">Kurulum rehberini okuyun</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Mehteran · <span data-l="en">local AI workflows</span><span data-l="tr">yerel yapay zekâ iş akışları</span></span>
+    <nav>
+      <a href="docs.html"><span data-l="en">Docs</span><span data-l="tr">Belgeler</span></a>
+      <a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.md"><span data-l="en">Full reference</span><span data-l="tr">Ayrıntılı başvuru</span></a>
+      <a href="https://github.com/tolgabuyuktanir/TranslationPipeline">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

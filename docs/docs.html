@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mehteran docs</title>
+<meta name="title-en" content="Mehteran docs">
+<meta name="title-tr" content="Mehteran belgeleri">
+<meta name="description" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
+<meta name="description-en" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
+<meta name="description-tr" content="Mehteran'ı kurma, yapay zekâ araçlarınızı bağlama, iş akışlarını çalıştırma ve oluşturma, yerel modelleri kullanma ve iş akışı dosya biçimi.">
+<meta name="theme-color" content="#0d5644">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="34" height="34"><b>Mehteran</b></a>
+    <nav class="nav" aria-label="Main">
+      <a href="./#features"><span data-l="en">Features</span><span data-l="tr">Özellikler</span></a>
+      <a href="./#templates"><span data-l="en">Templates</span><span data-l="tr">Şablonlar</span></a>
+      <a href="docs.html" aria-current="page"><span data-l="en">Docs</span><span data-l="tr">Belgeler</span></a>
+      <a href="https://github.com/tolgabuyuktanir/TranslationPipeline">GitHub</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language / Dil">
+      <button type="button" data-set="en" aria-pressed="true">EN</button>
+      <button type="button" data-set="tr" aria-pressed="false">TR</button>
+    </div>
+    <button type="button" class="menu-toggle" aria-expanded="false"><span data-l="en">Menu</span><span data-l="tr">Menü</span></button>
+  </div>
+</header>
+
+<div class="wrap docs">
+  <aside class="toc">
+    <input class="search" type="search" placeholder="Search the docs  ( / )" data-ph-en="Search the docs  ( / )" data-ph-tr="Belgelerde ara  ( / )" aria-label="Search / Ara">
+    <p><span data-l="en">On this page</span><span data-l="tr">Bu sayfada</span></p>
+    <ol></ol>
+  </aside>
+
+<!-- ================================================================================================= ENGLISH -->
+<article class="prose" data-l="en">
+  <header>
+    <span class="eyebrow">Documentation</span>
+    <h1>Mehteran docs</h1>
+    <p>Everything you need to install Mehteran, connect your AI tools, run and build workflows. The <a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.md">full reference</a> has every detail, the API and the internals.</p>
+  </header>
+  <p class="empty-search" hidden>No section contains these words.</p>
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>Mehteran runs AI workflows on your computer. A workflow is a series of connected steps: read a document, ask a model, check the answer, ask a person, save a file. Mehteran calls the AI through the command-line tools of your existing subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own.</p>
+    <div class="grid">
+      <div class="card"><h3>Workflow</h3><p>A graph of steps, saved as one YAML file. You build it on a canvas or write it by hand.</p></div>
+      <div class="card"><h3>Step</h3><p>One box of the workflow: read a document, ask a model, a condition, a loop, an approval, a merge or an export.</p></div>
+      <div class="card"><h3>Template</h3><p>A ready-made workflow that comes with Mehteran (72 of them). Open one and save it as your own to change it.</p></div>
+      <div class="card"><h3>Run</h3><p>One execution of a workflow with your inputs. It keeps a frozen copy of the workflow, every prompt and every result.</p></div>
+      <div class="card"><h3>AI tool</h3><p>The program that calls a model: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama or a local server.</p></div>
+    </div>
+    <p>The interface has three tabs: <b>Workflows</b> (the library and the editor), <b>Runs</b> (the history and live runs) and <b>Setup</b> (the AI tools and local tools).</p>
+  </section>
+
+  <section id="install">
+    <h2>Install and start</h2>
+    <p>You do not need to install anything first. Mehteran runs on macOS, Windows and Linux. It uses Python 3.11 or later; when the computer has none, it installs a private Python (uv) for itself on the first start.</p>
+    <ol>
+      <li>On the GitHub page, click <b>Code</b>, then <b>Download ZIP</b>. Unpack the zip file into a folder, for example <code>Documents/Mehteran</code>.</li>
+      <li>Start the interface:
+        <ul>
+          <li><b>macOS:</b> right-click <code>Open Mehteran.command</code>, choose <b>Open</b>, then click <b>Open</b> again in the warning. macOS asks this only the first time.</li>
+          <li><b>Windows:</b> double-click <code>Open Mehteran.bat</code>. If "Windows protected your PC" appears, click <b>More info</b>, then <b>Run anyway</b>.</li>
+          <li><b>Linux:</b> in a terminal, run <code>./mehter ui</code>.</li>
+        </ul>
+      </li>
+      <li>The interface opens in your browser at <code>http://127.0.0.1:8766/</code>. It runs while its terminal window stays open. To stop it, close that window or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in it.</li>
+      <li>On the <b>Setup</b> tab, install the AI tools you want and sign in to them (see <a href="#setup">Connect your AI tools</a>).</li>
+    </ol>
+    <table>
+      <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
+      <tbody>
+        <tr><td>Interface (double-click)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
+        <tr><td>Interface (terminal)</td><td><code>./mehter ui</code></td><td><code>mehter ui</code></td></tr>
+        <tr><td>Command line</td><td><code>./mehter &lt;command&gt;</code></td><td><code>mehter &lt;command&gt;</code></td></tr>
+      </tbody>
+    </table>
+    <h3>Updates</h3>
+    <p>If you got Mehteran with <code>git clone</code>, it updates itself from GitHub before the interface starts. If you downloaded a zip file, download the new zip; your workflows and runs are not in the code folder, so nothing needs to be moved (see <a href="#data">Where your data is</a>). When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
+    <h3>Where the tools go</h3>
+    <p>The tools that Mehteran installs go into the code folder (<code>.runtime/</code>) or into your user folder (Claude Code, Antigravity CLI and the private Python: <code>~/.local/bin</code>; on Windows under <code>%LOCALAPPDATA%</code>). No administrator rights are needed.</p>
+  </section>
+
+  <section id="setup">
+    <h2>Connect your AI tools</h2>
+    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and its usage. <b>Install missing tools</b> installs the tools that the templates and the book translation use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
+    <table>
+      <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Code</td><td>Subscription (Claude Pro / Max)</td><td>Anthropic</td></tr>
+        <tr><td>Codex CLI</td><td>Subscription (a paid ChatGPT plan)</td><td>OpenAI</td></tr>
+        <tr><td>Antigravity CLI</td><td>Free Google account</td><td>Google</td></tr>
+        <tr><td>Gemini CLI</td><td>API key (billed). Personal Google accounts can no longer sign in to Gemini CLI; the free Google path is Antigravity CLI.</td><td>Google</td></tr>
+        <tr><td>Ollama</td><td>Local</td><td>This computer</td></tr>
+        <tr><td>Local server (LM Studio, llama.cpp, vLLM)</td><td>Local</td><td>This computer</td></tr>
+      </tbody>
+    </table>
+    <h3>No surprise bills</h3>
+    <p>Mehteran removes the API key variables (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> and the others) from every model call, so a tool cannot bill an API account by accident. To use an API key on purpose, turn on <b>Allow an API key (billed)</b> for that tool on the Setup tab. A key that a tool stores itself (for example a Codex API-key login) is shown on its card as "API key (billed)".</p>
+    <h3>Automatic model choice</h3>
+    <p>A step's model can be <code>auto</code>. When a run starts, Mehteran picks the first tool of your <b>Model order</b> that is installed, signed in and not billed by an API key. Without your own order it uses Claude Code, Codex, Antigravity, Ollama. Variants:</p>
+    <ul>
+      <li><code>auto:fast</code>: the tool's fast model or a low thinking level.</li>
+      <li><code>auto:strong</code>: the tool's strong model or a high thinking level.</li>
+      <li><code>auto:local</code>: only a model on this computer.</li>
+    </ul>
+    <p>A tool whose usage limit has not reset yet goes to the end of the order. The choice is frozen into the run, so a resumed run uses the same models.</p>
+    <h3>Calls at once</h3>
+    <p>Each tool has a limit of calls at the same time over all runs (Claude Code and Codex 2, Antigravity 1, Ollama 1). Change it with <b>At once</b> on the Setup tab. A single run makes at most 4 model calls at the same time.</p>
+  </section>
+
+  <section id="run">
+    <h2>Run a workflow</h2>
+    <p>On the <b>Workflows</b> tab, find a workflow and click <b>Open</b>. Its page shows the description, a drawing, the inputs and the results. Click <b>Run</b> to open the run window.</p>
+    <ol>
+      <li>Fill in the inputs: upload the file, type the text, choose the model and the output language. <b>Same as last time</b> fills in the values of your last run (never files or anything like a password).</li>
+      <li>Read the estimate: the number of model calls, the upper bound with retries, each tool's usage now, and where each step sends its text ("Sent to: Anthropic", "Stays on this computer").</li>
+      <li>Click <b>Start the run</b>. The run opens on the <b>Runs</b> tab, where you see each step live.</li>
+    </ol>
+    <figure><div class="shot"><img src="assets/screens/en-runform.png" alt="The run window" width="1360" height="860" loading="lazy"></div><figcaption>The run window of "Document summary" with the estimate of model calls.</figcaption></figure>
+    <h3>Options of the run window</h3>
+    <ul>
+      <li><b>Only models on this computer</b>: every step must use a local model. <code>auto</code> becomes <code>auto:local</code>; any other model is refused before the run starts. A workflow can require this with <code>privacy: local</code>.</li>
+      <li><b>Run once for each file</b>: choose up to 50 files. Each file becomes its own run with the same other inputs. At most 2 runs of the batch work at the same time.</li>
+      <li><b>Also save the results to this folder</b>: type the full path of a folder. Mehteran confirms it the first time and never overwrites a file: an existing name gets " (2)", " (3)" and so on.</li>
+    </ul>
+    <h3>Stop, resume, retry</h3>
+    <p>Everything that runs has a stop button (■): in the run list, on the run page and in the header's activity list. <b>Resume</b> continues a failed, cancelled or interrupted run; the steps that finished are kept. A failed step can be retried alone. A run whose program ended (a closed terminal) shows as "interrupted" and can be resumed.</p>
+  </section>
+
+  <section id="results">
+    <h2>Results and history</h2>
+    <ul>
+      <li><b>Read</b>: a Markdown result opens formatted (headings, lists, tables, links). <b>Formatted / Plain text</b> switches the view. Arabic, Persian or Urdu paragraphs read right to left.</li>
+      <li><b>Compare</b>: put the result next to the same result of another finished run of the same workflow. The paragraphs that differ are highlighted.</li>
+      <li><b>Edit</b>: change the text with a live preview and save it. The original output never changes; the reader then offers "Original" and "Edited".</li>
+      <li><b>Export</b>: export the edited version as Markdown, Word, HTML, PDF or EPUB.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/en-reader.png" alt="The result reader" width="1360" height="860" loading="lazy"></div><figcaption>A result open in the reader: Formatted / Plain text, Edit, Download.</figcaption></figure>
+    <h3>The run history</h3>
+    <p>The <b>Runs</b> tab lists every run, grouped by workflow. The search finds the workflow name, the run's name and note, its main input and its status (case and accents are ignored). <b>Rename</b> gives a run a name and a note. <b>Delete</b> removes a finished run and its folder. <b>Delete old runs…</b> removes finished runs older than 30, 90 or 365 days and keeps working runs.</p>
+  </section>
+
+  <section id="build">
+    <h2>Build your own workflow</h2>
+    <p>Click <b>New workflow</b> and type a name. To change a template, click <b>Edit</b> on its card: a built-in template opens as your own unsaved copy.</p>
+    <h3>Start fast</h3>
+    <p>The empty canvas offers three starters:</p>
+    <ul>
+      <li><b>Read a document → AI → Save</b></li>
+      <li><b>A text I type → AI → Save</b></li>
+      <li><b>Describe it, I will build it</b>: write what the workflow should do and choose a model. The model writes a first draft (one call, plus one repair call when the draft has problems). The draft opens in the editor unsaved. Check the instruction of every step before you run it.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/en-editor.png" alt="The visual editor" width="1360" height="860" loading="lazy"></div><figcaption>The editor with a condition: the selected step's instruction and model are on the right.</figcaption></figure>
+    <h3>Edit on the canvas</h3>
+    <ul>
+      <li>Click a step type in the palette to add it. It connects from the selected step and gets the run form's model input when it needs a model. <b>Undo</b> reverses it.</li>
+      <li>Select a step to edit it in the side panel: its instruction, its model, and under <b>Advanced settings</b> its retries, timeout and <b>Fallback model</b>.</li>
+      <li><b>Problems</b> block running (for example an AI step without an instruction). <b>Warnings</b> do not: they point at a step whose result nobody uses, or a workflow with no export step. A click opens the field.</li>
+      <li><b>Test this step</b> runs only the selected AI step, with your unsaved changes. The texts of the steps before it come from the last run, or from a sample text you paste. It makes one model call and saves nothing.</li>
+      <li>The <b>YAML</b> tab shows the same workflow as a file. Changes on either side are checked the same way.</li>
+    </ul>
+    <h3>Share and import</h3>
+    <p><b>Share</b> downloads the workflow as one <code>&lt;id&gt;.mehteran.yaml</code> file, with your name as the author if you type one. <b>Import</b> (or a <code>.yaml</code> file dropped on the library) first shows a preview: the drawing, the inputs, the tools it needs and whether they are ready here, every instruction it sends to a model, and its problems. <b>Add to my workflows</b> imports it.</p>
+  </section>
+
+  <section id="steps">
+    <h2>Step types</h2>
+    <table>
+      <thead><tr><th>Type</th><th>What it does</th><th>Main settings</th></tr></thead>
+      <tbody>
+        <tr><td><code>document.extract</code></td><td>Reads a file or a web page into text. Scans go through OCR, audio and video through speech to text.</td><td><code>file</code>, <code>ocr</code>, <code>max_chars</code></td></tr>
+        <tr><td><code>ai.cli</code></td><td>Asks a model. The connected texts are added as data.</td><td><code>provider</code>, <code>prompt</code>, <code>output</code> (<code>text</code> or <code>json</code>), <code>json_schema</code></td></tr>
+        <tr><td><code>ai.map</code></td><td>A loop: splits a text into parts (headings, paragraphs, chunks, files) and asks the model once per part, in parallel.</td><td><code>split</code>, <code>max_items</code>, <code>prompt</code></td></tr>
+        <tr><td><code>condition</code></td><td>Takes the <code>true</code> or the <code>false</code> branch. It can ask a model a yes/no question or test the text.</td><td><code>operator</code> (<code>ai</code>, <code>contains</code>, <code>equals</code>, <code>regex</code>, <code>is_yes</code>, <code>empty</code>…), <code>question</code></td></tr>
+        <tr><td><code>text.merge</code></td><td>Joins texts, for example the branch that was taken.</td><td><code>template</code></td></tr>
+        <tr><td><code>approval</code></td><td>Stops the branch until a person approves or rejects. No program needs to stay open meanwhile.</td><td><code>instructions</code></td></tr>
+        <tr><td><code>document.export</code></td><td>Saves the text as files. Markdown tables become real tables.</td><td><code>formats</code>: <code>md</code>, <code>docx</code>, <code>html</code>, <code>pdf</code>, <code>epub</code>, <code>eml</code>, <code>json</code>, <code>csv</code></td></tr>
+      </tbody>
+    </table>
+    <p>Input files can be <code>pdf</code>, <code>docx</code>, <code>epub</code>, <code>md</code>, <code>txt</code>, <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>odt</code>, <code>rtf</code>, images (<code>png</code>, <code>jpg</code>, <code>tif</code>) and audio or video (<code>mp3</code>, <code>wav</code>, <code>m4a</code>, <code>mp4</code>, <code>mov</code> and more). An <code>eml</code> export is an e-mail draft that your mail program opens; Mehteran never sends mail.</p>
+  </section>
+
+  <section id="yaml">
+    <h2>The workflow file</h2>
+    <p>Every workflow is a YAML file (<code>schema_version: 1</code>). The editor writes it for you, but it is short enough to read and write by hand.</p>
+<pre><code>schema_version: 1
+id: paper-review
+name: {tr: Makale incelemesi, en: Paper review}
+category: research
+inputs:
+  - {id: paper, type: file, formats: [pdf, docx, md]}
+  - {id: language, type: language}          <span class="c"># the output language, from the flag list</span>
+  - {id: model, type: provider, default: auto}
+nodes:
+  - {id: read, type: document.extract}       <span class="c"># no file named: the only file input</span>
+  - id: review
+    type: ai.cli
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: Review this paper. List its strengths, its weaknesses and the missing citations.
+  - {id: save, type: document.export, config: {formats: [md, docx, pdf]}}
+connections:
+  - {from: read.text, to: review}
+  - {from: review.text, to: save}
+outputs:
+  - {id: report, from: save.docx, label: Report}</code></pre>
+    <h3>Inputs</h3>
+    <p><code>file</code> (with <code>formats</code> and optional <code>multiple: true</code> for up to 20 files), <code>text</code> (<code>multiline</code>), <code>choice</code> (<code>options</code>), <code>provider</code> (a model), <code>language</code> (the output language) and <code>url</code> (a web page). Inputs are required unless <code>required: false</code>.</p>
+    <h3>Placeholders and data</h3>
+    <ul>
+      <li><code>{{inputs.&lt;id&gt;}}</code> and <code>{{nodes.&lt;id&gt;.&lt;output&gt;}}</code> insert values. A step may use another step's output only when a connection joins them, so the drawing is the real data flow.</li>
+      <li>An instruction that names no data gets the connected texts after it, each between data tags. The prompt tells the model that this content is data, not instructions.</li>
+      <li>When the workflow has a <code>language</code> input that the instruction does not use, Mehteran adds "Write the answer in &lt;language&gt;."</li>
+    </ul>
+    <h3>The check</h3>
+    <p>A workflow is checked before it is saved or run. The check lists every problem at once with its place in the file: unknown keys, duplicate ids, missing connections, cycles, placeholders that do not resolve, and anything that looks like a credential (keys such as <code>api_key</code>, <code>token</code>, <code>password</code>). On the command line: <code>./mehter validate my-flow.yaml</code>.</p>
+  </section>
+
+  <section id="limits">
+    <h2>Usage limits and switching models</h2>
+    <p>When a tool reports a usage or rate limit, the step does not fail:</p>
+    <ul>
+      <li>An <code>auto</code> step moves on to the next model of your order.</li>
+      <li>A step with a <b>Fallback model</b> switches to it at once.</li>
+      <li>Otherwise the step shows "waiting for the usage limit" and tries again when the limit resets. A wait does not count as a failed attempt.</li>
+    </ul>
+    <p>On the run page, a waiting or failed step offers <b>Keep waiting</b> and <b>Continue with another model</b>. A loop keeps the parts it already has. A limit seen by one run is known to the others, so they do not call that tool until it resets.</p>
+    <p>The Setup tab shows each tool's usage: Mehteran's own counts (today, last 5 hours, last 7 days), the last limit with a countdown, and the limits the tool reports itself. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
+  </section>
+
+  <section id="local">
+    <h2>Local models and tools</h2>
+    <p>These are optional. Mehteran installs each one only when you ask, on the Setup tab or the command line. Each is a pinned version, checked against a SHA-256 sum. A copy that is already on the computer is found and used.</p>
+    <table>
+      <thead><tr><th>Tool</th><th>What it adds</th></tr></thead>
+      <tbody>
+        <tr><td>Ollama</td><td>Models that run on this computer. Install it, then download recommended models with their size and memory needs. A step uses <code>ollama/&lt;model&gt;</code>.</td></tr>
+        <tr><td>Local server</td><td>Any OpenAI-compatible server on this computer: LM Studio, llama.cpp's <code>llama-server</code>, vLLM. Only <code>127.0.0.1</code> / <code>localhost</code> addresses are accepted. A step uses <code>openai-local/&lt;model&gt;</code>.</td></tr>
+        <tr><td>Tesseract OCR</td><td>Reads scanned PDFs and images.</td></tr>
+        <tr><td>Typst</td><td>Makes the PDF export (with an Arabic-script font).</td></tr>
+        <tr><td>Pandoc</td><td>EPUB export, Word files with real equations, and reading <code>.odt</code> / <code>.rtf</code>.</td></tr>
+        <tr><td>Speech to text</td><td>whisper.cpp with ffmpeg: turns audio and video files into text, on this computer.</td></tr>
+        <tr><td>qpdf</td><td>Repairs damaged PDFs before they are read.</td></tr>
+      </tbody>
+    </table>
+<pre><code>./mehter install-local ollama
+./mehter install-local ocr tur eng
+./mehter install-local typst
+./mehter install-local pandoc
+./mehter install-local speech base
+./mehter install-local qpdf</code></pre>
+    <p class="note">Mehteran sizes the context of each Ollama call to the prompt. When a document is still too long for the model, the step fails with a clear message instead of answering from a cut text. Use a loop step (<code>ai.map</code>) or a model with a larger context.</p>
+  </section>
+
+  <section id="cli">
+    <h2>Command line</h2>
+<pre><code>./mehter templates                          <span class="c"># list the templates</span>
+./mehter validate my-flow.yaml              <span class="c"># check a workflow file</span>
+./mehter run document-summary --input document=report.pdf --input language=en
+./mehter run my-flow.yaml --input model=claude/opus@high
+./mehter runs                               <span class="c"># the run history</span>
+./mehter resume &lt;run&gt; [--node &lt;id&gt;]         <span class="c"># continue a run, or retry one step</span>
+./mehter cancel &lt;run&gt;                       <span class="c"># stop a run</span>
+./mehter approve &lt;run&gt; &lt;node&gt;               <span class="c"># approve a waiting approval step</span>
+./mehter --lang tr runs                     <span class="c"># messages in another language</span></code></pre>
+    <p><code>run</code> takes a template id or a path to a <code>.yaml</code> file. An input with several files takes <code>--input &lt;id&gt;=&lt;file&gt;</code> once per file. <kbd>Ctrl</kbd>+<kbd>C</kbd> cancels the run. Exit code: 0 finished, 3 waiting for an approval, 1 otherwise. On Windows, use <code>mehter</code> instead of <code>./mehter</code>.</p>
+  </section>
+
+  <section id="translation">
+    <h2>Islamic book translation</h2>
+    <p>The book translation is built in, as the pinned "Islamic book translation" card of the Workflows tab. It translates Turkish Islamic books into new languages. The Turkish source is the authority; published translations of the same book in related languages are used as references. Several models translate, review and check the text in turn. The result is the translated book and a report for the human translator.</p>
+    <ul>
+      <li><b>Open</b> shows the books: upload the Turkish source and the references, choose the target language, start or stop the translation, read and export the result.</li>
+      <li><b>Edit</b> opens the translation workflow, where you choose the model of each step, and its instructions.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/en-translation.png" alt="The book translation" width="1360" height="860" loading="lazy"></div><figcaption>The book translation inside Mehteran: Books, the translation workflow and its instructions.</figcaption></figure>
+    <p>The translation has its own detailed <a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/guide.md">user guide</a>. It can also run on its own with <code>./translate ui</code>.</p>
+  </section>
+
+  <section id="languages">
+    <h2>Languages</h2>
+    <p>The language button at the top right offers 18 interface languages: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 and 日本語. Arabic, Persian and Urdu turn the page right to left.</p>
+    <p>The output language of a workflow is separate: a <code>language</code> input offers every language of the registry and starts at your interface language. Mehteran stores its own messages with their keys, so a run's log appears in the language of whoever reads it.</p>
+  </section>
+
+  <section id="data">
+    <h2>Where your data is</h2>
+    <table>
+      <thead><tr><th>System</th><th>Folder</th></tr></thead>
+      <tbody>
+        <tr><td>macOS</td><td><code>~/Library/Application Support/Mehteran</code></td></tr>
+        <tr><td>Windows</td><td><code>%LOCALAPPDATA%\Mehteran</code></td></tr>
+        <tr><td>Linux</td><td><code>$XDG_DATA_HOME/mehteran</code>, else <code>~/.local/share/mehteran</code></td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><code>templates/</code>: your own workflows, one YAML file each.</li>
+      <li><code>executions/&lt;run&gt;/</code>: one folder per run: the frozen workflow, the uploaded files, each step's outputs and prompts, and edited results.</li>
+      <li><code>databases/mehteran.sqlite3</code>: the state of every run and step.</li>
+      <li><code>configurations/</code>: the Setup tab's settings (model order, calls at once, API-key permission). No secrets.</li>
+    </ul>
+    <p>Set <code>MEHTERAN_HOME</code> to use another folder. Sign-ins are kept by the AI tools themselves, in their own folders.</p>
+  </section>
+
+  <section id="security">
+    <h2>Privacy and security</h2>
+    <ul>
+      <li>The interface listens only on <code>127.0.0.1</code>. Each start creates a new session key that every request must carry, so other web sites cannot send commands to it.</li>
+      <li>Each model call runs in an empty temporary folder, asks the tool for no tools of its own, and gets the document text between data tags, marked as data.</li>
+      <li>A <code>url</code> input reads only public addresses. Addresses of this computer and of the local network are refused, also after a redirect.</li>
+      <li>Saving results to a folder never writes into a system folder or over an existing file. Deleting a run removes only its folder.</li>
+      <li>The page sends a strict Content-Security-Policy and builds every result from text nodes, so a result cannot run code in your browser.</li>
+      <li>Logs mask obvious secrets (<code>sk-…</code>, <code>Bearer …</code>, Google and GitHub keys).</li>
+    </ul>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+    <h3>macOS says it cannot open the file</h3>
+    <p>Right-click <code>Open Mehteran.command</code> and choose <b>Open</b>. If you see "you do not have appropriate access privileges", open Terminal, type <code>sh </code> (with a space), drag the file into the window and press Enter.</p>
+    <h3>A tool is "not signed in"</h3>
+    <p>On the Setup tab, click the sign-in button of its card. A terminal window opens; sign in in the browser, then click <b>Test</b>.</p>
+    <h3>A step waits for a usage limit</h3>
+    <p>That is normal: the run continues when the limit resets. To go on now, click <b>Continue with another model</b> on the step.</p>
+    <h3>PDF export says it needs Typst</h3>
+    <p>Install Typst on the Setup tab (Local tools), then export again. EPUB needs Pandoc in the same way.</p>
+    <h3>A scanned PDF gives no text</h3>
+    <p>Install Tesseract OCR on the Setup tab, with the languages of the document.</p>
+    <h3>The page says the code changed</h3>
+    <p>Close the terminal window of Mehteran and start it again.</p>
+  </section>
+
+  <section id="reference">
+    <h2>Reference and development</h2>
+    <ul>
+      <li><a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.md">Full reference</a>: every screen, setting, API route and limit (<a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.tr.md">Türkçe</a>).</li>
+      <li>Code: <code>mehteran/</code>, Python standard library only (PyYAML vendored). The interface is plain JavaScript with no build step.</li>
+      <li>Tests: <code>python3 -m unittest discover tests</code>. They use a fake AI tool and make no network calls.</li>
+      <li>A new step type: add a <code>NodeType</code> in <code>mehteran/nodes.py</code>; the check, the engine and the editor pick it up.</li>
+    </ul>
+  </section>
+</article>
+
+<!-- ================================================================================================= TÜRKÇE -->
+<article class="prose" data-l="tr">
+  <header>
+    <span class="eyebrow">Belgeler</span>
+    <h1>Mehteran belgeleri</h1>
+    <p>Mehteran'ı kurmak, yapay zekâ araçlarınızı bağlamak, iş akışlarını çalıştırmak ve oluşturmak için gereken her şey. Bütün ayrıntılar, API ve iç yapı <a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.tr.md">ayrıntılı başvuru belgesinde</a>.</p>
+  </header>
+  <p class="empty-search" hidden>Bu kelimeleri içeren bir bölüm yok.</p>
+
+  <section id="tr-genel">
+    <h2>Genel bakış</h2>
+    <p>Mehteran yapay zekâ iş akışlarını bilgisayarınızda çalıştırır. İş akışı, birbirine bağlı adımlardan oluşur: bir belgeyi okumak, bir modele sormak, cevabı kontrol etmek, bir kişiye sormak, bir dosya kaydetmek. Mehteran yapay zekâyı mevcut aboneliklerinizin komut satırı araçlarıyla (Claude Code, Codex, Antigravity CLI) ya da bu bilgisayardaki modellerle (Ollama, LM Studio, llama.cpp) çağırır. Kendi anahtarı ve hesabı yoktur.</p>
+    <div class="grid">
+      <div class="card"><h3>İş akışı</h3><p>Tek bir YAML dosyası olarak saklanan adımlar çizimi. Tuvalde kurulur ya da elle yazılır.</p></div>
+      <div class="card"><h3>Adım</h3><p>İş akışındaki bir kutu: belge okuma, modele sorma, koşul, döngü, onay, birleştirme ya da dışa aktarma.</p></div>
+      <div class="card"><h3>Şablon</h3><p>Mehteran'la gelen hazır bir iş akışı (72 tane). Değiştirmek için açıp kendi akışınız olarak kaydedin.</p></div>
+      <div class="card"><h3>Çalıştırma</h3><p>Bir iş akışının sizin girdilerinizle bir kez yürütülmesi. İş akışının dondurulmuş kopyasını, her istemi ve her sonucu saklar.</p></div>
+      <div class="card"><h3>Yapay zekâ aracı</h3><p>Modeli çağıran program: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama ya da yerel bir sunucu.</p></div>
+    </div>
+    <p>Arayüzde üç sekme var: <b>İş akışları</b> (kütüphane ve düzenleyici), <b>Çalıştırmalar</b> (geçmiş ve canlı çalıştırmalar) ve <b>Kurulum</b> (yapay zekâ araçları ve yerel araçlar).</p>
+  </section>
+
+  <section id="tr-kurulum">
+    <h2>Kurulum ve başlatma</h2>
+    <p>Önceden hiçbir şey kurmanız gerekmez. Mehteran macOS, Windows ve Linux'ta çalışır. Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa ilk açılışta kendine özel bir Python (uv) kurar.</p>
+    <ol>
+      <li>GitHub sayfasında <b>Code</b>, sonra <b>Download ZIP</b> düğmesine tıklayın. Zip dosyasını bir klasöre açın, örneğin <code>Belgeler/Mehteran</code>.</li>
+      <li>Arayüzü başlatın:
+        <ul>
+          <li><b>macOS:</b> <code>Open Mehteran.command</code> dosyasına sağ tıklayın, <b>Aç</b>'ı seçin, uyarıda yine <b>Aç</b>'a tıklayın. macOS bunu yalnızca ilk seferde sorar.</li>
+          <li><b>Windows:</b> <code>Open Mehteran.bat</code> dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa <b>Ek bilgi</b>, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
+          <li><b>Linux:</b> bir terminalde <code>./mehter ui</code> komutunu çalıştırın.</li>
+        </ul>
+      </li>
+      <li>Arayüz tarayıcınızda <code>http://127.0.0.1:8766/</code> adresinde açılır. Terminal penceresi açık kaldıkça çalışır. Durdurmak için o pencereyi kapatın ya da içinde <kbd>Ctrl</kbd>+<kbd>C</kbd> tuşlarına basın.</li>
+      <li><b>Kurulum</b> sekmesinde istediğiniz yapay zekâ araçlarını kurun ve oturum açın (bkz. <a href="#tr-araclar">Yapay zekâ araçlarını bağlama</a>).</li>
+    </ol>
+    <table>
+      <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
+      <tbody>
+        <tr><td>Arayüz (çift tıklama)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
+        <tr><td>Arayüz (terminal)</td><td><code>./mehter ui</code></td><td><code>mehter ui</code></td></tr>
+        <tr><td>Komut satırı</td><td><code>./mehter &lt;komut&gt;</code></td><td><code>mehter &lt;komut&gt;</code></td></tr>
+      </tbody>
+    </table>
+    <h3>Güncellemeler</h3>
+    <p>Mehteran'ı <code>git clone</code> ile aldıysanız, arayüz başlamadan önce kendini GitHub'dan günceller. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, bu yüzden hiçbir şeyi taşımanız gerekmez (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
+    <h3>Araçlar nereye kurulur</h3>
+    <p>Mehteran'ın kurduğu araçlar kod klasörüne (<code>.runtime/</code>) ya da kullanıcı klasörünüze gider (Claude Code, Antigravity CLI ve özel Python: <code>~/.local/bin</code>; Windows'ta <code>%LOCALAPPDATA%</code> altı). Yönetici yetkisi gerekmez.</p>
+  </section>
+
+  <section id="tr-araclar">
+    <h2>Yapay zekâ araçlarını bağlama</h2>
+    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, ne kadar kullanıldı. <b>Eksikleri kur</b>, şablonların ve kitap çevirisinin kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
+    <table>
+      <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Code</td><td>Abonelik (Claude Pro / Max)</td><td>Anthropic</td></tr>
+        <tr><td>Codex CLI</td><td>Abonelik (ücretli bir ChatGPT planı)</td><td>OpenAI</td></tr>
+        <tr><td>Antigravity CLI</td><td>Ücretsiz Google hesabı</td><td>Google</td></tr>
+        <tr><td>Gemini CLI</td><td>API anahtarı (ücretli). Kişisel Google hesapları artık Gemini CLI'da oturum açamıyor; ücretsiz Google yolu Antigravity CLI'dır.</td><td>Google</td></tr>
+        <tr><td>Ollama</td><td>Yerel</td><td>Bu bilgisayar</td></tr>
+        <tr><td>Yerel sunucu (LM Studio, llama.cpp, vLLM)</td><td>Yerel</td><td>Bu bilgisayar</td></tr>
+      </tbody>
+    </table>
+    <h3>Sürpriz fatura yok</h3>
+    <p>Mehteran her model çağrısından API anahtarı değişkenlerini (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> ve diğerleri) çıkarır. Böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Bilerek API anahtarı kullanmak için Kurulum sekmesinde o aracın <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Aracın kendi sakladığı bir anahtar (örneğin Codex'te API anahtarıyla oturum) kartında "API anahtarı (ücretli)" olarak görünür.</p>
+    <h3>Otomatik model seçimi</h3>
+    <p>Bir adımın modeli <code>auto</code> olabilir. Çalıştırma başlarken Mehteran, <b>Model sırası</b> listenizde kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer. Kendi sıranız yoksa sıra şudur: Claude Code, Codex, Antigravity, Ollama. Seçenekler:</p>
+    <ul>
+      <li><code>auto:fast</code>: aracın hızlı modeli ya da düşük düşünme düzeyi.</li>
+      <li><code>auto:strong</code>: aracın güçlü modeli ya da yüksek düşünme düzeyi.</li>
+      <li><code>auto:local</code>: yalnızca bu bilgisayardaki bir model.</li>
+    </ul>
+    <p>Kullanım sınırı henüz sıfırlanmamış bir araç sıranın sonuna gider. Seçim çalıştırmaya dondurulur; devam ettirilen bir çalıştırma aynı modelleri kullanır.</p>
+    <h3>Aynı anda çağrı</h3>
+    <p>Her aracın, bütün çalıştırmalar için aynı anda yapılabilecek çağrı sınırı vardır (Claude Code ve Codex 2, Antigravity 1, Ollama 1). Kurulum sekmesindeki <b>Aynı anda</b> ile değiştirin. Tek bir çalıştırma aynı anda en fazla 4 model çağrısı yapar.</p>
+  </section>
+
+  <section id="tr-calistir">
+    <h2>İş akışı çalıştırma</h2>
+    <p><b>İş akışları</b> sekmesinde bir iş akışı bulun ve <b>Aç</b>'a tıklayın. Sayfasında açıklaması, çizimi, girdileri ve sonuçları görünür. Çalıştırma penceresini açmak için <b>Çalıştır</b>'a tıklayın.</p>
+    <ol>
+      <li>Girdileri doldurun: dosyayı yükleyin, metni yazın, modeli ve çıktı dilini seçin. <b>Geçen seferki gibi</b>, son çalıştırmanızın değerlerini doldurur (dosyaları ve parolaya benzeyen hiçbir şeyi doldurmaz).</li>
+      <li>Tahmini okuyun: model çağrısı sayısı, yeniden denemelerle üst sınır, her aracın şu anki kullanımı ve her adımın metnini nereye gönderdiği ("Gönderildiği yer: Anthropic", "Bu bilgisayarda kalır").</li>
+      <li><b>Çalıştırmayı başlat</b>'a tıklayın. Çalıştırma <b>Çalıştırmalar</b> sekmesinde açılır; her adımı canlı görürsünüz.</li>
+    </ol>
+    <figure><div class="shot"><img src="assets/screens/tr-runform.png" alt="Çalıştırma penceresi" width="1360" height="860" loading="lazy"></div><figcaption>"Belge özeti" iş akışının çalıştırma penceresi ve model çağrısı tahmini.</figcaption></figure>
+    <h3>Çalıştırma penceresinin seçenekleri</h3>
+    <ul>
+      <li><b>Yalnızca bu bilgisayardaki modeller</b>: her adım yerel bir model kullanmak zorundadır. <code>auto</code>, <code>auto:local</code> olur; başka bir model çalıştırma başlamadan reddedilir. Bir iş akışı bunu <code>privacy: local</code> ile zorunlu kılabilir.</li>
+      <li><b>Her dosya için ayrı çalıştır</b>: en fazla 50 dosya seçin. Her dosya, diğer girdileri aynı olan ayrı bir çalıştırma olur. Toplu çalıştırmanın aynı anda en fazla 2 çalıştırması çalışır.</li>
+      <li><b>Sonuçları şu klasöre de kaydet</b>: bir klasörün tam yolunu yazın. Mehteran ilk seferde onayınızı ister ve hiçbir dosyanın üzerine yazmaz: var olan bir ada " (2)", " (3)" gibi bir ek getirir.</li>
+    </ul>
+    <h3>Durdurma, devam ettirme, yeniden deneme</h3>
+    <p>Çalışan her şeyin bir durdurma düğmesi (■) vardır: çalıştırma listesinde, çalıştırma sayfasında ve üst çubuktaki etkinlik listesinde. <b>Devam ettir</b>, başarısız, iptal edilmiş ya da yarıda kalmış bir çalıştırmayı sürdürür; biten adımlar korunur. Başarısız bir adım tek başına yeniden denenebilir. Programı kapanan (terminali kapatılan) bir çalıştırma "yarıda kaldı" olarak görünür ve devam ettirilebilir.</p>
+  </section>
+
+  <section id="tr-sonuclar">
+    <h2>Sonuçlar ve geçmiş</h2>
+    <ul>
+      <li><b>Okuma</b>: Markdown sonuç biçimlendirilmiş açılır (başlıklar, listeler, tablolar, bağlantılar). <b>Biçimli / Düz metin</b> görünümü değiştirir. Arapça, Farsça ya da Urduca paragraflar sağdan sola okunur.</li>
+      <li><b>Karşılaştırma</b>: sonucu, aynı iş akışının bitmiş başka bir çalıştırmasının aynı sonucuyla yan yana koyar. Farklı paragraflar vurgulanır.</li>
+      <li><b>Düzenleme</b>: metni canlı önizlemeyle değiştirip kaydedin. Asıl çıktı hiç değişmez; okuyucu bundan sonra "Özgün" ve "Düzenlenmiş" seçeneklerini sunar.</li>
+      <li><b>Dışa aktarma</b>: düzenlenmiş hâli Markdown, Word, HTML, PDF ya da EPUB olarak dışa aktarın.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/tr-reader.png" alt="Sonuç okuyucu" width="1360" height="860" loading="lazy"></div><figcaption>Okuyucuda açık bir sonuç: Biçimli / Düz metin, Düzenle, İndir.</figcaption></figure>
+    <h3>Çalıştırma geçmişi</h3>
+    <p><b>Çalıştırmalar</b> sekmesi her çalıştırmayı iş akışına göre gruplar. Arama; iş akışı adını, çalıştırmanın adını ve notunu, ana girdisini ve durumunu bulur (büyük-küçük harf ve aksanlar fark etmez). <b>Adlandır</b>, çalıştırmaya bir ad ve not verir. <b>Sil</b>, bitmiş bir çalıştırmayı klasörüyle birlikte kaldırır. <b>Eski çalıştırmaları sil…</b>, 30, 90 ya da 365 günden eski bitmiş çalıştırmaları kaldırır, çalışanları korur.</p>
+  </section>
+
+  <section id="tr-olustur">
+    <h2>Kendi iş akışınızı oluşturma</h2>
+    <p><b>Yeni iş akışı</b>'na tıklayın ve bir ad yazın. Bir şablonu değiştirmek için kartındaki <b>Düzenle</b>'ye tıklayın: hazır şablon, kaydedilmemiş kendi kopyanız olarak açılır.</p>
+    <h3>Hızlı başlangıç</h3>
+    <p>Boş tuval üç başlangıç sunar:</p>
+    <ul>
+      <li><b>Belge oku → Yapay zekâ → Kaydet</b></li>
+      <li><b>Yazdığım metin → Yapay zekâ → Kaydet</b></li>
+      <li><b>Anlat, oluşturayım</b>: iş akışının ne yapacağını yazın ve bir model seçin. Model ilk taslağı yazar (bir çağrı; taslakta sorun varsa bir onarım çağrısı daha). Taslak düzenleyicide kaydedilmemiş olarak açılır. Çalıştırmadan önce her adımın talimatını kontrol edin.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/tr-editor.png" alt="Görsel düzenleyici" width="1360" height="860" loading="lazy"></div><figcaption>Koşullu bir akışla düzenleyici: seçili adımın talimatı ve modeli sağda.</figcaption></figure>
+    <h3>Tuvalde düzenleme</h3>
+    <ul>
+      <li>Eklemek için paletteki bir adım türüne tıklayın. Yeni adım seçili adıma bağlanır; model gerektiriyorsa çalıştırma formunun model girdisini alır. <b>Geri al</b> bunu geri çevirir.</li>
+      <li>Bir adımı yan panelde düzenlemek için seçin: talimatı, modeli ve <b>Gelişmiş ayarlar</b> altında yeniden deneme sayısı, zaman aşımı ve <b>Yedek model</b>.</li>
+      <li><b>Sorunlar</b> çalıştırmayı engeller (örneğin talimatı olmayan bir yapay zekâ adımı). <b>Uyarılar</b> engellemez: sonucunu kimsenin kullanmadığı bir adımı ya da dışa aktarma adımı olmayan bir akışı gösterir. Tıklamak ilgili alanı açar.</li>
+      <li><b>Bu adımı dene</b>, yalnızca seçili yapay zekâ adımını kaydedilmemiş değişikliklerinizle çalıştırır. Önceki adımların metinleri son çalıştırmadan ya da yapıştırdığınız örnek bir metinden gelir. Bir model çağrısı yapar, hiçbir şey kaydetmez.</li>
+      <li><b>YAML</b> sekmesi aynı iş akışını dosya olarak gösterir. İki taraftaki değişiklikler de aynı şekilde denetlenir.</li>
+    </ul>
+    <h3>Paylaşma ve içe aktarma</h3>
+    <p><b>Paylaş</b>, iş akışını tek bir <code>&lt;id&gt;.mehteran.yaml</code> dosyası olarak indirir; isterseniz adınızı yazar olarak ekler. <b>İçe aktar</b> (ya da kütüphaneye bırakılan bir <code>.yaml</code> dosyası) önce bir önizleme gösterir: çizimi, girdileri, gerektirdiği araçları ve bu bilgisayarda hazır olup olmadıklarını, modele gönderdiği her talimatı ve sorunlarını. <b>Akışlarıma ekle</b> onu içe aktarır.</p>
+  </section>
+
+  <section id="tr-adimlar">
+    <h2>Adım türleri</h2>
+    <table>
+      <thead><tr><th>Tür</th><th>Ne yapar</th><th>Başlıca ayarlar</th></tr></thead>
+      <tbody>
+        <tr><td><code>document.extract</code></td><td>Bir dosyayı ya da web sayfasını metne çevirir. Taranmış belgeler OCR'dan, ses ve video konuşmayı yazıya çevirmeden geçer.</td><td><code>file</code>, <code>ocr</code>, <code>max_chars</code></td></tr>
+        <tr><td><code>ai.cli</code></td><td>Modele sorar. Bağlı metinler veri olarak eklenir.</td><td><code>provider</code>, <code>prompt</code>, <code>output</code> (<code>text</code> ya da <code>json</code>), <code>json_schema</code></td></tr>
+        <tr><td><code>ai.map</code></td><td>Döngü: metni parçalara ayırır (başlıklar, paragraflar, bloklar, dosyalar) ve modele her parça için paralel olarak bir kez sorar.</td><td><code>split</code>, <code>max_items</code>, <code>prompt</code></td></tr>
+        <tr><td><code>condition</code></td><td><code>true</code> ya da <code>false</code> dalını seçer. Modele evet/hayır sorusu sorabilir ya da metni sınayabilir.</td><td><code>operator</code> (<code>ai</code>, <code>contains</code>, <code>equals</code>, <code>regex</code>, <code>is_yes</code>, <code>empty</code>…), <code>question</code></td></tr>
+        <tr><td><code>text.merge</code></td><td>Metinleri birleştirir, örneğin seçilen dalın metnini.</td><td><code>template</code></td></tr>
+        <tr><td><code>approval</code></td><td>Bir kişi onaylayana ya da reddedene kadar dalı bekletir. Bu sırada hiçbir programın açık kalması gerekmez.</td><td><code>instructions</code></td></tr>
+        <tr><td><code>document.export</code></td><td>Metni dosya olarak kaydeder. Markdown tablolar gerçek tablolara dönüşür.</td><td><code>formats</code>: <code>md</code>, <code>docx</code>, <code>html</code>, <code>pdf</code>, <code>epub</code>, <code>eml</code>, <code>json</code>, <code>csv</code></td></tr>
+      </tbody>
+    </table>
+    <p>Girdi dosyaları <code>pdf</code>, <code>docx</code>, <code>epub</code>, <code>md</code>, <code>txt</code>, <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>odt</code>, <code>rtf</code>, görseller (<code>png</code>, <code>jpg</code>, <code>tif</code>) ve ses ya da video (<code>mp3</code>, <code>wav</code>, <code>m4a</code>, <code>mp4</code>, <code>mov</code> ve diğerleri) olabilir. <code>eml</code> çıktısı, e-posta programınızın açtığı bir e-posta taslağıdır; Mehteran hiçbir zaman e-posta göndermez.</p>
+  </section>
+
+  <section id="tr-yaml">
+    <h2>İş akışı dosyası</h2>
+    <p>Her iş akışı bir YAML dosyasıdır (<code>schema_version: 1</code>). Düzenleyici onu sizin için yazar, ama elle okunup yazılacak kadar kısadır.</p>
+<pre><code>schema_version: 1
+id: paper-review
+name: {tr: Makale incelemesi, en: Paper review}
+category: research
+inputs:
+  - {id: paper, type: file, formats: [pdf, docx, md]}
+  - {id: language, type: language}          <span class="c"># çıktı dili, bayrak listesinden</span>
+  - {id: model, type: provider, default: auto}
+nodes:
+  - {id: read, type: document.extract}       <span class="c"># dosya adı yok: tek dosya girdisi</span>
+  - id: review
+    type: ai.cli
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: Bu makaleyi incele. Güçlü yönlerini, zayıf yönlerini ve eksik kaynakları listele.
+  - {id: save, type: document.export, config: {formats: [md, docx, pdf]}}
+connections:
+  - {from: read.text, to: review}
+  - {from: review.text, to: save}
+outputs:
+  - {id: report, from: save.docx, label: {tr: Rapor, en: Report}}</code></pre>
+    <h3>Girdiler</h3>
+    <p><code>file</code> (<code>formats</code> ile; en fazla 20 dosya için isteğe bağlı <code>multiple: true</code>), <code>text</code> (<code>multiline</code>), <code>choice</code> (<code>options</code>), <code>provider</code> (bir model), <code>language</code> (çıktı dili) ve <code>url</code> (bir web sayfası). <code>required: false</code> yazılmadıkça girdiler zorunludur.</p>
+    <h3>Yer tutucular ve veri</h3>
+    <ul>
+      <li><code>{{inputs.&lt;id&gt;}}</code> ve <code>{{nodes.&lt;id&gt;.&lt;çıktı&gt;}}</code> değer ekler. Bir adım başka bir adımın çıktısını yalnızca aralarında bir bağlantı varsa kullanabilir. Böylece çizim, verinin gerçek yoludur.</li>
+      <li>Hiçbir veri adlandırmayan bir talimatın ardına bağlı metinler eklenir, her biri veri etiketleri arasında. İstem, modele bu içeriğin talimat değil veri olduğunu söyler.</li>
+      <li>İş akışında talimatın kullanmadığı bir <code>language</code> girdisi varsa Mehteran "Cevabı &lt;dil&gt; dilinde yaz." cümlesini ekler.</li>
+    </ul>
+    <h3>Denetim</h3>
+    <p>Bir iş akışı kaydedilmeden ya da çalıştırılmadan önce denetlenir. Denetim bütün sorunları dosyadaki yerleriyle birlikte bir kerede listeler: bilinmeyen anahtarlar, yinelenen kimlikler, eksik bağlantılar, döngüler, çözülemeyen yer tutucular ve kimlik bilgisine benzeyen her şey (<code>api_key</code>, <code>token</code>, <code>password</code> gibi anahtarlar). Komut satırında: <code>./mehter validate my-flow.yaml</code>.</p>
+  </section>
+
+  <section id="tr-sinirlar">
+    <h2>Kullanım sınırları ve model değiştirme</h2>
+    <p>Bir araç kullanım ya da hız sınırı bildirdiğinde adım başarısız olmaz:</p>
+    <ul>
+      <li><code>auto</code> adımı, sıranızdaki bir sonraki modele geçer.</li>
+      <li><b>Yedek model</b> tanımlı bir adım hemen ona geçer.</li>
+      <li>Aksi hâlde adım "kullanım sınırını bekliyor" gösterir ve sınır sıfırlanınca yeniden dener. Bekleme başarısız deneme sayılmaz.</li>
+    </ul>
+    <p>Çalıştırma sayfasında bekleyen ya da başarısız bir adım <b>Bekle</b> ve <b>Başka modelle devam et</b> seçeneklerini sunar. Döngü elindeki parçaları korur. Bir çalıştırmanın gördüğü sınırı diğerleri de bilir; o araç sıfırlanana kadar onu çağırmazlar.</p>
+    <p>Kurulum sekmesi her aracın kullanımını gösterir: Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün), geri sayımlı son sınır ve aracın kendi bildirdiği sınırlar. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
+  </section>
+
+  <section id="tr-yerel">
+    <h2>Yerel modeller ve araçlar</h2>
+    <p>Bunlar isteğe bağlıdır. Mehteran her birini yalnızca siz isteyince kurar: Kurulum sekmesinde ya da komut satırında. Her biri sabitlenmiş bir sürümdür ve SHA-256 özetiyle doğrulanır. Bilgisayarda zaten kurulu olan bir kopya bulunur ve kullanılır.</p>
+    <table>
+      <thead><tr><th>Araç</th><th>Ne kazandırır</th></tr></thead>
+      <tbody>
+        <tr><td>Ollama</td><td>Bu bilgisayarda çalışan modeller. Kurun, sonra önerilen modelleri boyutları ve bellek ihtiyaçlarıyla indirin. Adımda <code>ollama/&lt;model&gt;</code> yazılır.</td></tr>
+        <tr><td>Yerel sunucu</td><td>Bu bilgisayardaki OpenAI uyumlu herhangi bir sunucu: LM Studio, llama.cpp'nin <code>llama-server</code>'ı, vLLM. Yalnızca <code>127.0.0.1</code> / <code>localhost</code> adresleri kabul edilir. Adımda <code>openai-local/&lt;model&gt;</code> yazılır.</td></tr>
+        <tr><td>Tesseract OCR</td><td>Taranmış PDF'leri ve görselleri okur.</td></tr>
+        <tr><td>Typst</td><td>PDF çıktısını üretir (Arap harfli bir yazı tipiyle).</td></tr>
+        <tr><td>Pandoc</td><td>EPUB çıktısı, gerçek denklemli Word dosyaları ve <code>.odt</code> / <code>.rtf</code> okuma.</td></tr>
+        <tr><td>Konuşmayı yazıya çevirme</td><td>whisper.cpp ve ffmpeg: ses ve video dosyalarını bu bilgisayarda metne çevirir.</td></tr>
+        <tr><td>qpdf</td><td>Bozuk PDF'leri okunmadan önce onarır.</td></tr>
+      </tbody>
+    </table>
+<pre><code>./mehter install-local ollama
+./mehter install-local ocr tur eng
+./mehter install-local typst
+./mehter install-local pandoc
+./mehter install-local speech base
+./mehter install-local qpdf</code></pre>
+    <p class="note">Mehteran her Ollama çağrısının bağlam boyutunu isteme göre ayarlar. Belge model için yine de çok uzunsa adım, kesilmiş bir metinden cevap vermek yerine açık bir mesajla başarısız olur. Bir döngü adımı (<code>ai.map</code>) ya da bağlamı daha büyük bir model kullanın.</p>
+  </section>
+
+  <section id="tr-komut">
+    <h2>Komut satırı</h2>
+<pre><code>./mehter templates                          <span class="c"># şablonları listele</span>
+./mehter validate my-flow.yaml              <span class="c"># bir iş akışı dosyasını denetle</span>
+./mehter run document-summary --input document=rapor.pdf --input language=tr
+./mehter run my-flow.yaml --input model=claude/opus@high
+./mehter runs                               <span class="c"># çalıştırma geçmişi</span>
+./mehter resume &lt;run&gt; [--node &lt;id&gt;]         <span class="c"># çalıştırmayı sürdür ya da bir adımı yeniden dene</span>
+./mehter cancel &lt;run&gt;                       <span class="c"># çalıştırmayı durdur</span>
+./mehter approve &lt;run&gt; &lt;node&gt;               <span class="c"># bekleyen bir onay adımını onayla</span>
+./mehter --lang en runs                     <span class="c"># mesajlar başka bir dilde</span></code></pre>
+    <p><code>run</code> bir şablon kimliği ya da bir <code>.yaml</code> dosyasının yolunu alır. Birden çok dosya alan bir girdiye her dosya için bir kez <code>--input &lt;id&gt;=&lt;dosya&gt;</code> yazılır. <kbd>Ctrl</kbd>+<kbd>C</kbd> çalıştırmayı iptal eder. Çıkış kodu: 0 bitti, 3 onay bekliyor, diğer durumlarda 1. Windows'ta <code>./mehter</code> yerine <code>mehter</code> yazın.</p>
+  </section>
+
+  <section id="tr-ceviri">
+    <h2>İslami kitap çevirisi</h2>
+    <p>Kitap çevirisi yerleşiktir: İş akışları sekmesinin başına sabitlenmiş "İslami kitap çevirisi" kartı. Türkçe İslami kitapları yeni dillere çevirir. Türkçe kaynak belirleyicidir; aynı kitabın yakın dillerdeki yayımlanmış çevirileri referans olarak kullanılır. Birden çok model metni sırayla çevirir, inceler ve kontrol eder. Sonuç, çevrilmiş kitap ve insan çevirmen için bir rapordur.</p>
+    <ul>
+      <li><b>Aç</b> kitapları gösterir: Türkçe kaynağı ve referansları yükleyin, hedef dili seçin, çeviriyi başlatın ya da durdurun, sonucu okuyun ve dışa aktarın.</li>
+      <li><b>Düzenle</b> çeviri akışını açar: her adımın modelini ve talimatlarını orada seçersiniz.</li>
+    </ul>
+    <figure><div class="shot"><img src="assets/screens/tr-translation.png" alt="Kitap çevirisi" width="1360" height="860" loading="lazy"></div><figcaption>Mehteran içinde kitap çevirisi: Kitaplar, çeviri akışı ve talimatlar.</figcaption></figure>
+    <p>Çevirinin kendi ayrıntılı <a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/guide.tr.md">kullanım kılavuzu</a> vardır. <code>./translate ui</code> ile tek başına da çalışabilir.</p>
+  </section>
+
+  <section id="tr-diller">
+    <h2>Diller</h2>
+    <p>Sağ üstteki dil düğmesi 18 arayüz dili sunar: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 ve 日本語. Arapça, Farsça ve Urduca sayfayı sağdan sola çevirir.</p>
+    <p>Bir iş akışının çıktı dili ayrıdır: <code>language</code> girdisi kayıttaki her dili sunar ve arayüz dilinizle başlar. Mehteran kendi mesajlarını anahtarlarıyla saklar; bir çalıştırmanın günlüğü onu okuyan kişinin dilinde görünür.</p>
+  </section>
+
+  <section id="tr-veri">
+    <h2>Verileriniz nerede</h2>
+    <table>
+      <thead><tr><th>Sistem</th><th>Klasör</th></tr></thead>
+      <tbody>
+        <tr><td>macOS</td><td><code>~/Library/Application Support/Mehteran</code></td></tr>
+        <tr><td>Windows</td><td><code>%LOCALAPPDATA%\Mehteran</code></td></tr>
+        <tr><td>Linux</td><td><code>$XDG_DATA_HOME/mehteran</code>, yoksa <code>~/.local/share/mehteran</code></td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><code>templates/</code>: kendi iş akışlarınız, her biri bir YAML dosyası.</li>
+      <li><code>executions/&lt;run&gt;/</code>: her çalıştırma için bir klasör: dondurulmuş iş akışı, yüklenen dosyalar, her adımın çıktıları ve istemleri, düzenlenmiş sonuçlar.</li>
+      <li><code>databases/mehteran.sqlite3</code>: her çalıştırmanın ve adımın durumu.</li>
+      <li><code>configurations/</code>: Kurulum sekmesinin ayarları (model sırası, aynı anda çağrı, API anahtarı izni). Gizli bilgi yoktur.</li>
+    </ul>
+    <p>Başka bir klasör kullanmak için <code>MEHTERAN_HOME</code> değişkenini ayarlayın. Oturumları yapay zekâ araçları kendi klasörlerinde saklar.</p>
+  </section>
+
+  <section id="tr-guvenlik">
+    <h2>Gizlilik ve güvenlik</h2>
+    <ul>
+      <li>Arayüz yalnızca <code>127.0.0.1</code> üzerinde dinler. Her başlangıçta, her isteğin taşıması gereken yeni bir oturum anahtarı oluşur; böylece başka web siteleri ona komut gönderemez.</li>
+      <li>Her model çağrısı boş bir geçici klasörde çalışır, araçtan kendi araçlarını kullanmamasını ister ve belge metnini veri olarak işaretlenmiş veri etiketleri arasında alır.</li>
+      <li><code>url</code> girdisi yalnızca herkese açık adresleri okur. Bu bilgisayarın ve yerel ağın adresleri, yönlendirmeden sonra da reddedilir.</li>
+      <li>Sonuçları bir klasöre kaydetmek hiçbir zaman bir sistem klasörüne ya da var olan bir dosyanın üzerine yazmaz. Bir çalıştırmayı silmek yalnızca onun klasörünü kaldırır.</li>
+      <li>Sayfa sıkı bir Content-Security-Policy gönderir ve her sonucu metin düğümlerinden kurar; bir sonuç tarayıcınızda kod çalıştıramaz.</li>
+      <li>Günlükler belirgin gizli bilgileri maskeler (<code>sk-…</code>, <code>Bearer …</code>, Google ve GitHub anahtarları).</li>
+    </ul>
+  </section>
+
+  <section id="tr-sorunlar">
+    <h2>Sorun giderme</h2>
+    <h3>macOS dosyayı açamadığını söylüyor</h3>
+    <p><code>Open Mehteran.command</code> dosyasına sağ tıklayıp <b>Aç</b>'ı seçin. "Uygun erişim izinleriniz yok" mesajını görürseniz Terminal'i açın, <code>sh </code> yazın (bir boşlukla), dosyayı pencereye sürükleyin ve Enter'a basın.</p>
+    <h3>Bir araç "oturum açılmamış" görünüyor</h3>
+    <p>Kurulum sekmesinde kartındaki oturum açma düğmesine tıklayın. Bir terminal penceresi açılır; tarayıcıda oturum açın, sonra <b>Dene</b>'ye tıklayın.</p>
+    <h3>Bir adım kullanım sınırını bekliyor</h3>
+    <p>Bu normaldir: çalıştırma sınır sıfırlanınca devam eder. Hemen sürdürmek için adımda <b>Başka modelle devam et</b>'e tıklayın.</p>
+    <h3>PDF dışa aktarma Typst gerektiğini söylüyor</h3>
+    <p>Kurulum sekmesinde (Yerel araçlar) Typst'i kurun, sonra yeniden dışa aktarın. EPUB da aynı şekilde Pandoc gerektirir.</p>
+    <h3>Taranmış bir PDF'ten metin çıkmıyor</h3>
+    <p>Kurulum sekmesinde Tesseract OCR'ı belgenin dilleriyle birlikte kurun.</p>
+    <h3>Sayfa kodun değiştiğini söylüyor</h3>
+    <p>Mehteran'ın terminal penceresini kapatıp yeniden başlatın.</p>
+  </section>
+
+  <section id="tr-basvuru">
+    <h2>Başvuru ve geliştirme</h2>
+    <ul>
+      <li><a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.tr.md">Ayrıntılı başvuru</a>: her ekran, ayar, API yolu ve sınır (<a href="https://github.com/tolgabuyuktanir/TranslationPipeline/blob/main/docs/mehteran.md">English</a>).</li>
+      <li>Kod: <code>mehteran/</code>, yalnızca Python standart kütüphanesi (PyYAML projeye dahil). Arayüz derleme adımı olmayan düz JavaScript'tir.</li>
+      <li>Testler: <code>python3 -m unittest discover tests</code>. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz.</li>
+      <li>Yeni bir adım türü: <code>mehteran/nodes.py</code> içine bir <code>NodeType</code> ekleyin; denetim, motor ve düzenleyici onu kendiliğinden tanır.</li>
+    </ul>
+  </section>
+</article>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Mehteran · <span data-l="en">local AI workflows</span><span data-l="tr">yerel yapay zekâ iş akışları</span></span>
+    <nav>
+      <a href="./"><span data-l="en">Home</span><span data-l="tr">Ana sayfa</span></a>
+      <a href="https://github.com/tolgabuyuktanir/TranslationPipeline">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
