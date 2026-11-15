@@ -905,7 +905,8 @@
   "stale_restart": "Yeniden başlat",
   "stale_restarting": "Yeniden başlatılıyor…",
   "stale_manual": "Bu sunucu kendini yeniden başlatamıyor; bir kez yukarıda yazıldığı gibi elle yeniden başlatın.",
-  "open_full": "Tamamını aç"
+  "open_full": "Tamamını aç",
+  "privacy_local_web": "Bu iş akışı siteleri Claude Code ile tarayıcıda okur; yalnızca bu bilgisayardaki modellerle çalışamaz."
  },
  "messages": {
   "yaml_too_large": "Dosya çok büyük (en çok 1 MB).",
@@ -1204,6 +1205,7 @@
   "cli_no_schedules": "Zamanlanmış çalıştırma yok. Bir iş akışının çalıştırma penceresinde “Zamanla” ile oluşturun.",
   "restart_busy": "Bir çalıştırma ya da taslak hazırlığı sürüyor; bitince yeniden başlatın.",
   "restart_unavailable": "Bu sunucu kendini yeniden başlatamıyor.",
-  "ui_restarting": "Mehteran yeniden başlatılıyor…"
+  "ui_restarting": "Mehteran yeniden başlatılıyor…",
+  "agent_not_local": "Bu adım siteleri Claude Code ile tarayıcıda okur; \"Yalnızca bu bilgisayardaki modeller\" seçiliyken çalışamaz. Seçenekler'de bu kutuyu kapatın."
  }
 }

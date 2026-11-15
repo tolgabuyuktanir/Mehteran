@@ -835,7 +835,8 @@
   "stale_restart": "Neu starten",
   "stale_restarting": "Neustart…",
   "stale_manual": "Dieser Server kann sich nicht selbst neu starten; starten Sie ihn einmal von Hand wie oben beschrieben.",
-  "open_full": "Ganz öffnen"
+  "open_full": "Ganz öffnen",
+  "privacy_local_web": "Dieser Workflow liest Websites im Browser mit Claude Code; er kann nicht nur mit den Modellen auf diesem Computer laufen."
  },
  "messages": {
   "yaml_too_large": "Die Datei ist zu groß (höchstens 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "Die Adresse muss auf diesem Computer liegen und einen Port nennen, zum Beispiel http://127.0.0.1:1234/v1.",
   "restart_busy": "Ein Lauf oder ein Entwurf läuft noch; starten Sie neu, wenn er fertig ist.",
   "restart_unavailable": "Dieser Server kann sich nicht selbst neu starten.",
-  "ui_restarting": "Mehteran wird neu gestartet…"
+  "ui_restarting": "Mehteran wird neu gestartet…",
+  "agent_not_local": "Dieser Schritt liest Websites im Browser mit Claude Code; er kann nicht laufen, solange „Nur Modelle auf diesem Computer“ an ist. Schalten Sie das unter Optionen aus."
  }
 }

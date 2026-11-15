@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from mehteran_support import HomeCase, adapter_cfg, ai, workflow  # noqa: E402
 
-from mehteran import browser, nodes, schema  # noqa: E402
+from mehteran import browser, i18n, nodes, schema  # noqa: E402
 from mehteran.engine import Engine, RunError  # noqa: E402
 from mehteran.providers import ADAPTERS, base  # noqa: E402
 
@@ -87,6 +87,15 @@ class BrowserRulesTests(unittest.TestCase):
         self.assertIn("https://*.doubleclick.net", args[args.index("--blocked-origins") + 1].split(";"))
         self.assertNotIn("--allowed-origins", args)  # not a security boundary; guard() stops the step instead
 
+    def test_an_agent_step_keeps_its_longer_timeout(self):
+        # A browser agent reads many pages: the 1200 s of a model call cut it off before it could write its report.
+        from mehteran.engine import step_timeout
+        agent, cli = nodes.REGISTRY["ai.agent"], nodes.REGISTRY["ai.cli"]
+        self.assertEqual(step_timeout({"config": {"provider": "auto"}}, agent, {"timeout": 1200}), 1800)
+        self.assertEqual(step_timeout({"config": {"provider": "auto"}}, agent, {"timeout": 3000}), 3000)
+        self.assertEqual(step_timeout({"config": {"provider": "auto"}}, cli, {"timeout": 900}), 900)  # the user's own
+        self.assertEqual(step_timeout({"config": {"provider": "auto"}, "timeout": 60}, agent, {}), 60)
+
     def test_the_lock_file_pins_the_version_with_integrity_sums(self):
         lock = json.loads((browser.LOCK_DIR / "package-lock.json").read_text(encoding="utf-8"))
         self.assertEqual(lock["packages"]["node_modules/@playwright/mcp"]["version"], browser.VERSION)
@@ -139,8 +148,12 @@ class AgentRunTests(HomeCase):
         with self.assertRaises(RunError) as caught:
             engine.start(workflow(AGENT.replace("provider: claude", "provider: fake") % "", []))
         self.assertIn("Claude Code", str(caught.exception))
-        with self.assertRaises(RunError):
-            engine.start(workflow(AGENT % "", []), every_step="fake")
+        # "Model for every step" with another tool does not reach the browser agent: it keeps Claude Code
+        self.assertEqual(engine.get(engine.start(workflow(AGENT % "", []), every_step="fake", launch=False))["providers"]["look"], "claude")
+        # only models on this computer: one clear reason (a browser agent reads sites), not two
+        with self.assertRaises(RunError) as caught:
+            engine.start(workflow(AGENT % "", []), privacy="local")
+        self.assertEqual(caught.exception.messages, [f"nodes.look: {i18n.t('agent_not_local')}"])
         run_id = engine.start(workflow(AGENT % "", []))  # "claude" of the test configuration is a plain command
         self.assertEqual(engine.wait(run_id, 30), "failed")
         self.assertIn("Claude Code", engine.get(run_id)["nodes"]["look"]["error"])

@@ -835,7 +835,8 @@
   "stale_restart": "Mulai ulang",
   "stale_restarting": "Memulai ulang…",
   "stale_manual": "Server ini tidak bisa memulai ulang sendiri; mulai ulang sekali secara manual seperti tertulis di atas.",
-  "open_full": "Buka penuh"
+  "open_full": "Buka penuh",
+  "privacy_local_web": "Alur kerja ini membaca situs di browser dengan Claude Code; tidak bisa berjalan hanya dengan model di komputer ini."
  },
  "messages": {
   "yaml_too_large": "Berkas terlalu besar (maksimal 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "Alamat harus berada di komputer ini dan menyebutkan port, misalnya http://127.0.0.1:1234/v1.",
   "restart_busy": "Sebuah proses atau draf sedang berjalan; mulai ulang setelah selesai.",
   "restart_unavailable": "Server ini tidak bisa memulai ulang sendiri.",
-  "ui_restarting": "Memulai ulang Mehteran…"
+  "ui_restarting": "Memulai ulang Mehteran…",
+  "agent_not_local": "Langkah ini membaca situs di browser dengan Claude Code; tidak bisa berjalan saat \"Hanya model di komputer ini\" aktif. Matikan di Opsi."
  }
 }

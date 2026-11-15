@@ -1473,10 +1473,12 @@ function estimateSteps(est) {
 // The run window's privacy choice: "only models on this computer" (a workflow with "privacy: local" always is).
 function privacyField(tpl, estimate) {
   const fixed = Boolean(tpl.model && tpl.model.privacy === "local");
-  const box = h("input", {type: "checkbox", checked: fixed, disabled: fixed, onchange: () => { estimate.privacy = box.checked ? "local" : ""; estimate.refresh(true); }});
+  // A browser agent reads sites with Claude Code: such a workflow cannot keep everything on this computer.
+  const web = !fixed && ((tpl.model && tpl.model.nodes) || []).some((n) => n && n.type === "ai.agent");
+  const box = h("input", {type: "checkbox", checked: fixed, disabled: fixed || web, onchange: () => { estimate.privacy = box.checked ? "local" : ""; estimate.refresh(true); }});
   estimate.privacy = fixed ? "local" : "";
   const row = h("div", {class: "stack privacy-row"}, h("label", {class: "check"}, box, h("span", {}, S("privacy_local_label"))),
-    h("span", {class: "small muted"}, S(fixed ? "privacy_local_fixed" : "privacy_local_hint")));
+    h("span", {class: "small muted"}, S(fixed ? "privacy_local_fixed" : web ? "privacy_local_web" : "privacy_local_hint")));
   row.read = () => (box.checked ? "local" : "");
   return row;
 }

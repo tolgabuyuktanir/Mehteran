@@ -835,7 +835,8 @@
   "stale_restart": "Reiniciar",
   "stale_restarting": "Reiniciando…",
   "stale_manual": "Este servidor no puede reiniciarse solo; reinícielo una vez a mano como se indica arriba.",
-  "open_full": "Abrir completo"
+  "open_full": "Abrir completo",
+  "privacy_local_web": "Este flujo lee sitios en el navegador con Claude Code; no puede ejecutarse solo con los modelos de este equipo."
  },
  "messages": {
   "yaml_too_large": "El archivo es demasiado grande (máximo 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "La dirección debe ser de este equipo e indicar un puerto, por ejemplo http://127.0.0.1:1234/v1.",
   "restart_busy": "Hay una ejecución o un borrador en curso; reinicie cuando termine.",
   "restart_unavailable": "Este servidor no puede reiniciarse solo.",
-  "ui_restarting": "Reiniciando Mehteran…"
+  "ui_restarting": "Reiniciando Mehteran…",
+  "agent_not_local": "Este paso lee sitios en el navegador con Claude Code; no puede ejecutarse con «Solo modelos de este equipo» activado. Desactívelo en Opciones."
  }
 }

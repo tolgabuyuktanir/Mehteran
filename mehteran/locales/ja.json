@@ -835,7 +835,8 @@
   "stale_restart": "再起動",
   "stale_restarting": "再起動中…",
   "stale_manual": "このサーバーは自分で再起動できません。上の説明どおりに一度手動で再起動してください。",
-  "open_full": "全体を開く"
+  "open_full": "全体を開く",
+  "privacy_local_web": "このワークフローは Claude Code でブラウザーからサイトを読むため、このコンピューターのモデルだけでは実行できません。"
  },
  "messages": {
   "yaml_too_large": "ファイルが大きすぎます（最大 1 MB）。",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "アドレスはこのコンピューター上にあり、ポートを指定する必要があります（例：http://127.0.0.1:1234/v1）。",
   "restart_busy": "実行または下書きの作成が進行中です。終わってから再起動してください。",
   "restart_unavailable": "このサーバーは自分で再起動できません。",
-  "ui_restarting": "Mehteran を再起動しています…"
+  "ui_restarting": "Mehteran を再起動しています…",
+  "agent_not_local": "このステップは Claude Code でブラウザーからサイトを読みます。「このコンピューターのモデルのみ」がオンの間は実行できません。オプションでオフにしてください。"
  }
 }

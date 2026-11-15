@@ -835,7 +835,8 @@
   "stale_restart": "Ponovo pokreni",
   "stale_restarting": "Ponovno pokretanje…",
   "stale_manual": "Ovaj server se ne može sam ponovo pokrenuti; pokrenite ga jednom ručno kako piše iznad.",
-  "open_full": "Otvori u cijelosti"
+  "open_full": "Otvori u cijelosti",
+  "privacy_local_web": "Ovaj tok rada čita stranice u pregledniku pomoću Claude Code; ne može raditi samo s modelima na ovom računaru."
  },
  "messages": {
   "yaml_too_large": "Datoteka je prevelika (najviše 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "Adresa mora biti na ovom računaru i navesti port, na primjer http://127.0.0.1:1234/v1.",
   "restart_busy": "Traje pokretanje ili priprema nacrta; ponovo pokrenite kad završi.",
   "restart_unavailable": "Ovaj server se ne može sam ponovo pokrenuti.",
-  "ui_restarting": "Mehteran se ponovo pokreće…"
+  "ui_restarting": "Mehteran se ponovo pokreće…",
+  "agent_not_local": "Ovaj korak čita stranice u pregledniku pomoću Claude Code; ne može raditi dok je uključeno \"Samo modeli na ovom računaru\". Isključite to pod Opcije."
  }
 }

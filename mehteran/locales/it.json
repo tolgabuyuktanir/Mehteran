@@ -835,7 +835,8 @@
   "stale_restart": "Riavvia",
   "stale_restarting": "Riavvio…",
   "stale_manual": "Questo server non può riavviarsi da solo; riavvialo una volta a mano come indicato sopra.",
-  "open_full": "Apri per intero"
+  "open_full": "Apri per intero",
+  "privacy_local_web": "Questo flusso legge i siti nel browser con Claude Code; non può funzionare solo con i modelli di questo computer."
  },
  "messages": {
   "yaml_too_large": "Il file è troppo grande (al massimo 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "L’indirizzo deve essere su questo computer e indicare una porta, per esempio http://127.0.0.1:1234/v1.",
   "restart_busy": "È in corso un'esecuzione o una bozza; riavvia quando è finita.",
   "restart_unavailable": "Questo server non può riavviarsi da solo.",
-  "ui_restarting": "Riavvio di Mehteran…"
+  "ui_restarting": "Riavvio di Mehteran…",
+  "agent_not_local": "Questo passaggio legge i siti nel browser con Claude Code; non può funzionare con «Solo modelli su questo computer» attivo. Disattivalo in Opzioni."
  }
 }

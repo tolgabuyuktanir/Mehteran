@@ -835,7 +835,8 @@
   "stale_restart": "Redémarrer",
   "stale_restarting": "Redémarrage…",
   "stale_manual": "Ce serveur ne peut pas redémarrer seul ; redémarrez-le une fois à la main comme indiqué ci-dessus.",
-  "open_full": "Ouvrir en entier"
+  "open_full": "Ouvrir en entier",
+  "privacy_local_web": "Ce flux lit des sites dans le navigateur avec Claude Code ; il ne peut pas s'exécuter avec les seuls modèles de cet ordinateur."
  },
  "messages": {
   "yaml_too_large": "Le fichier est trop volumineux (1 Mo au maximum).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "L’adresse doit être sur cet ordinateur et indiquer un port, par exemple http://127.0.0.1:1234/v1.",
   "restart_busy": "Une exécution ou un brouillon est en cours ; redémarrez quand il sera terminé.",
   "restart_unavailable": "Ce serveur ne peut pas redémarrer seul.",
-  "ui_restarting": "Redémarrage de Mehteran…"
+  "ui_restarting": "Redémarrage de Mehteran…",
+  "agent_not_local": "Cette étape lit des sites dans le navigateur avec Claude Code ; elle ne peut pas s'exécuter avec « Seulement les modèles de cet ordinateur ». Désactivez-le dans Options."
  }
 }

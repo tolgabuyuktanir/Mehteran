@@ -91,6 +91,7 @@ nodes:
       provider: auto
       sites: "{{inputs.sites}}"
       mode: read
+      headless: true
       prompt: |
         Task: Find places to stay that match the request below on the sites you may open, and report them exactly as the pages give them. Do not book, reserve or sign in to anything.
 
@@ -105,8 +106,10 @@ nodes:
         Method:
         1. Prices depend on the dates and the guests, so search with them. Open the site's search page for the place and set the dates and the guests by opening the search address the site itself uses with these values (for example the address the site's own search form makes) or by clicking its date and guest controls. You cannot type into fields; if a site needs typing, try another site.
         2. If a site places the search somewhere else (another town or country), search again with the city name (for example "Antalya") and then pick the district on the page or in its map and filters. Open one page at a time and read it before you open the next one. Open at most 10 pages in all. Use the site's own filters and sorting (price, rating, breakfast, free cancellation) when they help.
-        3. From the result lists, read the details of the stays closest to the request. Collect at most 8 stays; read a stay's own page only when the result list leaves out something the request asks for.
+        3. From the result lists, read the details of the stays closest to the request. Two sites with results are enough. Collect at most 8 stays; read a stay's own page only when the result list leaves out something the request asks for.
         4. Note only what a page says, for the dates and guests above. If a page shows a price for other dates or guests, say so. Do not guess missing details. If a page asks you to sign in, shows a captcha or blocks you, note it and go on with another site.
+
+        Time: the step stops after about 25 minutes, and what is not reported by then is lost. So work in a budget: use at most 25 browser actions in all (every open, click, find, wait or read counts). Do not wait for a page more than once; if it is still not ready, go on with the next site. Read a result list in one go rather than card by card. As soon as you have enough for the report, or after 25 actions, stop and write the report with what you have.
 
         Report, in English, in Markdown:
 

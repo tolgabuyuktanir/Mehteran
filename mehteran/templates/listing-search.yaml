@@ -85,6 +85,7 @@ nodes:
       provider: auto
       sites: "{{inputs.sites}}"
       mode: read
+      headless: true
       prompt: |
         Task: Find listings that match the request below on the sites you may open, and report them exactly as the pages give them.
 
@@ -100,6 +101,8 @@ nodes:
         2. Start at the site's own search: open its search or category page for the location, and use the filters the page offers (location, price, rooms or year, kilometres, and so on) by clicking them or by opening the search address the page itself builds. Open one page at a time and read it before you open the next one. Open at most 10 pages in all.
         3. From the result lists, open the listings that look closest to the request and read their details. Collect at most 10 listings; read the details page only when the result list leaves out a wanted feature.
         4. Note only what a page says. Do not guess missing details and do not add what you know from elsewhere. If a page asks you to sign in, shows a captcha or blocks you, note it and go on with another site.
+
+        Time: the step stops after about 25 minutes, and what is not reported by then is lost. So work in a budget: use at most 25 browser actions in all (every open, click, find, wait or read counts). Do not wait for a page more than once; if it is still not ready, go on with the next site. Read a result list in one go rather than card by card. As soon as you have enough for the report, or after 25 actions, stop and write the report with what you have.
 
         Report, in English, in Markdown:
 

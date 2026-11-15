@@ -905,7 +905,8 @@
   "stale_restart": "Restart",
   "stale_restarting": "Restarting…",
   "stale_manual": "This server cannot restart itself; restart it once by hand as written above.",
-  "open_full": "Open in full"
+  "open_full": "Open in full",
+  "privacy_local_web": "This workflow reads sites in the browser with Claude Code; it cannot run with only the models on this computer."
  },
  "messages": {
   "yaml_too_large": "The file is too large (at most 1 MB).",
@@ -1204,6 +1205,7 @@
   "cli_no_schedules": "No scheduled runs. Make one in the run window of a workflow: “Run on a schedule”.",
   "restart_busy": "A run or a draft is going on; restart when it has finished.",
   "restart_unavailable": "This server cannot restart itself.",
-  "ui_restarting": "Restarting Mehteran…"
+  "ui_restarting": "Restarting Mehteran…",
+  "agent_not_local": "This step reads sites in the browser with Claude Code; it cannot run while \"Only models on this computer\" is on. Turn that box off under Options."
  }
 }

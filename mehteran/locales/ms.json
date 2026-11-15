@@ -835,7 +835,8 @@
   "stale_restart": "Mula semula",
   "stale_restarting": "Memulakan semula…",
   "stale_manual": "Pelayan ini tidak boleh mula semula sendiri; mulakan semula sekali secara manual seperti di atas.",
-  "open_full": "Buka penuh"
+  "open_full": "Buka penuh",
+  "privacy_local_web": "Aliran kerja ini membaca laman dalam pelayar dengan Claude Code; ia tidak boleh berjalan dengan model pada komputer ini sahaja."
  },
  "messages": {
   "yaml_too_large": "Fail terlalu besar (paling banyak 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "Alamat mesti berada pada komputer ini dan menamakan port, contohnya http://127.0.0.1:1234/v1.",
   "restart_busy": "Satu larian atau draf sedang berjalan; mulakan semula apabila selesai.",
   "restart_unavailable": "Pelayan ini tidak boleh mula semula sendiri.",
-  "ui_restarting": "Memulakan semula Mehteran…"
+  "ui_restarting": "Memulakan semula Mehteran…",
+  "agent_not_local": "Langkah ini membaca laman dalam pelayar dengan Claude Code; ia tidak boleh berjalan semasa \"Hanya model pada komputer ini\" dihidupkan. Matikannya di Pilihan."
  }
 }

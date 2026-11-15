@@ -835,7 +835,8 @@
   "stale_restart": "Rinis",
   "stale_restarting": "Po riniset…",
   "stale_manual": "Ky server nuk mund të riniset vetë; riniseni një herë me dorë siç shkruhet më lart.",
-  "open_full": "Hape të plotë"
+  "open_full": "Hape të plotë",
+  "privacy_local_web": "Kjo rrjedhë lexon faqe në shfletues me Claude Code; nuk mund të ekzekutohet vetëm me modelet në këtë kompjuter."
  },
  "messages": {
   "yaml_too_large": "Skedari është shumë i madh (deri në 1 MB).",
@@ -1103,6 +1104,7 @@
   "local_server_url_bad": "Adresa duhet të jetë në këtë kompjuter dhe të ketë një port, për shembull http://127.0.0.1:1234/v1.",
   "restart_busy": "Po vazhdon një ekzekutim ose një draft; riniseni kur të mbarojë.",
   "restart_unavailable": "Ky server nuk mund të riniset vetë.",
-  "ui_restarting": "Mehteran po riniset…"
+  "ui_restarting": "Mehteran po riniset…",
+  "agent_not_local": "Ky hap lexon faqe në shfletues me Claude Code; nuk mund të ekzekutohet kur \"Vetëm modelet në këtë kompjuter\" është aktiv. Çaktivizojeni te Opsionet."
  }
 }

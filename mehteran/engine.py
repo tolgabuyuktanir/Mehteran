@@ -93,6 +93,18 @@ def new_run_id() -> str:
     return time.strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3)
 
 
+
+def step_timeout(node: dict, node_type, general: dict) -> int:
+    """Seconds a step may take: its own "timeout", else for a step that calls a model the configured timeout of a
+    call (general.timeout, 1200 s), else its type's default. A type that needs longer than one call (a browser agent:
+    1800 s) never gets less than its own default."""
+    if "timeout" in node:
+        return node["timeout"]
+    if not (node.get("config") or {}).get("provider"):
+        return node_type.default_timeout
+    call = general.get("timeout", 1200)
+    return max(call, node_type.default_timeout) if node_type.default_timeout > 1200 else call
+
 class Engine:
     def __init__(self, home: Path | None = None, provider_cfg: dict | None = None, parallel: int = 4,
                  retry_delay: float = 2.0, quota_delay: float | None = None):
@@ -218,7 +230,8 @@ class Engine:
         An old name becomes the adapter's ("chatgpt" -> "codex"). `auto` kinds take the first usable model of the
         user's model order whose provider has no known usage limit now; the others stay as candidates for a later
         usage limit. privacy "local": `auto` becomes auto:local and any model that does not run here is refused.
-        every_step: this model for every step and every fallback, whatever the workflow sets."""
+        every_step: this model for every step and every fallback, whatever the workflow sets (a browser agent keeps its
+        own model unless every_step is Claude Code or `auto`). privacy "local" refuses a browser agent: it reads sites."""
         cfg = self.provider_cfg
         local_only = privacy == "local"
         auto: dict = {"nodes": {}, "candidates": {}}
@@ -262,7 +275,15 @@ class Engine:
                                                            f"nodes.{node_id}.fallback_provider")
             if isinstance((node.get("config") or {}).get("provider"), str):  # else no model (a plain condition)
                 agent = node["type"] == "ai.agent"
-                providers[node_id] = resolve(every_step or node["config"]["provider"], f"nodes.{node_id}", agent)
+                if agent and local_only:  # it reads sites with Claude Code: one clear reason, not two
+                    problems.append(f"nodes.{node_id}: {t('agent_not_local')}")
+                    providers[node_id] = node["config"]["provider"]
+                    continue
+                # "Model for every step" with another tool leaves a browser agent on its own model (Claude Code)
+                own = node["config"]["provider"]
+                chosen = every_step if every_step and (not agent or every_step in adapters.AUTO
+                                                       or adapters.split(every_step)[0] == "claude") else own
+                providers[node_id] = resolve(chosen, f"nodes.{node_id}", agent)
                 if agent and adapters.split(providers[node_id])[0] != "claude":
                     problems.append(f"nodes.{node_id}: {t('agent_needs_claude', name=providers[node_id])}")
         return providers, auto
@@ -721,9 +742,7 @@ class Engine:
         node = wf.nodes[node_id]
         node_type = REGISTRY[node["type"]]
         retries = node.get("retries", node_type.default_retries)
-        default_timeout = run["provider_cfg"]["general"].get("timeout", 1200) if (node.get("config") or {}).get("provider") \
-            else node_type.default_timeout
-        timeout = node.get("timeout", default_timeout)
+        timeout = step_timeout(node, node_type, run["provider_cfg"]["general"])
         general = run["provider_cfg"]["general"]
         node_dir = self.run_dir(run_id) / "nodes" / node_id
         error = ""
