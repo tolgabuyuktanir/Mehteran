@@ -87,6 +87,21 @@ class BrowserRulesTests(unittest.TestCase):
         self.assertIn("https://*.doubleclick.net", args[args.index("--blocked-origins") + 1].split(";"))
         self.assertNotIn("--allowed-origins", args)  # not a security boundary; guard() stops the step instead
 
+    def test_the_sign_in_browser_takes_only_a_web_address_and_never_a_flag(self):
+        # An address that starts with "-" would be read by Chrome as a switch (--remote-debugging-port=...).
+        launched = []
+        with mock.patch.object(browser, "chrome", lambda: Path("chrome")), \
+                mock.patch.object(Path, "mkdir", lambda *a, **k: None), \
+                mock.patch.object(browser.subprocess, "Popen", lambda argv, **k: launched.append(argv)):
+            for bad in ("--remote-debugging-port=9222", "file:///etc/passwd", "javascript:alert(1)", "chrome://settings"):
+                with self.assertRaises(browser.ToolError, msg=bad):
+                    browser.open_signin(Path("home"), bad)
+            self.assertEqual(launched, [])
+            browser.open_signin(Path("home"), "https://x.com/login")
+            browser.open_signin(Path("home"))
+        self.assertEqual(launched[0][-2:], ["--", "https://x.com/login"])
+        self.assertEqual(launched[1][-2:], ["--", "about:blank"])
+
     def test_an_agent_step_keeps_its_longer_timeout(self):
         # A browser agent reads many pages: the 1200 s of a model call cut it off before it could write its report.
         from mehteran.engine import step_timeout

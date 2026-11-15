@@ -117,7 +117,12 @@ def install() -> None:
 
 
 def open_signin(home: Path, url: str = "") -> None:
-    """Opens Chrome with Mehteran's profile, so that the person can sign in to the sites agent steps use."""
+    """Opens Chrome with Mehteran's profile, so that the person can sign in to the sites agent steps use.
+    Only an http(s) address is opened, after "--": Chrome never reads it as one of its switches."""
+    from . import urlfetch
+    problem = url and urlfetch.url_problem(url)
+    if problem:
+        raise ToolError(problem)
     program = chrome()
     if program is None:
         raise ToolError(t("browser_needs_chrome"))
@@ -125,7 +130,7 @@ def open_signin(home: Path, url: str = "") -> None:
     profile.mkdir(parents=True, exist_ok=True)
     from pipeline import system
     subprocess.Popen([str(program), f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check",
-                      url or "about:blank"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                      "--", url or "about:blank"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, **system.new_process_group())
 
 
