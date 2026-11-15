@@ -76,7 +76,7 @@ a { color: var(--accent); }
 
 main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
-.panel-head p { max-width: 720px; }
+.panel-head p { max-width: 62ch; }
 .sub { margin: 32px 0 12px; }
 
 /* buttons and fields */
@@ -792,9 +792,9 @@ body.fill main > .panel:not([hidden]) { flex: 1; min-height: 0; display: flex; f
 /* the book translation: a bar under the header (the width of the window), then the translation app (.tr-app) */
 .subnav { display: flex; align-items: center; gap: 12px; padding: 8px 24px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 #translation { --tr-top: calc(var(--top-h, 73px) + 66px); }  /* where the translation app's sticky parts stop */
-#translation > .subnav { position: sticky; top: var(--top-h, 73px); z-index: 6; margin: -24px calc(50% - 50vw) 22px;
+#translation > .subnav, #workflow-page > .subnav { position: sticky; top: var(--top-h, 73px); z-index: 6; margin: -24px calc(50% - 50vw) 22px;
   padding-inline: calc(50vw - 50%); }
-main:has(> .banner:not([hidden])) #translation > .subnav { position: static; margin-top: 0; }  /* below a banner, not under it */
+main:has(> .banner:not([hidden])) :is(#translation, #workflow-page) > .subnav { position: static; margin-top: 0; }  /* below a banner, not under it */
 .subnav-title { display: inline-flex; align-items: center; gap: 8px; font: 600 16px var(--serif); padding-right: 6px; }
 .subnav-title .tpl-icon { width: 30px; height: 30px; }
 .subtabs { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -828,6 +828,7 @@ main:has(> .banner:not([hidden])) #translation > .subnav { position: static; mar
 .tpl-card.cat-business { border-top-color: var(--claude); }
 .tpl-card.cat-data { border-top-color: var(--gpt); }
 .tpl-card.cat-writing { border-top-color: var(--muted); }
+.tpl-card.cat-web { border-top-color: var(--gpt); }
 .tpl-open {
   flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 10px; border: 0; background: none; color: var(--ink);
   font: inherit; text-align: left; cursor: pointer; border-radius: var(--radius) var(--radius) 0 0;
@@ -859,15 +860,68 @@ dialog.drawer {
 .drawer .small-canvas.gcanvas { height: 280px; }
 .drawer textarea.code { min-height: 320px; }
 
-/* the run dialog */
-dialog.run-dialog { width: min(640px, calc(100vw - 32px)); }
-.run-dialog .run-form { display: flex; flex-direction: column; gap: 0; max-height: calc(100vh - 48px); }
-.run-dialog .dialog-head { align-items: flex-start; }
-.run-dialog .dialog-head p { margin-top: 4px; }
-.run-fields { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px; flex: 1; min-height: 0; max-height: none; }
+/* A workflow's page. Run: one column, the inputs, "Options" folded, then "Start" with one line of what the run
+   calls and the whole estimate under "Details". Instructions: the steps in plain words. */
+.run-page { display: flex; flex-direction: column; gap: 18px; max-width: 760px; }
+.run-fields { display: flex; flex-direction: column; gap: 16px; }
 .run-field input[type=text], .run-field textarea, .run-field select, .run-field input[type=file] { width: 100%; }
-.run-dialog .dialog-foot { align-items: center; flex-wrap: nowrap; }
-.run-dialog .dialog-foot .notice { margin: 0; }
+.run-foot { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.run-start { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.run-start .btn.primary { padding: 11px 22px; font-size: 15px; }
+.run-start .notice { margin: 0; }
+.run-more > summary { cursor: pointer; color: var(--muted); }
+.run-more .run-estimate { margin-top: 8px; border-radius: var(--radius); padding: 14px 16px; max-height: none; }
+.wf-steps-line { margin: 0 0 14px; color: var(--muted); }
+.wf-steps-line .linkish { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.wf-steps { display: flex; flex-direction: column; gap: 16px; max-width: 820px; }
+.wf-desc { margin: 0; }
+.book-list.wf-runs { position: static; max-width: 720px; }
+.wf-body .empty .row { justify-content: center; }  /* the Runs tab's rows, without its sticky side column */
+
+/* the star and "⋯" beside the sections; the share box below the bar */
+.wf-actions { margin-inline-start: auto; gap: 6px; }
+.wf-more { position: relative; }
+.wf-more > summary { list-style: none; cursor: pointer; min-width: 34px; justify-content: center; font-weight: 700; }
+.wf-more > summary::-webkit-details-marker { display: none; }
+.wf-more .menu { position: absolute; inset-inline-end: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; padding: 6px;
+  display: flex; flex-direction: column; box-shadow: 0 10px 30px rgb(0 0 0 / 0.14); }
+.menu-item { display: block; text-align: start; padding: 8px 10px; border: 0; background: none; border-radius: 6px; font: inherit;
+  font-size: 14px; color: var(--ink); text-decoration: none; cursor: pointer; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); }
+.menu-item.danger { color: var(--bad); }
+.wf-extra .share-box { max-width: 760px; margin: 0 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+
+/* the steps in plain words (Instructions, "Here is what I built") */
+.steps-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.step-item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface); }
+.step-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700;
+  background: var(--surface-2); color: var(--muted); }
+.step-item.has-instr .step-n { background: var(--accent); color: var(--accent-ink); }
+.step-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.step-instr { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+.step-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
+.step-text.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.step-acts { gap: 14px; }
+.step-acts .linkish, .built-card .linkish { color: var(--accent); }
+.step-instr textarea { width: 100%; font-size: 14px; }
+
+/* "Here is what I built" */
+.built-card { padding: 18px 20px; margin-bottom: 22px; display: flex; flex-direction: column; gap: 14px; max-width: 760px;
+  border: 1px solid var(--accent); }
+.built-head h3 { margin: 0; font-size: 19px; }
+.built-head p { margin: 4px 0 0; }
+.built-change { gap: 8px; flex-wrap: nowrap; }
+.built-change input { flex: 1 1 auto; min-width: 0; }
+.built-acts { gap: 8px; }
+
+/* a model job in place: one line, "Stop", the log under "Details" */
+.job-line { display: flex; align-items: center; gap: 10px; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+.job-details > summary { cursor: pointer; margin-top: 6px; }
+.job-details .job-log { max-height: 220px; overflow: auto; }
 
 /* runs */
 .runs-layout { grid-template-columns: 290px minmax(0, 1fr); }
@@ -880,6 +934,8 @@ dialog.run-dialog { width: min(640px, calc(100vw - 32px)); }
 .run-actions { justify-content: flex-end; }
 .results-box { border-top: 4px solid var(--accent); }
 .results-box h3 { margin-bottom: 10px; }
+.share-box { border-top: 4px solid var(--accent); }
+.share-box .share-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .run-cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
 .run-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .run-main .timeline { margin-top: 0; }
@@ -966,7 +1022,7 @@ dialog.run-dialog { width: min(640px, calc(100vw - 32px)); }
   .runs-layout .book-list { max-height: none; }
   .lib-tools { position: static; }
   .subnav { padding: 8px 16px; }
-  #translation > .subnav { top: 0; margin-top: -16px; padding-inline: calc(50vw - 50%); }  /* the header scrolls away here */
+  #translation > .subnav, #workflow-page > .subnav { top: 0; margin-top: -16px; padding-inline: calc(50vw - 50%); }  /* the header scrolls away here */
   #translation { --tr-top: 110px; }
   #board-status { max-width: none; text-align: left; }
 }
@@ -1051,6 +1107,7 @@ dialog.confirm-dialog { width: min(520px, calc(100vw - 32px)); }
 .icon-mine, .icon-documents { color: var(--accent); }
 .icon-research { color: var(--gemini); }
 .icon-legal, .icon-everyday { color: var(--gold); }
+.icon-web { color: var(--gpt); }
 .icon-business { color: var(--claude); }
 .icon-data, .icon-education { color: var(--gpt); }
 .icon-developers { color: var(--claude); }
@@ -1484,6 +1541,14 @@ dialog.draft-dialog { width: min(680px, calc(100vw - 32px)); }
 .flow-fold[open] > summary { margin-bottom: 12px; }
 .run-extras { padding-top: 10px; border-top: 1px solid var(--line); gap: 8px; }
 .run-extras input.mono { width: 100%; direction: ltr; }
+.sched-box { gap: 8px; }
+.sched-days { flex-wrap: wrap; gap: 6px 12px; }
+.sched-box input[type=number] { width: 5em; }
+.rl-schedule { flex-wrap: wrap; }
+.rl-schedule-actions { width: 100%; gap: 6px; padding: 0 10px 8px; flex-wrap: wrap; }
+.book-list li .rl-schedule-actions button { width: auto; padding: 3px 8px; font-size: 12px; border-color: var(--line); }
+.background-panel { margin-top: 24px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.background-panel h3 { margin: 0; font-size: 15px; }
 .run-form input[type=url] { width: 100%; }
 .batch-files { margin-top: 4px; }
 pre.json-view { font: 13px/1.55 ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
@@ -1529,3 +1594,69 @@ pre.json-view { font: 13px/1.55 ui-monospace, Menlo, monospace; white-space: pre
 .estimate-steps code, .sent-to { overflow-wrap: anywhere; }
 .bad-text { color: var(--bad); }
 @media (max-width: 860px) { .providers-grid { grid-template-columns: 1fr; } }
+
+/* --- the editor's model picker: where the model comes from, then which one --- */
+.model-source { align-self: flex-start; flex-wrap: wrap; }
+.model-tool { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.model-tool select:nth-child(3) { grid-column: 1 / -1; }
+.model-tool select, .role-pick > select { min-width: 0; width: 100%; }
+.model-raw { gap: 8px; flex-wrap: nowrap; }
+.model-raw input { flex: 1 1 auto; min-width: 0; font-size: 12px; }
+
+/* --- the run form's models: folded under one line --- */
+.run-models { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 0 14px; }
+.run-models > summary { cursor: pointer; padding: 12px 0; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.run-models[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.run-models > .stack { padding-bottom: 14px; gap: 14px; }
+
+/* --- the library's "Describe it, I will build it" box: one row to write and build, short examples below --- */
+.describe-box { padding: 16px 18px; margin: 4px 0 22px; display: block; border: 1px solid var(--accent); }
+.describe-box-form { display: flex; flex-direction: column; gap: 10px; }
+.describe-box-head h3 { margin: 0; font-size: 18px; }
+.describe-box-head p { margin: 2px 0 0; }
+.describe-row { display: flex; gap: 10px; align-items: stretch; }
+.describe-row textarea { flex: 1 1 auto; min-width: 0; resize: vertical; min-height: 46px; }
+.describe-row .btn { flex: 0 0 auto; align-self: stretch; padding-inline: 18px; }
+.describe-foot { display: flex; gap: 10px 16px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.describe-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.describe-chips .chip { font-family: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px;
+  border-radius: 999px; cursor: pointer; color: var(--ink); }
+.describe-chips .chip:hover { border-color: var(--accent); }
+.describe-auto { margin: 0; }
+@media (max-width: 640px) { .describe-row { flex-direction: column; } .describe-box-head p { display: none; } }
+
+/* --- Setup: a ready tool in short; the rarely changed settings folded under their titles --- */
+.tool.compact { gap: 8px; padding: 14px 16px; }
+.tool.compact .actions { margin-top: 0; }
+.tool-more > summary { cursor: pointer; color: var(--muted); }
+.tool-more > .stack { margin-top: 10px; gap: 10px; }
+.setup-more { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.setup-more > summary { cursor: pointer; padding: 14px 18px; font: 600 17px var(--serif); }
+.setup-more[open] > summary { border-bottom: 1px solid var(--line); }
+.setup-more > section { margin: 0; border: 0; box-shadow: none; border-radius: 0 0 var(--radius) var(--radius); }
+.setup-more > section > .panel-head:first-child h2, .setup-more > section > .tool-head:first-child h3 { display: none; }
+.setup-more > .local-tools { padding: 16px 18px; }
+
+/* --- the editor: the folded palette is one labelled "+ Add step" rail; the model picker's extras folded --- */
+.pal-add { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 40px; padding: 12px 0; border: 1px dashed var(--accent);
+  border-radius: 10px; background: var(--surface); color: var(--accent); cursor: pointer; font: inherit; }
+.pal-add:hover { background: var(--accent-soft, var(--surface-2)); }
+.pal-add:disabled { opacity: 0.5; cursor: default; }
+.pal-add-plus { font-size: 22px; font-weight: 700; line-height: 1; }
+.pal-add-text { writing-mode: vertical-rl; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+.role-pick > select { width: 100%; }
+.model-advanced > summary { cursor: pointer; color: var(--muted); }
+.model-advanced > .stack { margin-top: 8px; gap: 8px; }
+
+/* the library tools bleed to the page edge: by the phone gutter (16px), not the desktop one */
+@media (max-width: 640px) { .lib-tools { margin-inline: -16px; padding-inline: 16px; } }
+
+/* --- a run's first text result, on the page --- */
+.result-files { gap: 8px; flex-wrap: wrap; }
+.result-files:empty { display: none; }
+.result-preview { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.result-preview-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.result-preview .reader-pane { max-height: 60vh; overflow: auto; padding: 4px 2px; }
+
+/* the workflows run last: the same space around it as around a group of cards */
+.lib-recent { margin: 24px 0 28px; }

@@ -37,6 +37,7 @@ FILE_FORMATS = ("pdf", "docx", "epub", "md", "txt", "csv", "tsv", "xlsx",  # pip
                 "odt", "rtf",  # read by Pandoc (pandoc.py)
                 "mp3", "wav", "m4a", "ogg", "opus", "flac", "aac", "mp4", "webm", "mov", "mkv")  # speech to text (speech.py)
 MAX_FILES = 20  # files of one input with "multiple: true"
+MAX_URLS = 30   # addresses of one url input with "multiple: true" (one per line)
 TEXT_LIMIT = 200_000
 LIMITS = {"nodes": 100, "inputs": 30, "connections": 400, "outputs": 30}
 
@@ -175,11 +176,29 @@ def check(data) -> Workflow:
     _references(nodes, inputs, connected, add)
     _fallbacks(nodes, inputs, add)
     order = _order(nodes, upstream, add)
+    _agents(nodes, upstream, add)
     outputs = _outputs(data.get("outputs"), nodes, add)
     _layout(data.get("layout"), nodes, add)
     if problems:
         raise WorkflowError(problems)
     return Workflow(data, inputs, nodes, upstream, order, outputs)
+
+
+def _agents(nodes: dict, upstream: dict, add) -> None:
+    """A browser agent that may type and send (mode: act) runs only after a person approved: an approval node must
+    come before it in the graph."""
+    for node_id, node in nodes.items():
+        if node.get("type") != "ai.agent" or (node.get("config") or {}).get("mode") != "act":
+            continue
+        seen, todo = set(), list(upstream.get(node_id, ()))
+        while todo:
+            current = todo.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            todo += list(upstream.get(current, ()))
+        if not any((nodes.get(n) or {}).get("type") == "approval" for n in seen):
+            add(f"nodes.{node_id}.config.mode", "agent_act_needs_approval")
 
 
 # --- helpers --------------------------------------------------------------------
@@ -273,7 +292,7 @@ def _inputs(value, add) -> dict[str, dict]:
         if "required" in item and not isinstance(item["required"], bool):
             add(f"{here}.required", "not_a_bool")
         for key, only in (("formats", "file"), ("multiple", "file"), ("options", "choice"), ("multiline", "text")):
-            if key in item and kind != only:
+            if key in item and kind != only and not (key == "multiple" and kind == "url"):
                 add(f"{here}.{key}", "key_only_for", type=only)
         if kind == "file":
             if "default" in item:
@@ -313,10 +332,18 @@ def _inputs(value, add) -> dict[str, dict]:
                 add(f"{here}.default", "bad_text")
             if "multiline" in item and not isinstance(item["multiline"], bool):
                 add(f"{here}.multiline", "not_a_bool")
-        elif kind == "url" and "default" in item:
+        elif kind == "url":
+            from .nodes import url_lines
             from .urlfetch import url_problem
-            if not isinstance(item["default"], str) or (item["default"].strip() and url_problem(item["default"].strip())):
-                add(f"{here}.default", "bad_url_default")
+            several = item.get("multiple") is True
+            if "multiple" in item and not isinstance(item["multiple"], bool):
+                add(f"{here}.multiple", "not_a_bool")
+            if "default" in item:
+                default = item["default"]
+                lines = (url_lines(default) if several else [default.strip()] if default.strip() else []) \
+                    if isinstance(default, str) else None
+                if lines is None or any(url_problem(line) for line in lines) or len(lines) > MAX_URLS:
+                    add(f"{here}.default", "bad_url_default")
     return inputs
 
 

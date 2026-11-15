@@ -440,8 +440,8 @@ class ApiTests(LocalCase):
         status, data = self.json("GET", "/api/local-tools")
         self.assertEqual(status, 200)
         tools = {item["id"]: item for item in data["tools"]}
-        self.assertEqual(list(tools), ["ollama", "ocr", "typst", "pandoc", "speech", "qpdf"])
-        for tool_id in ("typst", "pandoc", "speech", "qpdf"):
+        self.assertEqual(list(tools), ["ollama", "ocr", "typst", "pandoc", "speech", "qpdf", "browser"])
+        for tool_id in ("typst", "pandoc", "speech", "qpdf", "browser"):
             for key in ("installed", "source", "path", "version", "pinned_version", "size", "download_size", "install_dir",
                         "disk_free", "job"):
                 self.assertIn(key, tools[tool_id], tool_id)

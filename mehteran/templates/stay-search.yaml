@@ -1,0 +1,236 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: stay-search
+name:
+  tr: "Konaklama bul (otel)"
+  en: "Find a place to stay (hotel)"
+description:
+  tr: >-
+    Yeri, tarihleri, kişi sayısını ve isteklerinizi yazın; tarayıcı seçtiğiniz otel sitelerini okur ve uyan seçenekleri
+    fiyat ve bağlantılarıyla karşılaştırır. Rezervasyon yapmaz. Claude Code ve Kurulum'daki tarayıcı gerekir.
+  en: >-
+    Give the place, the dates, the guests and your wishes; the browser reads the hotel sites you choose and compares
+    the matching stays with prices and links. It books nothing. Needs Claude Code and the browser of the Setup tab.
+version: "1.0"
+category: web
+
+inputs:
+  - id: destination
+    type: text
+    label: {tr: "Nerede?", en: "Where?"}
+    description:
+      tr: "Şehir, bölge ya da semt. Örnek: 'Antalya, Kaleiçi' ya da 'Kapadokya'."
+      en: "City, region or district. For example: 'Antalya, Kaleici' or 'Cappadocia'."
+  - id: check_in
+    type: text
+    label: {tr: "Giriş tarihi", en: "Check-in date"}
+    description:
+      tr: "Örnek: 2026-12-20 ya da 20 Aralık 2026."
+      en: "For example: 2026-12-20 or 20 December 2026."
+  - id: check_out
+    type: text
+    label: {tr: "Çıkış tarihi", en: "Check-out date"}
+    description:
+      tr: "Örnek: 2026-12-23 ya da 23 Aralık 2026."
+      en: "For example: 2026-12-23 or 23 December 2026."
+  - id: guests
+    type: text
+    label: {tr: "Kişi ve oda", en: "Guests and rooms"}
+    description:
+      tr: "Örnek: '2 yetişkin, 1 çocuk (7 yaş), 1 oda'."
+      en: "For example: '2 adults, 1 child (7), 1 room'."
+  - id: budget
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Bütçe", en: "Budget"}
+    description:
+      tr: "İsteğe bağlı. Örnek: 'gecelik en fazla 4.000 TL'."
+      en: "Optional. For example: 'at most 4,000 TL a night'."
+  - id: wishes
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "İstekleriniz", en: "Your wishes"}
+    description:
+      tr: "İsteğe bağlı. Örnek: 'kahvaltı dahil, denize yürüme mesafesi, puanı 8 ve üstü, ücretsiz iptal'."
+      en: "Optional. For example: 'breakfast included, walking distance to the sea, rated 8 or more, free cancellation'."
+  - id: sites
+    type: text
+    multiline: true
+    label: {tr: "Otel siteleri", en: "Hotel sites"}
+    description:
+      tr: "Tarayıcının açabileceği siteler, her satıra bir tane. Bir site doğrulama isterse onu Kurulum → Tarayıcı'dan bir kez açın."
+      en: "The sites the browser may open, one per line. If a site asks for a check, open it once under Setup → Browser."
+    default: |
+      booking.com
+      hotels.com
+      etstur.com
+      trivago.com.tr
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    description:
+      tr: "Tarayıcı adımı her zaman Claude Code kullanır; bu model karşılaştırmayı yazar."
+      en: "The browser step always uses Claude Code; this model writes the comparison."
+    default: auto
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: auto
+
+nodes:
+  - id: search
+    type: ai.agent
+    label: {tr: "Konaklama ara", en: "Search for stays"}
+    config:
+      provider: auto
+      sites: "{{inputs.sites}}"
+      mode: read
+      prompt: |
+        Task: Find places to stay that match the request below on the sites you may open, and report them exactly as the pages give them. Do not book, reserve or sign in to anything.
+
+        The request:
+        - Where: {{inputs.destination}}
+        - Check-in: {{inputs.check_in}}
+        - Check-out: {{inputs.check_out}}
+        - Guests and rooms: {{inputs.guests}}
+        - Budget (it may be empty): {{inputs.budget}}
+        - Wishes (it may be empty): {{inputs.wishes}}
+
+        Method:
+        1. Prices depend on the dates and the guests, so search with them. Open the site's search page for the place and set the dates and the guests by opening the search address the site itself uses with these values (for example the address the site's own search form makes) or by clicking its date and guest controls. You cannot type into fields; if a site needs typing, try another site.
+        2. If a site places the search somewhere else (another town or country), search again with the city name (for example "Antalya") and then pick the district on the page or in its map and filters. Open one page at a time and read it before you open the next one. Open at most 10 pages in all. Use the site's own filters and sorting (price, rating, breakfast, free cancellation) when they help.
+        3. From the result lists, read the details of the stays closest to the request. Collect at most 8 stays; read a stay's own page only when the result list leaves out something the request asks for.
+        4. Note only what a page says, for the dates and guests above. If a page shows a price for other dates or guests, say so. Do not guess missing details. If a page asks you to sign in, shows a captcha or blocks you, note it and go on with another site.
+
+        Report, in English, in Markdown:
+
+        ## Stays
+
+        One block per stay:
+        - Name: (as the page gives it)
+        - Site: (the site the price is from)
+        - Price: (the total for the stay and, if given, per night, with the currency; the dates and guests the price is for)
+        - Location: (the district, and the distance the page gives to the centre, the sea or a landmark)
+        - Rating: (score and number of reviews, if given)
+        - Room and board: (room type; breakfast or other meals, if given)
+        - Cancellation: (free cancellation, until when, or non-refundable; if given)
+        - Other details from the request: (only what the page says)
+        - Address: (the full address of the page)
+
+        ## Pages read
+
+        (the address of every page you opened)
+
+        ## Not found or blocked
+
+        (what you looked for and could not find, the sites that needed typing, a sign-in or a captcha, or blocked you; or "None.")
+
+  - id: compare
+    type: ai.cli
+    label: {tr: "Karşılaştırmayı yaz", en: "Write the comparison"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Turn the search notes below into a clear comparison of places to stay for the person's trip.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings and the table, in this language. Keep hotel names, prices and addresses as the notes give them.
+
+        The trip:
+        - Where: {{inputs.destination}}
+        - Dates: {{inputs.check_in}} to {{inputs.check_out}}
+        - Guests and rooms: {{inputs.guests}}
+        - Budget (it may be empty): {{inputs.budget}}
+        - Wishes (it may be empty): {{inputs.wishes}}
+
+        The search notes:
+
+        {{nodes.search.text}}
+
+        Write, in Markdown:
+
+        ## Summary
+        Two or three sentences: how many stays were found for these dates, the price range for the whole stay, and the best value in one line.
+
+        ## Best matches
+        A table, the best match first. Columns: rank, name (as a Markdown link to the page address), site, total price (and per night), location, rating, breakfast, cancellation, and one column "Fits your wishes" that names each wish and the budget with ✓ (the stay has it), ✗ (it does not) or ? (the page does not say).
+
+        ## Also found
+        The stays that miss a wish or the budget, each with what it misses. Write "None." when there are none.
+
+        ## Before you book
+        Short points: prices are those of the moment of the search and can change; check taxes and fees, the cancellation terms and the exact location on the site itself; any price that was not for these dates or guests.
+
+        ## Not found or blocked
+        Repeat the sites the search could not use, so that the person can look there by hand. Write "None." when there are none.
+
+        Rules:
+        - Use only the stays in the notes. Never invent a stay, a price, a rating or an address.
+        - Compare prices only for the same dates and guests; mark a price that the notes give for other dates or guests.
+        - If the notes have no stay at all, write only the summary (nothing was found), the sites the search could not use, and three concrete ways to widen the request.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Karşılaştırmayı denetle", en: "Check the comparison"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Task: Act as an independent checker. A colleague turned the search notes below into the comparison below. Check it against the notes, fix every problem yourself, and output only the final comparison.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The comparison stays in this language.
+
+        The trip:
+        - Where: {{inputs.destination}}
+        - Dates: {{inputs.check_in}} to {{inputs.check_out}}
+        - Guests and rooms: {{inputs.guests}}
+        - Budget (it may be empty): {{inputs.budget}}
+        - Wishes (it may be empty): {{inputs.wishes}}
+
+        The search notes:
+
+        {{nodes.search.text}}
+
+        The comparison to check:
+
+        {{nodes.compare.text}}
+
+        Check that:
+        - every stay, name, price, rating, detail and address is in the notes exactly (remove or correct anything that is not);
+        - prices are compared only for the same dates and guests;
+        - every ✓, ✗ and ? is right, and no stay is called a match while it misses a wish or the budget;
+        - the best match comes first, and no matching stay of the notes is missing.
+
+        Output only the final comparison in Markdown, with the same headings, and nothing before or after it.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: |
+        {{nodes.check.text}}
+
+        # Search notes
+
+        {{nodes.search.text}}
+      title: Places to stay
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: stays
+
+connections:
+  - {from: search.text, to: compare}
+  - {from: search.text, to: check}
+  - {from: compare.text, to: check}
+  - {from: check.text, to: export}
+  - {from: search.text, to: export}
+
+outputs:
+  - {id: stays, from: check.text, label: {tr: "Konaklama seçenekleri", en: "Places to stay"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}

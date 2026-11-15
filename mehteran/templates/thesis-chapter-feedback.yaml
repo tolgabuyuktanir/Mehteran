@@ -6,22 +6,19 @@ name:
   en: Thesis chapter feedback
 description:
   tr: >-
-    Bir yüksek lisans veya doktora tezinin bir bölümünü üç bağımsız okuyucu gözüyle inceler: argüman ve yapı, kanıt, kaynak
-    kullanımı ve yöntem, akademik yazım. Üç inceleme aynı anda yapılır; bir danışman modeli bunları öncelik
-    sırasına konmuş bir düzeltme planında birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+    Tezinizin bir bölümünü verin; argüman, kanıt ve kaynaklar, yöntem ve akademik yazım üzerine geri bildirim ve
+    öncelik sırasına konmuş bir düzeltme planı alın.
   en: >-
-    Reviews a thesis or dissertation chapter through three independent readers: argument and structure,
-    evidence, use of sources and method, and academic writing. The three reviews run at the same time; a
-    supervisor model combines them into a prioritised revision plan. The result is a Markdown, Word and HTML
-    report.
+    Give a chapter of your thesis; get feedback on the argument, evidence and sources, method and academic
+    writing, and a revision plan in order of priority.
 version: "1.0"
 category: research
 
 inputs:
   - id: chapter
     type: file
-    label: {tr: Bölüm, en: Chapter}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    label: {tr: Tez bölümü, en: Thesis chapter}
+    description: {tr: "Bölüm dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The chapter file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: context
     type: text
@@ -30,8 +27,8 @@ inputs:
     default: ""
     label: {tr: Tez hakkında bilgi, en: About the thesis}
     description:
-      tr: "Örnek: tezin konusu, araştırma sorusu, derece (yüksek lisans, doktora), bu bölümün hangi bölüm olduğu."
-      en: "For example: the thesis topic, the research question, the degree (master's, PhD), which chapter this is."
+      tr: "İsteğe bağlı. Örnek: tezin konusu, araştırma sorusu, derece (yüksek lisans, doktora), bu bölümün hangi bölüm olduğu."
+      en: "Optional. For example: the thesis topic, the research question, the degree (master's, PhD), which chapter this is."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -43,13 +40,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Bölümü oku, en: Read the chapter}
     config:
       file: "{{inputs.chapter}}"
 
   - id: argument
     type: ai.cli
-    label: {tr: Argüman ve yapı, en: Argument and structure}
+    label: {tr: Argümanı ve yapıyı incele, en: Review argument and structure}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,7 +103,7 @@ nodes:
 
   - id: evidence
     type: ai.cli
-    label: {tr: "Kanıt, kaynaklar ve yöntem", en: "Evidence, sources and method"}
+    label: {tr: "Kanıtı ve yöntemi incele", en: "Review evidence and method"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -164,7 +161,7 @@ nodes:
 
   - id: writing
     type: ai.cli
-    label: {tr: Akademik yazım, en: Academic writing}
+    label: {tr: Akademik yazımı incele, en: Review the writing}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -215,7 +212,7 @@ nodes:
 
   - id: plan
     type: ai.cli
-    label: {tr: Düzeltme planı, en: Revision plan}
+    label: {tr: Düzeltme planını yaz, en: Write the revision plan}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -274,7 +271,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.plan.text}}
@@ -287,7 +284,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Chapter feedback

@@ -6,19 +6,13 @@ name:
   en: "Petition and formal letter writer"
 description:
   tr: >-
-    Olayı ve isteğinizi birkaç cümleyle anlatın; dilekçe, şikâyet, itiraz, istifa ya da genel bir resmî mektup
-    yazar. Türkçede resmî dilekçe biçimini (makam, konu, açıklamalar, talep, saygı kalıbı, tarih ve imza)
-    kullanabilir. Bilmediği bilgiyi uydurmaz, köşeli parantezle bırakır. İkinci bir geçiş metni sizin verdiğiniz
-    olaylarla karşılaştırır, uydurma bilgi ya da fazla iddialı ifade varsa düzeltir. Hukuki tavsiye değildir.
-    Sonuç Markdown, Word ve HTML belgedir.
+    Olayı ve isteğinizi birkaç cümleyle anlatın; dilekçe, şikâyet, itiraz ya da resmî mektup hazırlanır.
+    Eksik bilgiler köşeli parantezle boş kalır. Hukuki tavsiye değildir.
   en: >-
-    Describe what happened and what you want in a few sentences; it writes a petition, a complaint, an
-    objection, a resignation or a general formal letter. In Turkish it can use the formal petition layout
-    (authority, subject, explanations, request, closing, date and signature). It does not invent facts: it
-    leaves placeholders in square brackets. A second pass compares the text with the facts you gave and fixes
-    anything invented or too strong. This is not legal advice. The result is a Markdown, Word and HTML document.
+    Describe what happened and what you want; you get a petition, complaint, objection or formal letter.
+    Missing details stay as [placeholders]. This is not legal advice.
 version: "1.0"
-category: everyday
+category: writing
 tier: core
 
 inputs:
@@ -36,29 +30,29 @@ inputs:
     type: text
     required: false
     default: ""
-    label: {tr: "Muhatap (makam / kişi)", en: "Recipient (authority or person)"}
+    label: {tr: "Kime yazılıyor", en: "Addressed to"}
     description:
-      tr: "Örnek: 'İstanbul Büyükşehir Belediyesi Fen İşleri Müdürlüğü'. Bilinmiyorsa boş bırakın."
-      en: "For example: 'City Council, Roads Department'. Leave empty if unknown."
+      tr: "Kurum ya da kişi; örnek: 'İstanbul Büyükşehir Belediyesi Fen İşleri Müdürlüğü'. Bilmiyorsanız boş bırakın."
+      en: "The office or person, e.g. 'City Council, Roads Department'. Leave empty if you do not know."
   - id: facts
     type: text
     multiline: true
     label: {tr: "Olay ve isteğiniz", en: "What happened and what you want"}
     description:
-      tr: "Ne oldu, ne zaman, kimler; ve ne istiyorsunuz? Tarih, tutar, dosya/başvuru numarası gibi bilgileri yazın."
-      en: "What happened, when, who; and what do you want? Add dates, amounts, file or case numbers."
+      tr: "Ne oldu, ne zaman, kim; ne istiyorsunuz? Varsa tarih, tutar ve dosya numarasını da yazın."
+      en: "What happened, when, who, and what you want. Add dates, amounts or file numbers if you have them."
   - id: sender
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Gönderen bilgileri", en: "Sender details"}
+    label: {tr: "Sizin bilgileriniz", en: "Your details"}
     description:
-      tr: "Ad soyad, adres, telefon, (Türkiye için) T.C. kimlik no. Boşsa yer tutucu bırakılır."
-      en: "Name, address, phone. Left empty, placeholders are used."
+      tr: "Ad soyad, adres, telefon, T.C. kimlik no. Boş bırakırsanız yerleri boş kalır."
+      en: "Name, address and phone. If you leave this empty, the letter keeps blank spaces for them."
   - id: style
     type: choice
-    label: {tr: "Biçim", en: "Layout"}
+    label: {tr: "Yazım biçimi", en: "Letter layout"}
     options:
       - {value: tr_formal, label: {tr: "Türk resmî dilekçe biçimi", en: "Turkish formal petition layout"}}
       - {value: international, label: {tr: "Genel resmî mektup biçimi", en: "General formal letter layout"}}
@@ -79,7 +73,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Mektubu yaz", en: "Write the letter"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -113,7 +107,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Kontrol", en: "Review"}
+    label: {tr: "Mektubu denetle", en: "Check the letter"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

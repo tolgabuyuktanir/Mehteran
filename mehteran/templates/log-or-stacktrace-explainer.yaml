@@ -6,13 +6,11 @@ name:
   en: "Log and stack trace explainer"
 description:
   tr: >-
-    Yapıştırdığınız bir günlüğü ya da hata izini açıklar: ne olmuş, olası neden, nelere bakmalı ve olası
-    düzeltmeler. Metinde olmayan bir şeyi tahmin etmez; emin olunamayan yerleri açıkça belirtir. İkinci bir adım
-    açıklamayı metne karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Bir günlük ya da hata izi yapıştırın; ne olduğunu, olası nedeni ve düzeltme yollarını anlatan bir açıklama
+    alın. Emin olmadığı yeri açıkça söyler.
   en: >-
-    Explains a log or a stack trace you paste: what happened, the likely cause, what to check and possible fixes. It
-    does not guess beyond the text; it says where it cannot be sure. A second step checks the explanation against
-    the text. The result is a Markdown, Word and HTML document.
+    Paste a log or a stack trace and get an explanation: what happened, the likely cause and possible fixes. It
+    says where it cannot be sure.
 version: "1.0"
 category: developers
 
@@ -24,8 +22,8 @@ inputs:
     default: ""
     label: {tr: "Günlük ya da hata izi", en: "Log or stack trace"}
     description:
-      tr: "Yapıştırın."
-      en: "Paste it."
+      tr: "Buraya yapıştırın ya da aşağıdan bir dosya yükleyin."
+      en: "Paste it here, or upload a file below."
   - id: log_file
     type: file
     required: false
@@ -39,13 +37,13 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Bağlam (isteğe bağlı)", en: "Context (optional)"}
+    label: {tr: "Bağlam", en: "Context"}
     description:
-      tr: "Ne yapıyordunuz, ne bekliyordunuz, dil ve sürüm."
-      en: "What you were doing, what you expected, the language and version."
+      tr: "İsteğe bağlı. Ne yapıyordunuz, ne bekliyordunuz; örneğin 'uygulamayı başlatırken, Python 3.12'."
+      en: "Optional. What you were doing and expected; for example 'starting the app, Python 3.12'."
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: Açıklama dili, en: Explanation language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -60,7 +58,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Açıklamayı yaz", en: "Write the explanation"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -97,7 +95,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Açıklamayı denetle", en: "Check the explanation"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -134,7 +132,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Açıklamayı kaydet", en: "Save the explanation"}
     config:
       source: "{{nodes.review.text}}"
       title: "Log explained"

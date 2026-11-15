@@ -184,7 +184,8 @@ class NodeTypeBasicTests(HomeCase):
         basic = {name: [f["name"] for f in item["config"] if f["basic"]] for name, item in types.items()}
         self.assertEqual(basic, {"document.extract": [], "ai.cli": ["provider", "prompt"], "text.merge": [],
                                  "approval": ["instructions"], "document.export": ["formats"],
-                                 "condition": ["question", "provider"], "ai.map": ["provider", "prompt"]})
+                                 "condition": ["question", "provider"], "ai.map": ["provider", "prompt"],
+                                 "ai.agent": ["provider", "prompt", "sites", "mode"], "share.x": ["text"]})
         self.assertEqual(types["condition"]["initial_config"], {"operator": "ai"})
         self.assertEqual(next(f for f in types["ai.cli"]["config"] if f["name"] == "prompt")["label"]["tr"], "Talimat")
 

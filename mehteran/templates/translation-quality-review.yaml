@@ -6,17 +6,11 @@ name:
   en: Translation quality review
 description:
   tr: >-
-    Bir kaynak metni ve çevirisini karşılaştırarak çeviri kalitesini değerlendirir. İki inceleme aynı anda
-    yapılır: biri anlam doğruluğuna (yanlış çeviri, eksik, ekleme, sayı ve ad hataları), diğeri hedef dildeki
-    akıcılığa, dil bilgisine ve terim tutarlılığına bakar. Bir editör modeli bulguları önem derecesine göre
-    birleştirip genel bir karar verir. Sonuç: hata listeleri ve öncelikli düzeltmeler içeren Markdown, Word ve
-    HTML rapor.
+    Kaynak metni ve çevirisini verin; anlam hatalarını, akıcılık ve terim sorunlarını, genel bir değerlendirmeyi
+    ve öncelikli düzeltmeleri içeren bir rapor alın.
   en: >-
-    Assesses the quality of a translation by comparing it with its source text. Two reviews run at the same
-    time: one for accuracy (mistranslations, omissions, additions, wrong numbers and names), one for fluency,
-    grammar and consistent terminology in the target language. An editor model combines the findings by
-    severity and gives an overall verdict. The result is a Markdown, Word and HTML report with error lists and
-    priority fixes.
+    Give a source text and its translation; get a report on meaning errors, fluency and term problems, an overall
+    verdict and the fixes to make first.
 version: "1.0"
 category: writing
 
@@ -24,22 +18,22 @@ inputs:
   - id: source
     type: file
     label: {tr: Kaynak metin, en: Source text}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Özgün dildeki metin: PDF, Word, EPUB, Markdown veya düz metin.", en: "The text in the original language: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: translation
     type: file
     label: {tr: Çeviri, en: Translation}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Çevrilmiş metin: PDF, Word, EPUB, Markdown veya düz metin.", en: "The translated text: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: brief
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Çeviri amacı ve terimler, en: Translation brief and terms}
+    label: {tr: Çeviri amacı ve terimler, en: Purpose and terms}
     description:
-      tr: "Örnek: hedef okur, metnin kullanım amacı, uyulması gereken terim karşılıkları."
-      en: "For example: the target readers, what the translation is for, required term equivalents."
+      tr: "İsteğe bağlı. Örnek: hedef okur, metnin kullanım amacı, uyulması gereken terim karşılıkları."
+      en: "Optional. For example: the target readers, what the translation is for, required term equivalents."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -51,19 +45,19 @@ inputs:
 nodes:
   - id: extract_source
     type: document.extract
-    label: {tr: Kaynak metin, en: Source text}
+    label: {tr: Kaynak metni oku, en: Read the source text}
     config:
       file: "{{inputs.source}}"
 
   - id: extract_translation
     type: document.extract
-    label: {tr: Çeviri metni, en: Translation text}
+    label: {tr: Çeviriyi oku, en: Read the translation}
     config:
       file: "{{inputs.translation}}"
 
   - id: accuracy
     type: ai.cli
-    label: {tr: Anlam doğruluğu, en: Accuracy}
+    label: {tr: Anlamı denetle, en: Check the meaning}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -126,7 +120,7 @@ nodes:
 
   - id: fluency
     type: ai.cli
-    label: {tr: Akıcılık ve dil, en: Fluency and language}
+    label: {tr: Akıcılığı denetle, en: Check the fluency}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -183,7 +177,7 @@ nodes:
 
   - id: synthesis
     type: ai.cli
-    label: {tr: Editör özeti, en: Editor's synthesis}
+    label: {tr: Bulguları birleştir, en: Combine the findings}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -231,7 +225,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -242,7 +236,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Translation quality report

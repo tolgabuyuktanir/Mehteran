@@ -6,13 +6,11 @@ name:
   en: "Code review"
 description:
   tr: >-
-    Yapıştırdığınız bir diff'i ya da kod dosyasını inceler; bulguları ciddiyete göre sıralar, her biri için ilgili
-    satırı alıntılar ve düzeltme önerir. İkinci bir adım her bulguyu koda karşı doğrular ve dayanaksız olanları
-    çıkarır. Kodu çalıştırmaz; yalnızca okur. Sonuç Markdown, Word ve HTML belgedir.
+    Kodu ya da bir diff'i yapıştırın: sorunları, ilgili satır ve bir düzeltme önerisiyle birlikte önem sırasıyla
+    alırsınız. Kodu çalıştırmaz, yalnızca okur.
   en: >-
-    Reviews a diff or a code file you paste. It lists findings by severity, each with the quoted line and a
-    suggested fix. A second step checks every finding against the code and removes those without support. It does
-    not run the code; it only reads it. The result is a Markdown, Word and HTML document.
+    Paste code or a diff: you get the issues by severity, each with the line it concerns and a suggested fix. It
+    does not run the code; it only reads it.
 version: "1.0"
 category: developers
 tier: core
@@ -25,15 +23,15 @@ inputs:
     default: ""
     label: {tr: "Kod ya da diff", en: "Code or diff"}
     description:
-      tr: "Yapıştırın (ör. git diff çıktısı)."
-      en: "Paste it (for example the output of git diff)."
+      tr: "Kodu ya da 'git diff' çıktısını buraya yapıştırın."
+      en: "Paste the code or the output of 'git diff' here."
   - id: code_file
     type: file
     required: false
-    label: {tr: "Kod dosyası", en: "Code file"}
+    label: {tr: "Kod dosyası (isteğe bağlı)", en: "Code file (optional)"}
     description:
-      tr: "İsteğe bağlı. Yapıştırmak yerine dosya yükleyebilirsiniz."
-      en: "Optional. A file instead of pasted text."
+      tr: "Yapıştırmak yerine bir dosya da yükleyebilirsiniz."
+      en: "You can upload a file instead of pasting the code."
     formats: [md, txt, pdf, docx]
   - id: focus
     type: text
@@ -46,7 +44,7 @@ inputs:
       en: "For example: 'security' or 'readability'."
   - id: depth
     type: choice
-    label: {tr: "Derinlik", en: "Depth"}
+    label: {tr: "Ayrıntı düzeyi", en: "Level of detail"}
     options:
       - {value: main, label: {tr: "Yalnızca önemli sorunlar", en: "Important issues only"}}
       - {value: full, label: {tr: "Önemli sorunlar ve öneriler", en: "Important issues and suggestions"}}
@@ -68,7 +66,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Kodu incele", en: "Review the code"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -107,7 +105,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Bulguları denetle", en: "Check the findings"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -147,7 +145,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "İncelemeyi kaydet", en: "Save the review"}
     config:
       source: "{{nodes.review.text}}"
       title: "Code review"

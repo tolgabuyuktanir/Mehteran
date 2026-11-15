@@ -6,21 +6,11 @@ name:
   en: "New question variants from reference questions"
 description:
   tr: >-
-    Herhangi bir sınav ya da ders için örnek sorular verin (dosya ya da yapıştırma); önce bu soruların profili
-    çıkarılır: beceri, biçim, zorluk, çeldirici kalıpları. Sonra seçtiğiniz biçimde yeni, özgün sorular yazılır:
-    benzer (yeni sayı ve bağlam), yeni senaryo, daha zor, daha kolay ya da karışık. Bir model anahtarı ve
-    açıklamaları yazar; bir model yeni soruları referanslarla karşılaştırıp kopya ya da kopyaya yakın olanları
-    işaretler; bir model her soruyu anahtarı görmeden çözer. Bir kişi onayladıktan sonra sorular, anahtar ve
-    açıklamalar Markdown, Word ve HTML olarak kaydedilir. Referans soruları kopyalamaz; yalnızca tarzlarını
-    kullanır.
+    Örnek sorular verin; aynı tarzda yeni, özgün sorular, cevap anahtarı ve açıklamalar alın. Örnekler
+    kopyalanmaz; kaydetmeden önce seti siz onaylarsınız.
   en: >-
-    Give example questions for any exam or subject (files or pasted); first a profile is made: skill, format,
-    difficulty, distractor patterns. Then new, original questions are written in the mode you choose: similar
-    (new numbers and context), new scenario, harder, easier or mixed. One model writes the key and the
-    explanations; one model compares the new questions with the references and flags copies and near-copies; one
-    model solves every question without the key. After a person approves, the questions, the key and the
-    explanations are saved as Markdown, Word and HTML. It does not copy the reference questions; it uses only
-    their style.
+    Give example questions; get new, original questions in the same style, with an answer key and explanations.
+    The examples are not copied; you approve the set before it is saved.
 version: "1.0"
 category: education
 
@@ -29,26 +19,26 @@ inputs:
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı: örnek alınacak sorular; taranmış sayfa ya da fotoğraf da olur."
+      en: "Optional: the questions to model the new ones on; scans and photos work too."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Ya da örnek soruları yapıştırın", en: "Or paste example questions"}
     description:
-      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
-      en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
+      tr: "İsteğe bağlı: bir ya da birkaç soru, varsa cevaplarıyla."
+      en: "Optional: one or more questions, with their answers if you have them."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Yeni soruların türü", en: "Kind of new questions"}
     options:
-      - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
-      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
+      - {value: similar, label: {tr: "Benzer (aynı beceri ve zorluk, yeni sayılar)", en: "Similar (same skill and difficulty, new numbers)"}}
+      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, farklı bir gerçek hayat durumu)", en: "New scenario (same skill, a different real-life situation)"}}
       - {value: harder, label: {tr: "Daha zor", en: "Harder"}}
       - {value: easier, label: {tr: "Daha kolay", en: "Easier"}}
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
@@ -57,18 +47,19 @@ inputs:
     type: text
     required: false
     default: ""
-    label: {tr: "Ders / sınav", en: "Subject or exam"}
+    label: {tr: "Ders ya da sınav", en: "Subject or exam"}
     description:
-      tr: "Örnek: 'SAT matematik', 'TYT fizik'. Boş bırakılırsa referanslardan anlaşılır."
-      en: "For example: 'SAT math', 'TYT physics'. Left empty, it is inferred from the references."
+      tr: "Örnek: 'SAT matematik', 'TYT fizik'. Boş bırakırsanız örnek sorulardan anlaşılır."
+      en: "For example: 'SAT math', 'TYT physics'. If empty, it is taken from the example questions."
   - id: count
     type: text
     required: false
     default: "5"
     label: {tr: "Yeni soru sayısı", en: "Number of new questions"}
+    description: {tr: "Yalnızca sayı yazın; örnek: 5.", en: "A number only, e.g. 5."}
   - id: language
     type: language
-    label: {tr: "Soru ve açıklama dili", en: "Language of questions and explanations"}
+    label: {tr: "Soruların dili", en: "Question language"}
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
@@ -81,13 +72,13 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the examples"}
     config:
       file: "{{inputs.reference_questions}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnekleri incele", en: "Study the examples"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -129,7 +120,7 @@ nodes:
 
   - id: items
     type: ai.cli
-    label: {tr: "Yeni sorular", en: "New questions"}
+    label: {tr: "Yeni soruları yaz", en: "Write new questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -162,7 +153,7 @@ nodes:
 
   - id: key
     type: ai.cli
-    label: {tr: "Anahtar ve açıklamalar", en: "Key and explanations"}
+    label: {tr: "Cevap anahtarını yaz", en: "Write the answer key"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -187,7 +178,7 @@ nodes:
 
   - id: novelty
     type: ai.cli
-    label: {tr: "Özgünlük denetimi", en: "Originality check"}
+    label: {tr: "Özgünlüğü denetle", en: "Check originality"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -229,7 +220,7 @@ nodes:
 
   - id: solve
     type: ai.map
-    label: {tr: "Kör çözüm", en: "Blind solutions"}
+    label: {tr: "Soruları ayrıca çöz", en: "Solve each question"}
     retries: 2
     config:
       source: "{{nodes.items.text}}"
@@ -253,7 +244,7 @@ nodes:
 
   - id: compare
     type: ai.cli
-    label: {tr: "Anahtarla karşılaştır", en: "Compare with the key"}
+    label: {tr: "Anahtarı denetle", en: "Check the answer key"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -314,7 +305,7 @@ nodes:
 
   - id: fix
     type: ai.cli
-    label: {tr: "İşaretlenenleri düzelt", en: "Fix the flagged questions"}
+    label: {tr: "Sorunları düzelt", en: "Fix the problems"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -362,7 +353,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Seti kaydet", en: "Save the set"}
+    label: {tr: "Soruları kaydet", en: "Save the questions"}
     config:
       source: |
         {{nodes.fix.text}}
@@ -394,6 +385,6 @@ connections:
   - {from: fix.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: "Set (Markdown)", en: "Set (Markdown)"}}
-  - {id: report_docx, from: export.docx, label: {tr: "Set (Word)", en: "Set (Word)"}}
-  - {id: report_html, from: export.html, label: {tr: "Set (HTML)", en: "Set (HTML)"}}
+  - {id: report_md, from: export.md, label: {tr: "Soru seti (Markdown)", en: "Question set (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Soru seti (Word)", en: "Question set (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Soru seti (HTML)", en: "Question set (HTML)"}}

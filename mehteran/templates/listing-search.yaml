@@ -1,0 +1,223 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: listing-search
+name:
+  tr: "Ev ya da araba ilanı bul"
+  en: "Find home or car listings"
+description:
+  tr: >-
+    Aradığınız evin ya da arabanın özelliklerini yazın; tarayıcı seçtiğiniz ilan sitelerini okur ve uyan ilanları
+    bağlantılarıyla bir karşılaştırma tablosunda listeler. Claude Code ve Kurulum'daki tarayıcı gerekir.
+  en: >-
+    Describe the home or car you want; the browser reads the listing sites you choose and lists the matching
+    listings with their links in a comparison table. Needs Claude Code and the browser of the Setup tab.
+version: "1.0"
+category: web
+
+inputs:
+  - id: kind
+    type: choice
+    label: {tr: "Ne arıyorsunuz?", en: "What are you looking for?"}
+    options:
+      - {value: home, label: {tr: "Ev", en: "Home"}}
+      - {value: car, label: {tr: "Araba", en: "Car"}}
+    default: home
+  - id: deal
+    type: choice
+    label: {tr: "Satın alma mı, kiralama mı?", en: "Buy or rent?"}
+    options:
+      - {value: buy, label: {tr: "Satın alma", en: "Buy"}}
+      - {value: rent, label: {tr: "Kiralama", en: "Rent"}}
+    default: buy
+  - id: location
+    type: text
+    label: {tr: "Yer", en: "Location"}
+    description:
+      tr: "Şehir ve semt. Örnek: 'İstanbul, Kadıköy' ya da 'Ankara'."
+      en: "City and district. For example: 'Istanbul, Kadikoy' or 'Ankara'."
+  - id: criteria
+    type: text
+    multiline: true
+    label: {tr: "Aradığınız özellikler", en: "What you want"}
+    description:
+      tr: "Örnek ev: '3+1, en az 110 m², asansörlü, otoparklı'. Örnek araba: 'otomatik vites, dizel, en fazla 100.000 km, 2018 ve sonrası'."
+      en: "A home: '3 bedrooms, at least 110 m², lift, parking'. A car: 'automatic, diesel, at most 100,000 km, 2018 or newer'."
+  - id: budget
+    type: text
+    required: false
+    default: ""
+    label: {tr: "Bütçe", en: "Budget"}
+    description:
+      tr: "İsteğe bağlı. Örnek: 'en fazla 8.000.000 TL' ya da 'aylık en fazla 35.000 TL'."
+      en: "Optional. For example: 'at most 8,000,000 TL' or 'at most 35,000 TL a month'."
+  - id: sites
+    type: text
+    multiline: true
+    label: {tr: "İlan siteleri", en: "Listing sites"}
+    description:
+      tr: "Tarayıcının açabileceği siteler, her satıra bir tane; aramanıza uymayanlar atlanır. Bir site doğrulama isterse onu Kurulum → Tarayıcı'dan bir kez açın."
+      en: "The sites the browser may open, one per line; those that do not fit your search are skipped. If a site asks for a check, open it once under Setup → Browser."
+    default: |
+      sahibinden.com
+      hepsiemlak.com
+      emlakjet.com
+      arabam.com
+  - id: language
+    type: language
+    label: {tr: "Rapor dili", en: "Report language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    description:
+      tr: "Tarayıcı adımı her zaman Claude Code kullanır; bu model tabloyu yazar."
+      en: "The browser step always uses Claude Code; this model writes the table."
+    default: auto
+  - id: review_model
+    type: provider
+    label: {tr: "İkinci görüş için model", en: "Model for the second opinion"}
+    default: auto
+
+nodes:
+  - id: search
+    type: ai.agent
+    label: {tr: "İlanları ara", en: "Search the listings"}
+    config:
+      provider: auto
+      sites: "{{inputs.sites}}"
+      mode: read
+      prompt: |
+        Task: Find listings that match the request below on the sites you may open, and report them exactly as the pages give them.
+
+        The request:
+        - Looking for: {{inputs.kind}} (home or car)
+        - Deal: {{inputs.deal}} (buy or rent)
+        - Location: {{inputs.location}}
+        - What the person wants: {{inputs.criteria}}
+        - Budget (it may be empty): {{inputs.budget}}
+
+        Method:
+        1. Use only the sites that list this kind of item for this kind of deal (for a home: real estate sites; for a car: car sites). Skip the others.
+        2. Start at the site's own search: open its search or category page for the location, and use the filters the page offers (location, price, rooms or year, kilometres, and so on) by clicking them or by opening the search address the page itself builds. Open one page at a time and read it before you open the next one. Open at most 10 pages in all.
+        3. From the result lists, open the listings that look closest to the request and read their details. Collect at most 10 listings; read the details page only when the result list leaves out a wanted feature.
+        4. Note only what a page says. Do not guess missing details and do not add what you know from elsewhere. If a page asks you to sign in, shows a captcha or blocks you, note it and go on with another site.
+
+        Report, in English, in Markdown:
+
+        ## Listings
+
+        One block per listing:
+        - Title: (as the page gives it)
+        - Price: (as the page gives it, with the currency; "per month" for a rent)
+        - Location: (district or neighbourhood)
+        - Details: (for a home: rooms, gross and net m², floor, building age, heating, lift, parking, furnished; for a car: make, model, year, kilometres, fuel, gearbox, body, colour; only what the page gives)
+        - Seller: (owner, agency or dealer, if the page says)
+        - Date of the listing: (or "no date")
+        - Address: (the full address of the listing page)
+
+        ## Pages read
+
+        (the address of every page you opened)
+
+        ## Not found or blocked
+
+        (what you looked for and could not find, and the sites that asked for a sign-in, showed a captcha or blocked you; or "None.")
+
+  - id: table
+    type: ai.cli
+    label: {tr: "Tabloyu yaz", en: "Write the table"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Turn the search notes below into a clear comparison of listings for a person who is looking for a {{inputs.kind}} to {{inputs.deal}}.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings and the table, in this language. Keep listing titles, prices and addresses as the notes give them.
+
+        The request:
+        - Location: {{inputs.location}}
+        - What the person wants: {{inputs.criteria}}
+        - Budget (it may be empty): {{inputs.budget}}
+
+        The search notes:
+
+        {{nodes.search.text}}
+
+        Write, in Markdown:
+
+        ## Summary
+        Two or three sentences: how many listings were found, how many match the request, the price range, and the best match in one line.
+
+        ## Matching listings
+        A table, the best match first. Columns: rank, title (as a Markdown link to the listing address), price, location, the key details (rooms and m², or year and kilometres), and one column "Fits the request" that names each wanted feature with ✓ (the listing has it), ✗ (it does not) or ? (the listing does not say).
+
+        ## Close, but not matching
+        The listings that miss one wanted feature or the budget, each with what it misses. Write "None." when there are none.
+
+        ## Things to check
+        Short points for the person: details the listings do not give, a price far below the others (it can be a misleading listing), sellers who ask for money before a viewing, and anything else to ask before going further.
+
+        ## Not found or blocked
+        Repeat the sites that asked for a sign-in, showed a captcha or blocked the search, so that the person can look there by hand. Write "None." when there are none.
+
+        Rules:
+        - Use only the listings in the notes. Never invent a listing, a price, a detail or an address.
+        - Prices are those of the moment of the search; say once that they can change.
+        - If the notes have no listing at all, write only the summary (no listing was found), the sites that blocked the search, and three concrete ways to widen the request.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Tabloyu denetle", en: "Check the table"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Task: Act as an independent checker. A colleague turned the search notes below into the comparison below. Check it against the notes, fix every problem yourself, and output only the final comparison.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The comparison stays in this language.
+
+        The request:
+        - Location: {{inputs.location}}
+        - What the person wants: {{inputs.criteria}}
+        - Budget (it may be empty): {{inputs.budget}}
+
+        The search notes:
+
+        {{nodes.search.text}}
+
+        The comparison to check:
+
+        {{nodes.table.text}}
+
+        Check that:
+        - every listing, title, price, detail and address is in the notes exactly (remove or correct anything that is not);
+        - every ✓, ✗ and ? is right for the listing's own details, and that no listing is called matching while it misses a wanted feature or the budget;
+        - the order puts the best match first;
+        - no listing of the notes that matches the request is missing.
+
+        Output only the final comparison in Markdown, with the same headings, and nothing before or after it.
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: |
+        {{nodes.check.text}}
+
+        # Search notes
+
+        {{nodes.search.text}}
+      title: Listings
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: listings
+
+connections:
+  - {from: search.text, to: table}
+  - {from: search.text, to: check}
+  - {from: table.text, to: check}
+  - {from: check.text, to: export}
+  - {from: search.text, to: export}
+
+outputs:
+  - {id: listings, from: check.text, label: {tr: "İlanlar", en: "Listings"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}

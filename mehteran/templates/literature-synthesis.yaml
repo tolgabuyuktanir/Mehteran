@@ -6,15 +6,11 @@ name:
   en: Literature synthesis
 description:
   tr: >-
-    Sizin yüklediğiniz üç makaleyi bir araştırma sorusu etrafında birleştirir. Bir model her makalenin sorusunu,
-    yöntemini, örneklemini, bulgularını ve sınırlılıklarını özetler; ardından ortak temaları, uyuşan ve çelişen
-    bulguları ve boşlukları yazar, her ifadeyi [P1], [P2] veya [P3] ile kaynağına bağlar. İkinci bir model her
-    atfı makale metinlerine karşı denetler. Sonuç Markdown, Word ve HTML rapordur.
+    Üç makale yükleyin; bir araştırma sorusu etrafında ortak temaları, çelişkileri ve boşlukları kaynağıyla
+    gösteren bir sentez alın. Atıflar makalelere karşı denetlenir.
   en: >-
-    Combines three papers that you upload around one research question. One model summarises each paper's
-    question, method, sample, findings and limitations, then writes the common themes, agreements,
-    contradictions and gaps, tagging every statement with [P1], [P2] or [P3]. A second model checks every
-    attributed statement against the paper texts. The result is a Markdown, Word and HTML report.
+    Upload three papers and get a synthesis around one research question: common themes, contradictions and gaps,
+    each tied to its paper. The citations are checked against the papers.
 version: "1.0"
 category: research
 
@@ -37,10 +33,10 @@ inputs:
   - id: topic
     type: text
     multiline: true
-    label: {tr: Araştırma sorusu veya konu, en: Research question or topic}
+    label: {tr: Araştırma sorusu, en: Research question}
     description:
-      tr: "Sentezin hangi soruya cevap vermesi gerekiyor? Örnek: 'Uzaktan çalışma verimliliği nasıl etkiliyor?'"
-      en: "Which question should the synthesis answer? For example: 'How does remote work affect productivity?'"
+      tr: "İsteğe bağlı. Örnek: 'Uzaktan çalışma verimliliği nasıl etkiliyor?'"
+      en: "Optional. For example: 'How does remote work affect productivity?'"
     required: false
     default: "The common research question of these papers (infer it from them)"
   - id: language
@@ -58,25 +54,25 @@ inputs:
 nodes:
   - id: extract_1
     type: document.extract
-    label: {tr: Makale 1 metni, en: Text of paper 1}
+    label: {tr: Makale 1'i oku, en: Read paper 1}
     config:
       file: "{{inputs.paper_1}}"
 
   - id: extract_2
     type: document.extract
-    label: {tr: Makale 2 metni, en: Text of paper 2}
+    label: {tr: Makale 2'yi oku, en: Read paper 2}
     config:
       file: "{{inputs.paper_2}}"
 
   - id: extract_3
     type: document.extract
-    label: {tr: Makale 3 metni, en: Text of paper 3}
+    label: {tr: Makale 3'ü oku, en: Read paper 3}
     config:
       file: "{{inputs.paper_3}}"
 
   - id: synthesis
     type: ai.cli
-    label: {tr: Sentez, en: Synthesis}
+    label: {tr: Sentezi yaz, en: Write the synthesis}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -147,7 +143,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: Atıf denetimi, en: Attribution check}
+    label: {tr: Atıfları denetle, en: Check the citations}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -215,7 +211,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -224,7 +220,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Literature synthesis

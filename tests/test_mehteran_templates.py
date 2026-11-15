@@ -128,12 +128,11 @@ class TemplateTests(HomeCase):
         make_docx(paper)
         engine = self.engine()
         text = templates.read("builtin", "academic-paper-review", self.home)
-        run_id = engine.start(text, {"language": "tr", "focus": "TASK:ignored", "methodology_model": "fake/large",
-                                     "citations_model": "claude", "clarity_model": "chatgpt", "editor_model": "fake"},
+        run_id = engine.start(text, {"language": "tr", "focus": "TASK:ignored", "model": "fake/large", "editor_model": "fake"},
                               {"paper": paper}, template="builtin:academic-paper-review")
         self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])
         run = engine.get(run_id)
-        self.assertEqual(run["providers"], {"methodology": "fake/large", "citations": "claude", "clarity": "chatgpt",
+        self.assertEqual(run["providers"], {"methodology": "fake/large", "citations": "fake/large", "clarity": "fake/large",
                                             "synthesis": "fake"})
         self.assertEqual(len(self.calls()), 4)
         run_dir = engine.run_dir(run_id)

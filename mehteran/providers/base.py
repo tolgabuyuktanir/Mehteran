@@ -59,6 +59,11 @@ class Adapter:
     def argv(self, model: str, effort: str, out_file: Path) -> list[str]:
         raise NotImplementedError
 
+    def agent_argv(self, model: str, effort: str, out_file: Path, mcp_file: Path, tools: list[str]) -> list[str] | None:
+        """The command of an agent step (ai.agent): the tool with only the MCP server of mcp_file and only the
+        named tools of it. None: this tool cannot run agent steps."""
+        return None
+
     def stdin(self, prompt: str) -> str:
         return prompt
 
@@ -100,13 +105,20 @@ def guarded_env(adapter_keys: tuple, allow_api_key: bool, base: dict | None = No
     return env
 
 
-def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_output) -> tuple[int, str, str]:
+class Stopped(CallError):
+    """guard() stopped the call (an agent step left its sites); the message says why."""
+
+
+def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_output,
+            guard=None) -> tuple[int, str, str]:
     """Runs argv with stdin; each line of stdout goes to on_output(line) as it arrives (an error there never stops
-    the call). Raises subprocess.TimeoutExpired after timeout seconds (the tool is killed)."""
+    the call). Raises subprocess.TimeoutExpired after timeout seconds (the tool is killed). guard(line) -> a reason
+    or None: a reason kills the tool at once and raises Stopped."""
     from pipeline.system import hidden_window
     proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             encoding="utf-8", errors="replace", cwd=cwd, env=env, **hidden_window())
     out, err = [], []
+    stopped: list[str] = []
 
     def write_input() -> None:
         try:
@@ -118,6 +130,11 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
     def read_output() -> None:
         for line in proc.stdout:
             out.append(line)
+            reason = guard(line) if guard else None
+            if reason and not stopped:
+                stopped.append(reason)
+                from pipeline import system
+                system.stop_tree(proc.pid)  # the tool and the browser server it started
             if on_output:
                 try:
                     on_output(line)
@@ -136,16 +153,19 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
         proc.wait()
         raise subprocess.TimeoutExpired(argv, timeout)
     proc.wait(max(1.0, deadline - time.monotonic()))
+    if stopped:
+        raise Stopped(stopped[0])
     return proc.returncode, "".join(out), "".join(err)
 
 
 def run(adapter: Adapter, spec: dict, model: str, effort: str, prompt: str, timeout: float, on_output=None,
-        default_wait: float = 1800) -> tuple[str, str]:
+        default_wait: float = 1800, agent: dict | None = None) -> tuple[str, str]:
     """One call of a command-line tool, in an empty temporary folder (it sees no project or instruction files) and
     with the guarded environment. Returns (answer, stdout). Raises UsageLimit or CallError.
 
     spec: the provider's settings frozen with the run: "program" (a list that replaces the program, for the tests),
-    "api_key" (the user allowed "API key (billed)")."""
+    "api_key" (the user allowed "API key (billed)"). agent: {"mcp_file", "tools", "guard"} for an agent step: the
+    tool gets that MCP server and those tools only, and guard(line) may stop it (Stopped)."""
     from pipeline.i18n import t
     from pipeline.providers import ACCOUNT_REFUSED, is_quota_message, quota_wait_seconds
     from pipeline.system import resolve
@@ -153,14 +173,21 @@ def run(adapter: Adapter, spec: dict, model: str, effort: str, prompt: str, time
         out_file = Path(tmp) / "output.txt"
         cwd = Path(tmp) / "empty"
         cwd.mkdir()
-        argv = adapter.argv(model or spec.get("model") or "", effort, out_file)
+        if agent:
+            argv = adapter.agent_argv(model or spec.get("model") or "", effort, out_file, Path(agent["mcp_file"]),
+                                      agent["tools"])
+            if argv is None:
+                raise CallError(t("agent_needs_claude", name=adapter.name))
+        else:
+            argv = adapter.argv(model or spec.get("model") or "", effort, out_file)
         program = spec.get("program")
         if isinstance(program, list) and program:
             argv = [*program, *argv[1:]]
         argv = resolve(argv)
         env = guarded_env(adapter.keys, spec.get("api_key") is True)
         try:
-            code, stdout, stderr = _stream(argv, adapter.stdin(prompt), timeout, cwd, env, on_output)
+            code, stdout, stderr = _stream(argv, adapter.stdin(prompt), timeout, cwd, env, on_output,
+                                           agent.get("guard") if agent else None)
         except subprocess.TimeoutExpired:
             raise CallError(t("no_answer_in_time", seconds=int(timeout))) from None
         except FileNotFoundError:

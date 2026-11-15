@@ -360,9 +360,9 @@ class Automation:
 
 
 def start_batch(engine, text: str, template: str, values: dict, shared: dict, input_id: str, files: list[Path],
-                output_dir: str | None) -> tuple[str, list[str]]:
+                output_dir: str | None, every_step: str = "") -> tuple[str, list[str]]:
     """N queued runs of the workflow, one per file of input_id (a single-file input); the other file inputs (shared)
-    go to every run. Returns the batch id and the run ids. The Automation starts them."""
+    go to every run. Returns the batch id and the run ids. The Automation starts them. every_step: Engine.start's."""
     import secrets
     wf = schema.parse(text)
     spec = wf.inputs.get(input_id)
@@ -378,7 +378,8 @@ def start_batch(engine, text: str, template: str, values: dict, shared: dict, in
     created: list[str] = []
     try:
         for path in files:
-            run_id = engine.start(text, values, {**shared, input_id: path}, template=template, launch=False)
+            run_id = engine.start(text, values, {**shared, input_id: path}, template=template, launch=False,
+                                  every_step=every_step)
             created.append(run_id)
             engine.store.update_run(run_id, batch=batch, output_dir=output_dir)
     except BaseException:

@@ -6,40 +6,36 @@ name:
   en: CV and job posting fit
 description:
   tr: >-
-    Bir özgeçmişi bir iş ilanıyla karşılaştırır. Bir model ilandaki gereklilikleri zorunlu ve tercih edilen
-    olarak listeler; ikinci bir model her gereklilik için özgeçmişte kanıt arar ve eşleşmeyi alıntıyla gösterir;
-    üçüncü bir model, özgeçmişe hiçbir şey uydurmadan, özgeçmiş düzeltmeleri, ön yazı noktaları ve mülakat
-    hazırlığı önerir. Sonuç: uyum değerlendirmesi ve öneriler içeren Markdown, Word ve HTML rapor.
+    Özgeçmişinizi bir iş ilanıyla karşılaştırır: ilanın her şartı için özgeçmişteki kanıtı gösterir ve özgeçmiş,
+    ön yazı ve mülakat için öneri verir. Hiçbir şey uydurmaz.
   en: >-
-    Compares a CV with a job posting. One model lists the posting's requirements as required or preferred; a
-    second model looks for evidence of each requirement in the CV and shows the match with quotations; a third
-    model suggests CV edits, cover-letter points and interview preparation without inventing anything. The
-    result is a Markdown, Word and HTML report with a fit assessment and recommendations.
+    Compares your CV with a job posting: it shows the evidence in your CV for each requirement and gives advice
+    for the CV, the cover letter and the interview. It invents nothing.
 version: "1.0"
 category: writing
 
 inputs:
   - id: cv
     type: file
-    label: {tr: Özgeçmiş, en: CV}
-    description: {tr: "PDF, Word, Markdown veya düz metin.", en: "PDF, Word, Markdown or plain text."}
+    label: {tr: Özgeçmişiniz, en: Your CV}
+    description: {tr: "Güncel özgeçmişinizin dosyası.", en: "The file of your current CV."}
     formats: [pdf, docx, md, txt]
   - id: posting
     type: file
     label: {tr: İş ilanı, en: Job posting}
     description:
-      tr: "İlan metnini bir dosyaya (örneğin .txt) kaydedip yükleyin. PDF, Word, Markdown veya düz metin."
-      en: "Save the text of the posting in a file (for example .txt) and upload it. PDF, Word, Markdown or plain text."
+      tr: "İlan metnini bir dosyaya (örneğin .txt) kaydedip yükleyin."
+      en: "Save the text of the posting in a file (for example .txt) and upload it."
     formats: [pdf, docx, md, txt]
   - id: note
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Adayın notu, en: Note from the candidate}
+    label: {tr: Notunuz (isteğe bağlı), en: Your note (optional)}
     description:
-      tr: "Örnek: kariyer değişikliği, özgeçmişte yazmayan ama doğru olan deneyimler, öne çıkarmak istedikleriniz."
-      en: "For example: a career change, true experience not yet in the CV, what you want to emphasise."
+      tr: "Örnek: kariyer değişikliği ya da özgeçmişte yazmayan ama doğru bir deneyim."
+      en: "For example: a career change, or true experience that is not in the CV yet."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -51,19 +47,19 @@ inputs:
 nodes:
   - id: extract_cv
     type: document.extract
-    label: {tr: Özgeçmiş metni, en: CV text}
+    label: {tr: Özgeçmişi oku, en: Read the CV}
     config:
       file: "{{inputs.cv}}"
 
   - id: extract_posting
     type: document.extract
-    label: {tr: İlan metni, en: Posting text}
+    label: {tr: İlanı oku, en: Read the posting}
     config:
       file: "{{inputs.posting}}"
 
   - id: requirements
     type: ai.cli
-    label: {tr: İlanın gereklilikleri, en: Requirements of the posting}
+    label: {tr: Şartları listele, en: List the requirements}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -108,7 +104,7 @@ nodes:
 
   - id: match
     type: ai.cli
-    label: {tr: Eşleştirme, en: Matching}
+    label: {tr: Kanıtları eşleştir, en: Match the evidence}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -160,7 +156,7 @@ nodes:
 
   - id: advice
     type: ai.cli
-    label: {tr: Öneriler, en: Recommendations}
+    label: {tr: Önerileri yaz, en: Write the advice}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -221,7 +217,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.advice.text}}
@@ -232,7 +228,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: CV fit report

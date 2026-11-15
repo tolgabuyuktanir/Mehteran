@@ -6,17 +6,11 @@ name:
   en: Research question and hypothesis critique
 description:
   tr: >-
-    Yazdığınız araştırma sorularını ve hipotezleri iki bağımsız gözle inceler. Bir yöntembilimci açıklığı,
-    kapsamı, uygulanabilirliği, değişkenlerin nasıl ölçüleceğini ve hipotezlerin yanlışlanabilirliğini
-    değerlendirir; ikinci bir model alternatif açıklamaları, karıştırıcı değişkenleri ve karşı hipotezleri yazar.
-    Üçüncü bir model iki incelemeye dayanarak düzeltilmiş sorular ve hipotezler önerir. Sonuç Markdown, Word ve
-    HTML rapordur.
+    Araştırma sorularınızı ve hipotezlerinizi yazın; zayıf yönleri, alternatif açıklamaları ve düzeltilmiş
+    soru önerilerini içeren bir rapor alın.
   en: >-
-    Examines the research questions and hypotheses you write through two independent lenses. A methodologist
-    assesses clarity, scope, feasibility, how the variables would be measured and whether the hypotheses can be
-    falsified; a second model writes alternative explanations, confounders and counter-hypotheses. A third model
-    proposes revised questions and hypotheses based on both reviews. The result is a Markdown, Word and HTML
-    report.
+    Write your research questions and hypotheses; get a report on their weak points, other possible
+    explanations and suggested revised questions.
 version: "1.0"
 category: research
 
@@ -26,8 +20,8 @@ inputs:
     multiline: true
     label: {tr: Sorular ve hipotezler, en: Questions and hypotheses}
     description:
-      tr: "Araştırma sorularınız, hipotezleriniz ve kısa bir bağlam: alan, planlanan yöntem, veri, katılımcılar."
-      en: "Your research questions, hypotheses and a short context: the field, the planned method, the data, the participants."
+      tr: "Sorular ve hipotezlerle birlikte alanı, yöntemi, veriyi ve katılımcıları da kısaca yazın."
+      en: "Add a short context too: the field, the planned method, the data and the participants."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -39,13 +33,13 @@ inputs:
 nodes:
   - id: wrap
     type: text.merge
-    label: {tr: Metni al, en: Take the text}
+    label: {tr: Soruları al, en: Take the questions}
     config:
       template: "{{inputs.questions}}"
 
   - id: critique
     type: ai.cli
-    label: {tr: Yöntem eleştirisi, en: Methodological critique}
+    label: {tr: Yöntemi eleştir, en: Critique the method}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -100,7 +94,7 @@ nodes:
 
   - id: alternatives
     type: ai.cli
-    label: {tr: Alternatif açıklamalar, en: Alternative explanations}
+    label: {tr: Alternatif açıklamaları bul, en: Find other explanations}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -147,7 +141,7 @@ nodes:
 
   - id: revise
     type: ai.cli
-    label: {tr: Düzeltilmiş sorular, en: Revised questions}
+    label: {tr: Soruları düzelt, en: Revise the questions}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -202,7 +196,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.revise.text}}
@@ -213,7 +207,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Research question critique

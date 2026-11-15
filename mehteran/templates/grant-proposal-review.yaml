@@ -6,15 +6,11 @@ name:
   en: Grant proposal review
 description:
   tr: >-
-    Bir proje önerisini, sizin yüklediğiniz çağrı metnine göre değerlendirir. Bir model çağrının biçimsel
-    koşullarını (uygunluk, bütçe sınırları, uzunluk, zorunlu bölümler, tarihler) tek tek kontrol eder; ikinci bir
-    model, bir değerlendirme paneli gibi öneriyi çağrının kendi ölçütlerine göre puanlar. Üçüncü bir model
-    göndermeden önce yapılacak öncelikli düzeltmeleri yazar. Sonuç Markdown, Word ve HTML rapordur.
+    Proje önerinizi ve çağrı metnini verin; koşullara uygunluk denetimi, panel gibi bir puanlama ve göndermeden
+    önce yapılacak düzeltmeleri alın.
   en: >-
-    Reviews a grant proposal against the call text that you upload. One model checks the formal requirements of
-    the call one by one (eligibility, budget limits, length, mandatory sections, dates); a second model scores
-    the proposal like an evaluation panel, against the call's own criteria. A third model lists the priority
-    fixes before submission. The result is a Markdown, Word and HTML report.
+    Give your proposal and the call text; get a check of the call's requirements, a panel-style score and the
+    fixes to make before you submit.
 version: "1.0"
 category: research
 
@@ -23,8 +19,8 @@ inputs:
     type: file
     label: {tr: Çağrı metni, en: Call text}
     description:
-      tr: "Çağrı, başvuru rehberi veya değerlendirme ölçütleri. PDF, Word, EPUB, Markdown veya düz metin."
-      en: "The call, the applicant guide or the evaluation criteria. PDF, Word, EPUB, Markdown or plain text."
+      tr: "Çağrı, başvuru rehberi ya da değerlendirme ölçütleri: PDF, Word, EPUB ya da düz metin."
+      en: "The call, the applicant guide or the evaluation criteria: PDF, Word, EPUB or plain text."
     formats: [pdf, docx, epub, md, txt]
   - id: proposal
     type: file
@@ -36,10 +32,10 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Başvuru sahibi hakkında, en: About the applicant}
+    label: {tr: Başvuran hakkında, en: About the applicant}
     description:
-      tr: "Örnek: kurum türü, ülke, başvuranın kariyer aşaması. Uygunluk kontrolü için kullanılır."
-      en: "For example: the type of organisation, the country, the applicant's career stage. Used for the eligibility check."
+      tr: "İsteğe bağlı, uygunluk denetimi için. Örnek: 'üniversite, Türkiye, doktora sonrası araştırmacı'."
+      en: "Optional, for the eligibility check. For example: 'university, Turkey, postdoctoral researcher'."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -51,19 +47,19 @@ inputs:
 nodes:
   - id: extract_call
     type: document.extract
-    label: {tr: Çağrı metni, en: Call text}
+    label: {tr: Çağrıyı oku, en: Read the call}
     config:
       file: "{{inputs.call}}"
 
   - id: extract_proposal
     type: document.extract
-    label: {tr: Öneri metni, en: Proposal text}
+    label: {tr: Öneriyi oku, en: Read the proposal}
     config:
       file: "{{inputs.proposal}}"
 
   - id: eligibility
     type: ai.cli
-    label: {tr: Biçimsel koşullar, en: Formal requirements}
+    label: {tr: Koşulları denetle, en: Check the requirements}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -126,7 +122,7 @@ nodes:
 
   - id: panel
     type: ai.cli
-    label: {tr: Panel değerlendirmesi, en: Panel evaluation}
+    label: {tr: Öneriyi puanla, en: Score the proposal}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -183,7 +179,7 @@ nodes:
 
   - id: fixes
     type: ai.cli
-    label: {tr: Öncelikli düzeltmeler, en: Priority fixes}
+    label: {tr: Düzeltmeleri yaz, en: List the fixes}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -232,7 +228,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.fixes.text}}
@@ -243,7 +239,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Proposal review

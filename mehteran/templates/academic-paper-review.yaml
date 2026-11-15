@@ -6,13 +6,11 @@ name:
   en: Academic paper review
 description:
   tr: >-
-    Bir makaleyi üç bağımsız hakem gözüyle inceler: yöntem, kaynaklar ve atıflar, anlatımın açıklığı. Üç
-    değerlendirme aynı anda, sizin seçtiğiniz modellerle yapılır; bir editör modeli bunları genel bir karar ve
-    öncelikli düzeltmeler listesiyle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+    Makalenizi yöntem, kaynaklar ve anlatım açısından üç hakem gözüyle inceler; genel bir karar ve öncelikli
+    düzeltmeler listesi verir.
   en: >-
-    Reviews a paper through three independent reviewer lenses: methodology, references and citations, and clarity
-    of writing. The three reviews run at the same time with the models you choose; an editor model combines them
-    into an overall recommendation and a prioritised list of revisions. The result is a Markdown, Word and HTML report.
+    Reviews your paper as three reviewers would (methodology, references, clarity) and gives an overall
+    recommendation with a prioritised list of revisions.
 version: "1.0"
 category: research
 
@@ -34,36 +32,34 @@ inputs:
     description:
       tr: "Örnek: alan, hedef dergi, özellikle bakılmasını istediğiniz noktalar."
       en: "For example: the field, the target journal, points you want checked in particular."
-  - id: methodology_model
+  - id: model
     type: provider
-    label: {tr: Yöntemi inceleyen model, en: Model for the methodology}
-    default: auto
-  - id: citations_model
-    type: provider
-    label: {tr: Kaynakları inceleyen model, en: Model for the citations}
-    default: auto
-  - id: clarity_model
-    type: provider
-    label: {tr: Anlatımı inceleyen model, en: Model for clarity}
+    label: {tr: Model, en: Model}
+    description:
+      tr: "Üç hakem incelemesini yapan model."
+      en: "The model of the three reviews."
     default: auto
   - id: editor_model
     type: provider
-    label: {tr: Sentezi yazan model, en: Model for the synthesis}
+    label: {tr: Editör özeti için model, en: Model for the editor's summary}
+    description:
+      tr: "İncelemeleri birleştiren model; başka bir model seçmek ikinci bir görüş getirir."
+      en: "The model that combines the reviews; another model brings a second opinion."
     default: auto
 
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Makaleyi oku, en: Read the paper}
     config:
       file: "{{inputs.paper}}"
 
   - id: methodology
     type: ai.cli
-    label: {tr: Yöntem incelemesi, en: Methodology review}
+    label: {tr: Yöntemi incele, en: Review the methodology}
     retries: 2
     config:
-      provider: "{{inputs.methodology_model}}"
+      provider: "{{inputs.model}}"
       prompt: |
         Task: Act as an experienced peer reviewer for a scholarly journal. Your task is to assess the METHODOLOGY of
         the paper below. Other reviewers cover the references and the writing; do not review those.
@@ -122,10 +118,10 @@ nodes:
 
   - id: citations
     type: ai.cli
-    label: {tr: Kaynak ve atıf incelemesi, en: References and citations review}
+    label: {tr: Kaynakları incele, en: Review the references}
     retries: 2
     config:
-      provider: "{{inputs.citations_model}}"
+      provider: "{{inputs.model}}"
       prompt: |
         Task: Act as a meticulous reviewer checking the REFERENCES AND CITATIONS of the scholarly paper below. Other
         reviewers cover the methodology and the writing; do not review those.
@@ -181,10 +177,10 @@ nodes:
 
   - id: clarity
     type: ai.cli
-    label: {tr: Anlatım incelemesi, en: Clarity review}
+    label: {tr: Anlatımı incele, en: Review the clarity}
     retries: 2
     config:
-      provider: "{{inputs.clarity_model}}"
+      provider: "{{inputs.model}}"
       prompt: |
         Task: Act as an experienced academic editor assessing the CLARITY AND STRUCTURE of the paper below for its
         intended scholarly readers. Other reviewers cover the methodology and the references; do not review those.
@@ -232,7 +228,7 @@ nodes:
 
   - id: synthesis
     type: ai.cli
-    label: {tr: Editör özeti, en: Editor's synthesis}
+    label: {tr: Editör özetini yaz, en: Write the editor's summary}
     retries: 2
     config:
       provider: "{{inputs.editor_model}}"
@@ -280,7 +276,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -293,7 +289,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Review report

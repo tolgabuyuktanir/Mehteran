@@ -6,24 +6,23 @@ name:
   en: "Insights from customer reviews"
 description:
   tr: >-
-    Müşteri yorumlarını ya da anket cevaplarını (CSV, Excel, PDF ya da yapıştırılmış metin) okur ve ana
-    temaları, tekrar eden sorunları, övülen yönleri ve somut iyileştirme önerilerini çıkarır; her tema için
-    yaklaşık sayı ve birebir örnek alıntı verir. İkinci bir model sayıları ve alıntıları yorumlarla
-    karşılaştırır. Çok büyük tablolar kısaltılır ve rapor bunu söyler. Sonuç Markdown, Word ve HTML rapordur.
+    Müşteri yorumlarını ya da anket cevaplarını verin: ana temaları, tekrar eden sorunları, övülen yönleri ve
+    iyileştirme önerilerini örnek alıntılarla alırsınız.
   en: >-
-    Reads customer reviews or survey answers (CSV, Excel, PDF or pasted text) and extracts the main themes,
-    recurring problems, what people praise and concrete suggestions to improve; each theme has an approximate
-    count and exact example quotations. A second model checks the counts and quotations against the reviews.
-    Very large tables are cut and the report says so. The result is a Markdown, Word and HTML report.
+    Give customer reviews or survey answers: you get the main themes, recurring problems, what people praise and
+    ideas to improve, with example quotations.
 version: "1.0"
-category: everyday
+category: business
 tier: core
 
 inputs:
   - id: reviews
     type: file
     required: false
-    label: {tr: "Yorumlar", en: "Reviews"}
+    label: {tr: "Yorum dosyası", en: "Reviews file"}
+    description:
+      tr: "Örnek: anket sonuçlarının CSV ya da Excel dosyası."
+      en: "For example a CSV or Excel file of survey results."
     formats: [csv, tsv, xlsx, pdf, docx, md, txt]
   - id: reviews_text
     type: text
@@ -32,16 +31,16 @@ inputs:
     default: ""
     label: {tr: "Yorumlar (yapıştır)", en: "Reviews (paste)"}
     description:
-      tr: "Dosya yerine yapıştırabilirsiniz."
-      en: "Paste them instead of uploading a file."
+      tr: "Dosya yüklemek yerine yorumları buraya yapıştırabilirsiniz."
+      en: "You can paste the reviews here instead of uploading a file."
   - id: product
     type: text
     required: false
     default: ""
-    label: {tr: "Ürün ya da hizmet", en: "Product or service"}
+    label: {tr: "Ürün ya da hizmet (isteğe bağlı)", en: "Product or service (optional)"}
     description:
-      tr: "İsteğe bağlı bağlam."
-      en: "Optional context."
+      tr: "Örnek: 'mobil bankacılık uygulaması'."
+      en: "For example: 'mobile banking app'."
   - id: language
     type: language
     label: {tr: "Rapor dili", en: "Report language"}
@@ -57,13 +56,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: "Dosyayı oku", en: "Read the file"}
+    label: {tr: "Yorumları oku", en: "Read the reviews"}
     config:
       file: "{{inputs.reviews}}"
 
   - id: analyse
     type: ai.cli
-    label: {tr: "Analiz", en: "Analysis"}
+    label: {tr: "Yorumları analiz et", en: "Analyse the reviews"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -112,7 +111,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: "Sayı ve alıntı denetimi", en: "Counts and quotations check"}
+    label: {tr: "Sayıları ve alıntıları denetle", en: "Check counts and quotations"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

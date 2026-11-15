@@ -272,11 +272,30 @@ TABLE_CSS = ("table.md { border-collapse: collapse; margin: .8em 0 1em; font-siz
              "text-align: start; hyphens: manual; } table.md th { background: #f1f1f1; font-weight: 600; }")
 
 
+# Markdown links: "[text](https://...)" and "<https://...>", as pipeline.export.to_html escapes them. Only http(s).
+_HTML_LINK = re.compile(r"\[([^\]\n<>]+)\]\((https?://[^\s()<>]+)\)|&lt;(https?://[^\s<>]+?)&gt;")
+_MD_LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s()]+)\)|<(https?://[^\s<>]+)>")
+_CODE = re.compile(r"(<pre\b.*?</pre>|<code\b.*?</code>|<head\b.*?</head>)", re.S)
+
+
+def html_links(page: str) -> str:
+    """The Markdown links of an exported page as real links (not inside code, pre or the head)."""
+    def link(m: re.Match) -> str:
+        url = m.group(2) or m.group(3)
+        return f'<a href="{url}">{m.group(1) or url}</a>'
+    return "".join(piece if n % 2 else _HTML_LINK.sub(link, piece) for n, piece in enumerate(_CODE.split(page)))
+
+
+def plain_links(markdown: str) -> str:
+    """"[text](url)" -> "text (url)" and "<url>" -> "url", for the Word exporter (it has no links)."""
+    return _MD_LINK.sub(lambda m: f"{m.group(1)} ({m.group(2)})" if m.group(1) else m.group(3), markdown)
+
+
 def to_html(markdown: str, title: str, lang: str) -> str:
-    """pipeline.export.to_html with real tables."""
+    """pipeline.export.to_html with real tables and links."""
     from pipeline import export
     text, tables = extract(markdown)
-    page = export.to_html(text, title, lang)
+    page = html_links(export.to_html(text, title, lang))
     for marker, table in tables.items():
         width = max(len(r) for r in table["rows"])
         rows = []
@@ -330,9 +349,9 @@ def _docx_table(table: dict, rtl: bool) -> str:
 
 
 def to_docx(markdown: str, title: str, lang: str) -> bytes:
-    """pipeline.export.to_docx with real tables."""
+    """pipeline.export.to_docx with real tables; a link is written as its text and its address."""
     from pipeline import export
-    text, tables = extract(markdown)
+    text, tables = extract(plain_links(markdown))
     data = export.to_docx(text, title, lang)
     if not tables:
         return data

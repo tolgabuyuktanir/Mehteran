@@ -9,6 +9,9 @@
   the body is cut off above MAX_BYTES (the read fails).
 - text/html becomes readable text (script, style, nav and the like are dropped), text/plain is kept, a PDF is read
   like an uploaded PDF. JavaScript is not run, so a page that builds its text in the browser gives little text.
+- An RSS or Atom feed becomes a list of its items (title, date, link, summary), newest first; with max_age_days
+  only the items of the last days. A feed with a DTD (<!DOCTYPE>, <!ENTITY>) is refused anywhere in it and in any
+  encoding: the parser stops at the declaration, so no entity is expanded and nothing outside is loaded.
 """
 
 from __future__ import annotations
@@ -22,6 +25,10 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
+import xml.parsers.expat
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -33,6 +40,11 @@ MAX_BYTES = 5 * 1024 * 1024
 MAX_REDIRECTS = 3
 MAX_URL = 2000
 USER_AGENT = "Mehteran/1 (local document reader)"
+ACCEPT = "text/html, text/plain, application/pdf, application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9"
+FEED_TYPES = {"application/rss+xml", "application/atom+xml", "application/rdf+xml", "application/xml", "text/xml"}
+FEED_START = re.compile(rb"\A(\xef\xbb\xbf)?\s*(<\?xml[^>]*>\s*)?(<!--.*?-->\s*|<\?[^>]*>\s*|<!DOCTYPE[^>]*>\s*)*<(rss|feed|rdf:RDF)\b", re.S)
+MAX_FEED_ITEMS = 50     # the newest items of one feed
+MAX_SUMMARY = 600       # characters of an item's summary
 
 
 class FetchError(Exception):
@@ -133,7 +145,7 @@ def fetch(url: str, abort: threading.Event | None = None) -> tuple[str, str, byt
         problem = url_problem(url)
         if problem:
             raise FetchError(problem)
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html, text/plain, application/pdf"})
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": ACCEPT})
         try:
             res = _opener().open(req, timeout=TIMEOUT)
         except urllib.error.HTTPError as e:
@@ -254,9 +266,127 @@ def _charset(media: str, charset: str, body: bytes) -> str:
         return body.decode("utf-8", "replace")
 
 
-def read_url(url: str, abort: threading.Event | None = None, read_pdf=None) -> str:
-    """The text of the page at url. read_pdf(path): the text of a downloaded PDF (document.extract's reader)."""
+# --- RSS and Atom feeds ------------------------------------------------------------------------------
+
+def is_feed(media: str, body: bytes) -> bool:
+    return media in FEED_TYPES or (media in ("text/html", "text/plain", "application/octet-stream")
+                                   and FEED_START.match(body[:4096]) is not None)
+
+
+def _local(tag) -> str:
+    return tag.rpartition("}")[2] if isinstance(tag, str) else ""
+
+
+def _child(element, *names: str):
+    for child in element:
+        if _local(child.tag) in names:
+            return child
+    return None
+
+
+def _text(element, *names: str) -> str:
+    found = _child(element, *names)
+    return "".join(found.itertext()).strip() if found is not None else ""
+
+
+def _date(value: str) -> datetime | None:
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        found = parsedate_to_datetime(value)  # RSS: "Fri, 14 Nov 2026 09:30:00 +0000"
+    except (TypeError, ValueError, IndexError):
+        try:
+            found = datetime.fromisoformat(value.replace("Z", "+00:00"))  # Atom, Dublin Core: ISO 8601
+        except ValueError:
+            return None
+    return found if found.tzinfo else found.replace(tzinfo=timezone.utc)
+
+
+def _summary(raw: str) -> str:
+    text = html_text(raw) if "<" in raw else raw
+    text = " ".join(text.split())
+    return text if len(text) <= MAX_SUMMARY else text[:MAX_SUMMARY].rsplit(" ", 1)[0] + " …"
+
+
+class _Refused(Exception):
+    pass
+
+
+def _parse_xml(body: bytes) -> ET.Element:
+    """The XML tree of body with expat, refusing any DTD (so no entity expansion, no external entity)."""
+    builder = ET.TreeBuilder()
+    parser = xml.parsers.expat.ParserCreate(namespace_separator="}")  # tags as "<uri>}name", like ElementTree
+
+    def refuse(*_args):
+        raise _Refused()
+
+    parser.StartDoctypeDeclHandler = refuse
+    parser.EntityDeclHandler = refuse
+    parser.ExternalEntityRefHandler = refuse
+    parser.StartElementHandler = builder.start
+    parser.EndElementHandler = builder.end
+    parser.CharacterDataHandler = builder.data
+    parser.Parse(body, True)
+    return builder.close()
+
+
+def feed_text(body: bytes, url: str = "", max_age_days: int | None = None, now: datetime | None = None) -> str:
+    """The items of an RSS (0.9x, 1.0, 2.0) or Atom feed as Markdown: the feed's title, then for each item its title,
+    publication date (UTC), link and a short summary, newest first, at most MAX_FEED_ITEMS. max_age_days: only the
+    items published in the last days (an item without a date is kept). FetchError when it is not a readable feed."""
+    try:
+        root = _parse_xml(body)
+    except (_Refused, xml.parsers.expat.ExpatError, AssertionError):  # AssertionError: the builder, on broken nesting
+        raise FetchError(t("feed_unreadable", url=url[:200])) from None
+    kind = _local(root.tag)
+    channel = _child(root, "channel") if kind in ("rss", "RDF") else root
+    if kind not in ("rss", "RDF", "feed") or channel is None:
+        raise FetchError(t("feed_unreadable", url=url[:200]))
+    entries = [e for e in (root.iter() if kind == "RDF" else channel) if _local(e.tag) in ("item", "entry")]
+    items = []
+    for n, entry in enumerate(entries):
+        link = _text(entry, "link")
+        if kind == "feed":  # Atom: <link rel="alternate" href="..."/>
+            links = [e for e in entry if _local(e.tag) == "link"]
+            best = next((e for e in links if e.get("rel", "alternate") == "alternate"), links[0] if links else None)
+            link = (best.get("href") or "").strip() if best is not None else ""
+        if not link and _text(entry, "guid").startswith("http"):
+            link = _text(entry, "guid")
+        published = _date(_text(entry, "pubDate", "published", "updated", "date", "issued", "modified"))
+        items.append((n, published, _text(entry, "title") or "-", urljoin(url, link) if link else "",
+                      _summary(_text(entry, "description", "summary", "encoded", "content"))))
+    total = len(items)
+    now = now or datetime.now(timezone.utc)
+    if max_age_days:
+        since = now - timedelta(days=max_age_days)
+        items = [i for i in items if i[1] is None or i[1] >= since]
+    items.sort(key=lambda i: (i[1] is None, -(i[1].timestamp() if i[1] else 0), i[0]))
+    items = items[:MAX_FEED_ITEMS]
+    title = " ".join(_text(channel, "title").split()) or url
+    lines = [f"# {title}", "", f"Feed: {url}" if url else "", ]
+    dated = [i[1] for i in items if i[1]]
+    window = f"; the last {max_age_days} days up to {now:%Y-%m-%d %H:%M} UTC" if max_age_days else ""
+    span = f", published {min(dated):%Y-%m-%d} to {max(dated):%Y-%m-%d}" if dated else ""
+    lines.append(f"Items: {len(items)} of {total}{span}{window}.")
+    if not items:
+        lines += ["", "No items in this period."]
+    for _, published, item_title, link, summary in items:
+        lines += ["", f"## {' '.join(item_title.split())}", "",
+                  f"- Published: {published.astimezone(timezone.utc):%Y-%m-%d %H:%M} UTC" if published else "- Published: unknown"]
+        if link:
+            lines.append(f"- Link: {link}")
+        if summary:
+            lines += ["", summary]
+    return "\n".join(line for n, line in enumerate(lines) if line or n == 0 or lines[n - 1]).strip()
+
+
+def read_url(url: str, abort: threading.Event | None = None, read_pdf=None, max_age_days: int | None = None) -> str:
+    """The text of the page at url. read_pdf(path): the text of a downloaded PDF (document.extract's reader).
+    max_age_days: for a feed, only the items of the last days."""
     final, media, charset, body = fetch(url, abort)
+    if is_feed(media, body):
+        return feed_text(body, final, max_age_days)
     if media == "application/pdf" or (media == "application/octet-stream" and body[:5] == b"%PDF-"):
         if read_pdf is None:
             raise FetchError(t("url_type", type=media))

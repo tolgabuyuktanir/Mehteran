@@ -115,6 +115,8 @@ function historyList(runs, selected) {
     }
     items.push(...historyGroup("w:" + key, list[0].workflow_name, rows, list.length, draw));
   }
+  const plans = (state.schedules || []).filter((p) => !runHistory.query.trim() || fold(p.name).includes(fold(runHistory.query.trim())));
+  if (plans.length) items.unshift(...historyGroup("schedules", S("schedules_title"), plans.map((p) => scheduleRow(p, draw)), plans.length, draw));
   const q = fold(runHistory.query.trim());
   const bookList = books.filter((b) => !q || fold(b.book).includes(q) || fold(S("translation_card_title")).includes(q));
   const bookItems = bookList.map((b) => h("li", {class: "rl-item"}, h("button", {type: "button", onclick: () => go("workflows/translation/books")},
@@ -125,6 +127,97 @@ function historyList(runs, selected) {
   if (bookItems.length) items.push(...historyGroup("translation", S("translation_card_title"), bookItems, bookItems.length, draw, iconTile("translation")));
   fill($("#run-list"), items.length ? items : h("li", {class: "muted small pl-empty"}, S(runs.length || books.length ? "runs_no_match" : "no_runs")));
   animateBars(document.querySelectorAll("#run-list .fill[data-w]"), "run-list");
+}
+
+// --- scheduled runs (mehteran/schedules.py) ---------------------------------------------------------------
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];  // 0 is Monday
+
+function ruleText(rule) {
+  if (rule.every_hours) return S("schedule_every_hours", {hours: rule.every_hours});
+  const days = rule.days.length === 7 ? S("schedule_every_day")
+    : rule.days.length === 5 && rule.days.every((d) => d < 5) ? S("schedule_weekdays")
+    : rule.days.map((d) => S("weekday_" + d)).join(", ");
+  return `${days} · ${rule.time}`;
+}
+
+// One schedule in the Runs tab's list: its rule and next time; pause or resume, run now, delete.
+function scheduleRow(p, refresh) {
+  const sub = [ruleText(p.rule), p.enabled ? S("schedule_next", {when: fmtTime(p.next_at)}) : S("schedule_paused")].join(" · ");
+  const toggle = async (b) => {
+    if (await act(b, () => api("PUT", `/api/schedules/${p.id}`, {enabled: !p.enabled}))) refresh(true);
+  };
+  const runNow = async (b) => {
+    const res = await act(b, () => api("POST", `/api/schedules/${p.id}/run`, {}));
+    if (res) { toast(S("run_started_toast")); go("runs/" + res.id); }
+  };
+  const remove = async (b) => {
+    if (!(await askConfirm(S("schedule_delete_title", {name: p.name}), [S("schedule_delete_text")], S("delete"), true))) return;
+    if (await act(b, () => api("DELETE", `/api/schedules/${p.id}`, {}))) { toast(S("schedule_deleted")); refresh(true); }
+  };
+  return h("li", {class: "rl-item rl-schedule"},
+    h("button", {type: "button", title: p.last_error || null, onclick: () => (p.last_run ? go("runs/" + p.last_run) : null)},
+      h("span", {class: "rl-main"}, h("span", {class: "rl-name"}, "⏲ " + p.name),
+        h("span", {class: "small muted rl-sub"}, sub),
+        p.last_error ? h("span", {class: "small warn-text"}, p.last_error) : null),
+      p.last_status ? badge(p.last_status) : null),
+    h("div", {class: "row rl-schedule-actions"},
+      h("button", {type: "button", class: "btn small", onclick: (e) => toggle(e.currentTarget)}, S(p.enabled ? "schedule_pause" : "schedule_resume")),
+      h("button", {type: "button", class: "btn small", onclick: (e) => runNow(e.currentTarget)}, "▶ " + S("schedule_run_now")),
+      h("button", {type: "button", class: "btn small danger", onclick: (e) => remove(e.currentTarget)}, S("delete"))));
+}
+
+// The run window's "Run on a schedule": the days and the time, or every N hours. read(): the rule, or null.
+function scheduleField(tpl, onChange) {
+  const files = (tpl.input_specs || []).some((s) => s.type === "file" && s.required !== false);
+  const on = h("input", {type: "checkbox", id: "sched-on", disabled: files, onchange: () => { box.hidden = !on.checked; onChange(on.checked); }});
+  const kind = h("select", {id: "sched-kind", "aria-label": S("schedule_kind"), onchange: () => draw()},
+    h("option", {value: "days"}, S("schedule_kind_days")), h("option", {value: "hours"}, S("schedule_kind_hours")));
+  const days = WEEKDAYS.map((d) => h("input", {type: "checkbox", value: d, checked: true, "aria-label": S("weekday_" + d)}));
+  const at = h("input", {type: "time", value: "08:00", "aria-label": S("schedule_time"), required: true});
+  const hours = h("input", {type: "number", min: 1, max: 168, value: 6, "aria-label": S("schedule_hours")});
+  const name = h("input", {type: "text", id: "sched-name", maxlength: 120, placeholder: L(tpl.name) || ""});
+  const dayRow = h("div", {class: "row sched-days"}, days.map((box, i) => h("label", {class: "check small"}, box, S("weekday_" + i))), at);
+  const hourRow = h("div", {class: "row", hidden: true}, h("span", {class: "small"}, S("schedule_every")), hours, h("span", {class: "small"}, S("schedule_hours")));
+  const draw = () => { dayRow.hidden = kind.value !== "days"; hourRow.hidden = kind.value !== "hours"; };
+  const box = h("div", {class: "stack sched-box", hidden: true}, kind, dayRow, hourRow,
+    h("label", {class: "fld-label", for: "sched-name"}, S("schedule_name")), name,
+    h("p", {class: "small muted"}, S("schedule_hint")));
+  // A workflow that needs a file cannot be scheduled (a schedule keeps only text values): no choice is shown.
+  const el = h("section", {class: "run-extras stack", hidden: files},
+    h("label", {class: "check", for: "sched-on"}, on, S("schedule_on")), box);
+  el.read = () => {
+    if (!on.checked) return null;
+    if (kind.value === "hours") return {every_hours: Number(hours.value)};
+    const chosen = days.filter((d) => d.checked).map((d) => Number(d.value));
+    if (!chosen.length) throw new Error(S("schedule_no_days"));
+    return {days: chosen, time: at.value};
+  };
+  el.name = () => name.value.trim();
+  return el;
+}
+
+// The Setup tab's "Run in the background" (mehteran/background.py).
+async function loadBackground() {
+  const panel = $("#background-panel");
+  if (!panel) return;
+  let st;
+  try { st = await api("GET", "/api/background"); } catch (err) { return fill(panel, problemsBox(err)); }
+  const change = async (b, enabled) => {
+    if (!enabled && st.this_server && !(await askConfirm(S("background_stop_title"), [S("background_stop_text")], S("background_turn_off"), true))) return;
+    const res = await act(b, () => api("PUT", "/api/background", {enabled}));
+    if (!res) return;
+    toast(S(enabled ? (res.running ? "background_on_toast" : "background_on_later") : "background_off_toast"));
+    if (!(st.this_server && !enabled)) loadBackground();
+  };
+  fill(panel, h("div", {class: "tool-head"}, h("h3", {}, S("background_title")),
+      h("span", {class: "badge " + (st.enabled ? "good" : "")}, S(st.enabled ? "background_enabled" : "background_disabled"))),
+    h("p", {class: "small muted"}, S("background_about")),
+    st.this_server ? h("p", {class: "small good-text"}, "✓ " + S("background_this")) : null,
+    st.enabled && !st.this_server ? h("p", {class: "small muted"}, S("background_waiting")) : null,
+    st.supported ? h("div", {class: "actions"}, h("button", {type: "button", class: st.enabled ? "btn danger" : "btn primary",
+      onclick: (e) => change(e.currentTarget, !st.enabled)}, S(st.enabled ? "background_turn_off" : "background_turn_on")))
+      : h("p", {class: "small warn-text"}, S("background_unsupported")),
+    h("p", {class: "small muted"}, S("background_log", {path: st.log})));
 }
 
 // --- one run: its name and note, delete, where its results were saved -------------------------------------

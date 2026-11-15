@@ -6,9 +6,9 @@ name:
   en: "Proposal from a client brief"
 description:
   tr: >-
-    Müşterinin brifinden bir teklif taslağı yazar: kapsam, teslimatlar, zaman çizelgesi ve fiyat yapısı. Vermediğiniz fiyatlar için köşeli parantezli yer tutucu bırakır; fiyat, süre ya da koşul uydurmaz. İkinci bir adım taslağı brife karşı denetler ve düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Müşterinin brifini yapıştırın; kapsam, teslimatlar, takvim ve fiyatla bir teklif taslağı alın. Vermediğiniz fiyatlar köşeli parantezle boş kalır.
   en: >-
-    Writes a proposal draft from a client's brief: scope, deliverables, timeline and price structure. For prices you did not give it leaves a placeholder in square brackets; it does not invent prices, durations or terms. A second step checks the draft against the brief and corrects it. The result is a Markdown, Word and HTML document.
+    Paste the client's brief; get a proposal draft with scope, deliverables, timeline and prices. Prices you did not give stay as [placeholders].
 version: "1.0"
 category: business
 tier: core
@@ -20,8 +20,8 @@ inputs:
     required: true
     label: {tr: "Müşteri brifi", en: "Client brief"}
     description:
-      tr: "Brifi yapıştırın: ne istiyor, ne zamana kadar, bütçe ipuçları."
-      en: "Paste the brief: what the client wants, by when, any budget hints."
+      tr: "Müşteri ne istiyor, ne zamana kadar, bütçesi ne kadar? Brifi yapıştırın."
+      en: "What the client wants, by when, and any budget hints. Paste the brief."
   - id: about_you
     type: text
     multiline: true
@@ -29,8 +29,8 @@ inputs:
     default: ""
     label: {tr: "Siz ve hizmetiniz", en: "You and your service"}
     description:
-      tr: "İsteğe bağlı: kısa tanıtım, çalışma biçiminiz, fiyatlarınız."
-      en: "Optional: a short introduction, how you work, your rates."
+      tr: "İsteğe bağlı: kısa tanıtımınız, çalışma biçiminiz ve fiyatlarınız."
+      en: "Optional: a short introduction, how you work and your rates."
   - id: client_name
     type: text
     multiline: true
@@ -38,11 +38,11 @@ inputs:
     default: ""
     label: {tr: "Müşterinin adı", en: "Client name"}
     description:
-      tr: "İsteğe bağlı."
-      en: "Optional."
+      tr: "İsteğe bağlı; örnek: 'Yıldız Mimarlık'."
+      en: "Optional, e.g. 'Northwind Ltd'."
   - id: tone
     type: choice
-    label: {tr: "Ton", en: "Tone"}
+    label: {tr: "Üslup", en: "Tone"}
     options:
       - {value: professional, label: {tr: "Profesyonel", en: "Professional"}}
       - {value: friendly, label: {tr: "Samimi", en: "Friendly"}}
@@ -50,7 +50,7 @@ inputs:
     default: professional
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Teklifin dili, en: Proposal language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -59,7 +59,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Teklif taslağı", en: "Proposal draft"}
+    label: {tr: "Teklifi yaz", en: "Write the proposal"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -115,7 +115,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Teklifi denetle", en: "Check the proposal"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -154,7 +154,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Teklifi kaydet, en: Save the proposal}
     config:
       source: "{{nodes.check.text}}"
       title: "Proposal"
@@ -167,6 +167,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Teklif (Markdown), en: Proposal (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Teklif (Word), en: Proposal (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Teklif (HTML), en: Proposal (HTML)}}

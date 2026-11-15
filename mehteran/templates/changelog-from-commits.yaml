@@ -6,13 +6,11 @@ name:
   en: "Changelog from commits"
 description:
   tr: >-
-    Yapıştırdığınız git günlüğünden bir değişiklik günlüğü yazar: yeni özellikler, düzeltmeler, değişiklikler ve
-    kırıcı değişiklikler olarak gruplar ve her satırı okurun anlayacağı dille yazar. Commit'lerde olmayan madde
-    eklemez. İkinci bir adım her maddeyi commit'lere karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Git günlüğünü yapıştırın: yeni özellikler, düzeltmeler ve kırıcı değişiklikler olarak gruplanmış, okurun
+    anlayacağı dilde bir değişiklik günlüğü alırsınız. Commit'lerde olmayan madde eklenmez.
   en: >-
-    Writes a changelog from the git log you paste: grouped as new features, fixes, changes and breaking changes,
-    with each line in wording the reader understands. It adds no item that is not in the commits. A second step
-    checks every item against the commits. The result is a Markdown, Word and HTML document.
+    Paste a git log: you get a changelog grouped into new features, fixes and breaking changes, in words your
+    readers understand. Nothing is added that is not in the commits.
 version: "1.0"
 category: developers
 
@@ -24,15 +22,15 @@ inputs:
     default: ""
     label: {tr: "Git günlüğü", en: "Git log"}
     description:
-      tr: "git log çıktısını yapıştırın."
-      en: "Paste the output of git log."
+      tr: "'git log' komutunun çıktısını buraya yapıştırın."
+      en: "Paste the output of the 'git log' command here."
   - id: log_file
     type: file
     required: false
-    label: {tr: "Günlük dosyası", en: "Log file"}
+    label: {tr: "Günlük dosyası (isteğe bağlı)", en: "Log file (optional)"}
     description:
-      tr: "İsteğe bağlı. Yapıştırmak yerine dosya yükleyebilirsiniz."
-      en: "Optional. A file instead of pasted text."
+      tr: "Yapıştırmak yerine bir dosya da yükleyebilirsiniz."
+      en: "You can upload a file instead of pasting the text."
     formats: [md, txt, pdf, docx]
   - id: version
     type: text
@@ -42,10 +40,10 @@ inputs:
     label: {tr: "Sürüm adı (isteğe bağlı)", en: "Version name (optional)"}
     description:
       tr: "Örnek: 'v2.1.0'. Boşsa başlıkta sürüm yazılmaz."
-      en: "For example: 'v2.1.0'. Left empty, no version is written in the heading."
+      en: "For example: 'v2.1.0'. If you leave it empty, the heading has no version."
   - id: audience
     type: choice
-    label: {tr: "Okur", en: "Audience"}
+    label: {tr: "Kimin için", en: "Written for"}
     options:
       - {value: users, label: {tr: "Kullanıcılar", en: "Users"}}
       - {value: developers, label: {tr: "Geliştiriciler", en: "Developers"}}
@@ -67,7 +65,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Değişiklik günlüğünü yaz", en: "Write the changelog"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,7 +104,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Değişiklik günlüğünü denetle", en: "Check the changelog"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -145,7 +143,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Değişiklik günlüğünü kaydet", en: "Save the changelog"}
     config:
       source: "{{nodes.review.text}}"
       title: "Changelog"

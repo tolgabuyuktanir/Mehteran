@@ -6,17 +6,11 @@ name:
   en: Financial report analysis
 description:
   tr: >-
-    Bir yıllık veya çeyreklik faaliyet raporunu üç bağımsız analist gözüyle inceler: performans (gelir,
-    büyüme, kâr marjları, bölümler), finansal durum (bilanço, nakit akışı, likidite, borç) ve yönetimin anlatımı
-    (iddiaların rakamlarla uyumu, riskler, beklentiler). Hesaplamalar yalnızca raporda yazan rakamlarla ve
-    gösterilerek yapılır. Bir model bulguları ana sonuçlar, uyarı işaretleri ve yönetime sorulacak sorularla
-    birleştirir. Sonuç Markdown, Word ve HTML rapordur; yatırım tavsiyesi değildir.
+    Yıllık ya da çeyreklik bir finansal raporu verin; performans, finansal durum ve yönetimin anlatımı üzerine
+    bir analiz ile uyarı işaretlerini alın. Yatırım tavsiyesi değildir.
   en: >-
-    Analyses an annual or quarterly report through three independent analyst lenses: performance (revenue,
-    growth, margins, segments), financial position (balance sheet, cash flow, liquidity, debt) and the management
-    narrative (whether claims match the figures, risks, outlook). Calculations use only the figures stated in the
-    report and are shown. A model combines the findings into key conclusions, red flags and questions for
-    management. The result is a Markdown, Word and HTML report; it is not investment advice.
+    Give an annual or quarterly financial report and get an analysis of performance, financial position and the
+    management's story, with red flags. It is not investment advice.
 version: "1.0"
 category: business
 
@@ -25,8 +19,8 @@ inputs:
     type: file
     label: {tr: Finansal rapor, en: Financial report}
     description:
-      tr: "Yıllık veya çeyreklik rapor, finansal tablolar. PDF, Word, EPUB, Markdown veya düz metin."
-      en: "Annual or quarterly report, financial statements. PDF, Word, EPUB, Markdown or plain text."
+      tr: "Yıllık ya da çeyreklik rapor veya finansal tablolar: PDF, Word, EPUB ya da düz metin."
+      en: "An annual or quarterly report or financial statements: PDF, Word, EPUB or plain text."
     formats: [pdf, docx, epub, md, txt]
   - id: focus
     type: text
@@ -35,8 +29,8 @@ inputs:
     default: ""
     label: {tr: Odak noktası, en: Focus}
     description:
-      tr: "Örnek: 'Borç yapısı ve nakit üretimi bizim için önemli.'"
-      en: "For example: 'Debt structure and cash generation matter most to us.'"
+      tr: "İsteğe bağlı. Örnek: 'Borç yapısı ve nakit üretimi bizim için önemli.'"
+      en: "Optional. For example: 'Debt structure and cash generation matter most to us.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -48,13 +42,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Raporu oku, en: Read the report}
     config:
       file: "{{inputs.report_file}}"
 
   - id: performance
     type: ai.cli
-    label: {tr: Performans, en: Performance}
+    label: {tr: Performansı incele, en: Review the performance}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -112,7 +106,7 @@ nodes:
 
   - id: position
     type: ai.cli
-    label: {tr: Finansal durum, en: Financial position}
+    label: {tr: Finansal durumu incele, en: Review the financial position}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -171,7 +165,7 @@ nodes:
 
   - id: narrative
     type: ai.cli
-    label: {tr: Yönetimin anlatımı, en: Management narrative}
+    label: {tr: Yönetimin anlatımını incele, en: Review the management story}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -229,7 +223,7 @@ nodes:
 
   - id: synthesis
     type: ai.cli
-    label: {tr: Ana bulgular, en: Key findings}
+    label: {tr: Ana bulguları yaz, en: Write the key findings}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -288,7 +282,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -301,7 +295,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Financial report analysis

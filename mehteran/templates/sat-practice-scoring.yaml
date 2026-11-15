@@ -6,20 +6,11 @@ name:
   en: "SAT practice test: scoring and study plan"
 description:
   tr: >-
-    Bir öğrencinin SAT deneme cevaplarını cevap anahtarıyla karşılaştırır. İki ayrı model cevapları birbirinden
-    bağımsız puanlar; üçüncü bir model iki sayımı karşılaştırır, farklı çıkanları kendisi yeniden sayar, ham
-    puanı ve (veri varsa) alan dağılımını verir, geniş bir puan aralığını yalnızca TAHMİN olarak sunar ve iki
-    haftalık bir çalışma planı yazar. Bir kişi onayladıktan sonra rapor Markdown, Word ve HTML olarak
-    kaydedilir. Cevaplar ve anahtar dosyadan (CSV, Excel, PDF, Word, metin) ya da yapıştırılarak verilebilir.
-    Puan aralığı resmî değildir; gerçek SAT puanı uyarlanabilir sınav yapısına bağlıdır. College Board ile
-    ilgisi yoktur.
+    Öğrencinin SAT deneme cevaplarını ve cevap anahtarını verin; puanı, zayıf alanları ve iki haftalık çalışma
+    planını alın. Puan aralığı yalnızca tahmindir, resmî değildir. College Board ile ilgisi yoktur.
   en: >-
-    Compares a student's SAT practice answers with the answer key. Two separate models score the answers
-    independently; a third model compares the two counts, recounts anything that differs, gives the raw score
-    and (when the data allows) the domain breakdown, shows a wide score range only as an ESTIMATE, and writes a
-    two-week study plan. After a person approves, the report is saved as Markdown, Word and HTML. The answers
-    and the key can come from a file (CSV, Excel, PDF, Word, text) or be pasted. The score range is not
-    official; a real SAT score depends on the adaptive test design. Not affiliated with College Board.
+    Give a student's SAT practice answers and the answer key; get the score, the weak areas and a two-week study
+    plan. The score range is only an estimate, not official. Not affiliated with College Board.
 version: "1.0"
 category: exams
 
@@ -29,8 +20,8 @@ inputs:
     required: false
     label: {tr: "Öğrenci cevapları (dosya)", en: "Student answers (file)"}
     description:
-      tr: "İsteğe bağlı. Soru numarası ve öğrencinin cevabı. CSV, Excel, PDF, Word, metin ya da fotoğraf."
-      en: "Optional. Question number and the student's answer. CSV, Excel, PDF, Word, text or a photo."
+      tr: "İsteğe bağlı. Soru numaraları ve öğrencinin cevapları; CSV, Excel, PDF, Word, metin ya da fotoğraf."
+      en: "Optional. Question numbers and the student's answers; CSV, Excel, PDF, Word, text or a photo."
     formats: [csv, tsv, xlsx, pdf, docx, md, txt, png, jpg, jpeg]
   - id: answers_text
     type: text
@@ -39,15 +30,15 @@ inputs:
     default: ""
     label: {tr: "Öğrenci cevapları (yapıştır)", en: "Student answers (paste)"}
     description:
-      tr: "Örnek: '1 B, 2 D, 3 12.5, 4 -'. Boş cevap için '-' yazın."
-      en: "For example: '1 B, 2 D, 3 12.5, 4 -'. Write '-' for no answer."
+      tr: "Dosya yoksa buraya yazın. Örnek: '1 B, 2 D, 3 12.5, 4 -'. Boş cevap için '-' yazın."
+      en: "Use this if you have no file. For example: '1 B, 2 D, 3 12.5, 4 -'. Write '-' for no answer."
   - id: key_file
     type: file
     required: false
     label: {tr: "Cevap anahtarı (dosya)", en: "Answer key (file)"}
     description:
-      tr: "İsteğe bağlı. Soru numarası ve doğru cevap; varsa alan (domain) sütunu da."
-      en: "Optional. Question number and correct answer; a domain column too, if you have one."
+      tr: "İsteğe bağlı. Soru numaraları ve doğru cevaplar; varsa her sorunun konu alanı da."
+      en: "Optional. Question numbers and correct answers; the topic area of each question too, if you have it."
     formats: [csv, tsv, xlsx, pdf, docx, md, txt, png, jpg, jpeg]
   - id: key_text
     type: text
@@ -55,6 +46,9 @@ inputs:
     required: false
     default: ""
     label: {tr: "Cevap anahtarı (yapıştır)", en: "Answer key (paste)"}
+    description:
+      tr: "Dosya yoksa buraya yazın. Örnek: '1 C, 2 A, 3 12.5'."
+      en: "Use this if you have no file. For example: '1 C, 2 A, 3 12.5'."
   - id: test_info
     type: text
     multiline: true
@@ -62,16 +56,16 @@ inputs:
     default: ""
     label: {tr: "Test bilgisi", en: "Test information"}
     description:
-      tr: "Hangi test, bölümler ve modüller, hangi soru numaraları hangi alana ait. Boş bırakılırsa alan dağılımı yalnızca anahtarda varsa verilir."
-      en: "Which test, the sections and modules, and which question numbers belong to which domain. Left empty, a domain breakdown is given only if the key has one."
+      tr: "İsteğe bağlı. Hangi test olduğu ve hangi soruların hangi alana ait olduğu; örnek: 'Deneme 4, Matematik 1-10 cebir'."
+      en: "Optional. Which test it is and which questions belong to which area; for example: 'Practice test 4, Math 1-10 algebra'."
   - id: goal
     type: text
     required: false
     default: ""
     label: {tr: "Hedef ve süre", en: "Goal and time"}
     description:
-      tr: "Örnek: 'Matematikte 700, sınava 2 hafta var, günde 1 saat'."
-      en: "For example: 'Math 700, the test is in 2 weeks, 1 hour a day'."
+      tr: "İsteğe bağlı. Örnek: 'Matematikte 700, sınava 2 hafta var, günde 1 saat'."
+      en: "Optional. For example: 'Math 700, the test is in 2 weeks, 1 hour a day'."
   - id: language
     type: language
     label: {tr: "Rapor dili", en: "Report language"}
@@ -93,13 +87,13 @@ nodes:
 
   - id: key
     type: document.extract
-    label: {tr: "Anahtarı oku", en: "Read the key"}
+    label: {tr: "Cevap anahtarını oku", en: "Read the answer key"}
     config:
       file: "{{inputs.key_file}}"
 
   - id: score_a
     type: ai.cli
-    label: {tr: "Birinci puanlama", en: "First scoring"}
+    label: {tr: "Cevapları puanla", en: "Score the answers"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -151,7 +145,7 @@ nodes:
 
   - id: score_b
     type: ai.cli
-    label: {tr: "İkinci, bağımsız puanlama", en: "Second, independent scoring"}
+    label: {tr: "İkinci kez puanla", en: "Score a second time"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -203,7 +197,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: "Karşılaştır, tahmin et, plan yaz", en: "Reconcile, estimate, plan"}
+    label: {tr: "Puanı ve planı yaz", en: "Write the score and plan"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -293,7 +287,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    label: {tr: "Raporu birleştir", en: "Combine the report"}
     config:
       template: |
         {{nodes.approve.text}}

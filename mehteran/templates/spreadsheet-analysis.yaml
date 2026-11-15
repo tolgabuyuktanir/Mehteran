@@ -6,17 +6,11 @@ name:
   en: Spreadsheet (CSV / Excel) analysis
 description:
   tr: >-
-    Bir CSV, TSV ya da Excel (.xlsx) dosyasını okur (her sayfa ayrı bir tablo olur) ve tabloyu sorunuza göre
-    inceler: sütunların ne anlattığı, veri kalitesi sorunları (boş, tutarsız, aykırı değerler), öne çıkan
-    örüntüler ve sorunuzun cevabı. İkinci bir model analizi denetler: tabloda gerçekten görülemeyen her iddiayı
-    işaretler. Çok büyük tablolar kısaltılır ve rapor bunu söyler. Sonuç Markdown, Word ve HTML rapordur;
-    rapordaki tablolar Word ve HTML'de gerçek tablo olur.
+    Bir CSV ya da Excel tablosu ve isterseniz bir soru verin; tablonun ne anlattığını, veri sorunlarını, öne
+    çıkanları ve sorunuzun cevabını içeren bir rapor alın. Çok büyük tabloların yalnızca bir kısmı okunur.
   en: >-
-    Reads a CSV, TSV or Excel (.xlsx) file (each sheet becomes a table of its own) and examines it for your
-    question: what the columns describe, data quality problems (blanks, inconsistencies, outliers), notable
-    patterns, and the answer to your question. A second model checks the analysis and marks every claim that the
-    table does not actually show. Very large tables are cut, and the report says so. The result is a Markdown, Word
-    and HTML report; its tables are real tables in Word and HTML.
+    Give a CSV or Excel table and, if you like, a question; get a report on what the table shows, data problems,
+    key patterns and the answer. Only part of a very large table is read.
 version: "1.0"
 category: data
 tier: core
@@ -36,8 +30,8 @@ inputs:
     default: ""
     label: {tr: Sorunuz, en: Your question}
     description:
-      tr: "Örnek: 'Hangi bölgede satışlar düşüyor?' Boş bırakılırsa genel bir inceleme yapılır."
-      en: "For example: 'In which region are sales falling?' Left empty, a general review is made."
+      tr: "Örnek: 'Hangi bölgede satışlar düşüyor?' Boş bırakırsanız genel bir inceleme yapılır."
+      en: "For example: 'In which region are sales falling?' If you leave it empty, you get a general review."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -59,7 +53,7 @@ nodes:
 
   - id: analyse
     type: ai.cli
-    label: {tr: Tablo analizi, en: Table analysis}
+    label: {tr: Tabloyu incele, en: Analyse the table}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -139,14 +133,14 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.check.text}}
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Spreadsheet analysis

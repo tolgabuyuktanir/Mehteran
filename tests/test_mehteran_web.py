@@ -49,6 +49,22 @@ class WebTests(HomeCase):
         status, body, _ = self.call(*args, **kwargs)
         return status, json.loads(body)
 
+    def test_restart_stops_the_server_only_when_nothing_runs(self):
+        fake = mock.Mock()
+        self.assertEqual(self.json("POST", "/api/restart", {})[0], 409)  # no server of serve() to stop
+        self.app.server = fake
+        with mock.patch.object(self.app.engine, "busy", return_value=True):
+            status, body = self.json("POST", "/api/restart", {})
+        self.assertEqual(status, 409)
+        self.assertIn("run", body["error"].lower())
+        self.assertFalse(self.app.restart_wanted)
+        self.assertEqual(self.call("POST", "/api/restart", {}, token="wrong")[0], 403)
+        status, body = self.json("POST", "/api/restart", {})
+        self.assertEqual((status, body), (200, {"restarting": True}))
+        self.assertTrue(self.app.restart_wanted)
+        time.sleep(0.6)
+        fake.shutdown.assert_called_once()
+
     def test_page_carries_token_and_safe_headers(self):
         status, body, headers = self.call("GET", "/", token=False)
         self.assertEqual(status, 200)

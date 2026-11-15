@@ -6,15 +6,11 @@ name:
   en: Document consistency check
 description:
   tr: >-
-    Tek bir belgenin kendi içinde tutarlı olup olmadığını denetler. Bir model sayıları, tarihleri, adları,
-    toplamları ve yüzdeleri karşılaştırır, belirtilen toplamları yeniden hesaplar; ikinci bir model birbiriyle
-    çelişen ifadeleri, tutarsız terimleri ve bozuk iç göndermeleri bulur; bir editör modeli bulguları önem
-    sırasına koyar. Belgenin dış dünyaya göre doğruluğunu denetlemez. Sonuç Markdown, Word ve HTML rapordur.
+    Bir belge verin: sayılar, tarihler, adlar ve ifadeler arasındaki çelişkileri önem sırasıyla alırsınız.
+    Belgenin dış dünyaya göre doğruluğunu denetlemez.
   en: >-
-    Checks whether one document agrees with itself. One model compares the numbers, dates, names, totals and
-    percentages and recomputes stated sums; a second model finds contradicting statements, inconsistent terms and
-    broken cross-references; an editor model ranks the findings by severity. It does not check the document
-    against the outside world. The result is a Markdown, Word and HTML report.
+    Give a document: you get the places where its numbers, dates, names and statements contradict each other, by
+    severity. It does not check the facts against the outside world.
 version: "1.0"
 category: documents
 
@@ -22,14 +18,14 @@ inputs:
   - id: document
     type: file
     label: {tr: Belge, en: Document}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Örnek: bir rapor, bütçe ya da proje önerisi.", en: "For example a report, a budget or a project proposal."}
     formats: [pdf, docx, epub, md, txt]
   - id: focus
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Özellikle bakılacaklar, en: Points to check in particular}
+    label: {tr: Özellikle bakılacaklar (isteğe bağlı), en: Points to check (optional)}
     description:
       tr: "Örnek: 'Bütçe tablosundaki toplamlar ve proje tarihleri.'"
       en: "For example: 'The totals in the budget and the project dates.'"
@@ -44,13 +40,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Belgeyi oku, en: Read the document}
     config:
       file: "{{inputs.document}}"
 
   - id: facts
     type: ai.cli
-    label: {tr: Sayılar ve olgular, en: Figures and facts}
+    label: {tr: Sayıları denetle, en: Check the figures}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -107,7 +103,7 @@ nodes:
 
   - id: logic
     type: ai.cli
-    label: {tr: İfadeler ve terimler, en: Statements and terms}
+    label: {tr: İfadeleri denetle, en: Check the statements}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -164,7 +160,7 @@ nodes:
 
   - id: editor
     type: ai.cli
-    label: {tr: Editör özeti, en: Editor's synthesis}
+    label: {tr: Bulguları sırala, en: Rank the findings}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -211,7 +207,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.editor.text}}
@@ -222,7 +218,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Consistency check

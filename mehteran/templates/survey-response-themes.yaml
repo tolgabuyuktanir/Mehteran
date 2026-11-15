@@ -6,36 +6,31 @@ name:
   en: Survey free-text themes
 description:
   tr: >-
-    Bir anket sorusuna verilen açık uçlu yanıtları temalara ayırır. İki model birbirinden bağımsız olarak aynı
-    anda kodlama yapar: her biri temaları, tanımlarını, yaklaşık sayılarını ve birebir alıntıları içeren bir
-    kod kitabı çıkarır. Üçüncü bir model iki kod kitabını karşılaştırır, uyuşan ve ayrışan noktaları gösterir ve
-    tanımlı, alıntılı son tema listesini yazar. Sonuç Markdown, Word ve HTML rapordur.
+    Bir anket sorusuna verilen açık uçlu yanıtları verin; ana temaları, yaklaşık sayılarını ve örnek alıntıları
+    içeren bir rapor alın. Sayılar yaklaşıktır: önemli kararlardan önce kontrol edin.
   en: >-
-    Groups the free-text answers to a survey question into themes. Two models code the answers independently and
-    at the same time: each produces a codebook with themes, definitions, approximate counts and verbatim
-    quotations. A third model compares the two codebooks, shows where they agree and differ, and writes the final
-    list of themes with definitions and quotations. The result is a Markdown, Word and HTML report.
+    Give the free-text answers to a survey question; get a report of the main themes, their rough counts and
+    sample quotes. The counts are approximate: check them before important decisions.
 version: "1.0"
 category: data
 
 inputs:
   - id: responses
     type: file
-    label: {tr: Yanıtlar, en: Responses}
+    label: {tr: Yanıtlar dosyası, en: Responses file}
     description:
       tr: >-
-        Her yanıt ayrı bir satırda veya paragrafta. Düz metin, Markdown, Word veya PDF. CSV dosyasını .txt
-        olarak kaydedin.
+        Her satırda ya da paragrafta bir yanıt; metin, Markdown, Word veya PDF (CSV'yi .txt olarak kaydedin).
       en: >-
-        One response per line or paragraph. Plain text, Markdown, Word or PDF. Save a CSV file as .txt.
+        One response per line or paragraph; text, Markdown, Word or PDF (save a CSV as .txt).
     formats: [txt, md, docx, pdf]
   - id: survey_question
     type: text
     multiline: true
     label: {tr: Anket sorusu, en: Survey question}
     description:
-      tr: "Yanıtların verildiği sorunun tam metni."
-      en: "The exact text of the question the responses answer."
+      tr: "İsteğe bağlı. Yanıtların verildiği sorunun tam metni."
+      en: "Optional. The exact text of the question the responses answer."
     required: false
     default: "Not stated: infer the question from the responses"
   - id: context
@@ -43,10 +38,10 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Bağlam, en: Context}
+    label: {tr: Anket hakkında bilgi, en: About the survey}
     description:
-      tr: "Örnek: katılımcılar kim, anketin amacı, özellikle aradığınız konular."
-      en: "For example: who the respondents are, the purpose of the survey, topics you look for in particular."
+      tr: "İsteğe bağlı. Örnek: katılımcılar kim, anketin amacı, özellikle aradığınız konular."
+      en: "Optional. For example: who answered, the purpose of the survey, topics you look for."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -62,13 +57,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Yanıtları çıkar, en: Extract responses}
+    label: {tr: Yanıtları oku, en: Read the responses}
     config:
       file: "{{inputs.responses}}"
 
   - id: coder_a
     type: ai.cli
-    label: {tr: Birinci kodlama, en: First coding}
+    label: {tr: Temaları bul, en: Find the themes}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -125,7 +120,7 @@ nodes:
 
   - id: coder_b
     type: ai.cli
-    label: {tr: İkinci kodlama, en: Second coding}
+    label: {tr: Temaları yeniden bul, en: Find the themes again}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -182,7 +177,7 @@ nodes:
 
   - id: reconcile
     type: ai.cli
-    label: {tr: Kodlamaları uzlaştır, en: Reconcile codings}
+    label: {tr: Temaları birleştir, en: Combine the themes}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -249,7 +244,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.reconcile.text}}
@@ -260,7 +255,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Survey themes

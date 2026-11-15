@@ -48,6 +48,7 @@
 <main>
   <div class="notice warn banner stale-banner" id="stale-banner" role="alert" hidden>
     <div><b data-i18n="stale_title"></b> <span data-i18n="stale_how"></span></div>
+    <button type="button" class="btn small" id="stale-restart" data-i18n="stale_restart"></button>
   </div>
   <div class="notice warn banner" id="setup-banner" hidden>
     <span data-i18n="setup_banner"></span>
@@ -64,9 +65,11 @@
         </div>
         <div class="row">
           <button type="button" class="btn" id="template-import" data-i18n="import"></button>
-          <button type="button" class="btn primary" data-goto="workflows/new" data-i18n="new_workflow"></button>
+          <button type="button" class="btn" data-goto="workflows/new" data-i18n="new_workflow"></button>
         </div>
       </div>
+      <!-- "Describe it, I will build it" (editor.js: Drafter.box): a model of the user's tools builds and saves a workflow -->
+      <section id="describe-box" class="describe-box card"></section>
       <!-- the first-start welcome (app.js: showWelcome): until something was run or it was closed -->
       <section id="welcome-panel" class="welcome-panel" aria-labelledby="welcome-title" hidden></section>
       <div class="lib-tools">
@@ -88,6 +91,17 @@
         </nav>
       </div>
       <div id="translation-body" class="tr-body"></div>
+    </section>
+    <!-- one workflow's page (app.js: showWorkflowPage), built like the book translation's: Run, Instructions, Runs -->
+    <section id="workflow-page" class="wf-page" hidden>
+      <div class="subnav">
+        <button type="button" class="btn small" data-goto="workflows" data-i18n="back_to_workflows"></button>
+        <span class="subnav-title" id="wf-page-title"></span>
+        <nav class="subtabs" role="tablist" id="wf-tabs" data-i18n-label="wf_sections"></nav>
+        <div class="wf-actions row" id="wf-actions"></div>
+      </div>
+      <div id="wf-extra" class="wf-extra"></div>
+      <div id="wf-body" class="wf-body"></div>
     </section>
     <div id="workflow-editor" class="editor-shell" hidden>
       <div id="workflow-body" class="editor-body"></div>
@@ -121,8 +135,13 @@
     <section class="card box onboarding" id="onboarding"></section>
     <div id="tools" class="tool-grid"></div>
     <p class="small muted config-note" id="config-note"></p>
-    <section class="card box providers-panel" id="providers-panel"></section>
-    <section id="local-tools" class="local-tools"></section>
+    <!-- the settings that are rarely changed: folded under their titles -->
+    <details class="setup-more"><summary data-i18n="providers_title"></summary>
+      <section class="card box providers-panel" id="providers-panel"></section></details>
+    <details class="setup-more"><summary data-i18n="background_title"></summary>
+      <section class="card box background-panel" id="background-panel"></section></details>
+    <details class="setup-more"><summary data-i18n="local_title"></summary>
+      <section id="local-tools" class="local-tools"></section></details>
   </section>
 </main>
 
@@ -133,7 +152,6 @@
   <div id="drawer-body" class="drawer-body"></div>
 </dialog>
 
-<dialog id="run-dialog" class="run-dialog" aria-labelledby="run-title"></dialog>
 <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"></dialog>
 
 <dialog id="reader" aria-labelledby="reader-title">

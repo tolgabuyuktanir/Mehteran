@@ -6,40 +6,34 @@ name:
   en: RFP compliance matrix
 description:
   tr: >-
-    Bir ihale şartnamesini (RFP) ve hazırladığınız teklifi karşılaştırır. Bir model şartnamedeki her şartı
-    numaralandırıp zorunlu, tercih edilen veya biçimsel olarak sınıflandırır; ikinci bir model her şart için
-    teklifin karşılayıp karşılamadığını teklif metninden alıntıyla belirler. Teklif sorumlusu matrisi kontrol
-    edip düzeltme notları yazar; ardından bir model teslimden önce yapılacak düzeltmeleri ve elenme risklerini
-    listeler. Sonuç Markdown, Word ve HTML rapordur.
+    İhale şartnamesini (RFP) ve teklifinizi verin. Her şartın karşılanıp karşılanmadığını gösteren bir matris
+    (tablo) ve teslimden önce yapılacak düzeltmelerin listesini alın. Matrisi önce siz onaylarsınız.
   en: >-
-    Compares a request for proposal (RFP or tender) with your proposal. One model numbers every requirement of
-    the RFP and classes it as mandatory, desirable or a submission-format rule; a second model decides for each
-    requirement whether the proposal meets it, quoting the proposal. The bid manager checks the matrix and writes
-    correction notes; then a model lists the fixes to make before submission and the risks of disqualification.
-    The result is a Markdown, Word and HTML report.
+    Give an RFP (tender) and your proposal. Get a matrix (table) that shows whether the proposal meets each
+    requirement, and a list of fixes to make before you submit. You approve the matrix first.
 version: "1.0"
 category: business
 
 inputs:
   - id: rfp
     type: file
-    label: {tr: İhale şartnamesi (RFP), en: RFP or tender document}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    label: {tr: İhale şartnamesi, en: RFP or tender}
+    description: {tr: "Şartname dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The RFP file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: proposal
     type: file
-    label: {tr: Teklif, en: Proposal}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    label: {tr: Teklifiniz, en: Your proposal}
+    description: {tr: "Teklif dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The proposal file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: note
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Not, en: Note}
+    label: {tr: Ek not, en: Extra note}
     description:
-      tr: "Örnek: 'Yalnızca teknik bölüm teklife dahil; mali teklif ayrı.'"
-      en: "For example: 'Only the technical part is in this proposal; the price offer is separate.'"
+      tr: "İsteğe bağlı. Örnek: 'Yalnızca teknik bölüm teklife dahil; mali teklif ayrı.'"
+      en: "Optional. For example: 'Only the technical part is in this proposal; the price offer is separate.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -51,19 +45,19 @@ inputs:
 nodes:
   - id: extract_rfp
     type: document.extract
-    label: {tr: Şartname metni, en: RFP text}
+    label: {tr: Şartnameyi oku, en: Read the RFP}
     config:
       file: "{{inputs.rfp}}"
 
   - id: extract_proposal
     type: document.extract
-    label: {tr: Teklif metni, en: Proposal text}
+    label: {tr: Teklifi oku, en: Read the proposal}
     config:
       file: "{{inputs.proposal}}"
 
   - id: requirements
     type: ai.cli
-    label: {tr: Şart listesi, en: Requirements list}
+    label: {tr: Şartları listele, en: List the requirements}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -119,7 +113,7 @@ nodes:
 
   - id: matrix
     type: ai.cli
-    label: {tr: Uyum matrisi, en: Compliance matrix}
+    label: {tr: Uyum matrisini çıkar, en: Build the matrix}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -176,7 +170,7 @@ nodes:
 
   - id: review
     type: approval
-    label: {tr: Teklif sorumlusu kontrolü, en: Bid manager check}
+    label: {tr: Matrisi onayla, en: Approve the matrix}
     config:
       show: "{{nodes.matrix.text}}"
       instructions:
@@ -191,7 +185,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Düzeltme listesi, en: Fix list}
+    label: {tr: Düzeltmeleri listele, en: List the fixes}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -244,7 +238,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -255,7 +249,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: RFP compliance report

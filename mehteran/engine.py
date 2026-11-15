@@ -125,16 +125,27 @@ class Engine:
     # --- starting ----------------------------------------------------------------
 
     def start(self, workflow_yaml: str, values: dict | None = None, files: dict | None = None, template: str = "",
-              move_files: bool = False, launch: bool = True, privacy: str = "") -> str:
+              move_files: bool = False, launch: bool = True, privacy: str = "", every_step: str = "") -> str:
         """Checks the workflow and the inputs, records the run and starts it in a background thread (launch=False:
         the run stays "queued" until launch(); the batches of history.py start their runs a few at a time).
 
         values: {input id: text} for text, choice and provider inputs. files: {input id: path, or a list of paths for
         an input with "multiple: true"} for file inputs (copied into the run folder, or moved when move_files is set).
-        privacy "local" (or the workflow's "privacy: local"): only models that run on this computer."""
+        privacy "local" (or the workflow's "privacy: local"): only models that run on this computer.
+        every_step: one model ("codex", "claude/opus@high", or an `auto` kind) for every model step of the run, in
+        place of the models the workflow and its inputs set (for a person who has only one of the AI tools)."""
         wf = schema.parse(workflow_yaml)
         inputs, problems = self._inputs(wf, values or {}, files or {})
-        providers, auto = self._resolve_providers(wf, inputs, problems, privacy or wf.data.get("privacy") or "")
+        every_step = (every_step or "").strip()
+        if every_step and not PROVIDER_RE.match(every_step):
+            problems.append(t("bad_provider", value=every_step))
+            every_step = ""
+        if every_step:
+            for input_id, spec in wf.inputs.items():
+                if spec["type"] == "provider":
+                    inputs[input_id] = every_step  # the run's record says which model the steps used
+        providers, auto = self._resolve_providers(wf, inputs, problems, privacy or wf.data.get("privacy") or "",
+                                                  every_step)
         if problems:
             raise RunError(problems)
 
@@ -200,12 +211,14 @@ class Engine:
     # --- stream P: the model of each step (aliases, `auto`, privacy, known usage limits) -------------------------
     tool_states = None  # tests: a function that gives providers.statuses() without asking the real tools
 
-    def _resolve_providers(self, wf: schema.Workflow, inputs: dict, problems: list, privacy: str) -> tuple[dict, dict]:
+    def _resolve_providers(self, wf: schema.Workflow, inputs: dict, problems: list, privacy: str,
+                           every_step: str = "") -> tuple[dict, dict]:
         """({node_id: model, "<node>:fallback": model}, {"nodes": {node_id: kind}, "candidates": {kind: [model]}}).
 
         An old name becomes the adapter's ("chatgpt" -> "codex"). `auto` kinds take the first usable model of the
         user's model order whose provider has no known usage limit now; the others stay as candidates for a later
-        usage limit. privacy "local": `auto` becomes auto:local and any model that does not run here is refused."""
+        usage limit. privacy "local": `auto` becomes auto:local and any model that does not run here is refused.
+        every_step: this model for every step and every fallback, whatever the workflow sets."""
         cfg = self.provider_cfg
         local_only = privacy == "local"
         auto: dict = {"nodes": {}, "candidates": {}}
@@ -222,11 +235,13 @@ class Engine:
                 auto["candidates"][kind] = sorted(found, key=lambda c: adapters.split(c)[0] in known["blocked"])
             return auto["candidates"][kind]
 
-        def resolve(template: str, where: str) -> str:
+        def resolve(template: str, where: str, agent: bool = False) -> str:
             name = adapters.canonical(placeholders.render(template.strip(), lambda ref: inputs.get(ref[7:], "")), cfg["providers"])
             if name in adapters.AUTO:
                 kind = "auto:local" if local_only else name
                 found = choose(kind)
+                if agent:  # a browser agent: only Claude Code
+                    found = [c for c in found if adapters.split(c)[0] == "claude"]
                 if not found:
                     problems.append(f"{where}: {t('auto_none_local' if kind == 'auto:local' else 'auto_none')}")
                     return name
@@ -243,9 +258,13 @@ class Engine:
         providers = {}
         for node_id, node in wf.nodes.items():
             if isinstance(node.get("fallback_provider"), str):  # used when the step's model reports a usage limit
-                providers[f"{node_id}:fallback"] = resolve(node["fallback_provider"], f"nodes.{node_id}.fallback_provider")
+                providers[f"{node_id}:fallback"] = resolve(every_step or node["fallback_provider"],
+                                                           f"nodes.{node_id}.fallback_provider")
             if isinstance((node.get("config") or {}).get("provider"), str):  # else no model (a plain condition)
-                providers[node_id] = resolve(node["config"]["provider"], f"nodes.{node_id}")
+                agent = node["type"] == "ai.agent"
+                providers[node_id] = resolve(every_step or node["config"]["provider"], f"nodes.{node_id}", agent)
+                if agent and adapters.split(providers[node_id])[0] != "claude":
+                    problems.append(f"nodes.{node_id}: {t('agent_needs_claude', name=providers[node_id])}")
         return providers, auto
 
     def resolve_model(self, name: str) -> str:
@@ -348,6 +367,17 @@ class Engine:
                 problem = self.provider_problem(value)
                 if problem:
                     problems.append(f"{input_id}: {problem}")
+            elif spec["type"] == "url" and spec.get("multiple"):  # one address per line
+                from .nodes import url_lines
+                from .urlfetch import url_problem
+                lines = url_lines(value)
+                if len(lines) > schema.MAX_URLS:
+                    problems.append(t("input_too_many_urls", id=input_id, limit=schema.MAX_URLS))
+                for line in lines:
+                    problem = url_problem(line)
+                    if problem:
+                        problems.append(f"{input_id}: {problem}")
+                value = "\n".join(lines)
             elif spec["type"] == "url":  # read by document.extract (urlfetch.py); the form only is checked here
                 from .urlfetch import url_problem
                 value = value.strip()
@@ -491,6 +521,10 @@ class Engine:
 
     def is_active(self, run_id: str) -> bool:
         return self.thread_alive(run_id) or system.is_locked(self.run_dir(run_id) / ".lock")
+
+    def busy(self) -> bool:
+        """True while a run of this process goes on (its thread is alive)."""
+        return any(thread.is_alive() for thread in list(self._threads.values()))
 
     def thread_alive(self, run_id: str) -> bool:
         thread = self._threads.get(run_id)  # a thread that decided to end has removed itself already
@@ -715,6 +749,8 @@ class Engine:
                                                 livelog.append(log, str(message), stamp=True)),
                       upstream=lambda: self._upstream(run, wf, node_id),
                       input_types={i: spec["type"] for i, spec in wf.inputs.items()},
+                      several_urls=frozenset(i for i, spec in wf.inputs.items()
+                                             if spec["type"] == "url" and spec.get("multiple")),
                       record=lambda name, started, outcome, until=None, message="": self.store.record_call(
                           run_id, node_id, name, started, outcome, until, message),
                       log=log,

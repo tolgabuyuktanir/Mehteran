@@ -303,7 +303,7 @@ class LocalToolsApiTests(LocalCase):
         status, data = self.json("GET", "/api/local-tools")
         self.assertEqual(status, 200)
         tools = {item["id"]: item for item in data["tools"]}
-        self.assertEqual(set(tools), {"ollama", "ocr", "typst", "pandoc", "speech", "qpdf"})
+        self.assertEqual(set(tools), {"ollama", "ocr", "typst", "pandoc", "speech", "qpdf", "browser"})
         self.assertTrue(tools["ollama"]["running"])
         self.assertEqual(tools["ollama"]["pinned_version"], ollama.VERSION)
         for key in ("installed", "source", "path", "version", "size", "job", "models_dir", "disk_free", "memory"):

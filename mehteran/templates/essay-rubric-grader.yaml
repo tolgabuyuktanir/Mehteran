@@ -6,17 +6,11 @@ name:
   en: "Essay grading with your rubric"
 description:
   tr: >-
-    Bir essay ya da kompozisyonu, verdiğiniz rubriğe göre iki ayrı model ile birbirinden bağımsız puanlar: her
-    ölçüt için puan, metinden birebir alıntı ve gerekçe. Üçüncü bir model iki puanlamayı uzlaştırır ve öğrenci
-    için geri bildirim yazar. Bir kişi onayladıktan sonra sonuç Markdown, Word ve HTML olarak kaydedilir. IELTS,
-    TOEFL, AP ya da YKS tarzı gibi her tür rubrikle çalışır; resmî puanlayıcıların yerine geçmez, puanlar
-    tahmindir. Bu sınavları yürüten kurumlarla ilgisi yoktur.
+    Bir essay'i rubriğinize göre puanlar ve öğrenciye geri bildirim yazar; puanları siz onaylarsınız. Puanlar
+    tahmindir, resmî puanlamanın yerine geçmez; sınav kurumlarıyla ilgisi yoktur.
   en: >-
-    Scores an essay against the rubric you give, with two separate models working independently: a score for
-    each criterion, an exact quotation from the text and a reason. A third model reconciles the two scorings and
-    writes feedback for the student. After a person approves, the result is saved as Markdown, Word and HTML. It
-    works with any rubric (IELTS, TOEFL, AP or YKS style, or your own); it does not replace official examiners,
-    and the scores are estimates. Not affiliated with the bodies that run those exams.
+    Scores an essay against your rubric and writes feedback for the student; you approve the scores. The scores
+    are estimates, not official ones; not affiliated with any exam body.
 version: "1.0"
 category: education
 
@@ -25,23 +19,26 @@ inputs:
     type: file
     label: {tr: "Rubrik", en: "Rubric"}
     description:
-      tr: "Ölçütler, puan aralıkları ve açıklamaları."
-      en: "The criteria, their score ranges and descriptors."
+      tr: "Ölçütler, puan aralıkları ve açıklamaları; bir dosya ya da fotoğraf."
+      en: "The criteria, their score ranges and descriptors, as a file or a photo."
     formats: [pdf, docx, md, txt, csv, xlsx, png, jpg, jpeg]
   - id: essay_file
     type: file
     required: false
     label: {tr: "Essay dosyası", en: "Essay file"}
     description:
-      tr: "İsteğe bağlı. Elle yazılmış bir sayfanın fotoğrafı OCR ile okunur ve hata yapabilir."
-      en: "Optional. A photo of a handwritten page is read by OCR and may contain mistakes."
+      tr: "Dosya ya da metin verin; el yazısı bir sayfanın fotoğrafı hatalı okunabilir."
+      en: "Give a file or paste the text; a photo of a handwritten page may be read with mistakes."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: essay_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Essay metni (yapıştır)", en: "Essay text (paste)"}
+    label: {tr: "Essay metni", en: "Essay text"}
+    description:
+      tr: "Dosya yerine metni buraya yapıştırabilirsiniz."
+      en: "You can paste the text here instead of a file."
   - id: task
     type: text
     multiline: true
@@ -49,8 +46,8 @@ inputs:
     default: ""
     label: {tr: "Yazma görevi", en: "Writing task"}
     description:
-      tr: "Öğrencinin cevapladığı soru ya da konu. Boş bırakılabilir."
-      en: "The prompt or topic the student answered. May be left empty."
+      tr: "İsteğe bağlı. Öğrencinin cevapladığı soru ya da konu."
+      en: "Optional. The question or topic the student answered."
   - id: exam
     type: choice
     label: {tr: "Sınav türü", en: "Exam type"}
@@ -67,8 +64,8 @@ inputs:
     default: ""
     label: {tr: "Hedef düzey", en: "Target level"}
     description:
-      tr: "Örnek: 'IELTS 6.5 hedefi', 'lise 10. sınıf'."
-      en: "For example: 'aiming at IELTS 6.5', 'grade 10'."
+      tr: "İsteğe bağlı. Örnek: 'IELTS 6.5 hedefi' ya da 'lise 10. sınıf'."
+      en: "Optional. For example: 'aiming at IELTS 6.5' or 'grade 10'."
   - id: language
     type: language
     label: {tr: "Geri bildirim dili", en: "Feedback language"}
@@ -78,7 +75,7 @@ inputs:
     default: auto
   - id: review_model
     type: provider
-    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    label: {tr: İkinci puanlama için model, en: Model for the second scoring}
     default: auto
 
 nodes:
@@ -96,7 +93,7 @@ nodes:
 
   - id: grade_a
     type: ai.cli
-    label: {tr: "Birinci puanlama", en: "First scoring"}
+    label: {tr: "Essay'i puanla", en: "Score the essay"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -146,7 +143,7 @@ nodes:
 
   - id: grade_b
     type: ai.cli
-    label: {tr: "İkinci, bağımsız puanlama", en: "Second, independent scoring"}
+    label: {tr: "Ayrıca yeniden puanla", en: "Score it again separately"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -195,7 +192,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: "Uzlaştır ve geri bildirim yaz", en: "Reconcile and write feedback"}
+    label: {tr: "Puanları birleştir", en: "Combine the scores"}
     retries: 2
     config:
       provider: "{{inputs.model}}"

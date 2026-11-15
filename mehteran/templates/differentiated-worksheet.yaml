@@ -6,9 +6,10 @@ name:
   en: "Differentiated worksheet"
 description:
   tr: >-
-    Bir konu ya da metinden üç düzeyde (temel, orta, ileri) çalışma kâğıdı ve cevap anahtarı hazırlar. İkinci adım her cevabı yeniden çözerek cevap anahtarını denetler ve yanlışları düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Bir konu ya da metin verin: temel, orta ve ileri düzeyde bir çalışma kâğıdı ve denetlenmiş bir cevap anahtarı
+    alırsınız.
   en: >-
-    Prepares a worksheet at three levels (basic, medium, advanced) and an answer key from a topic or text. A second step solves every answer again to check the key and corrects mistakes. The result is a Markdown, Word and HTML document.
+    Give a topic or a text: you get a worksheet at basic, medium and advanced level and a checked answer key.
 version: "1.0"
 category: education
 
@@ -19,8 +20,8 @@ inputs:
     required: true
     label: {tr: "Konu ya da metin", en: "Topic or text"}
     description:
-      tr: "Konuyu yazın ya da kaynak metni yapıştırın."
-      en: "Write the topic or paste the source text."
+      tr: "Konuyu yazın ya da kaynak metni yapıştırın, örnek: 'kesirlerle toplama'."
+      en: "Write the topic or paste the source text, for example 'adding fractions'."
   - id: grade
     type: text
     multiline: true
@@ -42,13 +43,13 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Soru türü", en: "Question type"}
+    label: {tr: "Soru türü (isteğe bağlı)", en: "Question type (optional)"}
     description:
-      tr: "İsteğe bağlı: örnek 'boşluk doldurma ve kısa cevap'."
-      en: "Optional: for example 'fill in the blank and short answer'."
+      tr: "Örnek: 'boşluk doldurma ve kısa cevap'."
+      en: "For example: 'fill in the blank and short answer'."
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Çalışma kâğıdı dili, en: Worksheet language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -57,7 +58,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Çalışma kâğıdı", en: "Worksheet"}
+    label: {tr: "Çalışma kâğıdını yaz", en: "Write the worksheet"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -101,7 +102,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Cevapları denetle", en: "Check the answers"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -137,7 +138,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Çalışma kâğıdını kaydet, en: Save the worksheet}
     config:
       source: "{{nodes.check.text}}"
       title: "Worksheet"

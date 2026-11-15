@@ -6,17 +6,11 @@ name:
   en: Business plan and pitch critique
 description:
   tr: >-
-    Bir iş planını veya yatırımcı sunumunu üç bağımsız değerlendirici gözüyle inceler: pazar ve müşteri
-    (sorun, hedef müşteri, pazar büyüklüğü iddiaları, rekabet), finansallar (gelir modeli, varsayımlar, birim
-    ekonomisi, nakit ihtiyacı) ve uygulama (ekip, pazara giriş, kilometre taşları, riskler). Üç değerlendirme
-    aynı anda yapılır; bir model bunları güçlü yönler, kritik zayıflıklar, fon sağlayıcının soracağı sorular ve
-    göndermeden önce yapılacak düzeltmelerle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+    Bir iş planı ya da yatırımcı sunumu verin: pazar, finans ve uygulama açısından incelenir. Güçlü yönleri,
+    zayıflıkları ve göndermeden önce yapılacak düzeltmeleri alırsınız.
   en: >-
-    Reviews a business plan or pitch deck through three independent reviewer lenses: market and customer
-    (problem, target customer, market size claims, competition), financials (revenue model, assumptions, unit
-    economics, cash needs) and execution (team, go-to-market, milestones, risks). The three reviews run at the
-    same time; a model combines them into strengths, critical weaknesses, questions a funder will ask, and fixes
-    to make before sending. The result is a Markdown, Word and HTML report.
+    Give a business plan or pitch deck: it is reviewed for market, finances and execution. You get the strengths,
+    the weaknesses and the fixes to make before you send it.
 version: "1.0"
 category: business
 
@@ -25,15 +19,15 @@ inputs:
     type: file
     label: {tr: İş planı veya sunum, en: Business plan or pitch deck}
     description:
-      tr: "PDF, Word, EPUB, Markdown veya düz metin. Sunumu PDF olarak kaydedin."
-      en: "PDF, Word, EPUB, Markdown or plain text. Save a slide deck as PDF."
+      tr: "Bir sunumu önce PDF olarak kaydedin."
+      en: "Save a slide deck as PDF first."
     formats: [pdf, docx, epub, md, txt]
   - id: context
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Bağlam, en: Context}
+    label: {tr: Bağlam (isteğe bağlı), en: Context (optional)}
     description:
       tr: "Örnek: 'Tohum aşaması, melek yatırımcılara gönderilecek.' veya 'Banka kredisi başvurusu.'"
       en: "For example: 'Seed stage, to be sent to angel investors.' or 'Bank loan application.'"
@@ -48,13 +42,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Planı oku, en: Read the plan}
     config:
       file: "{{inputs.plan}}"
 
   - id: market
     type: ai.cli
-    label: {tr: Pazar ve müşteri, en: Market and customer}
+    label: {tr: Pazarı incele, en: Review the market}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -111,7 +105,7 @@ nodes:
 
   - id: financials
     type: ai.cli
-    label: {tr: Finansallar, en: Financials}
+    label: {tr: Finansalları incele, en: Review the financials}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -170,7 +164,7 @@ nodes:
 
   - id: execution
     type: ai.cli
-    label: {tr: Uygulama, en: Execution}
+    label: {tr: Uygulamayı incele, en: Review the execution}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -226,7 +220,7 @@ nodes:
 
   - id: memo
     type: ai.cli
-    label: {tr: Değerlendirme notu, en: Review memo}
+    label: {tr: Değerlendirmeyi yaz, en: Write the assessment}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -288,7 +282,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.memo.text}}
@@ -301,7 +295,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Business plan critique

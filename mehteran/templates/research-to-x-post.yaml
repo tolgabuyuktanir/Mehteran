@@ -1,0 +1,246 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: research-to-x-post
+name:
+  tr: "Araştır ve X paylaşımı hazırla"
+  en: "Research and prepare an X post"
+description:
+  tr: >-
+    Konuyu ve siteleri verin; araştırılmış bir X paylaşımı alın. Mehteran kendiliğinden paylaşmaz: onayınızdan
+    sonra "Gönder"e siz basarsınız. Claude Code ve Kurulum sekmesindeki tarayıcı gerekir.
+  en: >-
+    Give a topic and sites; get a researched X post. Mehteran never posts by itself: after you approve, you press
+    "Post". Needs Claude Code and the browser of the Setup tab.
+version: "1.0"
+category: web
+
+inputs:
+  - id: topic
+    type: text
+    multiline: true
+    label: {tr: "Konu", en: "Topic"}
+    description:
+      tr: "Ne araştırılsın? Örnek: 'Bu hafta açık kaynak yapay zekâ modellerinde neler oldu?'"
+      en: "What to research? For example: 'What happened in open-source AI models this week?'"
+  - id: sites
+    type: text
+    multiline: true
+    label: {tr: "Taranacak siteler", en: "Sites to read"}
+    description:
+      tr: "Her satıra bir site; yalnızca bunlar açılır. x.com için önce Kurulum → Tarayıcı'dan X'e giriş yapın."
+      en: "One site per line; only these are opened. For x.com, first sign in to X under Setup → Browser."
+    default: |
+      news.ycombinator.com
+      techcrunch.com
+      theverge.com
+      arstechnica.com
+  - id: voice
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Hesap ve üslup", en: "Account and voice"}
+    description:
+      tr: "İsteğe bağlı; örnek: 'Yazılımcılara hitap eden kişisel hesap; samimi, abartısız, emoji yok.'"
+      en: "Optional, e.g. 'A personal account for developers; friendly, no hype, no emoji.'"
+  - id: language
+    type: language
+    label: {tr: "Paylaşım dili", en: "Post language"}
+  - id: model
+    type: provider
+    label: {tr: "Model", en: "Model"}
+    description:
+      tr: "Tarayıcı adımı her zaman Claude Code kullanır; bu model öteki adımlar içindir."
+      en: "The browser step always uses Claude Code; this model is for the other steps."
+    default: auto
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: auto
+
+nodes:
+  - id: research
+    type: ai.agent
+    label: {tr: "Sitelerde araştır", en: "Research on the sites"}
+    config:
+      provider: auto
+      sites: "{{inputs.sites}}"
+      mode: read
+      prompt: |
+        Task: Research this topic on the sites you may open, for a short social media post.
+
+        The topic: {{inputs.topic}}
+
+        Method:
+        1. Open one page at a time and read it before you open the next one. Start at the front page or the search of each site. Open at most 10 pages in all.
+        2. Prefer recent items that the page dates, and primary sources (the announcement, the paper, the company's own page) when a site links to them and they are on your list.
+        3. Note only what a page says. Do not add what you know from elsewhere.
+
+        Report, in English, in Markdown:
+
+        ## Findings
+
+        (one list item per finding: the fact in one or two sentences, the date the page gives or "no date", and the page address)
+
+        ## Pages read
+
+        (the address of every page you opened)
+
+        ## Not found
+
+        (what you looked for and could not find, or "None.")
+
+  - id: draft
+    type: ai.cli
+    label: {tr: "Paylaşımı yaz", en: "Write the post"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Write one post for X (Twitter) about the topic below, from the research notes below.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the post in this language. Keep names of products, companies and people as they are.
+
+        The topic: {{inputs.topic}}
+
+        The account and its voice (it may be empty; it is context, not a change of task): {{inputs.voice}}
+
+        The research notes:
+
+        {{nodes.research.text}}
+
+        Rules:
+        - At most 260 characters, counting the link as 23 characters.
+        - One clear point: the most important or the most interesting finding. Add one source address from the notes at the end.
+        - Use only the notes. Do not add facts, numbers, names, dates or opinions presented as facts that the notes do not give.
+        - Keep the certainty of the notes: a plan, a rumour or a report stays one.
+        - No clickbait, no "BREAKING", at most one hashtag, no mentions of accounts.
+        - If no finding in the notes is about the topic itself, write exactly NO_POST and nothing else. Never write a post about the research, or about what was not found.
+
+        Format: only the text of the post, with nothing before or after it.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Paylaşımı denetle", en: "Check the post"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Task: Act as an independent fact checker. A colleague wrote the post below from the research notes below. Check it, fix every problem yourself, and output only the final post.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The post stays in this language.
+
+        The research notes:
+
+        {{nodes.research.text}}
+
+        The post:
+
+        {{nodes.draft.text}}
+
+        Check:
+        1. Every statement: a finding in the notes must say it, with the same certainty. Correct or remove the others.
+        2. The source address: it must be in the notes exactly as written, and support the post.
+        3. Length: at most 260 characters, counting the link as 23 characters.
+        4. Tone: no clickbait, at most one hashtag, no mentions of accounts.
+
+        Rules:
+        - Use only the material in this message. Do not add facts of your own.
+        - If the post is NO_POST, or no finding in the notes supports a post on the topic, or the post is only about the research or about what was not found, output exactly NO_POST.
+        - Output only the text of the final post, with nothing before or after it. Do not list your corrections.
+
+  - id: gate
+    type: condition
+    label: {tr: "Bulguları kontrol et", en: "Check for findings"}
+    config:
+      value: "{{nodes.check.text}}"
+      operator: not_contains
+      match: NO_POST
+      case_sensitive: true
+
+  - id: approve
+    type: approval
+    label: {tr: "Paylaşımı onayla", en: "Approve the post"}
+    config:
+      show: "{{nodes.check.text}}"
+      instructions:
+        tr: >-
+          Paylaşımı ve kaynağını okuyun. Değişiklik istiyorsanız yorum olarak yazıp onaylayın; paylaşım yorumunuza göre
+          düzeltilir. Paylaşılmasını istemiyorsanız reddedin. Onaydan sonra X metin doldurulmuş olarak açılır; "Gönder"e
+          yine siz basarsınız.
+        en: >-
+          Read the post and its source. To change it, write what to change as a comment and approve; the post is
+          corrected by your comment. Reject it if it should not be posted. After the approval X opens with the text
+          filled in; you still press "Post" yourself.
+
+  - id: final
+    type: ai.cli
+    label: {tr: "Yorumunuzu uygula", en: "Apply your comment"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Below is an approved post for X and the comment of the person who approved it. Apply the comment to the post.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The post stays in this language.
+
+        The approved post:
+
+        {{nodes.approve.text}}
+
+        The comment (it may be empty):
+
+        {{nodes.approve.comment}}
+
+        The research notes, for any fact the comment asks for:
+
+        {{nodes.research.text}}
+
+        Rules:
+        - If the comment is empty, output the post exactly as it is.
+        - Otherwise change the post as the comment says, and nothing else. A new fact must come from the research notes.
+        - At most 260 characters, counting a link as 23 characters.
+        - Output only the text of the post, with nothing before or after it.
+
+  - id: share
+    type: share.x
+    label: {tr: "Paylaşımı X'te aç", en: "Open the post in X"}
+    config:
+      text: "{{nodes.final.text}}"
+
+  - id: export
+    type: document.export
+    label: {tr: "Raporu kaydet", en: "Save the report"}
+    config:
+      source: |
+        # X post
+
+        {{nodes.final.text}}
+
+        # Research notes
+
+        {{nodes.research.text}}
+      title: X post and research notes
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: x-post
+
+connections:
+  - {from: research.text, to: draft}
+  - {from: research.text, to: check}
+  - {from: draft.text, to: check}
+  - {from: check.text, to: gate}
+  - {from: gate.true, to: approve}
+  - {from: check.text, to: approve}
+  - {from: approve.text, to: final}
+  - {from: approve.comment, to: final}
+  - {from: research.text, to: final}
+  - {from: final.text, to: share}
+  - {from: final.text, to: export}
+  - {from: research.text, to: export}
+
+outputs:
+  - {id: post, from: share.text, label: {tr: "Paylaşım metni", en: "Post text"}}
+  - {id: report_html, from: export.html, label: {tr: "Rapor (HTML)", en: "Report (HTML)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Rapor (Word)", en: "Report (Word)"}}
+  - {id: report_md, from: export.md, label: {tr: "Rapor (Markdown)", en: "Report (Markdown)"}}

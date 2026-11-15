@@ -6,17 +6,11 @@ name:
   en: Dataset documentation review
 description:
   tr: >-
-    Bir veri sözlüğünü veya veri seti belgesini, isterseniz yapıştırdığınız örnek satırlarla birlikte inceler.
-    Bir model her değişken (tanım, tür, birim, izin verilen değerler, eksik değer kodları) ve veri seti geneli
-    (amaç, kaynak, toplama yöntemi, kapsam, lisans, sürüm, kişisel veri notları, sınırlılıklar) için neyin
-    belgelendiğini çıkarır; ikinci bir model aynı anda sözlüğü örnek satırlarla karşılaştırır. Bir model
-    bunları öncelikli iyileştirme listesiyle birleştirir. Sonuç Markdown, Word ve HTML rapordur.
+    Bir veri sözlüğü ya da veri seti belgesi verin, isterseniz örnek satırlar ekleyin: eksik ve tutarsız
+    noktaları, öncelik sırasına konmuş bir iyileştirme listesi olarak alırsınız.
   en: >-
-    Reviews a data dictionary or dataset documentation, optionally with sample rows that you paste. One model
-    checks what is documented for each variable (definition, type, unit, allowed values, missing-value codes) and
-    for the dataset as a whole (purpose, provenance, collection method, coverage, licence, version, personal-data
-    notes, limitations); a second model at the same time compares the dictionary with the sample rows. A model
-    combines both into a prioritised list of improvements. The result is a Markdown, Word and HTML report.
+    Give a data dictionary or dataset documentation, with sample rows if you like: you get what is missing or
+    inconsistent, as a prioritised list of improvements.
 version: "1.0"
 category: data
 
@@ -25,28 +19,28 @@ inputs:
     type: file
     label: {tr: Belge veya veri sözlüğü, en: Documentation or data dictionary}
     description:
-      tr: "PDF, Word, EPUB, Markdown veya düz metin. CSV biçimindeki bir sözlüğü .txt olarak kaydedin."
-      en: "PDF, Word, EPUB, Markdown or plain text. Save a dictionary in CSV form as .txt."
+      tr: "CSV biçimindeki bir sözlüğü önce .txt olarak kaydedin."
+      en: "Save a dictionary in CSV form as .txt first."
     formats: [pdf, docx, epub, md, txt]
   - id: sample
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Örnek satırlar, en: Sample rows}
+    label: {tr: Örnek satırlar (isteğe bağlı), en: Sample rows (optional)}
     description:
       tr: >-
-        İsteğe bağlı: veri setinden başlık satırıyla birlikte birkaç satır (CSV, TSV veya düz metin). Boş
-        bırakılırsa yalnızca belgenin kendi içindeki tutarlılık incelenir.
+        Veri setinden başlık satırıyla birkaç satır yapıştırın. Boş bırakırsanız yalnızca belgenin kendi
+        tutarlılığı incelenir.
       en: >-
-        Optional: a few rows of the dataset with the header row (CSV, TSV or plain text). When empty, only the
-        internal consistency of the documentation is checked.
+        Paste a few rows of the dataset with the header row. If you leave it empty, only the documentation itself
+        is checked.
   - id: purpose
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Amaç, en: Purpose}
+    label: {tr: Amaç (isteğe bağlı), en: Purpose (optional)}
     description:
       tr: "Örnek: 'Veri seti açık erişimli bir depoya yüklenecek.' veya 'Ekip içinde yeniden kullanım.'"
       en: "For example: 'The dataset will be deposited in an open repository.' or 'Reuse within the team.'"
@@ -61,19 +55,19 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Belgeyi oku, en: Read the documentation}
     config:
       file: "{{inputs.documentation}}"
 
   - id: wrap_sample
     type: text.merge
-    label: {tr: Örnek satırlar, en: Sample rows}
+    label: {tr: Örnek satırları hazırla, en: Prepare the sample rows}
     config:
       template: "{{inputs.sample}}"
 
   - id: completeness
     type: ai.cli
-    label: {tr: Eksiksizlik, en: Completeness}
+    label: {tr: Eksikleri bul, en: Find the gaps}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -126,7 +120,7 @@ nodes:
 
   - id: consistency
     type: ai.cli
-    label: {tr: Tutarlılık, en: Consistency}
+    label: {tr: Tutarlılığı denetle, en: Check the consistency}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -184,7 +178,7 @@ nodes:
 
   - id: synthesis
     type: ai.cli
-    label: {tr: İyileştirme listesi, en: Improvement list}
+    label: {tr: İyileştirmeleri sırala, en: List the improvements}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -234,7 +228,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -245,7 +239,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Dataset documentation review

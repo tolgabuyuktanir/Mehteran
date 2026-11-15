@@ -6,46 +6,40 @@ name:
   en: "Expense table from receipts and invoices"
 description:
   tr: >-
-    Fiş, fatura ya da hesap özeti dosyalarını (PDF, fotoğraf, CSV, Excel) okur; taranmış sayfalar için metin
-    tanıma kullanılır. Her dosyadan tarih, satıcı, kategori, para birimi, KDV ve toplam alanlarını bir tabloya
-    çıkarır (dosyalar aynı anda işlenir). Sonra toplamları kategori ve para birimine göre hesaplar, olağan dışı
-    kalemleri (tekrar, eksik alan, toplamı tutmayan satır) işaretler. Tablolar Word ve HTML'de gerçek tablo
-    olur. Fotoğraflardan okunan sayıları mutlaka kontrol edin.
+    Fiş, fatura ya da hesap özetlerini (PDF, fotoğraf, Excel) verin; kategori toplamları ve şüpheli kalemlerle
+    bir gider tablosu alın. Fotoğraflardan okunan sayıları mutlaka kontrol edin.
   en: >-
-    Reads receipt, invoice or statement files (PDF, photos, CSV, Excel); scanned pages are read by text
-    recognition. From each file it extracts date, vendor, category, currency, VAT and total into a table (the
-    files run at the same time). Then it computes totals by category and currency and flags unusual items
-    (duplicates, missing fields, lines whose total does not add up). The tables become real tables in Word and
-    HTML. Always check numbers read from photos.
+    Give receipts, invoices or statements (PDF, photos, Excel); get an expense table with totals by category and
+    unusual items marked. Always check numbers read from photos.
 version: "1.0"
-category: everyday
+category: business
 tier: core
 
 inputs:
   - id: receipts
     type: file
     multiple: true
-    label: {tr: "Fiş, fatura ya da hesap özeti dosyaları", en: "Receipt, invoice or statement files"}
+    label: {tr: "Fiş ve faturalar", en: "Receipts and invoices"}
     description:
-      tr: "En çok 20 dosya."
-      en: "Up to 20 files."
+      tr: "En çok 20 dosya: fiş fotoğrafı, PDF fatura ya da hesap özeti."
+      en: "Up to 20 files: receipt photos, PDF invoices or statements."
     formats: [pdf, png, jpg, jpeg, tif, tiff, csv, tsv, xlsx, md, txt]
   - id: categories
     type: text
     required: false
     default: "Travel, Meals, Office, Software, Utilities, Other"
-    label: {tr: "Kategoriler", en: "Categories"}
+    label: {tr: "Gider kategorileri", en: "Expense categories"}
     description:
-      tr: "Virgülle ayırın. Varsayılan listeyi değiştirebilirsiniz."
-      en: "Separated by commas. You can change the default list."
+      tr: "Virgülle ayırın; örnek: 'Yol, Yemek, Ofis, Diğer'."
+      en: "Separate them with commas, e.g. 'Travel, Meals, Office, Other'."
   - id: rules
     type: text
     required: false
     default: ""
     label: {tr: "Gider kuralları", en: "Expense rules"}
     description:
-      tr: "Örnek: 'Yemek en çok 500 TL'. Boş bırakılabilir."
-      en: "For example: 'Meals at most 40 EUR'. May be left empty."
+      tr: "İsteğe bağlı; örnek: 'Yemek en çok 500 TL'."
+      en: "Optional, e.g. 'Meals at most 40 EUR'."
   - id: language
     type: language
     label: {tr: "Rapor dili", en: "Report language"}
@@ -67,7 +61,7 @@ nodes:
 
   - id: rows
     type: ai.map
-    label: {tr: "Dosya başına satırlar", en: "Rows per file"}
+    label: {tr: "Kalemleri çıkar", en: "List the items"}
     retries: 2
     config:
       source: "{{nodes.receipts.text}}"
@@ -95,7 +89,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: "Toplamlar ve işaretler", en: "Totals and flags"}
+    label: {tr: "Toplamları hesapla", en: "Add up the totals"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -141,7 +135,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    label: {tr: "Raporu birleştir", en: "Combine the report"}
     config:
       template: |
         {{nodes.summary.text}}

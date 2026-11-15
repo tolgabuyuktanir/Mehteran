@@ -9,6 +9,9 @@
   resume <run> [--node <id>]           continues a run (or retries one failed node)
   cancel <run>                         stops a run
   approve|reject <run> <node>          decides a waiting approval node
+  schedules                            the scheduled runs (made in the web interface; they start while it runs)
+  background on|off|status             starts the web interface in the background at sign-in (no window), so that
+                                       scheduled runs start on time
   install <tool> ...                   installs tools into <code folder>/.runtime, shared with the translation app
                                        (used by the Setup tab; pipeline.runtime does the work)
   install-local ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf [name ...]
@@ -122,7 +125,7 @@ def cmd_run(args, home: Path) -> int:
         else:
             values[key] = value
     engine = Engine(home)
-    run_id = engine.start(text, values, files, template=ref)
+    run_id = engine.start(text, values, files, template=ref, every_step=args.every_step)
     _print(t("cli_started", id=run_id))
     return _follow(engine, run_id)
 
@@ -176,13 +179,13 @@ def cmd_install(args, home: Path) -> int:
     return 0
 
 
-LOCAL_TARGETS = ["ollama", "ocr", "ocr-languages", "typst", "pandoc", "speech", "speech-models", "qpdf"]
+LOCAL_TARGETS = ["ollama", "ocr", "ocr-languages", "typst", "pandoc", "speech", "speech-models", "qpdf", "browser"]
 
 
 def cmd_install_local(args, home: Path) -> int:
     from pipeline import i18n as pipeline_i18n
 
-    from . import ocr, ollama, pandoc, qpdf, speech, typst
+    from . import browser, ocr, ollama, pandoc, qpdf, speech, typst
     pipeline_i18n.set_default(i18n.pipeline_lang())  # the download progress of pipeline.runtime: Turkish or English
     try:
         if args.target == "ollama":
@@ -196,10 +199,50 @@ def cmd_install_local(args, home: Path) -> int:
         elif args.target == "speech-models":
             speech.install_models(args.names or speech.DEFAULT_MODELS)
         else:
-            {"typst": typst, "pandoc": pandoc, "qpdf": qpdf}[args.target].install()
+            {"typst": typst, "pandoc": pandoc, "qpdf": qpdf, "browser": browser}[args.target].install()
     except Exception as e:  # noqa: BLE001 - ToolError, PipelineError of pipeline.runtime, OSError: the log shows it
         _print(f"{t('cli_error')}: {e}")
         return 1
+    return 0
+
+
+def cmd_browser_signin(args, home: Path) -> int:
+    """Opens Chrome with Mehteran's own profile (the browser of agent steps), to sign in to sites there."""
+    from . import browser
+    try:
+        browser.open_signin(home, args.url)
+    except Exception as e:  # noqa: BLE001 - ToolError: Chrome is missing
+        _print(f"{t('cli_error')}: {e}")
+        return 1
+    _print(str(browser.profile_dir(home)))
+    return 0
+
+
+def cmd_schedules(args, home: Path) -> int:
+    from . import schedules
+    items = schedules.load(home)
+    if not items:
+        _print(t("cli_no_schedules"))
+    for item in items:
+        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(item["next_at"])) if item.get("enabled") else t("schedule_paused")
+        _print(f"{item['id']}  {when:16}  {item['template']:40} {item['name']}")
+    return 0
+
+
+def cmd_background(args, home: Path) -> int:
+    from . import background
+    if args.action != "status":
+        if not background.supported():
+            _print(f"{t('cli_error')}: {t('background_unsupported')}")
+            return 1
+        try:
+            (background.turn_on if args.action == "on" else background.turn_off)(home)
+        except OSError as e:
+            _print(f"{t('cli_error')}: {t('background_failed', error=e)}")
+            return 1
+    state = background.status(home)
+    _print(t("background_on" if state["enabled"] else "background_off"))
+    _print(t("background_log", path=state["log"]))
     return 0
 
 
@@ -215,6 +258,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("run")
     p.add_argument("workflow", help="template id (builtin:<id>, user:<id>) or a .yaml file")
     p.add_argument("--input", "-i", action="append", metavar="NAME=VALUE")
+    p.add_argument("--every-step", default="", metavar="MODEL",
+                   help="one model for every step, e.g. codex, claude/opus@high or auto (default: the workflow's models)")
     sub.add_parser("runs")
     p = sub.add_parser("resume")
     p.add_argument("run")
@@ -225,17 +270,22 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("run")
         p.add_argument("node")
         p.add_argument("--comment", default="")
+    sub.add_parser("schedules")
+    sub.add_parser("background").add_argument("action", choices=["on", "off", "status"])
     from pipeline.tools import TOOLS
     sub.add_parser("install").add_argument("tools", nargs="+", choices=list(TOOLS))
     p = sub.add_parser("install-local")
     p.add_argument("target", choices=LOCAL_TARGETS)
     p.add_argument("names", nargs="*", help="OCR languages or speech models")
+    sub.add_parser("browser-signin", help="open Chrome with the profile of agent steps, to sign in to sites").add_argument(
+        "url", nargs="?", default="")
     args = parser.parse_args(argv)
     i18n.set_default(args.lang or (os.environ.get("TP_LANG") if os.environ.get("TP_LANG") in i18n.LANGUAGES else None))
     home = paths.home()
     handlers = {"ui": cmd_ui, "templates": cmd_templates, "validate": cmd_validate, "run": cmd_run, "runs": cmd_runs,
                 "resume": cmd_resume, "cancel": cmd_cancel, "approve": cmd_decide, "reject": cmd_decide,
-                "install": cmd_install, "install-local": cmd_install_local}
+                "install": cmd_install, "install-local": cmd_install_local, "browser-signin": cmd_browser_signin,
+                "schedules": cmd_schedules, "background": cmd_background}
     try:
         return handlers[args.command](args, home)
     except (RunError, templates.TemplateError) as e:

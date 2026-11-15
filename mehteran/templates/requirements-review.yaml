@@ -6,17 +6,11 @@ name:
   en: Requirements document review
 description:
   tr: >-
-    Bir gereksinim belgesini (yazılım, ürün veya hizmet) iki bağımsız gözle inceler. Bir model her gereksinimin
-    kalitesine bakar (belirsiz, test edilemez, birden çok gereksinimi birleştiren, çözümü dikte eden) ve yeniden
-    yazım önerir; ikinci bir model eksikleri arar (işlevsel olmayan gereksinimler, hata durumları, çelişkiler,
-    tanımsız terimler). Üçüncü model paydaşlara sorulacak soruları ve öncelikli düzeltmeleri yazar. Sonuç Markdown,
-    Word ve HTML rapordur.
+    Bir gereksinim belgesi (yazılım, ürün ya da hizmet) verin; belirsiz maddeleri, eksikleri, çelişkileri,
+    paydaşlara sorulacak soruları ve düzeltme önerilerini içeren bir rapor alın.
   en: >-
-    Reviews a requirements document (software, product or service) through two independent lenses. One model
-    checks the quality of each requirement (ambiguous, not testable, compound, dictating the solution) and
-    proposes rewrites; a second model looks for gaps (non-functional requirements, error cases, conflicts,
-    undefined terms). A third model writes the questions for stakeholders and the priority fixes. The result is a
-    Markdown, Word and HTML report.
+    Give a requirements document (software, product or service); get a report of unclear items, gaps,
+    conflicts, questions for stakeholders and suggested fixes.
 version: "1.0"
 category: documents
 
@@ -24,7 +18,7 @@ inputs:
   - id: requirements
     type: file
     label: {tr: Gereksinim belgesi, en: Requirements document}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "İncelenecek belge; örnek: yazılım şartnamesi ya da ürün gereksinimleri.", en: "The document to review, e.g. a software specification or product requirements."}
     formats: [pdf, docx, epub, md, txt]
   - id: context
     type: text
@@ -33,8 +27,8 @@ inputs:
     default: ""
     label: {tr: Ürün ve kullanıcılar, en: Product and users}
     description:
-      tr: "Örnek: 'Hastane randevu sistemi; kullanıcılar hastalar ve sekreterler.'"
-      en: "For example: 'A hospital appointment system; the users are patients and receptionists.'"
+      tr: "İsteğe bağlı; örnek: 'Hastane randevu sistemi; kullanıcılar hastalar ve sekreterler.'"
+      en: "Optional, e.g. 'A hospital appointment system; the users are patients and receptionists.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -46,13 +40,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Belgeyi oku, en: Read the document}
     config:
       file: "{{inputs.requirements}}"
 
   - id: quality
     type: ai.cli
-    label: {tr: Gereksinim kalitesi, en: Requirement quality}
+    label: {tr: Maddeleri denetle, en: Check each requirement}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -108,7 +102,7 @@ nodes:
 
   - id: completeness
     type: ai.cli
-    label: {tr: Eksiklik ve çelişkiler, en: Gaps and conflicts}
+    label: {tr: Eksikleri ve çelişkileri bul, en: Find gaps and conflicts}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -168,7 +162,7 @@ nodes:
 
   - id: synthesis
     type: ai.cli
-    label: {tr: Sorular ve öncelikler, en: Questions and priorities}
+    label: {tr: Soruları ve öncelikleri yaz, en: Write questions and priorities}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -217,7 +211,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.synthesis.text}}
@@ -228,7 +222,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Requirements review

@@ -6,15 +6,11 @@ name:
   en: Contract risk review
 description:
   tr: >-
-    Bir sözleşmeyi sizin belirttiğiniz tarafın gözünden inceler. Bir model tarafları, yükümlülükleri, ödemeleri,
-    süreleri ve fesih koşullarını çıkarır; ikinci bir model bu tarafa göre riskli hükümleri alıntılarıyla
-    listeler; üçüncü bir model risk incelemesini sözleşme metnine karşı denetler, atlanan ve abartılan noktaları
-    bulur. Sonuç: müzakere önerileri içeren, hukuki tavsiye olmadığını belirten Markdown, Word ve HTML rapor.
+    Bir sözleşme verin ve kimin açısından bakılacağını yazın: riskli hükümleri alıntılarıyla ve müzakere
+    önerileriyle alırsınız. Hukuki tavsiye değildir.
   en: >-
-    Reviews a contract from the point of view of the party you name. One model maps the parties, obligations,
-    payments, dates and termination terms; a second model lists the clauses that are risky for that party, with
-    quotations; a third model checks the risk review against the contract text and finds missed or overstated
-    points. The result is a Markdown, Word and HTML report with negotiation points, marked as not legal advice.
+    Give a contract and say whose side to take: you get the risky clauses with quotations and points to
+    negotiate. This is not legal advice.
 version: "1.0"
 category: legal
 tier: core
@@ -23,14 +19,14 @@ inputs:
   - id: contract
     type: file
     label: {tr: Sözleşme, en: Contract}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Örnek: kira, hizmet ya da satış sözleşmesi.", en: "For example a lease, a service or a sales contract."}
     formats: [pdf, docx, epub, md, txt]
   - id: party
     type: text
-    label: {tr: Kimin açısından, en: Point of view}
+    label: {tr: Kimin açısından, en: Whose side}
     description:
-      tr: "Sözleşmede sizin tarafınızın adı veya rolü. Örnek: 'Alıcı', 'Yüklenici', 'ABC Ltd.'"
-      en: "The name or role of your side in the contract. For example: 'Buyer', 'Contractor', 'ABC Ltd.'"
+      tr: "Sizin tarafınızın adı ya da rolü, örnek: 'Alıcı', 'Yüklenici', 'ABC Ltd.'"
+      en: "The name or role of your side, for example 'Buyer', 'Contractor', 'ABC Ltd.'"
     required: false
     default: "the weaker party of the contract (infer it from the document)"
   - id: concerns
@@ -38,7 +34,7 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Özel endişeler, en: Specific concerns}
+    label: {tr: Özel endişeler (isteğe bağlı), en: Specific concerns (optional)}
     description:
       tr: "Örnek: 'Ödeme gecikmesi ve fikrî mülkiyet bizim için önemli.'"
       en: "For example: 'Late payment and intellectual property matter most to us.'"
@@ -57,13 +53,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Sözleşmeyi oku, en: Read the contract}
     config:
       file: "{{inputs.contract}}"
 
   - id: terms
     type: ai.cli
-    label: {tr: Hüküm haritası, en: Terms map}
+    label: {tr: Hükümleri çıkar, en: List the terms}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -116,7 +112,7 @@ nodes:
 
   - id: risks
     type: ai.cli
-    label: {tr: Risk incelemesi, en: Risk review}
+    label: {tr: Riskleri bul, en: Find the risks}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -226,7 +222,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Özet ve müzakere noktaları, en: Summary and negotiation points}
+    label: {tr: Özeti ve önerileri yaz, en: Write the summary and advice}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -278,7 +274,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -291,7 +287,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: "Contract review: {{inputs.party}}"

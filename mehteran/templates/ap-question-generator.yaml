@@ -6,24 +6,11 @@ name:
   en: "AP question generator (multiple choice and free response)"
 description:
   tr: >-
-    İki tür AP tarzı özgün soru üretir. Çoktan seçmeli: yüklediğiniz ders notlarını başlıklarına göre bölümlere
-    ayırır, her bölüm için ayrı bir model çağrısıyla soru ve cevap anahtarı yazar (bölümler aynı anda işlenir);
-    ikinci bir model her soruyu notlara bakarak çözer, hatalı anahtarı düzeltir, sorunlu soruyu onarır, yenisiyle
-    değiştirir ya da çıkarır. Serbest cevaplı (FRQ): bir ders ve konu için puan puan puanlama anahtarı ve örnek
-    tam puanlı cevap yazar; ikinci bir model örnek cevabı rubriğe göre puanlar ve sorunları işaretler; bir
-    öğretmen onaylar. İsterseniz örnek soruları verin: yeni sorular aynı beceriyi ölçer ama kopya değildir.
-    Sonuç Markdown, Word ve HTML belgedir. Resmî AP Ders ve Sınav Tanımı'nı (CED) bilmez; öğretmen kontrol etmelidir.
-    College Board ile ilgisi yoktur.
+    Özgün AP tarzı sorular yazar: ders notlarınızdan çoktan seçmeli sorular ya da rubrikli bir serbest cevaplı
+    (FRQ) soru. Öğretmen kontrol etmelidir. College Board ile ilgisi yoktur.
   en: >-
-    Writes two kinds of original AP-style questions. Multiple choice: splits the class notes you upload into
-    sections by their headings and, in a separate model call for each section, writes questions with an answer
-    key (the sections run at the same time); a second model answers every question from the notes, corrects a
-    wrong key, repairs a faulty question, replaces it or drops it. Free response (FRQ): for a course and topic,
-    writes a point-by-point scoring guide and a full-credit sample response; a second model scores the sample
-    response against the rubric and flags problems; a teacher approves. You may give example questions: the new
-    ones test the same skill but are not copies. The result is a Markdown, Word and HTML document. It does not
-    know the official AP Course and Exam Description (CED); a teacher must check it. Not affiliated with College
-    Board.
+    Writes original AP-style questions: multiple choice from your class notes, or one free-response (FRQ)
+    question with a rubric. A teacher must check them. Not affiliated with College Board.
 version: "1.0"
 category: exams
 
@@ -32,16 +19,16 @@ inputs:
     type: choice
     label: {tr: "Soru türü", en: "Kind of question"}
     options:
-      - {value: mcq, label: {tr: "Çoktan seçmeli (notlardan, bölüm bölüm)", en: "Multiple choice (from the notes, section by section)"}}
-      - {value: frq, label: {tr: "Serbest cevaplı (FRQ, rubrik ve örnek cevapla)", en: "Free response (FRQ, with rubric and sample response)"}}
+      - {value: mcq, label: {tr: "Çoktan seçmeli (notlarınızdan)", en: "Multiple choice (from your notes)"}}
+      - {value: frq, label: {tr: "Serbest cevaplı (FRQ, rubrikli)", en: "Free response (FRQ, with a rubric)"}}
     default: frq
   - id: notes
     type: file
     required: false
     label: {tr: "Ders notları", en: "Class notes"}
     description:
-      tr: "Çoktan seçmeli için gerekir; başlıklı notlar en iyi sonucu verir (her başlık bir bölüm olur). Serbest cevaplı için isteğe bağlıdır: yüklerseniz soru ve rubrik notlara dayanır."
-      en: "Needed for multiple choice; notes with headings work best (each heading becomes a section). Optional for free response: if you upload them, the question and rubric rest on them."
+      tr: "Çoktan seçmeli için gerekir; başlıklı notlar en iyisidir. Serbest cevaplı için isteğe bağlıdır."
+      en: "Needed for multiple choice; notes with headings work best. Optional for free response."
     formats: [pdf, docx, epub, md, txt]
   - id: course
     type: text
@@ -56,7 +43,7 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Ünite ve konu (serbest cevaplı için)", en: "Unit and topic (for free response)"}
+    label: {tr: "Ünite ve konu (serbest cevaplı)", en: "Unit and topic (free response)"}
     description:
       tr: "Örnek: 'Ünite 6: Gen ifadesi ve düzenlenmesi'."
       en: "For example: 'Unit 6: Gene expression and regulation'."
@@ -65,14 +52,17 @@ inputs:
     required: false
     default: "3"
     label: {tr: "Bölüm başına soru (çoktan seçmeli)", en: "Questions per section (multiple choice)"}
+    description:
+      tr: "Notlardaki her başlık için kaç soru yazılacağı, örnek: 3."
+      en: "How many questions to write for each heading of the notes, for example 3."
   - id: frq_type
     type: text
     required: false
     default: ""
     label: {tr: "Serbest cevaplı soru türü", en: "Free-response question type"}
     description:
-      tr: "Örnek: 'argüman essay', 'veri analizi', 'çok bölümlü uzun FRQ'. Boş bırakılırsa dersin olağan FRQ türü seçilir."
-      en: "For example: 'argument essay', 'data analysis', 'multi-part long FRQ'. Left empty, the usual FRQ type of the course is chosen."
+      tr: "Örnek: 'argüman essay', 'veri analizi'. Boş bırakırsanız dersin olağan türü seçilir."
+      en: "For example: 'argument essay', 'data analysis'. If you leave it empty, the usual type of the course is used."
   - id: points
     type: text
     required: false
@@ -82,33 +72,36 @@ inputs:
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı. Yeni sorular bunların tarzını izler ama kopyası olmaz; fotoğraf da olur."
+      en: "Optional. The new questions follow their style but never copy them; photos work too."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Örnek sorular (yapıştır)", en: "Example questions (paste)"}
     description:
-      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
-      en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
+      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu, varsa cevabıyla, buraya yapıştırın."
+      en: "Optional. Paste one or more example questions here, with their answers if you have them."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Örneklere göre", en: "Compared with the examples"}
+    description:
+      tr: "Yeni sorular örnek sorulardan nasıl farklı olsun."
+      en: "How the new questions differ from the example questions."
     options:
-      - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
-      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
+      - {value: similar, label: {tr: "Benzer (aynı beceri, yeni sayılar ve bağlam)", en: "Similar (same skill, new numbers and context)"}}
+      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill, a different real-world context)"}}
       - {value: harder, label: {tr: "Daha zor", en: "Harder"}}
       - {value: easier, label: {tr: "Daha kolay", en: "Easier"}}
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
     default: similar
   - id: language
     type: language
-    label: {tr: "Belge dili (sorular dahil)", en: "Document language (questions included)"}
+    label: {tr: "Soruların dili", en: "Language of the questions"}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -121,7 +114,7 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the example questions"}
     config:
       file: "{{inputs.reference_questions}}"
 
@@ -133,7 +126,7 @@ nodes:
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnek soruları incele", en: "Study the example questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -175,7 +168,7 @@ nodes:
 
   - id: gate
     type: condition
-    label: {tr: "Serbest cevaplı soru mu?", en: "Free-response question?"}
+    label: {tr: "Serbest cevaplıysa", en: "If free response"}
     config:
       value: "{{inputs.kind}}"
       operator: equals
@@ -183,7 +176,7 @@ nodes:
 
   - id: frq
     type: ai.cli
-    label: {tr: "Soru, rubrik, örnek cevap", en: "Question, rubric, sample response"}
+    label: {tr: "Soruyu ve rubriği yaz", en: "Write the question and rubric"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -241,7 +234,7 @@ nodes:
 
   - id: check_frq
     type: ai.cli
-    label: {tr: "Soru denetimi", en: "Question check"}
+    label: {tr: "Soruyu denetle", en: "Check the question"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -317,7 +310,7 @@ nodes:
 
   - id: mcqs
     type: ai.map
-    label: {tr: "Bölüm soruları", en: "Questions per section"}
+    label: {tr: "Bölüm sorularını yaz", en: "Write the section questions"}
     retries: 2
     config:
       source: "{{nodes.extract.text}}"
@@ -358,7 +351,7 @@ nodes:
 
   - id: final_mcq
     type: ai.cli
-    label: {tr: "Soru denetimi ve son metin", en: "Question check and final text"}
+    label: {tr: "Soruları denetle", en: "Check the questions"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -407,7 +400,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Soruları kaydet", en: "Save the questions"}
     config:
       source: |
         {{nodes.approve.text}}

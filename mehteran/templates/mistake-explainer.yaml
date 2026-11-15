@@ -6,18 +6,11 @@ name:
   en: "Missed-question explainer"
 description:
   tr: >-
-    Bir öğrencinin yanlış yaptığı soruları (yazarak ya da dosyadan) ve varsa öğrencinin cevabını okur. Bir model
-    her soru için doğru çözümü adım adım anlatır, öğrencinin cevabına götüren olası hatayı açıklar ve hata
-    türünü adlandırır. İkinci bir model aynı beceriyi ölçen yeni, özgün birer benzer soru ve cevabı yazar.
-    Üçüncü bir model açıklamaları ve yeni soruların cevaplarını bağımsız çözerek denetler. Sonuç Markdown, Word
-    ve HTML belgedir. Yapay zekâ hata yapabilir; öğrenciye vermeden önce kontrol edin.
+    Öğrencinin yanlış yaptığı soruları verin; her biri için adım adım çözüm, hatanın açıklaması ve benzer yeni
+    bir soru alın. Öğrenciye vermeden önce kontrol edin.
   en: >-
-    Reads the questions a student missed (typed or from a file) and the student's answers, if you have them. One
-    model explains the correct solution of each question step by step, explains the likely mistake that led to
-    the student's answer, and names the kind of error. A second model writes one new, original similar question
-    per missed question, with its answer. A third model checks the explanations and the answers to the new
-    questions by solving them independently. The result is a Markdown, Word and HTML document. AI can make
-    mistakes; check it before you give it to a student.
+    Give the questions a student missed and get, for each, the solution step by step, what went wrong and a
+    similar new question. Check it before you give it to a student.
 version: "1.0"
 category: education
 
@@ -27,14 +20,17 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Yanlış yapılan sorular (yapıştır)", en: "Missed questions (paste)"}
+    label: {tr: "Yanlış yapılan sorular", en: "Missed questions"}
     description:
-      tr: "Soru metni, şıklar ve varsa öğrencinin cevabı. Dosya yüklüyorsanız boş bırakabilirsiniz."
-      en: "The question text, the choices and, if you have it, the student's answer. May be left empty if you upload a file."
+      tr: "Soru, şıklar ve varsa öğrencinin cevabı; dosya yüklüyorsanız boş bırakın."
+      en: "The question, the choices and the student's answer if you have it; leave empty if you upload a file."
   - id: missed_file
     type: file
     required: false
-    label: {tr: "Yanlış yapılan sorular (dosya)", en: "Missed questions (file)"}
+    label: {tr: "Soru dosyası", en: "Questions file"}
+    description:
+      tr: "İsteğe bağlı. Yapıştırmak yerine bir dosya ya da fotoğraf yükleyin."
+      en: "Optional. A file or a photo instead of pasted text."
     formats: [pdf, docx, md, txt, csv, xlsx, png, jpg, jpeg]
   - id: subject
     type: text
@@ -42,14 +38,14 @@ inputs:
     default: ""
     label: {tr: "Ders ve düzey", en: "Subject and level"}
     description:
-      tr: "Örnek: 'SAT matematik', 'AP Biology', '8. sınıf fen'."
-      en: "For example: 'SAT math', 'AP Biology', 'grade 8 science'."
+      tr: "İsteğe bağlı. Örnek: 'SAT matematik' ya da '8. sınıf fen'."
+      en: "Optional. For example: 'SAT math' or 'grade 8 science'."
   - id: student_work
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Öğrencinin cevapları ve düşüncesi", en: "Student's answers and thinking"}
+    label: {tr: "Öğrencinin cevapları", en: "Student's answers"}
     description:
       tr: "İsteğe bağlı. Öğrencinin seçtiği cevap ve nasıl düşündüğü."
       en: "Optional. The answer the student gave and how they thought."
@@ -57,26 +53,29 @@ inputs:
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı. Yeni sorular bunların tarzında yazılır ama kopyalanmaz; tarama ve fotoğraf da olur."
+      en: "Optional. New questions follow their style but never copy them; scans and photos work too."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Örnek sorular (metin)", en: "Example questions (text)"}
     description:
-      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
-      en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
+      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu, varsa cevabıyla, buraya yapıştırın."
+      en: "Optional. Paste one or more example questions here, with their answers if you have them."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Yeni soruların biçimi", en: "Kind of new questions"}
+    description:
+      tr: "Yeni benzer soruların yanlış yapılan sorulara ne kadar benzeyeceği."
+      en: "How close the new similar questions stay to the missed ones."
     options:
-      - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
-      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
+      - {value: similar, label: {tr: "Benzer (aynı beceri, yeni sayılar ve bağlam)", en: "Similar (same skill, new numbers and context)"}}
+      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, başka bir gerçek hayat bağlamı)", en: "New scenario (same skill, another real-life setting)"}}
       - {value: harder, label: {tr: "Daha zor", en: "Harder"}}
       - {value: easier, label: {tr: "Daha kolay", en: "Easier"}}
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
@@ -96,13 +95,13 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the example questions"}
     config:
       file: "{{inputs.reference_questions}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnekleri incele", en: "Study the examples"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -150,7 +149,7 @@ nodes:
 
   - id: explain
     type: ai.cli
-    label: {tr: "Açıklamalar", en: "Explanations"}
+    label: {tr: "Soruları açıkla", en: "Explain the questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -191,7 +190,7 @@ nodes:
 
   - id: similar
     type: ai.cli
-    label: {tr: "Benzer yeni sorular", en: "Similar new questions"}
+    label: {tr: "Benzer sorular yaz", en: "Write similar questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -237,7 +236,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Açıklamaları denetle ve düzelt", en: "Check and fix the explanations"}
+    label: {tr: "Açıklamaları denetle", en: "Check the explanations"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -297,14 +296,14 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    label: {tr: "Açıklamaları birleştir", en: "Combine the explanations"}
     config:
       template: |
         {{nodes.check.text}}
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Açıklamaları kaydet", en: "Save the explanations"}
     config:
       source: "{{nodes.report.text}}"
       title: "Missed-question review"
@@ -325,6 +324,6 @@ connections:
   - {from: refs.text, to: check}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: "Belge (Markdown)", en: "Document (Markdown)"}}
-  - {id: report_docx, from: export.docx, label: {tr: "Belge (Word)", en: "Document (Word)"}}
-  - {id: report_html, from: export.html, label: {tr: "Belge (HTML)", en: "Document (HTML)"}}
+  - {id: report_md, from: export.md, label: {tr: "Açıklamalar (Markdown)", en: "Explanations (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Açıklamalar (Word)", en: "Explanations (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Açıklamalar (HTML)", en: "Explanations (HTML)"}}

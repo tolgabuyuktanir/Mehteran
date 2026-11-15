@@ -26,6 +26,8 @@ def _calls(node: dict) -> tuple[int, int, int] | None:
     config = node.get("config") or {}
     if node["type"] == "ai.cli":  # "output: json" asks once more when the answer is not valid JSON
         return 1, 2 if config.get("output") == "json" else 1, 0
+    if node["type"] == "ai.agent":
+        return 1, 1, 0
     if node["type"] == "condition" and (config.get("operator") or "contains") == "ai":
         return 1, 2, 0
     if node["type"] == "ai.map":
@@ -57,10 +59,11 @@ def _sent_to(model: str, cfg: dict, privacy: str) -> dict:
     return {"sent_to": where["vendor"], "local": where["local"], "refused": privacy == "local" and not where["local"]}
 
 
-def estimate(wf: schema.Workflow, values: dict, cfg: dict, resolve=None, privacy: str = "") -> dict:
+def estimate(wf: schema.Workflow, values: dict, cfg: dict, resolve=None, privacy: str = "", every_step: str = "") -> dict:
     """The model calls of a run of wf with the given input values (a missing value: the input's default).
     Each step says where its prompt goes (sent_to, local); an `auto` model is shown as resolve(kind) chooses it.
     privacy "local" (or the workflow's "privacy: local"): a step that would leave this computer is "refused".
+    every_step: one model for every step (Engine.start's every_step).
 
     {steps: [{node, label, type, provider, model, retries, calls, per_part, max_parts, conditional, max_calls}],
      models: [{provider, model, configured, calls, loops, max_parts, max_calls}],
@@ -83,6 +86,8 @@ def estimate(wf: schema.Workflow, values: dict, cfg: dict, resolve=None, privacy
             continue
         once, per_attempt, parts = counted
         template = (node.get("config") or {}).get("provider")
+        if isinstance(template, str) and every_step.strip():
+            template = every_step
         model = placeholders.render(template.strip(), lambda ref: inputs.get(ref[7:], "")).strip() \
             if isinstance(template, str) else ""
         model, chosen_by = _concrete(model, cfg, resolve, privacy)

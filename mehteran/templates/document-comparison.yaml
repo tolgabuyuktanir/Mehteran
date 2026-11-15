@@ -6,19 +6,11 @@ name:
   en: Document comparison
 description:
   tr: >-
-    İki ya da daha fazla belgeyi (en çok 20) karşılaştırır. "İki belge" kipinde (örneğin bir sözleşmenin iki sürümü
-    ya da eski ve yeni bir makale) eklenen, çıkarılan, değişen ve taşınan hükümleri, rakamları ve iddiaları alıntılarla
-    ve önem derecesiyle verir; ikinci bir model okur için kısa bir özet ve öneriler yazar. "Belge kümesi" kipinde
-    (örneğin üç teklif ya da birkaç politika) her belge için ayrı bir model çağrısıyla yapılandırılmış bir özet
-    çıkarılır, sonra bir model özetleri aynı ölçütlerle karşılaştırır: tablo, ortak noktalar, farklar, çelişkiler ve
-    öneriler. Sonuç Markdown, Word ve HTML rapordur.
+    İki ya da daha fazla belgeyi karşılaştırır: iki sürüm arasındaki farkları alıntılarla gösterir ya da birkaç
+    belgeyi bir tabloda yan yana koyar, öneriler verir.
   en: >-
-    Compares two or more documents (at most 20). In the "Two documents" mode (for example two versions of a contract,
-    or the old and new version of a paper) it reports added, removed, changed and moved provisions, figures and
-    claims with quotations and a rating; a second model writes a short summary with recommendations. In the "A set
-    of documents" mode (for example three proposals or several policies) a structured digest of each document is made,
-    one model call per document, then a model compares the digests on the same criteria: a table, what they share,
-    how they differ, contradictions and recommendations. The result is a Markdown, Word and HTML report.
+    Compares two or more documents: it shows the differences between two versions with quotations, or puts
+    several documents side by side in a table, with recommendations.
 version: "1.1"
 category: documents
 tier: core
@@ -29,15 +21,15 @@ inputs:
     multiple: true
     label: {tr: Belgeler, en: Documents}
     description:
-      tr: "İki ya da daha fazla belge seçin (en çok 20). Raporda belgeler dosya adlarıyla anılır."
-      en: "Choose two or more documents (at most 20). The report names the documents by their file names."
+      tr: "İki ya da daha fazla belge, en çok 20; rapor belgeleri dosya adlarıyla anar."
+      en: "Two or more documents, at most 20; the report names them by their file names."
     formats: [pdf, docx, epub, md, txt]
   - id: mode
     type: choice
-    label: {tr: Karşılaştırma kipi, en: Comparison mode}
+    label: {tr: Karşılaştırma türü, en: Kind of comparison}
     description:
-      tr: "'İki belge' tam olarak iki belge ister ve ayrıntılı, alıntılı fark listesi verir. 'Belge kümesi' tablolu karşılaştırma yapar."
-      en: "'Two documents' needs exactly two documents and gives a detailed list of differences with quotations. 'A set of documents' gives a comparison table."
+      tr: "'İki belge' tam iki belge ister ve farkları alıntılarla verir; 'Belge kümesi' bir tablo verir."
+      en: "'Two documents' needs exactly two and lists the differences with quotations; 'A set of documents' gives a table."
     options:
       - {value: pair, label: {tr: İki belge (ayrıntılı farklar), en: Two documents (detailed differences)}}
       - {value: set, label: {tr: Belge kümesi (tablo), en: A set of documents (table)}}
@@ -47,20 +39,20 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Amaç ve ölçütler, en: Purpose and criteria}
+    label: {tr: Amaç ve ölçütler (isteğe bağlı), en: Purpose and criteria (optional)}
     description:
-      tr: "Örnek: 'Yeni sürüm bizim için riskli bir değişiklik içeriyor mu?' ya da 'fiyat, teslim süresi, garanti, riskler'. Boş bırakılırsa ölçütleri model belirler."
-      en: "For example: 'Does the new version contain a change that is risky for us?' or 'price, delivery time, warranty, risks'. Left empty, the model chooses the criteria."
+      tr: "Örnek: 'Yeni sürümde bizim için riskli bir değişiklik var mı?' ya da 'fiyat, teslim süresi, garanti'."
+      en: "For example: 'Is there a change in the new version that is risky for us?' or 'price, delivery time, warranty'."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
   - id: model
     type: provider
-    label: {tr: Karşılaştıran model, en: Model for the comparison}
+    label: {tr: Model, en: Model}
     default: auto
   - id: writer_model
     type: provider
-    label: {tr: Raporu yazan model, en: Model for the summary}
+    label: {tr: Özeti yazan model, en: Model for the summary}
     default: auto
 
 nodes:
@@ -72,7 +64,7 @@ nodes:
 
   - id: gate
     type: condition
-    label: {tr: "İki belge kipi mi?", en: "Two-document mode?"}
+    label: {tr: "İki belgeyse", en: "If two documents"}
     config:
       value: "{{inputs.mode}}"
       operator: equals
@@ -80,7 +72,7 @@ nodes:
 
   - id: compare
     type: ai.cli
-    label: {tr: Ayrıntılı karşılaştırma, en: Detailed comparison}
+    label: {tr: Farkları bul, en: Find the differences}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -140,7 +132,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Okur için özet, en: Summary for the reader}
+    label: {tr: Özeti yaz, en: Write the summary}
     retries: 2
     config:
       provider: "{{inputs.writer_model}}"
@@ -190,7 +182,7 @@ nodes:
 
   - id: digests
     type: ai.map
-    label: {tr: Her belgenin özeti, en: Digest of each document}
+    label: {tr: Belgeleri özetle, en: Summarise each document}
     retries: 2
     config:
       source: "{{nodes.extract.text}}"
@@ -226,7 +218,7 @@ nodes:
 
   - id: compare_set
     type: ai.cli
-    label: {tr: Karşılaştırma, en: Comparison}
+    label: {tr: Belgeleri karşılaştır, en: Compare the documents}
     retries: 2
     config:
       provider: "{{inputs.writer_model}}"
@@ -273,7 +265,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -286,7 +278,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Document comparison

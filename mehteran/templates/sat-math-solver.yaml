@@ -6,17 +6,11 @@ name:
   en: "SAT Math: worked solution with a double check"
 description:
   tr: >-
-    Bir SAT tarzı matematik sorusunu (yazarak ya da dosyadan) iki ayrı model çağrısıyla birbirinden bağımsız
-    çözer. Üçüncü bir adım iki nihai cevabı karşılaştırır. Cevaplar uyuşmazsa bir model soruyu yeniden, farklı
-    bir yolla çözer ve hangi cevabın doğru olduğuna karar verir; uyuşuyorsa temiz bir çözüm yazılır. Sonuç adım
-    adım çözüm, cevap, yaygın tuzaklar ve ölçülen becerilerdir (Markdown, Word, HTML). Yapay zekâ çözümü hata
-    yapabilir, bu yüzden iki modelin uyuşması doğruluğun kanıtı değildir. College Board ile ilgisi yoktur.
+    Bir SAT tarzı matematik sorusu verin; adım adım çözümü, cevabı ve yaygın tuzakları alın. Soru iki kez
+    çözülür, ama yapay zekâ yine yanılabilir: sonucu kontrol edin. College Board ile ilgisi yoktur.
   en: >-
-    Solves an SAT-style math question (typed or from a file) in two separate, independent model calls. A third
-    step compares the two final answers. If they differ, a model solves the question again by a different route
-    and decides which answer is right; if they agree, a clean solution is written. The result is a step-by-step
-    solution, the answer, common traps and the skill tested (Markdown, Word, HTML). An AI solution can be wrong,
-    so two models agreeing is not proof. Not affiliated with College Board.
+    Give an SAT-style math question; get a step-by-step solution, the answer and common traps. It is solved
+    twice, but AI can still be wrong: check the result. Not affiliated with College Board.
 version: "1.0"
 category: exams
 
@@ -26,17 +20,17 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Soru (yazın veya yapıştırın)", en: "Question (type or paste)"}
+    label: {tr: "Soru", en: "Question"}
     description:
-      tr: "Şıkları da yazın. Şekil gerekiyorsa sözle tarif edin. Dosya yüklüyorsanız boş bırakabilirsiniz."
-      en: "Include the answer choices. Describe any figure in words. May be left empty if you upload a file."
+      tr: "Soruyu şıklarıyla yazın, şekli sözle tarif edin. Dosya yüklerseniz boş bırakın."
+      en: "Type the question with its answer choices and describe any figure in words. Leave empty if you upload a file."
   - id: question_file
     type: file
     required: false
     label: {tr: "Soru dosyası", en: "Question file"}
     description:
-      tr: "İsteğe bağlı. Metin içeren PDF, Word, Markdown, düz metin ya da fotoğraf (OCR ile okunur)."
-      en: "Optional. A PDF, Word, Markdown or text file, or a photo (read by OCR)."
+      tr: "İsteğe bağlı. Soruyu içeren bir PDF, Word, metin dosyası ya da fotoğraf."
+      en: "Optional. A PDF, Word or text file, or a photo, that contains the question."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: language
     type: language
@@ -53,13 +47,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: "Dosyadan soruyu oku", en: "Read the question file"}
+    label: {tr: "Soru dosyasını oku", en: "Read the question file"}
     config:
       file: "{{inputs.question_file}}"
 
   - id: solve_a
     type: ai.cli
-    label: {tr: "Birinci çözüm", en: "First solution"}
+    label: {tr: "Soruyu çöz", en: "Solve the question"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -95,7 +89,7 @@ nodes:
 
   - id: solve_b
     type: ai.cli
-    label: {tr: "İkinci, bağımsız çözüm", en: "Second, independent solution"}
+    label: {tr: "İkinci kez çöz", en: "Solve it a second time"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -178,7 +172,7 @@ nodes:
 
   - id: gate
     type: condition
-    label: {tr: "Cevaplar farklıysa", en: "If the answers differ"}
+    label: {tr: "Uyuşmayı denetle", en: "Check for agreement"}
     config:
       value: "{{nodes.compare.text}}"
       operator: regex
@@ -186,7 +180,7 @@ nodes:
 
   - id: reconcile
     type: ai.cli
-    label: {tr: "Uzlaştırma: yeniden çöz", en: "Reconcile: solve again"}
+    label: {tr: "Yeniden çözüp karar ver", en: "Solve again and decide"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

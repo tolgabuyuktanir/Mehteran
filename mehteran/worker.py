@@ -128,6 +128,23 @@ def _local_server_call(job: dict, spec: dict, prompt: str, log: Path | None, pre
     return 0
 
 
+def _agent(job: dict, log: Path | None, prefix: str) -> dict | None:
+    """An agent step's browser (job["agent"]: mcp_file, tools, hosts): the guard stops the step when it leaves its
+    sites, and writes each browser action to the live log."""
+    spec = job.get("agent")
+    if not spec:
+        return None
+    from mehteran import browser
+    check = browser.guard(spec["hosts"])
+
+    def guard(line: str) -> str | None:
+        stop, action = check(line)
+        if action and log:
+            livelog.append(log, "".join(f"{prefix}» {a}\n" for a in action.splitlines()), stamp=True)
+        return stop
+    return {"mcp_file": spec["mcp_file"], "tools": spec["tools"], "guard": guard}
+
+
 def _adapter_call(job: dict, spec: dict, prompt: str, log: Path | None, prefix: str) -> int:
     """One call through an adapter: the tool's output goes to the live log as it arrives (toolstream.py)."""
     from mehteran import usage
@@ -140,7 +157,8 @@ def _adapter_call(job: dict, spec: dict, prompt: str, log: Path | None, prefix: 
     shown, stdout = "", ""
     try:
         answer, stdout = base.run(adapter, spec, model, effort, prompt, job["timeout"], live.feed if live else None,
-                                  default_wait=job["cfg"]["general"].get("quota_wait_minutes", 30) * 60)
+                                  default_wait=job["cfg"]["general"].get("quota_wait_minutes", 30) * 60,
+                                  agent=_agent(job, log, prefix))
     except base.UsageLimit as e:
         _write(Path(job["error"]), t("quota_hit", name=provider, time=time.strftime("%H:%M", time.localtime(e.until))))
         if job.get("quota"):

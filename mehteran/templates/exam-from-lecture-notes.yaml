@@ -6,17 +6,11 @@ name:
   en: "A/B exam from lecture notes"
 description:
   tr: >-
-    Yüklediğiniz ders notlarından aynı kazanımları ölçen iki sınav formu (A ve B) hazırlar. Bir model Form A'yı,
-    ikinci bir model Form B'yi yazar; B, A ile aynı konuları ve zorluğu ölçer ama soruları farklıdır. Her formda
-    cevap anahtarı ve notlardaki yeri vardır. Üçüncü bir model iki formu notlara bakarak çözer, anahtar
-    hatalarını ve iki form arasındaki denkliği (konu ve zorluk) denetler. Sonuç Markdown, Word ve HTML belgedir;
-    öğrenciye vermeden önce öğretmenin kontrolü gerekir.
+    Ders notlarınızdan aynı konuları ölçen iki sınav formu (A ve B) ve cevap anahtarlarını hazırlar. Öğrenciye
+    vermeden önce bir öğretmen kontrol etmelidir.
   en: >-
-    Prepares two exam forms (A and B) that measure the same objectives from the lecture notes you upload. One
-    model writes Form A, a second writes Form B, which measures the same topics at the same difficulty with
-    different questions. Each form has an answer key with its place in the notes. A third model answers both
-    forms from the notes and checks the keys and the match between the two forms (topics and difficulty). The
-    result is a Markdown, Word and HTML document; a teacher should check it before it goes to students.
+    Makes two exam forms (A and B) on the same topics from your lecture notes, with answer keys. A teacher should
+    check them before they go to students.
 version: "1.0"
 category: education
 
@@ -24,6 +18,7 @@ inputs:
   - id: notes
     type: file
     label: {tr: "Ders notları", en: "Lecture notes"}
+    description: {tr: "PDF, Word, EPUB ya da düz metin.", en: "PDF, Word, EPUB or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: level
     type: text
@@ -31,37 +26,41 @@ inputs:
     default: ""
     label: {tr: "Öğrenci düzeyi", en: "Student level"}
     description:
-      tr: "Örnek: 'lise 10. sınıf'."
-      en: "For example: 'grade 10'."
+      tr: "İsteğe bağlı. Örnek: 'lise 10. sınıf'."
+      en: "Optional. For example: 'grade 10'."
   - id: count
     type: text
     required: false
     default: "12"
     label: {tr: "Form başına soru", en: "Questions per form"}
+    description: {tr: "Her formdaki soru sayısı, örneğin 12.", en: "The number of questions in each form, for example 12."}
   - id: reference_questions
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı. Yeni sorular bunların tarzında yazılır ama kopyalanmaz; tarama ve fotoğraf da olur."
+      en: "Optional. New questions follow their style but never copy them; scans and photos work too."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Örnek sorular (metin)", en: "Example questions (text)"}
     description:
-      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
-      en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
+      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu, varsa cevabıyla, buraya yapıştırın."
+      en: "Optional. Paste one or more example questions here, with their answers if you have them."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Örneklere benzerlik", en: "Likeness to the examples"}
+    description:
+      tr: "Örnek soru verdiyseniz yeni soruların onlara ne kadar benzeyeceği."
+      en: "If you gave example questions: how close the new ones stay to them."
     options:
-      - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
-      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
+      - {value: similar, label: {tr: "Benzer (aynı beceri, yeni sayılar ve bağlam)", en: "Similar (same skill, new numbers and context)"}}
+      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, başka bir gerçek hayat bağlamı)", en: "New scenario (same skill, another real-life setting)"}}
       - {value: harder, label: {tr: "Daha zor", en: "Harder"}}
       - {value: easier, label: {tr: "Daha kolay", en: "Easier"}}
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
@@ -81,13 +80,13 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the example questions"}
     config:
       file: "{{inputs.reference_questions}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnekleri incele", en: "Study the examples"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -135,7 +134,7 @@ nodes:
 
   - id: form_a
     type: ai.cli
-    label: {tr: "Form A", en: "Form A"}
+    label: {tr: "Form A'yı yaz", en: "Write Form A"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -185,7 +184,7 @@ nodes:
 
   - id: form_b
     type: ai.cli
-    label: {tr: "Form B", en: "Form B"}
+    label: {tr: "Form B'yi yaz", en: "Write Form B"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -240,7 +239,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Formları denetle ve düzelt", en: "Check and fix the forms"}
+    label: {tr: "Formları denetle", en: "Check the forms"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -293,14 +292,14 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    label: {tr: "Sınavı birleştir", en: "Combine the exam"}
     config:
       template: |
         {{nodes.check.text}}
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Sınavı kaydet", en: "Save the exam"}
     config:
       source: "{{nodes.report.text}}"
       title: "A/B exam"

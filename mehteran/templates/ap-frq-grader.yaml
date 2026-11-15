@@ -6,50 +6,47 @@ name:
   en: "AP FRQ grading (double scoring)"
 description:
   tr: >-
-    Öğretmenin rubriğini ve öğrenci cevap dosyalarını okur. İki ayrı model her cevabı birbirinden bağımsız
-    puanlar: her rubrik satırı için puan ve cevaptan birebir alıntı. Birinci model ayrıca öğrenciye geri
-    bildirim yazar. Bir model iki puanlamayı satır satır karşılaştırır; fark varsa üçüncü bir adım yalnızca
-    tartışmalı satırları yeniden değerlendirir. Bir öğretmen onaylamadan sonuç kaydedilmez. Puanlar yapay zekâ
-    tahminidir, resmî AP puanı değildir; nihai karar öğretmenindir. College Board ile ilgisi yoktur.
+    Rubriği ve öğrenci cevaplarını verin: her cevap iki kez puanlanır ve öğrenciye geri bildirim yazılır. Puanlar
+    resmî AP puanı değildir; öğretmen onaylar. College Board ile ilgisi yoktur.
   en: >-
-    Reads the teacher's rubric and the student response files. Two separate models score every response
-    independently: a score for each rubric row and an exact quotation from the response. The first model also
-    writes feedback for the student. A model compares the two scorings row by row; if they differ, a third step
-    reassesses only the disputed rows. Nothing is saved until a teacher approves. The scores are AI estimates,
-    not official AP scores; the final decision is the teacher's. Not affiliated with College Board.
+    Give the rubric and the student responses: each response is scored twice and gets feedback. The scores are
+    not official AP scores; a teacher approves them. Not affiliated with College Board.
 version: "1.0"
 category: exams
 
 inputs:
   - id: rubric
     type: file
-    label: {tr: "Rubrik / puanlama anahtarı", en: "Rubric / scoring guide"}
+    label: {tr: "Rubrik (puanlama anahtarı)", en: "Rubric (scoring guide)"}
     description:
-      tr: "Her puanın neyle kazanıldığını anlatan rubrik. Soru da bu dosyada olabilir."
-      en: "The rubric that says what earns each point. The question may be in the same file."
+      tr: "Her puanın neyle kazanıldığını anlatan dosya; soru da içinde olabilir."
+      en: "The file that says what earns each point; it may hold the question too."
     formats: [pdf, docx, md, txt, csv, xlsx, png, jpg, jpeg]
   - id: responses
     type: file
     multiple: true
     label: {tr: "Öğrenci cevapları", en: "Student responses"}
     description:
-      tr: "Her öğrenci için bir dosya (en çok 20). Dosya adı öğrencinin adı ya da numarası olabilir; kişisel veri paylaşmak istemiyorsanız numara kullanın."
-      en: "One file per student (up to 20). The file name may be the student's name or number; use a number if you do not want to share personal data."
+      tr: "Her öğrenci için bir dosya, en çok 20. Kişisel veri paylaşmamak için dosyalara ad yerine numara verin."
+      en: "One file per student, up to 20. To keep personal data out, name the files by number, not by name."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: question
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Soru metni", en: "Question text"}
+    label: {tr: "Soru metni (isteğe bağlı)", en: "Question text (optional)"}
     description:
-      tr: "İsteğe bağlı. Rubrik dosyasında soru yoksa buraya yazın."
-      en: "Optional. Write it here if the rubric file does not hold the question."
+      tr: "Rubrik dosyasında soru yoksa buraya yazın."
+      en: "Write the question here if the rubric file does not hold it."
   - id: course
     type: text
     required: false
     default: ""
     label: {tr: "AP dersi", en: "AP course"}
+    description:
+      tr: "Örnek: 'AP Biology', 'AP US History'."
+      en: "For example: 'AP Biology', 'AP US History'."
   - id: language
     type: language
     label: {tr: "Geri bildirim dili", en: "Feedback language"}
@@ -77,7 +74,7 @@ nodes:
 
   - id: grade_a
     type: ai.map
-    label: {tr: "Birinci puanlama ve geri bildirim", en: "First scoring and feedback"}
+    label: {tr: "Puanla, geri bildirim yaz", en: "Score and give feedback"}
     retries: 2
     config:
       source: "{{nodes.responses.text}}"
@@ -126,7 +123,7 @@ nodes:
 
   - id: grade_b
     type: ai.map
-    label: {tr: "İkinci, bağımsız puanlama", en: "Second, independent scoring"}
+    label: {tr: "Bağımsız olarak yeniden puanla", en: "Score again independently"}
     retries: 2
     config:
       source: "{{nodes.responses.text}}"
@@ -171,7 +168,7 @@ nodes:
 
   - id: compare
     type: ai.cli
-    label: {tr: "Puanlamaları karşılaştır", en: "Compare the scorings"}
+    label: {tr: "Puanları karşılaştır", en: "Compare the scores"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -220,7 +217,7 @@ nodes:
 
   - id: reconcile
     type: ai.cli
-    label: {tr: "Tartışmalı satırlar", en: "Disputed rows"}
+    label: {tr: "Farkları incele", en: "Review the differences"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -269,7 +266,7 @@ nodes:
 
   - id: bundle
     type: text.merge
-    label: {tr: "Puanlamayı birleştir", en: "Assemble the grading"}
+    label: {tr: "Puanlamayı birleştir", en: "Combine the grading"}
     config:
       template: |
         {{nodes.grade_a.text}}

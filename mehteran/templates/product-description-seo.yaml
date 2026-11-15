@@ -6,52 +6,48 @@ name:
   en: "Product descriptions and SEO text"
 description:
   tr: >-
-    Ürün bilgisinden (yapıştırılan metin, teknik özellik tablosu ya da CSV/Excel) satış sitesi ve pazaryeri için
-    ürün açıklamaları yazar: kısa açıklama, uzun açıklama, madde madde özellikler, arama sonuçları için başlık
-    (en çok 60 karakter) ve meta açıklama (en çok 155 karakter), anahtar kelime önerileri. Ürün bilgisinde
-    olmayan özellik ya da iddia eklemez; ikinci bir geçiş bunu denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Ürün bilgilerini (metin ya da Excel tablosu) verin; mağaza ya da pazaryeri için ürün açıklamaları, arama
+    başlığı ve anahtar kelimeler alın. Bilgide olmayan özellik eklenmez.
   en: >-
-    Writes product descriptions for a shop or marketplace from product information (pasted text, a spec table,
-    or CSV/Excel): a short description, a long description, bullet features, a title for search results (at most
-    60 characters), a meta description (at most 155 characters) and keyword ideas. It adds no feature or claim
-    that the product information does not give; a second pass checks this. The result is a Markdown, Word and
-    HTML document.
+    Give the product details (text or a spreadsheet); get product descriptions, a search title and keywords for
+    your shop or a marketplace. No feature is added that your details do not give.
 version: "1.0"
-category: everyday
+category: writing
 
 inputs:
   - id: info_file
     type: file
     required: false
-    label: {tr: "Ürün bilgisi dosyası", en: "Product information file"}
+    label: {tr: "Ürün bilgisi dosyası", en: "Product details file"}
+    description: {tr: "İsteğe bağlı; örnek: ürün listesi Excel'i ya da teknik özellik belgesi.", en: "Optional, e.g. a product list in Excel or a spec sheet."}
     formats: [csv, tsv, xlsx, pdf, docx, md, txt]
   - id: info
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Ürün bilgisi (yapıştır)", en: "Product information (paste)"}
+    label: {tr: "Ya da ürün bilgisi", en: "Or the product details"}
     description:
-      tr: "Ad, özellikler, ölçüler, malzeme, fiyat aralığı vb."
-      en: "Name, features, dimensions, material, price range and so on."
+      tr: "Ad, özellikler, ölçüler, malzeme, fiyat aralığı gibi bilgileri yapıştırın."
+      en: "Paste the name, features, size, material, price range and so on."
   - id: channel
     type: choice
-    label: {tr: "Kanal", en: "Channel"}
+    label: {tr: "Nerede satılacak", en: "Where you sell"}
     options:
-      - {value: shop, label: {tr: "Kendi mağaza sitesi", en: "Own shop site"}}
-      - {value: marketplace, label: {tr: "Pazaryeri", en: "Marketplace"}}
+      - {value: shop, label: {tr: "Kendi mağaza sitem", en: "My own shop site"}}
+      - {value: marketplace, label: {tr: "Pazaryeri (Trendyol, Amazon vb.)", en: "A marketplace (Amazon, Etsy, ...)"}}
     default: shop
   - id: audience
     type: text
     required: false
     default: ""
-    label: {tr: "Hedef kitle", en: "Audience"}
+    label: {tr: "Kimler alacak", en: "Who buys it"}
     description:
-      tr: "Örnek: 'ilk kez koşmaya başlayanlar'."
-      en: "For example: 'first-time runners'."
+      tr: "İsteğe bağlı; örnek: 'koşmaya yeni başlayanlar'."
+      en: "Optional, e.g. 'first-time runners'."
   - id: tone
     type: choice
-    label: {tr: "Ton", en: "Tone"}
+    label: {tr: "Üslup", en: "Tone"}
     options:
       - {value: clear, label: {tr: "Net ve bilgilendirici", en: "Clear and informative"}}
       - {value: warm, label: {tr: "Sıcak", en: "Warm"}}
@@ -59,7 +55,7 @@ inputs:
     default: clear
   - id: language
     type: language
-    label: {tr: "Rapor dili", en: "Report language"}
+    label: {tr: "Metnin dili", en: "Text language"}
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
@@ -78,7 +74,7 @@ nodes:
 
   - id: write
     type: ai.cli
-    label: {tr: "Açıklamalar", en: "Descriptions"}
+    label: {tr: "Açıklamaları yaz", en: "Write the descriptions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -116,7 +112,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: "Doğrulama", en: "Claims and length check"}
+    label: {tr: "Metni denetle", en: "Check the text"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -147,7 +143,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Metni kaydet", en: "Save the copy"}
+    label: {tr: "Metni kaydet", en: "Save the text"}
     config:
       source: "{{nodes.verify.text}}"
       title: "Product descriptions"
@@ -162,6 +158,6 @@ connections:
   - {from: verify.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: "Metin (Markdown)", en: "Copy (Markdown)"}}
-  - {id: report_docx, from: export.docx, label: {tr: "Metin (Word)", en: "Copy (Word)"}}
-  - {id: report_html, from: export.html, label: {tr: "Metin (HTML)", en: "Copy (HTML)"}}
+  - {id: report_md, from: export.md, label: {tr: "Ürün metinleri (Markdown)", en: "Product texts (Markdown)"}}
+  - {id: report_docx, from: export.docx, label: {tr: "Ürün metinleri (Word)", en: "Product texts (Word)"}}
+  - {id: report_html, from: export.html, label: {tr: "Ürün metinleri (HTML)", en: "Product texts (HTML)"}}

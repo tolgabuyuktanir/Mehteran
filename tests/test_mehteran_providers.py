@@ -267,6 +267,39 @@ class PrivacyTests(HomeCase):
         self.assertEqual(local["refused"], 2)
 
 
+class EveryStepTests(HomeCase):
+    """"Model for every step": a person with one AI tool runs a workflow that names other tools."""
+    FLOW = workflow(ai("a", "TASK:a", provider="nothere/opus@high", fallback_provider="chatgpt")
+                    + ai("b", "TASK:b {{nodes.a.text}}", provider="'{{inputs.model}}'"), [("a", "b")],
+                    inputs="  - {id: model, type: provider, default: claude}\n")
+
+    def test_every_step_replaces_the_models_and_fallbacks_of_the_workflow(self):
+        engine = self.engine()
+        with self.assertRaises(RunError) as caught:
+            engine.start(self.FLOW)  # the workflow names a tool that is not there
+        self.assertIn("--every-step", str(caught.exception))
+        run_id = engine.start(self.FLOW, every_step="fake")
+        self.assertEqual(engine.wait(run_id, 30), "succeeded", engine.get(run_id)["error"])
+        run = engine.get(run_id)
+        self.assertEqual(run["providers"], {"a": "fake", "a:fallback": "fake", "b": "fake"})
+        self.assertEqual(run["inputs"]["model"], "fake")
+        self.assertEqual(len(self.calls()), 2)
+
+    def test_every_step_may_be_auto_and_is_checked(self):
+        engine = self.engine()
+        wf = schema.parse(self.FLOW)
+        found, auto = engine._resolve_providers(wf, {"model": "auto"}, problems := [], "", "auto")
+        self.assertEqual((found["a"], found["b"], problems), ("claude", "claude", []))
+        self.assertEqual(auto["nodes"], {"a": "auto", "b": "auto"})
+        for bad in ("nothere", "{{inputs.model}}", "a b"):
+            with self.subTest(bad=bad), self.assertRaises(RunError):
+                engine.start(self.FLOW, every_step=bad)
+
+    def test_the_estimate_shows_the_one_model(self):
+        out = estimate.estimate(schema.parse(self.FLOW), {}, fake_cfg(), every_step="fake")
+        self.assertEqual({s["node"]: s["model"] for s in out["steps"]}, {"a": "fake", "b": "fake"})
+
+
 class WebTests(HomeCase):
     def test_get_and_put(self):
         from mehteran.web import App

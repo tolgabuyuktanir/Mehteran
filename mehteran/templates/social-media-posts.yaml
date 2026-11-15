@@ -6,17 +6,13 @@ name:
   en: "Social media posts from an article or report"
 description:
   tr: >-
-    Bir makaleyi, raporu ya da duyuruyu okur ve LinkedIn, X (Twitter) ve Instagram için ayrı paylaşım metinleri
-    yazar: LinkedIn için uzun ve kısa bir gönderi, X için bir seri, Instagram için başlık ve kaydırmalı gönderi
-    planı, ayrıca etiket önerileri. İkinci bir geçiş her sayının ve iddianın kaynakta olduğunu denetler ve
-    karakter sınırlarını düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Bir makale, rapor ya da duyuru verin; LinkedIn, X ve Instagram için hazır paylaşım metinlerini alın.
+    Mehteran hiçbir şeyi kendisi paylaşmaz: metinleri kontrol edip siz paylaşırsınız.
   en: >-
-    Reads an article, report or announcement and writes separate posts for LinkedIn, X (Twitter) and Instagram:
-    a long and a short LinkedIn post, an X thread, an Instagram caption with a carousel plan, and hashtag ideas.
-    A second pass checks that every number and claim is in the source and fixes character limits. The result is
-    a Markdown, Word and HTML document.
+    Give an article, report or announcement; get ready-to-use posts for LinkedIn, X and Instagram. Mehteran never
+    posts by itself: you check the texts and post them.
 version: "1.0"
-category: everyday
+category: writing
 tier: core
 
 inputs:
@@ -24,6 +20,9 @@ inputs:
     type: file
     required: false
     label: {tr: "Makale ya da rapor", en: "Article or report"}
+    description:
+      tr: "İsteğe bağlı. PDF, Word, EPUB, Markdown veya metin dosyası."
+      en: "Optional. A PDF, Word, EPUB, Markdown or text file."
     formats: [pdf, docx, epub, md, txt, odt, rtf]
   - id: source_text
     type: text
@@ -32,8 +31,8 @@ inputs:
     default: ""
     label: {tr: "Metin (yapıştır)", en: "Text (paste)"}
     description:
-      tr: "Dosya yerine metni yapıştırabilirsiniz."
-      en: "Paste the text instead of uploading a file."
+      tr: "Dosya yoksa metni buraya yapıştırın."
+      en: "If you have no file, paste the text here."
   - id: tone
     type: choice
     label: {tr: "Ton", en: "Tone"}
@@ -49,8 +48,8 @@ inputs:
     default: ""
     label: {tr: "Amaç ve hedef kitle", en: "Goal and audience"}
     description:
-      tr: "Örnek: 'yeni raporumuzu duyurmak, sektör yöneticileri'."
-      en: "For example: 'announce our new report, industry managers'."
+      tr: "İsteğe bağlı. Örnek: 'yeni raporumuzu duyurmak, sektör yöneticileri'."
+      en: "Optional. For example: 'announce our new report, industry managers'."
   - id: language
     type: language
     label: {tr: "Paylaşım dili", en: "Language of the posts"}
@@ -72,7 +71,7 @@ nodes:
 
   - id: posts
     type: ai.cli
-    label: {tr: "Paylaşımlar", en: "Posts"}
+    label: {tr: "Paylaşımları yaz", en: "Write the posts"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -118,7 +117,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: "Doğrulama", en: "Fact and length check"}
+    label: {tr: "Paylaşımları denetle", en: "Check the posts"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

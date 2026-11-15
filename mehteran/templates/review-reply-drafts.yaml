@@ -6,9 +6,9 @@ name:
   en: "Replies to customer reviews"
 description:
   tr: >-
-    Yapıştırdığınız müşteri yorumlarının her birine kibar bir yanıt taslağı yazar. İndirim, iade, tazminat ya da düzeltme sözü uydurmaz; yalnızca sizin verdiğiniz bilgiyi kullanır. İkinci adım her yanıtı yorumuna ve verdiğiniz bilgiye karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Müşteri yorumlarını yapıştırın; her birine kibar bir yanıt taslağı alın. Sizin vermediğiniz indirim, iade ya da söz eklenmez.
   en: >-
-    Writes a polite reply draft to each customer review you paste. It invents no discount, refund, compensation or promise to fix; it uses only the information you give. A second step checks every reply against its review and your information. The result is a Markdown, Word and HTML document.
+    Paste customer reviews; get a polite reply draft for each one. No discount, refund or promise is added that you did not give.
 version: "1.0"
 category: business
 
@@ -17,29 +17,29 @@ inputs:
     type: text
     multiline: true
     required: true
-    label: {tr: "Yorumlar", en: "Reviews"}
+    label: {tr: "Müşteri yorumları", en: "Customer reviews"}
     description:
-      tr: "Yorumları yapıştırın; her yorumu boş satırla ayırın."
-      en: "Paste the reviews; separate each review with an empty line."
+      tr: "Yorumları yapıştırın; aralarına boş satır koyun."
+      en: "Paste the reviews with an empty line between them."
   - id: business
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "İşletme ve verebileceğiniz bilgi", en: "Business and what you can say"}
+    label: {tr: "İşletme bilgisi", en: "About your business"}
     description:
-      tr: "İsteğe bağlı: işletme adı, ne vaat edebileceğiniz, iletişim yolu."
-      en: "Optional: business name, what you may promise, a contact route."
+      tr: "İsteğe bağlı; örnek: 'Kafe Lale; iade yok, şikâyet için info@ornek.com'."
+      en: "Optional, e.g. 'Cafe Lale; no refunds, complaints to info@example.com'."
   - id: tone
     type: choice
-    label: {tr: "Ton", en: "Tone"}
+    label: {tr: "Üslup", en: "Tone"}
     options:
       - {value: warm, label: {tr: "Sıcak", en: "Warm"}}
       - {value: professional, label: {tr: "Profesyonel", en: "Professional"}}
     default: warm
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Yanıtların dili, en: Reply language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -48,7 +48,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Yanıt taslakları", en: "Reply drafts"}
+    label: {tr: "Yanıtları yaz", en: "Write the replies"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -92,7 +92,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Yanıtları denetle", en: "Check the replies"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -129,7 +129,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Yanıtları kaydet, en: Save the replies}
     config:
       source: "{{nodes.check.text}}"
       title: "Review replies"
@@ -142,6 +142,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Yanıtlar (Markdown), en: Replies (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Yanıtlar (Word), en: Replies (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Yanıtlar (HTML), en: Replies (HTML)}}

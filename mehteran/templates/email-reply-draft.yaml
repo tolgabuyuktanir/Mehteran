@@ -6,17 +6,13 @@ name:
   en: "Email reply draft"
 description:
   tr: >-
-    Yapıştırdığınız bir e-postaya ya da yazışma zincirine yanıt taslağı yazar. Önce kısa bir durum özeti ve
-    sizden beklenenler çıkar; sonra seçtiğiniz tonda ve uzunlukta bir ana taslak ile daha kısa bir alternatif
-    yazar. Yanıtta söylemek istediğinizi bir cümleyle belirtebilirsiniz. Bilgi eksikse uydurmaz, köşeli
-    parantezle sorar. Sonuç Markdown, Word ve HTML belgedir.
+    Bir e-postayı ya da yazışmayı yapıştırın, seçtiğiniz tonda bir yanıt taslağı alın; yanıtsız kalan bir e-postanın
+    takibini de yazar. Eksik bilgiyi uydurmaz, köşeli parantezle sorar.
   en: >-
-    Writes a reply draft to an email or a thread you paste. It first gives a short summary of the situation and
-    what is asked of you, then a main draft in the tone and length you choose and a shorter alternative. You can
-    say in one sentence what you want to answer. It does not invent facts: where information is missing it
-    leaves a placeholder in square brackets. The result is a Markdown, Word and HTML document.
-version: "1.0"
-category: everyday
+    Paste an email or a thread and get a reply draft in the tone you choose; it also writes a follow-up to an email
+    that got no answer. It does not invent missing facts: it marks them in square brackets.
+version: "1.1"
+category: writing
 tier: core
 
 inputs:
@@ -27,15 +23,15 @@ inputs:
     default: ""
     label: {tr: "E-posta ya da yazışma", en: "Email or thread"}
     description:
-      tr: "Yapıştırın. En altta en eski mesaj olabilir; model sırayı çözer."
-      en: "Paste it. The oldest message may be at the bottom; the model works out the order."
+      tr: "Buraya yapıştırın; en eski mesajın en altta olması sorun değil."
+      en: "Paste it here; the oldest message may be at the bottom."
   - id: thread_file
     type: file
     required: false
     label: {tr: "E-posta dosyası", en: "Email file"}
     description:
-      tr: "İsteğe bağlı. Yapıştırmak yerine dosya yükleyebilirsiniz."
-      en: "Optional. A file instead of pasted text."
+      tr: "İsteğe bağlı. Yapıştırmak yerine bir dosya ya da ekran görüntüsü yükleyin."
+      en: "Optional. A file or a screenshot instead of pasted text."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: intent
     type: text
@@ -44,8 +40,8 @@ inputs:
     default: ""
     label: {tr: "Ne söylemek istiyorsunuz?", en: "What do you want to say?"}
     description:
-      tr: "Örnek: 'Evet de ama Cuma'dan önce olmaz; fiyat konusunda esneğim.' Boş bırakılırsa makul bir yanıt önerilir."
-      en: "For example: 'Say yes, but not before Friday; I am flexible on the price.' Left empty, a sensible reply is proposed."
+      tr: "Örnek: 'Evet de ama Cuma'dan önce olmaz' ya da takip için 'teklife cevap iste'; boşsa makul bir yanıt önerilir."
+      en: "For example: 'Say yes, but not before Friday', or for a follow-up 'ask for an answer to the quote'; left empty, a sensible reply is proposed."
   - id: tone
     type: choice
     label: {tr: "Ton", en: "Tone"}
@@ -80,7 +76,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Yanıt", en: "Reply"}
+    label: {tr: "Yanıtı yaz", en: "Write the reply"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,6 +102,7 @@ nodes:
 
         Rules:
         - Answer every question and request in the last message. Do not repeat the whole thread.
+        - If the user's wish asks for a follow-up (the last message was sent by the user and got no answer), write a short follow-up to that message instead of a reply: refer to it, restate what is pending and ask for the next step.
         - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Where you need a fact that the user did not give (a date, a price, an attachment), write a placeholder in square brackets, for example [date].
         - Do not invent reasons, excuses, promises or conditions. Say only what the user's wish above says. If it gives no reason, give none.
         - If the user's wish contradicts the thread (for example about dates), follow the user's wish and mention the conflict under "Before you send". Do not mention today's date or the current year.

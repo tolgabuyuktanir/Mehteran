@@ -16,7 +16,7 @@ It runs on macOS, Windows and Linux, in 18 interface languages.
 
 - **No extra bill.** Mehteran removes API keys from every model call, so a tool cannot bill an API account by accident. A billed API key is used only when you allow it for that tool.
 - **Your files stay with you.** The interface runs only on `127.0.0.1`. Runs, results and settings are folders on your disk. A workflow marked "local only" sends no text off the computer.
-- **72 ready-made templates** in 10 categories: documents, business, legal, education, exams, research, writing, data, software and everyday tasks.
+- **77 ready-made templates** in 10 categories: web research, documents, writing, business, legal, education, exams, research, data and software.
 - **A visual editor**, or plain words: draw steps on a canvas (AI steps, conditions, loops, human approvals), or describe the workflow and let a model draft it. "Test this step" runs one step on its own.
 - **Real documents in and out.** Reads PDF, Word, EPUB, Excel, web pages, scans (OCR) and recordings (speech to text). Saves Markdown, Word, HTML, PDF, EPUB, e-mail drafts, JSON and CSV.
 - **Usage limits do not break a run.** A step waits for the limit to reset, or continues with the next model of your order.

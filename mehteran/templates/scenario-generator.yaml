@@ -6,17 +6,11 @@ name:
   en: "Scenario, case and word-problem generator"
 description:
   tr: >-
-    Bir konudan ya da örnek senaryolardan yeni, özgün vaka çalışmaları, kelime problemleri ya da rol canlandırma
-    senaryoları üretir. Her senaryoda bağlam, gerekirse veri, öğrenciye görevler, beklenen cevap noktaları ve
-    puanlama ölçütleri bulunur. Referans verirseniz önce profili çıkarılır ve yeni senaryolar aynı beceriyi
-    ölçer ama farklı bir bağlamda geçer. Bir model senaryodaki sayıları ve görevlerin çözülebilirliğini,
-    referanslara yakınlığı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Bir konu ya da örnek sorular verin; yeni vaka çalışmaları, kelime problemleri veya rol canlandırma
+    senaryolarını cevap noktaları ve puanlama ölçütleriyle alın. Kullanmadan önce kontrol edin.
   en: >-
-    Writes new, original case studies, word problems or role-play scenarios from a topic or from example
-    scenarios. Each scenario has a context, data where needed, tasks for the student, the points an answer
-    should cover and a scoring rubric. If you give references, a profile is made first, and the new scenarios
-    test the same skill in a different context. A model checks the numbers in the scenario, whether the tasks
-    can be solved, and the closeness to the references. The result is a Markdown, Word and HTML document.
+    Give a topic or example questions; get new case studies, word problems or role-play scenarios, with answer
+    points and a scoring rubric. Check them before you use them.
 version: "1.0"
 category: education
 
@@ -25,23 +19,23 @@ inputs:
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı. Örnek alınacak sorular; PDF, Word, metin ya da fotoğraf. Kopyalanmaz, yalnızca tarzı alınır."
+      en: "Optional. Questions to model the new ones on; PDF, Word, text or photos. They are not copied, only their style is used."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Örnek sorular (yapıştır)", en: "Example questions (paste)"}
     description:
       tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
       en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Örneklerden farkı", en: "How new ones differ"}
     options:
       - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
       - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
@@ -56,11 +50,11 @@ inputs:
     default: ""
     label: {tr: "Konu ve kazanım", en: "Topic and learning goal"}
     description:
-      tr: "Örnek: 'Yüzde ve faiz hesabı, 9. sınıf' ya da 'müşteri şikâyetlerini yönetme'. Referans veriyorsanız boş bırakabilirsiniz."
-      en: "For example: 'percent and interest, grade 9' or 'handling customer complaints'. May be left empty if you give references."
+      tr: "Örnek: 'Yüzde ve faiz hesabı, 9. sınıf' ya da 'müşteri şikâyetlerini yönetme'. Örnek soru verdiyseniz boş bırakabilirsiniz."
+      en: "For example: 'percent and interest, grade 9' or 'handling customer complaints'. You can leave it empty if you give example questions."
   - id: kind
     type: choice
-    label: {tr: "Tür", en: "Kind"}
+    label: {tr: "Senaryo türü", en: "Kind of scenario"}
     options:
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
       - {value: case_study, label: {tr: "Vaka çalışması", en: "Case study"}}
@@ -71,7 +65,7 @@ inputs:
     type: text
     required: false
     default: ""
-    label: {tr: "Düzey / hedef kitle", en: "Level or audience"}
+    label: {tr: "Düzey veya kitle", en: "Level or audience"}
     description:
       tr: "Örnek: 'lise 10. sınıf', 'üniversite birinci sınıf', 'çağrı merkezi çalışanları'."
       en: "For example: 'grade 10', 'first-year university', 'call-centre staff'."
@@ -80,6 +74,7 @@ inputs:
     required: false
     default: "3"
     label: {tr: "Senaryo sayısı", en: "Number of scenarios"}
+    description: {tr: "Kaç senaryo istediğinizi yazın, örnek: 3.", en: "How many scenarios you want, for example: 3."}
   - id: language
     type: language
     label: {tr: "Belge dili", en: "Document language"}
@@ -95,13 +90,13 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the example questions"}
     config:
       file: "{{inputs.reference_questions}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnekleri incele", en: "Study the examples"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -143,7 +138,7 @@ nodes:
 
   - id: scenarios
     type: ai.cli
-    label: {tr: "Senaryolar", en: "Scenarios"}
+    label: {tr: "Senaryoları yaz", en: "Write the scenarios"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -179,7 +174,7 @@ nodes:
 
   - id: rubric
     type: ai.cli
-    label: {tr: "Cevap noktaları ve rubrik", en: "Answer points and rubric"}
+    label: {tr: "Puanlama ölçütlerini yaz", en: "Write the rubric"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -204,7 +199,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Senaryoları denetle ve düzelt", en: "Check and fix the scenarios"}
+    label: {tr: "Senaryoları denetle", en: "Check the scenarios"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -255,7 +250,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    label: {tr: "Belgeyi birleştir", en: "Combine the document"}
     config:
       template: |
         {{nodes.check.text}}

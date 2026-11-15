@@ -179,6 +179,12 @@ def _check(model) -> dict:
     return {"valid": True, "problems": [], "warnings": [w.item() for w in schema.warnings(wf)], "ports": _ports(model)}
 
 
+def _every_step(body) -> str:
+    """The run window's "Model for every step" ("" : the models the workflow sets)."""
+    value = body.get("every_step")
+    return value.strip() if isinstance(value, str) else ""
+
+
 def _model(body) -> dict:
     model = body.get("model")
     if not isinstance(model, dict):
@@ -199,9 +205,12 @@ class App:
         self.uploads.mkdir(parents=True, exist_ok=True)
         self._clean_uploads()
         self.translation = None  # the translation app (mehteran.translation.Translation), set by serve()
+        self.server = None  # the HTTP server, set by serve(): "Restart" stops it
+        self.restart_wanted = False
         from . import history
         self.automation = history.Automation(engine)  # batch starts and saves to a folder (history.py)
         self.automation.kick()  # work left from before a restart: queued batch runs, saves not done yet
+        self.scheduler = None  # schedules.Scheduler, started by serve()
 
     def _clean_uploads(self) -> None:
         """Uploads that never became a run are removed after a day."""
@@ -230,7 +239,7 @@ class App:
                                                                                      "detail": ""}),
                                 "favorite": TRANSLATION_FAVORITE in self._favorites()},
                 # the limits of a run's files, shown by the run window (engine.FILES_SIZE_LIMIT, schema.MAX_FILES)
-                "max_files": schema.MAX_FILES, "files_limit_mb": FILES_SIZE_LIMIT // 1024 // 1024,
+                "max_files": schema.MAX_FILES, "max_urls": schema.MAX_URLS, "files_limit_mb": FILES_SIZE_LIMIT // 1024 // 1024,
                 "upload_limit_mb": UPLOAD_LIMIT // 1024 // 1024,
                 "formats": list(FORMATS), "file_formats": list(schema.FILE_FORMATS), "input_types": list(schema.INPUT_TYPES)}
 
@@ -532,6 +541,20 @@ class App:
             self.__dict__["_editor_jobs"] = Jobs(self.home)
         return self.__dict__["_editor_jobs"]
 
+    # --- "Restart" on the banner "the server runs the old code" ---
+    def restart(self, m, body) -> dict:
+        """Starts this server again with the code on disk (serve() does it once the server stopped). Refused while a
+        run or an editor job of this server goes on: it would end with the process. The book translation's runs are
+        processes of their own and go on."""
+        jobs = self.__dict__.get("_editor_jobs")
+        if self.engine.busy() or (jobs and any(job.status == "running" for job in list(jobs.items.values()))):
+            raise HTTPError(409, t("restart_busy"))
+        if self.server is None:
+            raise HTTPError(409, t("restart_unavailable"))
+        self.restart_wanted = True
+        threading.Timer(0.3, self.server.shutdown).start()  # after this answer is sent
+        return {"restarting": True}
+
     def _editor_job(self, start) -> dict:
         from .drafting import DraftError
         try:
@@ -541,11 +564,13 @@ class App:
 
     def editor_draft(self, m, body) -> dict:
         """A model writes a first draft of a workflow for {"description", "provider"}: starts the job. One model call
-        (two when the first answer does not pass the check). Nothing is saved and nothing runs."""
+        (two when the first answer does not pass the check). Nothing is saved and nothing runs. With "previous" (the
+        YAML of a workflow), the description is a change of that workflow."""
         from . import drafting
         taken = {item["id"] for item in templates.listing(self.home)}
         return self._editor_job(lambda: {"id": drafting.start_draft(
-            self.editor_jobs, self.engine, str(body.get("description", "")), str(body.get("provider", "")), taken)})
+            self.editor_jobs, self.engine, str(body.get("description", "")), str(body.get("provider", "")), taken,
+            str(body.get("previous") or ""))})
 
     def editor_try_source(self, m, body) -> dict:
         from . import drafting
@@ -614,8 +639,9 @@ class App:
     # --- local tools: Ollama, Tesseract OCR, Typst, Pandoc, whisper.cpp, qpdf (installed only when the user asks) ---
     def local_tools(self, m, body) -> dict:
         """The state of each local tool, with its install job (as /api/tools has it for the AI tools)."""
-        from . import ocr, ollama, pandoc, qpdf, speech, typst
-        items = [ollama.status(), ocr.status(), typst.status(), pandoc.status(), speech.status(), qpdf.status()]
+        from . import browser, ocr, ollama, pandoc, qpdf, speech, typst
+        items = [ollama.status(), ocr.status(), typst.status(), pandoc.status(), speech.status(), qpdf.status(),
+                 browser.status(self.home)]
         for item in items:
             item["job"] = self.jobs.info(f"local:{item['id']}")
         items[1]["languages_job"] = self.jobs.info("local:ocr-languages")
@@ -645,6 +671,19 @@ class App:
                                        else "", known=", ".join(ocr.LANGUAGES)))
             return self._local_job("ocr-languages", ["ocr-languages", *codes])
         return self._local_job(m[1], [m[1]])
+
+    def browser_signin(self, m, body) -> dict:
+        """Opens Chrome with Mehteran's own profile, so that the person signs in to the sites of agent steps."""
+        from . import browser, urlfetch
+        from .localtools import ToolError
+        url = str(body.get("url") or "").strip()
+        if url and urlfetch.url_problem(url):
+            raise HTTPError(400, urlfetch.url_problem(url))
+        try:
+            browser.open_signin(self.home, url)
+        except ToolError as e:
+            raise HTTPError(409, str(e)) from None
+        return {"opened": True, "profile": str(browser.profile_dir(self.home))}
 
     def local_cancel(self, m, body) -> dict:
         job = self.jobs.items.get(f"local:{m[1]}")
@@ -803,7 +842,8 @@ class App:
         if not isinstance(values, dict):
             raise HTTPError(400, t("bad_request"))
         out = estimate.estimate(schema.parse(templates.read(m[1], m[2], self.home)), values, self.engine.provider_cfg,
-                                resolve=self._auto_now, privacy="local" if body.get("privacy") == "local" else "")
+                                resolve=self._auto_now, privacy="local" if body.get("privacy") == "local" else "",
+                                every_step=_every_step(body))
         by_provider = {name: (tool, spec["name"]) for tool, spec in tools.TOOLS.items() if spec["provider"]
                        for name in {spec["provider"], adapters.canonical(spec["provider"])}}  # "chatgpt" and "codex"
         for item in out["models"]:
@@ -963,10 +1003,12 @@ class App:
                  for key, value in uploads.items()}
         output_dir = self._output_dir(f"{source}:{template_id}", body)  # history.py: save the results there too
         if isinstance(body.get("batch"), dict):  # "once per file": one queued run per file of one input
-            return self._batch_start(text, f"{source}:{template_id}", values, files, body["batch"], output_dir)
+            return self._batch_start(text, f"{source}:{template_id}", values, files, body["batch"], output_dir,
+                                     _every_step(body))
         run_id = self.engine.start(text, {str(k): v for k, v in values.items()}, files,
                                    template=f"{source}:{template_id}", move_files=True, launch=False,
-                                   privacy="local" if body.get("privacy") == "local" else "")
+                                   privacy="local" if body.get("privacy") == "local" else "",
+                                   every_step=_every_step(body))
         if output_dir:
             self.engine.store.update_run(run_id, output_dir=output_dir)
         self.engine.launch(run_id)
@@ -976,6 +1018,59 @@ class App:
             for path in value if isinstance(value, list) else [value]:
                 shutil.rmtree(path.parent, ignore_errors=True)
         return {"id": run_id}
+
+    # --- scheduled runs (schedules.py) and the background server (background.py) ---
+    def _wake_scheduler(self) -> None:
+        if self.scheduler:
+            self.scheduler.wake.set()
+
+    def schedule_list(self, m, body) -> list:
+        from . import schedules
+        return schedules.listing(self.engine)
+
+    def schedule_create(self, m, body) -> dict:
+        from . import schedules
+        source, template_id = templates.resolve(str(body.get("template", "")), self.home)
+        values = body.get("values") or {}
+        if not isinstance(values, dict) or body.get("files"):
+            raise HTTPError(400, t("schedule_needs_files") if body.get("files") else t("bad_request"))
+        item = schedules.create(self.engine, f"{source}:{template_id}", values, body.get("rule"), body.get("name") or "",
+                                _every_step(body), "local" if body.get("privacy") == "local" else "",
+                                self._output_dir(f"{source}:{template_id}", body))
+        self._wake_scheduler()
+        return item
+
+    def schedule_update(self, m, body) -> dict:
+        from . import schedules
+        changes = {k: body[k] for k in ("enabled", "rule", "name") if k in body}
+        item = schedules.update(self.home, m[1], changes)
+        self._wake_scheduler()
+        return item
+
+    def schedule_delete(self, m, body) -> dict:
+        from . import schedules
+        schedules.delete(self.home, m[1])
+        return {"deleted": True}
+
+    def schedule_run(self, m, body) -> dict:
+        from . import schedules
+        return {"id": schedules.run_now(self.engine, m[1], self.automation.kick)}
+
+    def background_get(self, m, body) -> dict:
+        from . import background
+        return background.status(self.home)
+
+    def background_set(self, m, body) -> dict:
+        from . import background
+        if not isinstance(body.get("enabled"), bool):
+            raise HTTPError(400, t("bad_request"))
+        if not background.supported():
+            raise HTTPError(400, t("background_unsupported"))
+        try:
+            (background.turn_on if body["enabled"] else background.turn_off)(self.home)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise HTTPError(400, t("background_failed", error=str(e)[:300])) from None
+        return background.status(self.home)
 
     def run_list(self, m, body) -> list:
         from . import history
@@ -1035,7 +1130,8 @@ class App:
         return {"path": str(folder) if folder else "", "problem": str(problem) if problem else None,
                 "confirmed": bool(folder) and str(folder) in confirmed}
 
-    def _batch_start(self, text: str, ref: str, values: dict, files: dict, batch: dict, output_dir: str | None) -> dict:
+    def _batch_start(self, text: str, ref: str, values: dict, files: dict, batch: dict, output_dir: str | None,
+                     every_step: str = "") -> dict:
         from . import history
         input_id, ids = str(batch.get("input", "")), batch.get("files")
         if not isinstance(ids, list) or not ids or input_id in files or len(set(map(str, ids))) != len(ids) \
@@ -1045,7 +1141,7 @@ class App:
             raise HTTPError(400, t("batch_too_many", limit=history.MAX_BATCH))
         each = [self._upload_file(v) for v in ids]
         batch_id, run_ids = history.start_batch(self.engine, text, ref, {str(k): v for k, v in values.items()}, files,
-                                                input_id, each, output_dir)
+                                                input_id, each, output_dir, every_step)
         self.automation.kick()
         for path in each + [p for v in files.values() for p in (v if isinstance(v, list) else [v])]:
             shutil.rmtree(path.parent, ignore_errors=True)
@@ -1063,9 +1159,28 @@ class App:
                                 "instructions": (node.get("config") or {}).get("instructions"),
                                 "ports": wf.ports(n)} for n, node in wf.nodes.items()}
         run["artifacts"] = self.engine.artifacts(m[1])
+        run["shares"] = self._shares(m[1], wf, run)
         run["events"] = self.engine.store.events(m[1])
         run["active"] = self.engine.is_active(m[1])
         return run
+
+    def _shares(self, run_id: str, wf: schema.Workflow, run: dict) -> list[dict]:
+        """The finished "Share on X" steps: [{node, label, text, url}] (the run page shows an "Open in X" button)."""
+        from .nodes import X_INTENT
+        out = []
+        for node_id, node in wf.nodes.items():
+            info = run["nodes"].get(node_id) or {}
+            if node["type"] != "share.x" or info.get("status") != "succeeded":
+                continue
+            folder = self.engine.run_dir(run_id)
+            try:
+                url = (folder / info["outputs"]["url"]).read_text(encoding="utf-8").strip()
+                text = (folder / info["outputs"]["text"]).read_text(encoding="utf-8").strip()
+            except (KeyError, OSError):
+                continue
+            if url.startswith(X_INTENT):
+                out.append({"node": node_id, "label": node.get("label"), "text": text, "url": url})
+        return out
 
     def run_action(self, m, body) -> dict:
         if m[2] == "cancel":
@@ -1167,8 +1282,9 @@ ROUTES = [
     ("PUT", rf"/api/templates/(user)/{ID}/draft", App.template_save_draft),
     ("GET", r"/api/node-types", App.node_types),
     ("GET", r"/api/local-tools", App.local_tools),
-    ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf)/install", App.local_install),
-    ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf)/cancel", App.local_cancel),
+    ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf|browser)/install", App.local_install),
+    ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf|browser)/cancel", App.local_cancel),
+    ("POST", r"/api/browser/signin", App.browser_signin),
     ("GET", r"/api/ollama/models", App.ollama_models),
     ("POST", r"/api/ollama/pull", App.ollama_pull),
     ("GET", r"/api/ollama/pull", App.ollama_pull_state),
@@ -1185,6 +1301,7 @@ ROUTES = [
     ("POST", r"/api/editor/parse", App.editor_parse),
     ("POST", r"/api/editor/rename", App.editor_rename),
     ("POST", r"/api/editor/draft", App.editor_draft),
+    ("POST", r"/api/restart", App.restart),
     ("POST", r"/api/editor/try", App.editor_try),
     ("POST", r"/api/editor/try/source", App.editor_try_source),
     ("POST", r"/api/editor/jobs/([0-9a-f]{16})", App.editor_job_state),
@@ -1198,6 +1315,14 @@ ROUTES = [
     ("POST", r"/api/tools/([a-z]{1,20})/test", App.test_tool),
     ("GET", r"/api/tools/([a-z]{1,20})/models", App.models),
     ("POST", r"/api/models/test", App.test_model),
+    # scheduled runs (schedules.py) and the background server (background.py)
+    ("GET", r"/api/schedules", App.schedule_list),
+    ("POST", r"/api/schedules", App.schedule_create),
+    ("PUT", r"/api/schedules/([0-9a-f]{12})", App.schedule_update),
+    ("DELETE", r"/api/schedules/([0-9a-f]{12})", App.schedule_delete),
+    ("POST", r"/api/schedules/([0-9a-f]{12})/run", App.schedule_run),
+    ("GET", r"/api/background", App.background_get),
+    ("PUT", r"/api/background", App.background_set),
     ("POST", r"/api/runs", App.run_start),
     ("GET", r"/api/runs", App.run_list),
     ("GET", rf"/api/runs/{RUN}", App.run_get),
@@ -1413,26 +1538,41 @@ class Server(ThreadingHTTPServer):
 
 
 def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = None) -> None:
+    from . import background, schedules
     url = f"http://127.0.0.1:{port}/"
-    try:
-        server = Server(("127.0.0.1", port), None)  # the port first: a busy port opens no database
-    except OSError:
-        # As in the translation app: usually the interface is already open. A Mehteran started before an update
-        # would show the new page with its old code, so that case is named.
-        stale = running_stale(port)
-        print(t("ui_port_stale" if stale else "ui_port_busy", url=url, port=port), flush=True)
-        if open_browser and not stale:
-            webbrowser.open(url)
-        return
+    waited = False
+    while True:
+        try:
+            server = Server(("127.0.0.1", port), None)  # the port first: a busy port opens no database
+            break
+        except OSError:
+            if background.is_background():  # Mehteran is open in a terminal: take over when it closes
+                if not waited:
+                    print(t("ui_background_waiting", port=port), flush=True)
+                    waited = True
+                time.sleep(30)
+                continue
+            # As in the translation app: usually the interface is already open. A Mehteran started before an update
+            # would show the new page with its old code, so that case is named.
+            stale = running_stale(port)
+            print(t("ui_port_stale" if stale else "ui_port_busy", url=url, port=port), flush=True)
+            if open_browser and not stale:
+                webbrowser.open(url)
+            return
     tools.extend_path(ROOT)
     app = App(engine or Engine())
     if resume_on_start():  # opt-in: configurations/engine.toml
         app.engine.resume_interrupted()
     server.RequestHandlerClass = make_handler(app, port)
+    app.server = server
     # The book translation: the translation app's API under /api/tr/ of this server, with this server's session key.
     app.translation = translation.Translation()
     if not app.translation.start(token=app.token):
         print(t(app.translation.error, error=app.translation.detail), flush=True)
+    app.scheduler = schedules.Scheduler(app.engine, app.automation.kick)  # scheduled runs (schedules.py)
+    app.scheduler.begin()
+    if background.is_background():
+        background.mark_running(app.home)
     print(t("ui_running", url=url), flush=True)
     if open_browser:
         threading.Timer(0.5, webbrowser.open, args=[url]).start()
@@ -1442,4 +1582,10 @@ def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = N
         pass
     finally:
         server.server_close()
+    if app.restart_wanted:  # "Restart": the same command again, with the code on disk; no new browser window
+        argv = [sys.executable, *sys.orig_argv[1:]]
+        if "ui" in argv and "--no-browser" not in argv:
+            argv.append("--no-browser")
+        print(t("ui_restarting"), flush=True)
+        os.execv(sys.executable, argv)
 

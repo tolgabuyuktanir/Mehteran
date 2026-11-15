@@ -6,9 +6,9 @@ name:
   en: "Lesson plan"
 description:
   tr: >-
-    Konu, sınıf düzeyi, süre ve kazanımlardan zamanlı etkinlikler, malzemeler ve değerlendirme içeren bir ders planı yazar. Verdiğiniz süreyi aşmaz; kazanım ya da müfredat maddesi uydurmaz. İkinci adım planı sürelere ve kazanımlara göre denetler ve düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Konu, sınıf düzeyi ve süreden zamanlı etkinlikler ve değerlendirme içeren bir ders planı yazar. Süreyi aşmaz; kazanım ya da müfredat maddesi uydurmaz.
   en: >-
-    Writes a lesson plan from a topic, grade level, duration and objectives: timed activities, materials and assessment. It does not run over the duration you give and invents no curriculum standard. A second step checks the plan against the times and objectives and corrects it. The result is a Markdown, Word and HTML document.
+    Writes a lesson plan with timed activities and assessment from a topic, grade level and duration. It keeps to your time and invents no curriculum standard.
 version: "1.0"
 category: education
 
@@ -19,16 +19,16 @@ inputs:
     required: true
     label: {tr: "Konu", en: "Topic"}
     description:
-      tr: "Ders konusu."
-      en: "The lesson topic."
+      tr: "Dersin konusu, örneğin 'Kesirlerle toplama'."
+      en: "The topic of the lesson, for example 'Adding fractions'."
   - id: grade
     type: text
     multiline: true
     required: true
     label: {tr: "Sınıf düzeyi", en: "Grade level"}
     description:
-      tr: "Örnek: '6. sınıf', 'lise 10'."
-      en: "For example: 'grade 6', 'year 10'."
+      tr: "Örnek: '6. sınıf' ya da 'lise 10'."
+      en: "For example: 'grade 6' or 'year 10'."
   - id: duration
     type: text
     multiline: true
@@ -53,11 +53,11 @@ inputs:
     default: ""
     label: {tr: "Sınıf ve olanaklar", en: "Class and resources"}
     description:
-      tr: "İsteğe bağlı: sınıf mevcudu, araç gereç."
-      en: "Optional: class size, equipment."
+      tr: "İsteğe bağlı. Örnek: '28 öğrenci, akıllı tahta var'."
+      en: "Optional. For example: '28 students, there is a smart board'."
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Plan dili, en: Plan language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -66,7 +66,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Ders planı taslağı", en: "Plan draft"}
+    label: {tr: "Planı yaz", en: "Write the plan"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -117,7 +117,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Planı denetle", en: "Check the plan"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -158,7 +158,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Planı kaydet, en: Save the plan}
     config:
       source: "{{nodes.check.text}}"
       title: "Lesson plan"
@@ -171,6 +171,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Ders planı (Markdown), en: Lesson plan (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Ders planı (Word), en: Lesson plan (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Ders planı (HTML), en: Lesson plan (HTML)}}

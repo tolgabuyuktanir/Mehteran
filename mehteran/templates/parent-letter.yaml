@@ -6,9 +6,9 @@ name:
   en: "Letter to parents"
 description:
   tr: >-
-    Amacınızdan ve verdiğiniz bilgilerden velilere gönderilecek bir mektup yazar. Vermediğiniz tarih, etkinlik ya da kural uydurmaz; eksikler için köşeli parantez bırakır. İkinci adım mektubu bilgilerinize karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Mektubun amacını ve bilgileri yazın; velilere gönderilecek bir mektup hazırlanır. Eksik bilgiler köşeli parantezle boş kalır; göndermeden önce okuyun.
   en: >-
-    Writes a letter to parents from your purpose and the facts you give. It invents no date, event or rule; it leaves square brackets for missing facts. A second step checks the letter against your facts. The result is a Markdown, Word and HTML document.
+    Give the purpose and the facts; you get a letter to parents. Missing details stay as [placeholders]. Read it before you send it.
 version: "1.0"
 category: education
 
@@ -19,44 +19,44 @@ inputs:
     required: true
     label: {tr: "Mektubun amacı", en: "Purpose of the letter"}
     description:
-      tr: "Örnek: 'Gezi izni iste', 'Veli toplantısına davet'."
-      en: "For example: 'Ask for a trip permission', 'Invite to a parents' meeting'."
+      tr: "Mektup ne için? Örnek: 'Gezi için izin iste', 'Veli toplantısına davet et'."
+      en: "What the letter is for, e.g. 'Ask permission for a trip', 'Invite to a parents' meeting'."
   - id: facts
     type: text
     multiline: true
     required: true
-    label: {tr: "Bilgiler", en: "Facts"}
+    label: {tr: "Gerekli bilgiler", en: "The details"}
     description:
-      tr: "Tarih, saat, yer, ücret, getirilecekler."
-      en: "Date, time, place, cost, what to bring."
+      tr: "Tarih, saat, yer, ücret, getirilecekler gibi bilgiler."
+      en: "Details such as the date, time, place, cost and what to bring."
   - id: sender
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Gönderen", en: "Sender"}
+    label: {tr: "Gönderen", en: "From"}
     description:
-      tr: "İsteğe bağlı: öğretmen adı ve sınıf."
-      en: "Optional: teacher name and class."
+      tr: "İsteğe bağlı; örnek: 'Ayşe Yılmaz, 4-B sınıf öğretmeni'."
+      en: "Optional, e.g. 'Ms Smith, class 4B teacher'."
   - id: recipient
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Alıcı", en: "Recipient"}
+    label: {tr: "Hitap", en: "Greeting"}
     description:
-      tr: "İsteğe bağlı: örnek 'Sayın veliler'."
-      en: "Optional: for example 'Dear parents'."
+      tr: "İsteğe bağlı; örnek: 'Sayın veliler'."
+      en: "Optional, e.g. 'Dear parents'."
   - id: tone
     type: choice
-    label: {tr: "Ton", en: "Tone"}
+    label: {tr: "Üslup", en: "Tone"}
     options:
       - {value: warm, label: {tr: "Sıcak ve saygılı", en: "Warm and respectful"}}
       - {value: formal, label: {tr: "Resmî", en: "Formal"}}
     default: warm
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Mektubun dili, en: Letter language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -65,7 +65,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Mektup taslağı", en: "Letter draft"}
+    label: {tr: "Mektubu yaz", en: "Write the letter"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,7 +106,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Mektubu denetle", en: "Check the letter"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -146,7 +146,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Mektubu kaydet, en: Save the letter}
     config:
       source: "{{nodes.check.text}}"
       title: "Letter to parents"
@@ -159,6 +159,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Mektup (Markdown), en: Letter (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Mektup (Word), en: Letter (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Mektup (HTML), en: Letter (HTML)}}

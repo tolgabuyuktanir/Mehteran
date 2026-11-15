@@ -249,7 +249,8 @@ Rules of the workflow file (YAML):
   Every step except the first ones needs an incoming connection; every step's result must be used by a
   connection or be saved.
 - Instruction-only style: the prompt of an AI step is a plain instruction, written to the model as you would brief
-  a capable colleague: what to do, what to pay attention to, what the result looks like. Never write
+  a capable colleague: what to do, what to pay attention to, what the result looks like. Write it in paragraphs
+  (a YAML "|" block): never break a line inside a sentence; start a new line only for a new paragraph or a list item. Never write
   {{nodes.<id>.<output>}} in a prompt: the connected texts are added after the instruction automatically.
   A text input of the run form is used with {{inputs.<id>}}. A file input is never used in a prompt: a
   document.extract step reads it (config.file: "{{inputs.<id>}}") and is connected to the step that needs the text.
@@ -273,6 +274,23 @@ def draft_prompt(description: str, lang: str) -> str:
         f"Write name, description, every label and every prompt in {languages.english_name(lang)}. "
         f"Output only the YAML file in one ```yaml block, nothing before or after it.\n\n"
         f"The person's description of the workflow:\n{nodes.wrap_data('description', description)}")
+
+
+PREVIOUS_LIMIT = 60_000  # characters of the current workflow file sent with a change
+
+
+def change_prompt(change: str, previous: str, lang: str) -> str:
+    """A change of a workflow that a model wrote before ("Change: make it shorter"): the same rules, the current file
+    and the change, both as data."""
+    return (
+        f"{nodes.DATA_PREAMBLE}You change a workflow file for Mehteran, a program that runs AI workflows on a person's own "
+        f"computer. The current file and the change the person asked for are the data blocks at the end. Write the "
+        f"complete changed workflow file. Keep everything the change does not touch.\n\n{RULES}\n"
+        f"Node types (* marks a required setting):\n{schema_summary()}\n\n"
+        f"Write name, description, every label and every prompt in {languages.english_name(lang)}. "
+        f"Output only the YAML file in one ```yaml block, nothing before or after it.\n\n"
+        f"The current workflow file:\n{nodes.wrap_data('current_workflow', previous[:PREVIOUS_LIMIT])}\n\n"
+        f"The change the person asked for:\n{nodes.wrap_data('change', change)}")
 
 
 def repair_prompt(first: str, answer: str, problems: list[str]) -> str:
@@ -405,15 +423,18 @@ def read_answer(answer: str, taken: set[str], provider: str) -> dict:
     return {"valid": True, "model": data, "yaml": text, "problems": [], "english": []}
 
 
-def draft(description: str, provider: str, taken: set[str], ask_model, lang: str | None = None) -> dict:
+def draft(description: str, provider: str, taken: set[str], ask_model, lang: str | None = None, previous: str = "") -> dict:
     """The draft of a workflow for a description. ask_model(prompt, stem) -> the model's answer (one call each time).
-    At most two calls: the draft, and one repair when the draft does not pass the check."""
+    At most two calls: the draft, and one repair when the draft does not pass the check. previous: the YAML of a
+    workflow to change; the description is then the change asked for."""
     description = str(description or "").strip()
     if not description:
         raise DraftError(t("draft_needs_description"))
     if len(description) > DESCRIPTION_LIMIT:
         raise DraftError(t("draft_too_long", limit=DESCRIPTION_LIMIT))
-    prompt = draft_prompt(description, lang or i18n.current())
+    lang = lang or i18n.current()
+    previous = str(previous or "").strip()
+    prompt = change_prompt(description, previous, lang) if previous else draft_prompt(description, lang)
     answer = ask_model(prompt, "draft-1")
     found, calls = read_answer(answer, taken, provider), 1
     if not found["valid"]:
@@ -423,7 +444,7 @@ def draft(description: str, provider: str, taken: set[str], ask_model, lang: str
     return {**found, "calls": calls, "provider": provider}
 
 
-def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[str]) -> str:
+def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[str], previous: str = "") -> str:
     provider = checked_provider(engine, provider)
     description = str(description or "").strip()
     if not description:
@@ -431,7 +452,8 @@ def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[
     if len(description) > DESCRIPTION_LIMIT:
         raise DraftError(t("draft_too_long", limit=DESCRIPTION_LIMIT))
     return jobs.start("draft", lambda job: draft(description, provider, taken,
-                                                  lambda prompt, stem: ask(engine, job, provider, prompt, stem)))
+                                                  lambda prompt, stem: ask(engine, job, provider, prompt, stem),
+                                                  previous=previous))
 
 
 # --- "Test this step" ---------------------------------------------------------------------------------------

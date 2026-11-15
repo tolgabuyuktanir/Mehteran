@@ -6,20 +6,11 @@ name:
   en: Writing polish
 description:
   tr: >-
-    İki işten birini yapar. "Düzelti" kipinde bir metnin yazım, noktalama, dil bilgisi ve tutarlılık hatalarını bulur
-    ve metni yeniden yazmak yerine bir değişiklik listesi verir: her madde için metinden alıntı, düzeltme ve gerekçe;
-    ikinci bir model her düzeltmeyi denetler ve yanlış, gereksiz ya da anlamı değiştiren önerileri ayıklar. "Özet ve
-    başlık" kipinde bir makalenin özetini ve başlığını metnin geri kalanıyla karşılaştırır: bir model eksikleri,
-    dayanaksız iddiaları ve tutmayan rakamları bulur, ikinci model üç başlık önerisi ve kelime sınırınıza uyan yeni bir
-    özet yazar, üçüncü model bunu makaleye karşı denetleyip düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Bir metin ya da makale verin; yazım, noktalama ve dil bilgisi düzeltmelerinin listesini ya da makaleniz için yeni
+    bir özet ve başlık önerilerini alın.
   en: >-
-    Does one of two jobs. In the "Proofreading" mode it finds spelling, punctuation, grammar and consistency errors in
-    a text and, instead of rewriting it, returns a change list: for each item a quotation from the text, the
-    correction and the reason; a second model checks every correction and removes wrong, unnecessary or
-    meaning-changing ones. In the "Abstract and title" mode it compares a paper's abstract and title with the body
-    of the paper: one model finds missing elements, claims the body does not support and numbers that do not match, a
-    second model writes three title options and a new abstract within your word limit, and a third model checks it
-    against the paper and corrects it. The result is a Markdown, Word and HTML document.
+    Give a text or a paper; get a list of spelling, punctuation and grammar fixes, or a new abstract and title
+    options for your paper.
 version: "1.0"
 category: writing
 tier: core
@@ -28,37 +19,38 @@ inputs:
   - id: document
     type: file
     label: {tr: Metin ya da makale, en: Text or paper}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Metin dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The text file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: kind
     type: choice
     label: {tr: "Ne yapılsın?", en: "What to do"}
     options:
-      - {value: proofread, label: {tr: Düzelti ve değişiklik listesi, en: Proofreading with a change list}}
-      - {value: abstract, label: {tr: Makalenin özetini ve başlığını iyileştir, en: Improve the abstract and title of a paper}}
+      - {value: proofread, label: {tr: "Dil hatalarını düzelt (değişiklik listesi)", en: "Proofread (list of changes)"}}
+      - {value: abstract, label: {tr: Makalenin özetini ve başlığını iyileştir, en: Improve a paper's abstract and title}}
     default: proofread
   - id: conventions
     type: text
     required: false
     default: ""
-    label: {tr: Dil ve yazım tercihleri (düzelti kipi), en: Language conventions (proofreading mode)}
+    label: {tr: Yazım tercihleri, en: Spelling conventions}
     description:
-      tr: "Örnek: 'TDK Yazım Kılavuzu', 'İngiliz İngilizcesi, Oxford virgülü yok', 'Terimler: e-posta, web sitesi'."
-      en: "For example: 'British English, no Oxford comma', 'US English', 'Terms: e-mail, website'."
+      tr: "İsteğe bağlı, yalnızca düzeltme için. Örnek: 'TDK Yazım Kılavuzu', 'İngiliz İngilizcesi, Oxford virgülü yok', 'Terimler: e-posta, web sitesi'."
+      en: "Optional, for proofreading only. For example: 'British English, no Oxford comma', 'US English', 'Terms: e-mail, website'."
   - id: word_limit
     type: text
     required: false
     default: "250"
-    label: {tr: Özet için kelime sınırı (özet kipi), en: Word limit for the abstract (abstract mode)}
+    label: {tr: Özetin kelime sınırı, en: Abstract word limit}
+    description: {tr: "Yalnızca özet için. Örnek: 250.", en: "For the abstract only. For example: 250."}
   - id: venue
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Hedef dergi veya konferans (özet kipi), en: Target journal or conference (abstract mode)}
+    label: {tr: Hedef dergi veya konferans, en: Target journal or conference}
     description:
-      tr: "Örnek: derginin adı ve özet biçimi (yapılandırılmış özet: Amaç, Yöntem, Bulgular, Sonuç)."
-      en: "For example: the journal's name and abstract format (structured: Objective, Methods, Results, Conclusions)."
+      tr: "İsteğe bağlı, yalnızca özet için. Örnek: derginin adı ve özet biçimi (Amaç, Yöntem, Bulgular, Sonuç)."
+      en: "Optional, for the abstract only. For example: the journal's name and abstract format (Objective, Methods, Results, Conclusions)."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -74,13 +66,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Metni oku, en: Read the text}
     config:
       file: "{{inputs.document}}"
 
   - id: gate
     type: condition
-    label: {tr: "Düzelti mi?", en: "Proofreading?"}
+    label: {tr: "Seçilen işe geç", en: "Go to the chosen job"}
     config:
       value: "{{inputs.kind}}"
       operator: equals
@@ -88,7 +80,7 @@ nodes:
 
   - id: proofread
     type: ai.cli
-    label: {tr: Düzelti, en: Proofreading}
+    label: {tr: Hataları bul, en: Find the errors}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -139,7 +131,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: Düzeltileri denetle, en: Check the corrections}
+    label: {tr: Düzeltmeleri denetle, en: Check the corrections}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -194,7 +186,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: Son liste, en: Final list}
+    label: {tr: Son listeyi yaz, en: Write the final list}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -240,7 +232,7 @@ nodes:
 
   - id: diagnose
     type: ai.cli
-    label: {tr: Özetin teşhisi, en: Diagnosis of the abstract}
+    label: {tr: Özeti incele, en: Review the abstract}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -299,7 +291,7 @@ nodes:
 
   - id: rewrite
     type: ai.cli
-    label: {tr: Yeni başlık ve özet, en: New title and abstract}
+    label: {tr: Yeni özet ve başlık yaz, en: Write new abstract and titles}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -354,7 +346,7 @@ nodes:
 
   - id: fidelity
     type: ai.cli
-    label: {tr: Doğruluk denetimi ve düzeltme, en: Fidelity check and correction}
+    label: {tr: Yeni özeti denetle, en: Check the new abstract}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -425,7 +417,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Belgeyi birleştir, en: Assemble document}
+    label: {tr: Sonucu birleştir, en: Combine the result}
     config:
       template: |
         {{nodes.final.text}}
@@ -436,7 +428,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save document}
+    label: {tr: Sonucu kaydet, en: Save the result}
     config:
       source: "{{nodes.report.text}}"
       title: Writing polish

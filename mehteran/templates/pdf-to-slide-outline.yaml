@@ -6,38 +6,35 @@ name:
   en: "Slide outline from a long document"
 description:
   tr: >-
-    Uzun bir belgeyi (rapor, tez, kitap bölümü) başlıklarına göre bölümlere ayırır; her bölümden sunuma girecek
-    ana noktaları ayrı bir model çağrısıyla çıkarır (bölümler aynı anda işlenir). Sonra bir model süre ve hedef
-    kitleye göre slayt slayt bir taslak yazar: başlık, 3-5 madde, konuşmacı notu ve görsel önerisi; belgede
-    olmayan bilgi eklemez. Sonuç Markdown, Word ve HTML belgedir.
+    Uzun bir belge (rapor, tez, kitap bölümü) verin; süreye ve dinleyiciye göre slayt slayt bir sunum taslağı
+    alın: başlıklar, maddeler ve konuşmacı notları.
   en: >-
-    Splits a long document (a report, a thesis, a book chapter) into sections by its headings; a separate model
-    call extracts the points that belong in a presentation from each section (the sections run at the same
-    time). Then a model writes a slide-by-slide outline for your time and audience: a title, 3 to 5 bullets,
-    speaker notes and a visual suggestion; it adds no information that the document does not have. The result is
-    a Markdown, Word and HTML document.
+    Give a long document (a report, a thesis, a book chapter); get a slide-by-slide outline for your time and
+    audience: titles, bullets and speaker notes.
 version: "1.0"
-category: everyday
+category: documents
 tier: core
 
 inputs:
   - id: document
     type: file
     label: {tr: "Belge", en: "Document"}
+    description: {tr: "Sunuma dönüştürülecek belge; örnek: bir rapor ya da tez.", en: "The document to turn into a talk, e.g. a report or a thesis."}
     formats: [pdf, docx, epub, md, txt, odt, rtf]
   - id: audience
     type: text
     required: false
     default: "a general professional audience"
-    label: {tr: "Hedef kitle", en: "Audience"}
+    label: {tr: "Dinleyiciler", en: "Audience"}
     description:
-      tr: "Örnek: 'yönetim kurulu', 'birinci sınıf öğrencileri'."
-      en: "For example: 'the board', 'first-year students'."
+      tr: "Sunumu kim dinleyecek? Örnek: 'yönetim kurulu', 'birinci sınıf öğrencileri'."
+      en: "Who will listen? For example: 'the board', 'first-year students'."
   - id: minutes
     type: text
     required: false
     default: "15"
-    label: {tr: "Süre (dakika)", en: "Time (minutes)"}
+    label: {tr: "Sunum süresi (dakika)", en: "Talk length (minutes)"}
+    description: {tr: "Yalnızca sayı yazın; örnek: 15.", en: "A number only, e.g. 15."}
   - id: language
     type: language
     label: {tr: "Sunum dili", en: "Presentation language"}
@@ -55,7 +52,7 @@ nodes:
 
   - id: sections
     type: ai.map
-    label: {tr: "Bölüm noktaları", en: "Points per section"}
+    label: {tr: "Ana noktaları çıkar", en: "Pick the key points"}
     retries: 2
     config:
       source: "{{nodes.extract.text}}"
@@ -77,7 +74,7 @@ nodes:
 
   - id: deck
     type: ai.cli
-    label: {tr: "Slayt taslağı", en: "Slide outline"}
+    label: {tr: "Slaytları yaz", en: "Write the slides"}
     retries: 2
     config:
       provider: "{{inputs.model}}"

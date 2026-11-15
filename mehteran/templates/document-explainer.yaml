@@ -6,37 +6,34 @@ name:
   en: "Explain a document in plain language"
 description:
   tr: >-
-    Sözleşme, kira kontratı, resmî yazı, sigorta poliçesi ya da hesap koşulları gibi belgeyi uzman olmayan biri
-    için sade bir dille anlatır: bu belge ne, sizden ne istiyor, ne kadar ve ne zaman ödüyorsunuz, nelere dikkat
-    etmelisiniz, imzalamadan önce hangi soruları sormalısınız. İkinci bir model açıklamayı belgeyle
-    karşılaştırıp yanlış ya da belgede olmayan her cümleyi düzeltir. Hukuki, mali ya da tıbbi tavsiye değildir.
-    Sonuç Markdown, Word ve HTML belgedir.
+    Bir sözleşme, resmî yazı ya da poliçe verin: sizden ne istediğini, ne ödeyeceğinizi ve nelere dikkat etmeniz
+    gerektiğini sade bir dille anlatır. Hukuki, mali ya da tıbbi tavsiye değildir.
   en: >-
-    Explains a document such as a contract, lease, official letter, insurance policy or account terms to a non-
-    expert in plain language: what it is, what it asks of you, what you pay and when, what to watch for, and
-    which questions to ask before you sign. A second model compares the explanation with the document and
-    corrects every sentence that is wrong or not in it. This is not legal, financial or medical advice. The
-    result is a Markdown, Word and HTML document.
+    Give a contract, an official letter or a policy: it explains in plain words what it asks of you, what you pay
+    and what to watch for. This is not legal, financial or medical advice.
 version: "1.0"
-category: everyday
+category: documents
 tier: core
 
 inputs:
   - id: document
     type: file
     label: {tr: "Belge", en: "Document"}
+    description:
+      tr: "Örnek: kira kontratı ya da sigorta poliçesi; fotoğrafı da olur."
+      en: "For example a lease or an insurance policy; a photo works too."
     formats: [pdf, docx, epub, md, txt, odt, rtf, png, jpg, jpeg]
   - id: reader
     type: text
     required: false
     default: "a person with no legal or technical background"
-    label: {tr: "Okuyucu", en: "Reader"}
+    label: {tr: "Kim okuyacak", en: "Who will read it"}
     description:
       tr: "Örnek: 'ilk kez ev kiralayan bir öğrenci'."
       en: "For example: 'a student renting a home for the first time'."
   - id: language
     type: language
-    label: {tr: "Rapor dili", en: "Report language"}
+    label: {tr: "Anlatım dili", en: "Explanation language"}
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
@@ -55,7 +52,7 @@ nodes:
 
   - id: explain
     type: ai.cli
-    label: {tr: "Sade anlatım", en: "Plain-language explanation"}
+    label: {tr: "Sade dille anlat", en: "Explain in plain words"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -102,7 +99,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: "Belgeyle karşılaştır", en: "Check against the document"}
+    label: {tr: "Anlatımı denetle", en: "Check the explanation"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

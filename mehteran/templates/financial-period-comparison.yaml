@@ -6,17 +6,11 @@ name:
   en: Two-period financial comparison
 description:
   tr: >-
-    Aynı şirketin iki dönemine ait finansal raporlarını (örneğin 2024 ve 2025 ya da iki çeyrek) karşılaştırır.
-    Bir model değişen kalemleri mutlak ve yüzde değişimleriyle, hesaplamayı göstererek listeler ve
-    karşılaştırmayı sınırlayan muhasebe ya da tanım değişikliklerini belirtir. İkinci bir model her rakamı
-    kaynakta arar ve her hesabı yeniden yapar. Üçüncü adım düzeltilmiş ana değişiklikleri ve raporların
-    belirttiği nedenleri özetler. Sonuç Markdown, Word ve HTML rapordur; yatırım tavsiyesi değildir.
+    Bir şirketin iki dönemlik finansal raporunu verin; neyin ne kadar ve neden değiştiğini gösteren bir rapor
+    alın. Yatırım tavsiyesi değildir.
   en: >-
-    Compares the financial reports of the same company for two periods (for example 2024 and 2025, or two
-    quarters). One model lists the changed line items with absolute and percentage change, showing each
-    calculation, and notes accounting or definition changes that limit the comparison. A second model looks up
-    every figure in the sources and redoes every calculation. A third step summarises the corrected key changes
-    and the drivers the reports state. The result is a Markdown, Word and HTML report; it is not investment advice.
+    Give the financial reports of one company for two periods and get a report of what changed, by how much and
+    why. It is not investment advice.
 version: "1.0"
 category: business
 
@@ -34,13 +28,13 @@ inputs:
   - id: first_name
     type: text
     label: {tr: Önceki dönemin adı, en: Name of the earlier period}
-    description: {tr: "Örnek: 2024, 2025-Ç1", en: "For example: 2024, Q1 2025"}
+    description: {tr: "Örnek: 2024 ya da 2025-Ç1.", en: "For example: 2024 or Q1 2025."}
     default: "2024"
     required: false
   - id: second_name
     type: text
     label: {tr: Sonraki dönemin adı, en: Name of the later period}
-    description: {tr: "Örnek: 2025, 2025-Ç2", en: "For example: 2025, Q2 2025"}
+    description: {tr: "Örnek: 2025 ya da 2025-Ç2.", en: "For example: 2025 or Q2 2025."}
     default: "2025"
     required: false
   - id: focus
@@ -50,8 +44,8 @@ inputs:
     default: ""
     label: {tr: Odak noktası, en: Focus}
     description:
-      tr: "Örnek: 'Marjlardaki düşüşün nedeni nedir?'"
-      en: "For example: 'Why did the margins fall?'"
+      tr: "İsteğe bağlı. Örnek: 'Marjlardaki düşüşün nedeni nedir?'"
+      en: "Optional. For example: 'Why did the margins fall?'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -67,19 +61,19 @@ inputs:
 nodes:
   - id: extract_first
     type: document.extract
-    label: {tr: Önceki dönem metni, en: Earlier period text}
+    label: {tr: Önceki raporu oku, en: Read the earlier report}
     config:
       file: "{{inputs.first}}"
 
   - id: extract_second
     type: document.extract
-    label: {tr: Sonraki dönem metni, en: Later period text}
+    label: {tr: Sonraki raporu oku, en: Read the later report}
     config:
       file: "{{inputs.second}}"
 
   - id: compare
     type: ai.cli
-    label: {tr: Kalem kalem karşılaştırma, en: Line-by-line comparison}
+    label: {tr: Dönemleri karşılaştır, en: Compare the periods}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -146,7 +140,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: Rakam denetimi, en: Figure check}
+    label: {tr: Rakamları denetle, en: Check the figures}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -207,7 +201,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Özet, en: Summary}
+    label: {tr: Özeti yaz, en: Write the summary}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -261,7 +255,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -272,7 +266,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: "{{inputs.first_name}} / {{inputs.second_name}}"

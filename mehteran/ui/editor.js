@@ -21,7 +21,7 @@ const Editor = (() => {
     sel: null, problems: [], valid: false, ports: {}, mode: "visual", yamlBase: "", lastField: null, checkSeq: 0, checkTimer: null,
     lastKey: "", lastTime: 0, canvas: null, modelsLoaded: false};
   const SHORT = {"document.extract": "extract", "ai.cli": "ai", "text.merge": "merge", "approval": "approval", "document.export": "export",
-    "condition": "condition", "ai.map": "loop"};
+    "condition": "condition", "ai.map": "loop", "ai.agent": "agent", "share.x": "share"};
   const arr = (v) => (Array.isArray(v) ? v : []);
   const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : null);
   const nodes = () => arr(ed.model && ed.model.nodes).filter((n) => obj(n) && typeof n.id === "string");
@@ -254,7 +254,7 @@ const Editor = (() => {
   // folding it by hand holds for this session.
   const paletteChoice = () => { try { return sessionStorage.getItem("mehteran.palette"); } catch { return null; } };
   // A new workflow starts with the palette open (its steps with their names), whatever the width.
-  const paletteFolded = () => { const v = paletteChoice(); return v ? v === "folded" : ed.palOpen && window.innerWidth >= 1100 ? false : window.innerWidth < 1440; };
+  const paletteFolded = () => { const v = paletteChoice(); return v ? v === "folded" : ed.palOpen && window.innerWidth >= 1100 ? false : window.innerWidth < 1680; };
   window.addEventListener("resize", () => {
     const board = $("#board");
     if (board && !paletteChoice() && board.classList.contains("pal-folded") !== paletteFolded()) { board.classList.toggle("pal-folded", paletteFolded()); renderPalette(); }
@@ -290,7 +290,6 @@ const Editor = (() => {
       ed.readOnly ? null : h("button", {type: "button", class: "icon-btn tb", id: "ed-redo", onclick: redo, title: S("redo") + " · Ctrl/⌘+Shift+Z", "aria-label": S("redo")}, "↷"),
       h("span", {class: "grow"}),
       h("span", {id: "board-status", class: "small muted", role: "status", "aria-live": "polite"}),
-      h("button", {type: "button", class: "btn ed-new", onclick: () => go("workflows/new")}, S("new_workflow")),
       h("button", {type: "button", class: "btn", id: "ed-run", onclick: runIt}, "▶ " + S("run")),
       h("button", {type: "button", class: "btn primary", id: "ed-save", onclick: save, title: "Ctrl/⌘+S"}, S("save")));
     const yamlPane = h("section", {class: "card prompt-editor yaml-pane", id: "yaml-pane", hidden: ed.mode !== "yaml"},
@@ -922,38 +921,49 @@ const Editor = (() => {
     if (again) { again.focus({preventScroll: true}); again.setSelectionRange(ed.lastField.start, ed.lastField.end); }
   }
 
-  // The model of an AI step: an input of the run form, or a fixed model of a configured tool, as in the
-  // translation app's Workflow tab (one row of buttons per tool, the thinking level apart, a test button).
+  // The model of an AI step: one list (an input of the run form, the automatic choices, the tools). The tool's
+  // model, its thinking level and the written value are under "Advanced", for those who want them.
   function modelPicker(n, key, where, label) {
     const value = String(n.config[key] || "").trim();
     const set = (v) => { setOrDelete(n.config, key, v); changed(); };
     const inputRef = /^\{\{\s*inputs\.([a-z][a-z0-9_-]*)\s*\}\}$/.exec(value);
     const base = value.split("@")[0], effort = value.split("@")[1] || "";
+    const providers = INFO.providers || [];
     const provInputs = arr(ed.model.inputs).filter((i) => obj(i) && i.type === "provider" && typeof i.id === "string");
-    const rows = (INFO.providers || []).map((p) => h("div", {class: "pick-row"}, h("span", {class: "pick-provider " + p.name}, p.name, localTag(p)),
-      h("div", {class: "pick-chips"}, [p.name, ...p.models.map((m) => `${p.name}/${m}`)].map((name) => h("button", {type: "button", class: "pick", "data-edit": "1",
-        "aria-pressed": String(!inputRef && base === name), onclick: () => set(name + (effort && (p.efforts || []).includes(effort) ? "@" + effort : ""))},
-      name === p.name ? S("default_model") : name.slice(p.name.length + 1))))));
-    const chosen = (INFO.providers || []).find((p) => p.name === base.split("/")[0]);
-    const efforts = !inputRef && chosen && chosen.efforts.length ? h("label", {class: "effort-row"}, h("span", {}, S("effort_title")),
-      h("select", {"data-key": where + ":effort", onchange: (e) => set(base + (e.target.value ? "@" + e.target.value : ""))},
-        h("option", {value: ""}, S("effort_default")), chosen.efforts.map((e) => h("option", {value: e, selected: e === effort}, S("effort_" + e))))) : null;
+    const toolName = base.split("/")[0], modelName = base.split("/").slice(1).join("/");
+    const chosen = !inputRef && !AUTO_KINDS.includes(value) ? providers.find((p) => p.name === toolName) : null;
+    const main = inputRef ? value : AUTO_KINDS.includes(value) ? value : toolName;
+    const option = (v, text) => h("option", {value: v, selected: v === main}, text);
+    const known = new Set([...provInputs.map((i) => `{{inputs.${i.id}}}`), ...AUTO_KINDS, ...providers.map((p) => p.name)]);
+    const select = h("select", {"aria-label": label, "data-edit": "1", onchange: (e) => {
+      const p = providers.find((x) => x.name === e.target.value);
+      set(e.target.value + (p && effort && (p.efforts || []).includes(effort) ? "@" + effort : ""));
+    }},
+      main && !known.has(main) ? option(main, main) : null,
+      !main ? option("", "–") : null,
+      provInputs.length ? h("optgroup", {label: S("from_run_form")}, provInputs.map((i) => option(`{{inputs.${i.id}}}`, L(i.label) || i.id))) : null,
+      h("optgroup", {label: S("auto_group")}, AUTO_KINDS.map((k) => option(k, S("auto_kind_" + k.replace(":", "_"))))),
+      providers.length ? h("optgroup", {label: S("tools_group")}, providers.map((p) => option(p.name, p.label || p.name))) : null);
+    const pick = (aria, options, current, onchange) => h("select", {"aria-label": aria, "data-edit": "1", onchange: (e) => onchange(e.target.value)},
+      options.map(([v, text]) => h("option", {value: v, selected: v === current}, text)));
+    const models = chosen ? [["", S("default_model")], ...chosen.models.map((m) => [m, m])] : [];
+    if (chosen && modelName && !chosen.models.includes(modelName)) models.push([modelName, modelName]);
     const testName = inputRef ? (provInputs.find((i) => i.id === inputRef[1]) || {}).default : value;
     const raw = textControl(() => n.config[key], (v) => setOrDelete(n.config, key, v.trim()), where, {mono: true, placeholder: "claude/opus@high"});
     raw.addEventListener("change", () => renderInspector());
+    const advanced = h("details", {class: "model-advanced", open: Boolean(modelName || effort) || undefined},
+      h("summary", {class: "small"}, S("details")),
+      h("div", {class: "stack"},
+        chosen ? h("div", {class: "model-tool"},
+          pick(S("model"), models, modelName, (v) => set(toolName + (v ? "/" + v : "") + (effort ? "@" + effort : ""))),
+          chosen.efforts.length ? pick(S("effort_title"), [["", S("effort_default")], ...chosen.efforts.map((e) => [e, S("effort_" + e)])], effort,
+            (v) => set(base + (v ? "@" + v : ""))) : null) : null,
+        h("div", {class: "row model-raw"}, raw, h("button", {type: "button", class: "btn small", disabled: !testName, onclick: (e) => testModel(e.currentTarget, testName)},
+          S("test_model")))));
     return h("fieldset", {class: "role-pick fld", "data-where": where},
       h("legend", {}, label, h("span", {class: "parallel-tag"}, S("model_hint"))),
-      provInputs.length ? h("div", {class: "pick-row"}, h("span", {class: "pick-provider"}, S("from_run_form")),
-        h("div", {class: "pick-chips"}, provInputs.map((i) => h("button", {type: "button", class: "pick", "data-edit": "1",
-          "aria-pressed": String(Boolean(inputRef && inputRef[1] === i.id)), onclick: () => set(`{{inputs.${i.id}}}`)}, L(i.label) || i.id)))) : null,
-      // stream P: `auto`, chosen from the user's model order when a run starts (app.js AUTO_KINDS)
-      h("div", {class: "pick-row"}, h("span", {class: "pick-provider"}, S("auto_group")),
-        h("div", {class: "pick-chips"}, AUTO_KINDS.map((k) => h("button", {type: "button", class: "pick", "data-edit": "1",
-          "aria-pressed": String(value === k), onclick: () => set(k)}, S("auto_kind_" + k.replace(":", "_")))))),
-      rows.length ? rows : h("p", {class: "small warn-text"}, S("no_providers")),
-      efforts,
-      h("div", {class: "row"}, raw, h("button", {type: "button", class: "btn small", disabled: !testName, onclick: (e) => testModel(e.currentTarget, testName)},
-        S("test_model"))),
+      providers.length ? select : h("p", {class: "small warn-text"}, S("no_providers")),
+      advanced,
       h("span", {class: "field-problem small"}));
   }
 
@@ -1039,7 +1049,7 @@ const Editor = (() => {
     idInput.addEventListener("change", () => rename("inputs", item.id, idInput.value.trim(), idInput));
     const typeSel = h("select", {"data-key": where + ".type", onchange: (e) => {
       item.type = e.target.value;
-      for (const [k, only] of [["formats", "file"], ["multiple", "file"], ["options", "choice"], ["multiline", "text"]]) if (item.type !== only) delete item[k];
+      for (const [k, only] of [["formats", "file"], ["multiple", "file"], ["options", "choice"], ["multiline", "text"]]) if (item.type !== only && !(k === "multiple" && item.type === "url")) delete item[k];
       if (item.type === "file") delete item.default;
       else if ("default" in item && item.type !== "text") delete item.default;
       if (item.type === "choice" && !Array.isArray(item.options)) item.options = [];
@@ -1062,6 +1072,11 @@ const Editor = (() => {
         setOrDelete(item, "multiple", e.target.checked || "");
         changed({keepInspector: true});
       }}), S("multiple_files"), h("span", {class: "small muted"}, " · " + S("multiple_files_hint", {count: INFO.max_files || 20}))));
+    } else if (item.type === "url") {
+      extra.push(h("label", {class: "check", "data-where": where + ".multiple"}, h("input", {type: "checkbox", checked: item.multiple === true, onchange: (e) => {
+        setOrDelete(item, "multiple", e.target.checked || "");
+        changed({keepInspector: true});
+      }}), S("multiple_urls"), h("span", {class: "small muted"}, " · " + S("multiple_urls_hint", {count: INFO.max_urls || 30}))));
     } else if (item.type === "text") {
       extra.push(h("label", {class: "check"}, h("input", {type: "checkbox", checked: item.multiline === true, onchange: (e) => {
         setOrDelete(item, "multiline", e.target.checked || "");
@@ -1306,12 +1321,9 @@ const Editor = (() => {
     const toggle = h("button", {type: "button", class: "icon-btn pal-toggle", "aria-expanded": String(!folded), onclick: togglePalette,
       title: S(folded ? "palette_show" : "palette_hide"), "aria-label": S(folded ? "palette_show" : "palette_hide")}, folded ? "»" : "«");
     if (folded) {
-      // Folded: one icon per step type, still dragged or clicked onto the canvas; the name is the tooltip.
-      pal.replaceChildren(toggle, ...Object.values(NODE_TYPES).map(({type, ...info}) => h("div", {class: "step-icon kind-" + type.replace(/\W/g, "-"),
-        role: "button", tabindex: ed.readOnly ? "-1" : "0", "aria-disabled": String(ed.readOnly), "data-type": type,
-        title: `${L(info.label)} · ${S("palette_hint")}`, "aria-label": L(info.label),
-        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); addNode(type); } },
-        onpointerdown: (e) => paletteDrag(e, {type})}, h("span", {class: "glyph", "aria-hidden": "true"}, GLYPH[type] || "?"))));
+      // Folded: one labelled button that opens the list of steps.
+      pal.replaceChildren(h("button", {type: "button", class: "pal-add", "aria-expanded": "false", onclick: togglePalette, disabled: ed.readOnly},
+        h("span", {class: "pal-add-plus", "aria-hidden": "true"}, "+"), h("span", {class: "pal-add-text"}, S("add_step"))));
       return;
     }
     const types = Object.values(NODE_TYPES).map(({type, ...info}) => h("div", {class: "step-type kind-" + type.replace(/\W/g, "-"), role: "button",
@@ -1320,17 +1332,10 @@ const Editor = (() => {
       onpointerdown: (e) => paletteDrag(e, {type})},
     h("span", {class: "glyph", "aria-hidden": "true"}, GLYPH[type] || "?"),
     h("span", {}, h("b", {}, L(info.label)), h("span", {class: "small"}, L(info.description)))));
-    const models = (INFO.providers || []).map((p) => h("section", {class: "card palette-group " + p.name}, h("h3", {}, p.name, localTag(p)),
-      p.local && !p.models.length ? h("p", {class: "small muted"}, S("no_local_models_hint")) : null,
-      [p.name, ...p.models.map((m) => `${p.name}/${m}`)].map((name) => h("div", {class: "model-card " + p.name, "data-name": name,
-        onpointerdown: (e) => { if (!e.target.closest("button")) paletteDrag(e, {model: name}); }},
-      h("span", {}, name === p.name ? S("default_model") : name.slice(p.name.length + 1)),
-      h("span", {class: "tools"}, h("button", {type: "button", class: "icon-btn", onclick: (e) => testModel(e.currentTarget, name)}, S("test")))))));
+    // The steps only: a step's model is chosen in its panel (modelPicker).
     pal.replaceChildren(h("div", {class: "pal-head"}, h("h3", {class: "palette-title"}, S("palette_steps")), toggle),
       h("section", {class: "card palette-group steps-group"}, types,
-      h("p", {class: "muted small"}, S(ed.readOnly ? "palette_readonly" : "palette_hint"))),
-    h("div", {}, h("h3", {class: "palette-title"}, S("palette_models")), h("p", {class: "muted small"}, S("palette_models_hint"))),
-    ...(models.length ? models : [h("p", {class: "small warn-text"}, S("no_providers"))]));
+      h("p", {class: "muted small"}, S(ed.readOnly ? "palette_readonly" : "palette_hint"))));
   }
 
   // The config field of a node that takes a model (widget "provider": an AI step, a loop), or null.
@@ -1522,16 +1527,23 @@ const Editor = (() => {
 
 // "Describe it, I will build it": the user writes what the workflow should do, a model writes a first draft
 // (POST /api/editor/draft, mehteran/drafting.py: one model call, a second one only when the first answer does not
-// pass the check). The draft opens in the editor as an unsaved workflow; nothing is saved and nothing runs.
+// pass the check). From the editor (open) the draft opens there, unsaved. From the library (build) a draft that
+// passes the check is saved at once and its page opens on Run; one that does not opens in the editor with its
+// problems. Nothing runs by itself.
 const Drafter = (() => {
-  const st = {dialog: null, text: "", job: null, log: "", problem: "", keep: null};
+  const st = {dialog: null, text: "", job: null, log: "", problem: "", keep: null, boxText: "", boxBusy: false};
 
-  function open() {
+  function dialog() {
     if (!st.dialog) {
       st.dialog = h("dialog", {id: "draft-dialog", class: "draft-dialog", "aria-labelledby": "draft-title"});
       document.body.appendChild(st.dialog);
       st.dialog.addEventListener("close", () => { if (st.job) api("POST", `/api/editor/jobs/${st.job}/cancel`).catch(() => {}); });
     }
+    return st.dialog;
+  }
+
+  function open() {
+    dialog();
     st.keep = Editor.current();  // an empty new workflow: the draft takes its name and id
     st.problem = "";
     draw();
@@ -1557,9 +1569,7 @@ const Drafter = (() => {
       head,
       h("div", {class: "layout-body stack"},
         h("label", {class: "fld-label", for: "draft-text"}, S("describe_label")), area,
-        h("div", {class: "describe-examples"}, h("span", {class: "small muted"}, S("describe_examples")),
-          [1, 2, 3].map((k) => h("button", {type: "button", class: "linkish small", onclick: () => { st.text = area.value = S("describe_example_" + k); area.focus(); }},
-            "“" + S("describe_example_" + k) + "”"))),
+        examples((text) => { st.text = area.value = text; area.focus(); }),
         h("span", {class: "fld-label"}, S("describe_model")), model,
         h("p", {class: "small muted"}, S("describe_one_call")),
         st.problem ? h("div", {class: "notice bad", role: "alert"}, st.problem) : null),
@@ -1567,6 +1577,9 @@ const Drafter = (() => {
         h("button", {type: "submit", class: "btn primary"}, "✦ " + S("describe_start"))));
     fill(st.dialog, form);
   }
+
+  const examples = (use) => h("div", {class: "describe-examples"}, h("span", {class: "small muted"}, S("describe_examples")),
+    [1, 2, 3].map((k) => h("button", {type: "button", class: "linkish small", onclick: () => use(S("describe_example_" + k))}, "“" + S("describe_example_" + k) + "”")));
 
   async function start(provider) {
     if (!st.text.trim()) return;
@@ -1590,18 +1603,92 @@ const Drafter = (() => {
     });
   }
 
-  // The draft opens in the editor, unsaved. One that did not pass the check opens on the YAML tab with its problems.
   function finish(result) {
     const model = result.model || {schema_version: 1, id: "draft", name: S("new_workflow"), nodes: []};
     if (st.keep && result.model) Object.assign(model, {id: st.keep.id, name: st.keep.name});
     let yaml = result.valid ? null : result.yaml;
     if (yaml != null && st.keep && result.model) yaml = yaml.replace(/^id:.*$/m, `id: ${st.keep.id}`);
-    st.dialog.close();
+    if (st.dialog && st.dialog.open) st.dialog.close();
     st.text = "";
     Editor.startNew(model, {draftBy: result.provider, yaml, problems: result.valid ? null : result.problems});
     if (!isEditorHash(location.hash.slice(1))) go("workflows/new");
     toast(S(result.valid ? "describe_done" : "describe_done_invalid"));
   }
 
-  return {open};
+  // A draft job shown in place (the library's box, the "Here is what I built" card): one line, "Stop", the log under
+  // "Details". onEnd gets the job's last state.
+  async function inline(body, el, onEnd) {
+    let job;
+    try { job = (await api("POST", "/api/editor/draft", body)).id; } catch (err) { return onEnd({status: "failed", error: err.message}); }
+    const log = h("pre", {class: "job-log", "aria-label": S("live_log")});
+    fill(el, h("div", {class: "job-line"}, h("span", {class: "spinner", "aria-hidden": "true"}), h("span", {role: "status"}, S("describe_working_short")),
+      h("button", {type: "button", class: "btn small", onclick: () => api("POST", `/api/editor/jobs/${job}/cancel`).catch(() => {})}, S("describe_stop"))),
+    h("details", {class: "job-details"}, h("summary", {class: "small muted"}, S("details")), log));
+    await Editor.followJob(job, (state) => { log.textContent += state.log; log.scrollTop = log.scrollHeight; }, onEnd);
+  }
+
+  const failure = (state) => (state.status === "cancelled" ? S("describe_cancelled") : state.error || S("describe_failed"));
+  const provider = () => recall("mehteran.draftModel") || "auto";
+
+  // The library's box: the first thing on the Workflows tab. A workflow that passes the check is saved and its page
+  // opens with "Here is what I built"; one that does not opens in the editor with its problems.
+  function box() {
+    const el = $("#describe-box");
+    if (st.boxBusy) return;  // a build is going on in it
+    const area = h("textarea", {id: "describe-box-text", rows: 2, maxlength: 4000, placeholder: S("describe_placeholder"), "aria-labelledby": "describe-box-title"});
+    area.value = st.boxText || "";
+    area.addEventListener("input", () => { st.boxText = area.value; });
+    const auto = h("p", {class: "small muted describe-auto"});
+    const showAuto = () => {
+      const chosen = autoChoice(provider());
+      auto.textContent = chosen ? S("describe_auto_line", {name: (providerInfo(chosen.name.split("@")[0].split("/")[0]) || {}).label || chosen.name}) : "";
+    };
+    loadProviderStates().then(showAuto);
+    const chips = h("div", {class: "describe-chips"}, [1, 2, 3].map((k) => h("button", {type: "button", class: "chip",
+      onclick: () => { area.value = st.boxText = S("describe_example_" + k); area.focus(); }}, S("describe_chip_" + k))));
+    const work = h("div", {class: "describe-work", "aria-live": "polite"});
+    const start = async () => {
+      const text = area.value.trim();
+      if (!text) return area.focus();
+      st.boxBusy = true;
+      form.hidden = true;
+      await inline({description: text, provider: provider()}, work, async (end) => {
+        st.boxBusy = false;
+        if (end.status !== "done") { form.hidden = false; return fill(work, h("div", {class: "notice bad", role: "alert"}, failure(end))); }
+        const result = end.result;
+        if (result.valid && result.model) {
+          try {
+            const res = await api("POST", "/api/templates/new", {model: result.model, draft: false});
+            st.boxText = "";
+            state.built = `user/${res.id}`;  // app.js: the page opens with "Here is what I built"
+            toast(S("describe_saved", {name: L(result.model.name) || res.id}));
+            return go(`workflows/user/${res.id}/run`);
+          } catch (err) { toast(err.message, true); }  // not saved: it opens in the editor, to be saved from there
+        }
+        st.boxText = "";
+        finish(result);
+      });
+    };
+    const form = h("form", {class: "describe-box-form", onsubmit: (e) => { e.preventDefault(); start(); }},
+      h("div", {class: "describe-box-head"}, h("h3", {id: "describe-box-title"}, "✦ " + S("describe_title")), h("p", {class: "small muted"}, S("describe_lib_intro"))),
+      h("div", {class: "describe-row"}, area, h("button", {type: "submit", class: "btn primary"}, S("describe_build"))),
+      h("div", {class: "describe-foot"}, chips, auto));
+    fill(el, form, work);
+  }
+
+  // "Change: …" on "Here is what I built": the model writes the workflow again from its file and the sentence; one
+  // that passes the check replaces it (same id); otherwise it stays as it was.
+  function change(tpl, id, text, el, done) {
+    inline({description: text, provider: provider(), previous: tpl.yaml}, el, async (end) => {
+      if (end.status !== "done") return fill(el, h("div", {class: "notice bad", role: "alert"}, failure(end)));
+      if (!end.result.valid || !end.result.model) return fill(el, problemsBox({message: S("built_change_invalid"), problems: end.result.problems || []}));
+      try {
+        await saveWorkflowModel(id, {...end.result.model, id});  // app.js
+        toast(S("built_changed"));
+        done();
+      } catch (err) { fill(el, problemsBox(err)); }
+    });
+  }
+
+  return {open, box, change};
 })();

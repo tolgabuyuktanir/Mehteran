@@ -6,9 +6,9 @@ name:
   en: "Job posting writer"
 description:
   tr: >-
-    Pozisyon bilgilerinizden bir iş ilanı yazar: görev tanımı, aranan nitelikler, sunulanlar ve başvuru. Ayrımcı nitelik (yaş, cinsiyet, medeni hâl vb.) yazmaz; vermediğiniz maaş ya da yan hakları uydurmaz. İkinci adım ilanı bu kurallara göre denetler ve düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Pozisyon bilgilerinizden bir iş ilanı yazar. Ayrımcı nitelik (yaş, cinsiyet gibi) yazmaz; vermediğiniz maaş ya da yan hakları uydurmaz.
   en: >-
-    Writes a job posting from your role details: duties, requirements, what is offered and how to apply. It writes no discriminatory requirement (age, gender, marital status and so on) and invents no salary or benefits you did not give. A second step checks the posting against these rules and corrects it. The result is a Markdown, Word and HTML document.
+    Writes a job posting from your role details. It writes no discriminatory requirement (such as age or gender) and invents no salary or benefits you did not give.
 version: "1.0"
 category: business
 
@@ -19,8 +19,8 @@ inputs:
     required: true
     label: {tr: "Pozisyon bilgileri", en: "Role details"}
     description:
-      tr: "Unvan, görevler, gerekli beceriler, çalışma yeri ve düzeni."
-      en: "Title, duties, required skills, location and working pattern."
+      tr: "Unvan, görevler, gerekli beceriler, çalışma yeri ve düzeni; örneğin 'Muhasebe uzmanı, İzmir, hibrit'."
+      en: "Title, duties, required skills, location and working pattern; for example 'Accountant, Izmir, hybrid'."
   - id: company
     type: text
     multiline: true
@@ -28,8 +28,8 @@ inputs:
     default: ""
     label: {tr: "Şirket hakkında", en: "About the company"}
     description:
-      tr: "İsteğe bağlı."
-      en: "Optional."
+      tr: "İsteğe bağlı. Şirketi birkaç cümleyle tanıtın."
+      en: "Optional. Describe the company in a few sentences."
   - id: offer
     type: text
     multiline: true
@@ -37,8 +37,8 @@ inputs:
     default: ""
     label: {tr: "Sunulanlar", en: "What you offer"}
     description:
-      tr: "İsteğe bağlı: maaş aralığı, yan haklar. Boşsa ilanda yer almaz."
-      en: "Optional: salary range, benefits. Left empty, the posting does not mention them."
+      tr: "İsteğe bağlı. Maaş aralığı ve yan haklar; boşsa ilanda yer almaz."
+      en: "Optional. Salary range and benefits; left empty, the posting does not mention them."
   - id: apply
     type: text
     multiline: true
@@ -46,8 +46,8 @@ inputs:
     default: ""
     label: {tr: "Başvuru yolu", en: "How to apply"}
     description:
-      tr: "İsteğe bağlı: e-posta ya da form."
-      en: "Optional: an email or a form."
+      tr: "İsteğe bağlı. Örnek: bir e-posta adresi ya da form bağlantısı."
+      en: "Optional. For example: an email address or a link to a form."
   - id: tone
     type: choice
     label: {tr: "Ton", en: "Tone"}
@@ -57,7 +57,7 @@ inputs:
     default: professional
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: İlan dili, en: Posting language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -66,7 +66,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "İlan taslağı", en: "Posting draft"}
+    label: {tr: "İlanı yaz", en: "Write the posting"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -121,7 +121,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "İlanı denetle", en: "Check the posting"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -164,7 +164,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: İlanı kaydet, en: Save the posting}
     config:
       source: "{{nodes.check.text}}"
       title: "Job posting"
@@ -177,6 +177,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: İlan (Markdown), en: Posting (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: İlan (Word), en: Posting (Word)}}
+  - {id: report_html, from: export.html, label: {tr: İlan (HTML), en: Posting (HTML)}}

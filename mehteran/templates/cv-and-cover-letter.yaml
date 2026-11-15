@@ -6,28 +6,27 @@ name:
   en: "Tailored CV and cover letter"
 description:
   tr: >-
-    Özgeçmişinizi ve iş ilanını okur; ilana göre uyarlanmış bir özgeçmiş ve bir ön yazı hazırlar. Özgeçmişte
-    olmayan deneyim, beceri ya da sayı eklemez; yalnızca vurguyu ve dili ilana uydurur, eksik kalan
-    gereklilikleri ayrı bir listede gösterir. İkinci bir model her iddianın özgeçmişte olup olmadığını denetler.
-    Sonuç Markdown, Word ve HTML belgedir.
+    Özgeçmişinizi ve bir iş ilanını verin: ilana göre uyarlanmış bir özgeçmiş ve bir ön yazı alırsınız.
+    Özgeçmişinizde olmayan hiçbir şey eklenmez.
   en: >-
-    Reads your CV and a job posting and prepares a CV tailored to the posting and a cover letter. It adds no
-    experience, skill or number that is not in your CV; it only adjusts emphasis and wording, and it lists the
-    requirements that remain uncovered. A second model checks that every claim is in your CV. The result is a
-    Markdown, Word and HTML document.
+    Give your CV and a job posting: you get a CV tailored to the posting and a cover letter. Nothing is added
+    that is not in your CV.
 version: "1.0"
-category: everyday
+category: writing
 tier: core
 
 inputs:
   - id: cv
     type: file
-    label: {tr: "Özgeçmiş", en: "Your CV"}
+    label: {tr: "Özgeçmişiniz", en: "Your CV"}
     formats: [pdf, docx, epub, md, txt, odt, rtf]
   - id: posting
     type: file
     required: false
-    label: {tr: "İş ilanı", en: "Job posting"}
+    label: {tr: "İş ilanı (dosya)", en: "Job posting (file)"}
+    description:
+      tr: "İlanın dosyası ya da ekran görüntüsü."
+      en: "A file or a screenshot of the posting."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: posting_text
     type: text
@@ -42,7 +41,7 @@ inputs:
     type: text
     required: false
     default: ""
-    label: {tr: "Not", en: "Note"}
+    label: {tr: "Not (isteğe bağlı)", en: "Note (optional)"}
     description:
       tr: "Örnek: 'Kısa olsun', 'yönetici pozisyonuna geçmek istiyorum'."
       en: "For example: 'keep it short', 'I want to move into management'."
@@ -73,7 +72,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Özgeçmiş ve ön yazı", en: "CV and cover letter"}
+    label: {tr: "Özgeçmişi ve ön yazıyı yaz", en: "Write the CV and letter"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -120,7 +119,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Doğruluk denetimi", en: "Truthfulness check"}
+    label: {tr: "İddiaları denetle", en: "Check the claims"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -159,7 +158,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    label: {tr: "Belgeyi birleştir", en: "Combine the document"}
     config:
       template: |
         {{nodes.draft.text}}

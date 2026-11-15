@@ -6,18 +6,13 @@ name:
   en: "Ask your documents"
 description:
   tr: >-
-    Birden çok belge yükleyin ve bir soru sorun. Her belge ayrı bir model çağrısıyla taranır (belgeler aynı anda
-    işlenir) ve soruyla ilgili bölümler birebir alıntıyla çıkarılır. Sonra bir model yalnızca bu alıntılardan
-    cevabı yazar: her cümlede hangi belgeden geldiğini gösterir, belgeler çelişiyorsa bunu söyler, cevap
-    belgelerde yoksa 'belgelerde bulunamadı' der. Sonuç Markdown, Word ve HTML belgedir.
+    Birkaç belge yükleyin ve bir soru sorun: cevap yalnızca bu belgelerden, kaynağı gösterilerek yazılır. Cevap
+    belgelerde yoksa bunu açıkça söyler.
   en: >-
-    Upload several documents and ask a question. Each document is scanned in its own model call (the documents
-    run at the same time) and the passages that bear on the question are taken out as exact quotations. Then a
-    model writes the answer from those quotations only: every statement shows which document it comes from,
-    conflicts between documents are named, and if the answer is not in the documents it says so. The result is a
-    Markdown, Word and HTML document.
+    Upload several documents and ask a question: the answer comes only from these documents and shows its
+    sources. If the answer is not in them, it says so.
 version: "1.0"
-category: everyday
+category: documents
 tier: core
 
 inputs:
@@ -26,16 +21,19 @@ inputs:
     multiple: true
     label: {tr: "Belgeler", en: "Documents"}
     description:
-      tr: "En çok 20 dosya."
-      en: "Up to 20 files."
+      tr: "En çok 20 dosya, örnek: sözleşmeler, raporlar, notlar."
+      en: "Up to 20 files, for example contracts, reports or notes."
     formats: [pdf, docx, epub, md, txt, odt, rtf, csv, tsv, xlsx, png, jpg, jpeg]
   - id: question
     type: text
     multiline: true
     label: {tr: "Sorunuz", en: "Your question"}
+    description:
+      tr: "Örnek: 'Sözleşmeyi feshetmek için kaç gün önce bildirmek gerekir?'"
+      en: "For example: 'How many days of notice are needed to end the contract?'"
   - id: language
     type: language
-    label: {tr: "Rapor dili", en: "Report language"}
+    label: {tr: "Cevap dili", en: "Answer language"}
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
@@ -50,7 +48,7 @@ nodes:
 
   - id: find
     type: ai.map
-    label: {tr: "Belge başına ilgili bölümler", en: "Relevant passages per document"}
+    label: {tr: "İlgili bölümleri bul", en: "Find the relevant passages"}
     retries: 2
     config:
       source: "{{nodes.documents.text}}"
@@ -76,7 +74,7 @@ nodes:
 
   - id: answer
     type: ai.cli
-    label: {tr: "Cevap", en: "Answer"}
+    label: {tr: "Cevabı yaz", en: "Write the answer"}
     retries: 2
     config:
       provider: "{{inputs.model}}"

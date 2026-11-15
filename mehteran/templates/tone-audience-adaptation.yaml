@@ -6,17 +6,11 @@ name:
   en: Tone and audience adaptation
 description:
   tr: >-
-    Bir metni yeni bir okur kitlesine, tona ve kanala uyarlar (örneğin teknik bir raporu yöneticilere giden bir
-    e-postaya ya da bir duyuruyu sosyal medya metnine). Önce bir model korunması gereken bilgileri ve hedef
-    okuru tanımlayan bir yazım planı çıkarır; siz planı onaylar veya not eklersiniz; ardından metin uyarlanır ve
-    ikinci bir model uyarlamayı plana karşı denetler. Sonuç: uyarlanmış metin ve denetim notlarını içeren
-    Markdown, Word ve HTML belge.
+    Bir metin verin, okuru, tonu ve kanalı seçin; metnin yeni okura uyarlanmış hâlini alın (örnek: teknik bir
+    rapordan yöneticilere bir e-posta). Yazmadan önce planı siz onaylarsınız.
   en: >-
-    Adapts a text to new readers, a new tone and a new channel (for example a technical report into an e-mail
-    to managers, or an announcement into a social media post). First a model writes a brief: the facts that must
-    be kept and the target readers; you approve the brief or add notes; then the text is adapted and a second
-    model checks the adaptation against the brief. The result is a Markdown, Word and HTML document with the
-    adapted text and the review notes.
+    Give a text and choose the readers, tone and channel; get the text adapted for them (for example a technical
+    report turned into an e-mail to managers). You approve the plan before it is written.
 version: "1.0"
 category: writing
 
@@ -24,7 +18,7 @@ inputs:
   - id: document
     type: file
     label: {tr: Özgün metin, en: Original text}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Metin dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The text file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: audience
     type: text
@@ -65,13 +59,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Metni oku, en: Read the text}
     config:
       file: "{{inputs.document}}"
 
   - id: brief
     type: ai.cli
-    label: {tr: Yazım planı, en: Writing brief}
+    label: {tr: Yazım planını çıkar, en: Write the plan}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -123,7 +117,7 @@ nodes:
 
   - id: confirm
     type: approval
-    label: {tr: Planı onayla, en: Approve the brief}
+    label: {tr: Planı onayla, en: Approve the plan}
     config:
       show: "{{nodes.brief.text}}"
       instructions:
@@ -245,7 +239,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Belgeyi birleştir, en: Assemble document}
+    label: {tr: Belgeyi birleştir, en: Combine the document}
     config:
       template: |
         {{nodes.adapt.text}}
@@ -256,7 +250,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save document}
+    label: {tr: Metni kaydet, en: Save the text}
     config:
       source: "{{nodes.report.text}}"
       title: Adapted text

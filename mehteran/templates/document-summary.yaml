@@ -6,20 +6,11 @@ name:
   en: Document summary
 description:
   tr: >-
-    Uzun bir belgeyi seçtiğiniz biçimde özetler. "Dört uzunlukta" kipi: tek cümle, tek paragraf, bir sayfa ve bölüm bölüm
-    ana noktalar; ikinci bir model özetlerdeki her ifadeyi belgeye karşı denetler (yanlış, belgede dayanağı olmayan,
-    önemli eksik), üçüncü adım özetleri bu denetime göre düzeltir. "Bölüm bölüm" kipi (kitap, tez, rapor): belge
-    başlıklarına göre bölümlere ayrılır, her bölüm ayrı bir model çağrısıyla özetlenir (bölümler aynı anda işlenir,
-    bitenler saklanır, yarıda kalan çalıştırma devam ettirilince yalnızca eksik bölümler sorulur); sonra bütünün genel
-    özeti yazılır. Sonuç Markdown, Word ve HTML belgedir.
+    Bir belge verin, özetini alın: dört uzunlukta kısa özet ya da kitap ve tez için bölüm bölüm özet. Kullanmadan
+    önce sonucu kontrol edin.
   en: >-
-    Summarises a long document in the form you choose. The "Four lengths" mode gives one sentence, one paragraph, one
-    page and key points section by section; a second model checks every statement of the summaries against the
-    document (wrong, unsupported, important omissions) and a third step corrects the summaries from that check. The
-    "Chapter by chapter" mode (a book, a thesis, a report) splits the document into chapters by its headings and
-    summarises each chapter in its own model call (the chapters are processed at the same time, finished ones are
-    kept, and a resumed run asks again only for the missing chapters); then an overview of the whole is written. The
-    result is a Markdown, Word and HTML document.
+    Give a document and get its summary: four short versions, or chapter by chapter for a book or a thesis. Check the
+    result before you use it.
 version: "1.0"
 category: documents
 tier: core
@@ -34,10 +25,10 @@ inputs:
     type: choice
     label: {tr: Özet biçimi, en: Summary form}
     description:
-      tr: "'Dört uzunlukta' kısa bir belge ya da rapor için; 'Bölüm bölüm' başlıkları olan uzun belgeler (kitap, tez) için."
-      en: "'Four lengths' suits a short document or a report; 'Chapter by chapter' suits long documents with headings (a book, a thesis)."
+      tr: "Kısa bir belge ya da rapor için 'Dört uzunlukta'; kitap ya da tez için 'Bölüm bölüm'."
+      en: "'Four lengths' for a short document or a report; 'Chapter by chapter' for a book or a thesis."
     options:
-      - {value: lengths, label: {tr: Dört uzunlukta (denetimli), en: Four lengths (fact-checked)}}
+      - {value: lengths, label: {tr: Dört uzunlukta (denetlenir), en: Four lengths (fact-checked)}}
       - {value: chapters, label: {tr: Bölüm bölüm, en: Chapter by chapter}}
     default: lengths
   - id: audience
@@ -45,13 +36,13 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Okur kitlesi ve odak, en: Audience and focus}
+    label: {tr: Okur ve odak, en: Readers and focus}
     description:
-      tr: "Örnek: 'Yönetim kurulu', 'Konuya yabancı okurlar' ya da 'yöntem ve bulgular'. Boş bırakılabilir."
-      en: "For example: 'The board', 'Readers new to the subject' or 'method and findings'. May be left empty."
+      tr: "İsteğe bağlı. Örnek: 'yönetim kurulu için, yöntem ve bulgulara odaklan'."
+      en: "Optional. For example: 'for the board, focus on method and findings'."
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: Özet dili, en: Summary language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -64,13 +55,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Belgeyi oku, en: Read the document}
     config:
       file: "{{inputs.document}}"
 
   - id: gate
     type: condition
-    label: {tr: "Dört uzunlukta mı?", en: "Four lengths?"}
+    label: {tr: "Özet biçimine bak", en: "See the summary form"}
     config:
       value: "{{inputs.mode}}"
       operator: equals
@@ -78,7 +69,7 @@ nodes:
 
   - id: summarise
     type: ai.cli
-    label: {tr: Özetler, en: Summaries}
+    label: {tr: Özetleri yaz, en: Write the summaries}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -192,7 +183,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: Düzeltilmiş özetler, en: Corrected summaries}
+    label: {tr: Özetleri düzelt, en: Correct the summaries}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -242,7 +233,7 @@ nodes:
 
   - id: chapters
     type: ai.map
-    label: {tr: Bölüm özetleri, en: Chapter summaries}
+    label: {tr: Bölümleri özetle, en: Summarise each chapter}
     retries: 2
     config:
       source: "{{nodes.extract.text}}"
@@ -273,7 +264,7 @@ nodes:
 
   - id: overview
     type: ai.cli
-    label: {tr: Genel özet, en: Overview}
+    label: {tr: Genel özeti yaz, en: Write the overview}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -310,7 +301,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Belgeyi birleştir, en: Assemble document}
+    label: {tr: Özeti birleştir, en: Combine the summary}
     config:
       template: |
         {{nodes.final.text}}
@@ -321,7 +312,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save document}
+    label: {tr: Özeti kaydet, en: Save the summary}
     config:
       source: "{{nodes.report.text}}"
       title: Document summary

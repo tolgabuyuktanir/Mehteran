@@ -6,17 +6,11 @@ name:
   en: Response letter to reviewers
 description:
   tr: >-
-    Düzeltilmiş makaleden ve hakem yorumlarından madde madde bir cevap mektubu taslağı hazırlar. Bir model
-    yorumları numaralandırır, sınıflandırır ve her birinin makalede karşılanıp karşılanmadığını alıntıyla gösterir;
-    ikinci bir model nazik bir cevap mektubu yazar ve makalede görünmeyen bir değişikliği asla iddia etmez, onun
-    yerine [YAZAR: ...] yer tutucusu bırakır. Siz taslağı onaylayıp notlarınızı eklersiniz; son model mektubu
-    notlarınıza göre düzeltir. Sonuç Markdown, Word ve HTML mektuptur.
+    Düzeltilmiş makaleyi ve hakem yorumlarını verin; madde madde bir cevap mektubu alın. Makalede görünmeyen
+    değişiklikler [YAZAR: ...] olarak boş kalır; taslağı siz onaylayıp notlarınızı eklersiniz.
   en: >-
-    Drafts a point-by-point response letter from the revised manuscript and the reviewers' comments. One model
-    numbers and classifies the comments and shows, with quotations, whether the manuscript addresses each one; a
-    second model writes a polite response letter that never claims a change the manuscript does not show and
-    leaves an [AUTHOR: ...] placeholder instead. You approve the draft and add your notes; a last model revises
-    the letter with your notes. The result is a Markdown, Word and HTML letter.
+    Give the revised manuscript and the reviewers' comments; get a point-by-point response letter. Changes the
+    manuscript does not show stay as [AUTHOR: ...]; you approve the draft and add your notes.
 version: "1.0"
 category: research
 
@@ -24,24 +18,24 @@ inputs:
   - id: paper
     type: file
     label: {tr: Düzeltilmiş makale, en: Revised manuscript}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Makalenin düzeltmelerden sonraki son hâli.", en: "The manuscript as it is after your changes."}
     formats: [pdf, docx, epub, md, txt]
   - id: comments
     type: file
     label: {tr: Hakem yorumları, en: Reviewer comments}
     description:
-      tr: "Editör ve hakem yorumlarının tamamı. PDF, Word, EPUB, Markdown veya düz metin."
-      en: "All comments of the editor and the reviewers. PDF, Word, EPUB, Markdown or plain text."
+      tr: "Editörün ve hakemlerin yorumlarının tamamı; örnek: dergiden gelen karar e-postası."
+      en: "All comments of the editor and the reviewers, e.g. the decision email from the journal."
     formats: [pdf, docx, epub, md, txt]
   - id: note
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Yazarlardan not, en: Note from the authors}
+    label: {tr: Yazarların notu, en: Your notes}
     description:
-      tr: "Örnek: derginin adı, yaptığınız ana değişiklikler, katılmadığınız yorumlar."
-      en: "For example: the journal's name, the main changes you made, comments you disagree with."
+      tr: "İsteğe bağlı; örnek: derginin adı, yaptığınız ana değişiklikler, katılmadığınız yorumlar."
+      en: "Optional, e.g. the journal's name, the main changes you made, comments you disagree with."
   - id: language
     type: language
     label: {tr: Mektup dili, en: Letter language}
@@ -53,13 +47,13 @@ inputs:
 nodes:
   - id: extract_paper
     type: document.extract
-    label: {tr: Makale metni, en: Manuscript text}
+    label: {tr: Makaleyi oku, en: Read the manuscript}
     config:
       file: "{{inputs.paper}}"
 
   - id: extract_comments
     type: document.extract
-    label: {tr: Yorum metni, en: Comments text}
+    label: {tr: Hakem yorumlarını oku, en: Read the comments}
     config:
       file: "{{inputs.comments}}"
 
@@ -116,7 +110,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: Mektup taslağı, en: Draft letter}
+    label: {tr: Mektubu yaz, en: Write the letter}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -172,7 +166,7 @@ nodes:
 
   - id: author_check
     type: approval
-    label: {tr: Yazar kontrolü, en: Author check}
+    label: {tr: Taslağı onayla, en: Approve the draft}
     config:
       show: "{{nodes.draft.text}}"
       instructions:
@@ -186,7 +180,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: Son mektup, en: Final letter}
+    label: {tr: Notlarınızı ekle, en: Add your notes}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -225,7 +219,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Mektubu kaydet, en: Save letter}
+    label: {tr: Mektubu kaydet, en: Save the letter}
     config:
       source: "{{nodes.final.text}}"
       title: Response to the reviewers

@@ -6,14 +6,11 @@ name:
   en: "Bug report triage"
 description:
   tr: >-
-    Yapıştırdığınız hata bildirimlerini sınıflandırır: her bildirim için ciddiyet, olası kopyalar, eksik bilgi ve
-    önerilen sonraki adım. Bildirimde olmayan bilgiyi uydurmaz, eksikleri soru olarak listeler. İkinci bir adım
-    sınıflandırmayı bildirimlere karşı denetler ve düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Hata bildirimlerini yapıştırın: her biri için ciddiyet, olası kopyalar, eksik bilgi ve sonraki adım çıkar.
+    Bildirimde olmayan bilgiyi uydurmaz; eksikleri soru olarak sorar.
   en: >-
-    Triages the bug reports you paste: for each report the severity, likely duplicates, missing information and a
-    suggested next step. It does not invent information that the report lacks; it lists the gaps as questions. A
-    second step checks the triage against the reports and corrects it. The result is a Markdown, Word and HTML
-    document.
+    Paste bug reports: for each one you get the severity, likely duplicates, missing information and a next step.
+    It invents nothing the report lacks; it asks about the gaps.
 version: "1.0"
 category: developers
 
@@ -30,10 +27,10 @@ inputs:
   - id: reports_file
     type: file
     required: false
-    label: {tr: "Bildirim dosyası", en: "Reports file"}
+    label: {tr: "Bildirim dosyası (isteğe bağlı)", en: "Reports file (optional)"}
     description:
-      tr: "İsteğe bağlı. Yapıştırmak yerine dosya yükleyebilirsiniz."
-      en: "Optional. A file instead of pasted text."
+      tr: "Yapıştırmak yerine bir dosya da yükleyebilirsiniz."
+      en: "You can upload a file instead of pasting the text."
     formats: [md, txt, pdf, docx]
   - id: product
     type: text
@@ -42,8 +39,8 @@ inputs:
     default: ""
     label: {tr: "Ürün hakkında (isteğe bağlı)", en: "About the product (optional)"}
     description:
-      tr: "Örnek: hangi sürüm ve hangi bileşenler var, neyin kritik olduğu."
-      en: "For example: the versions and components, and what counts as critical."
+      tr: "Örnek: 'Sürüm 3.2; ödeme ekranındaki hatalar kritiktir.'"
+      en: "For example: 'Version 3.2; bugs on the payment screen are critical.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -61,7 +58,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Bildirimleri sınıflandır", en: "Triage the reports"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -98,7 +95,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Sınıflandırmayı denetle", en: "Check the triage"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -136,7 +133,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Sınıflandırmayı kaydet", en: "Save the triage"}
     config:
       source: "{{nodes.review.text}}"
       title: "Bug report triage"

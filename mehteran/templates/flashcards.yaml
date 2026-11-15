@@ -6,13 +6,11 @@ name:
   en: "Flashcards (Anki)"
 description:
   tr: >-
-    Notlarınızdan ya da belgenizden ezber kartları yapar ve Anki'ye aktarmak için CSV olarak verir (ön yüz;arka
-    yüz). İkinci bir adım her kartı kaynağa karşı denetler; kaynağın desteklemediği kartları çıkarır, hatalıları
-    düzeltir. Sonuç, kopyalanabilir CSV bloğu içeren Markdown, Word ve HTML belgedir.
+    Notlarınızdan ya da bir belgeden ezber kartları yapar ve Anki'ye aktarılacak biçimde verir. Her kart kaynağa
+    karşı denetlenir.
   en: >-
-    Makes flashcards from your notes or document and gives them as CSV for import into Anki (front;back). A second
-    step checks every card against the source, drops the cards it does not support and corrects wrong ones. The
-    result is a Markdown, Word and HTML document with a copyable CSV block.
+    Makes flashcards from your notes or a document, ready to import into Anki. Every card is checked against the
+    source.
 version: "1.0"
 category: education
 tier: core
@@ -25,8 +23,8 @@ inputs:
     default: ""
     label: {tr: "Notlar", en: "Notes"}
     description:
-      tr: "Notlarınızı yapıştırın."
-      en: "Paste your notes."
+      tr: "Notlarınızı buraya yapıştırın ya da aşağıdan bir dosya yükleyin."
+      en: "Paste your notes here, or upload a file below."
   - id: notes_file
     type: file
     required: false
@@ -48,13 +46,13 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Odak (isteğe bağlı)", en: "Focus (optional)"}
+    label: {tr: "Odak", en: "Focus"}
     description:
-      tr: "Örnek: 'yalnızca tanımlar' ya da 'tarihler ve isimler'."
-      en: "For example: 'definitions only' or 'dates and names'."
+      tr: "İsteğe bağlı. Örnek: 'yalnızca tanımlar' ya da 'tarihler ve isimler'."
+      en: "Optional. For example: 'definitions only' or 'dates and names'."
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: Kart dili, en: Card language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -69,7 +67,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Kartları yaz", en: "Write the cards"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -108,7 +106,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Kartları denetle", en: "Check the cards"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -147,7 +145,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Kartları kaydet", en: "Save the cards"}
     config:
       source: "{{nodes.review.text}}"
       title: "Flashcards"

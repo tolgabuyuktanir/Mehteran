@@ -6,9 +6,9 @@ name:
   en: "Report card comments"
 description:
   tr: >-
-    Yapıştırdığınız öğrenci notlarından her öğrenci için bir karne yorumu yazar: güçlü yönler ve bir sonraki adım. Her öğrencinin bilgisi ayrı tutulur. İkinci adım, hiçbir yorumda o öğrencinin notlarında olmayan bir bilgi kalmamasını sağlar. Sonuç Markdown, Word ve HTML belgedir.
+    Öğrencilerle ilgili notlarınızı yapıştırın; her öğrenci için güçlü yönleri ve bir sonraki adımı anlatan bir karne yorumu alın.
   en: >-
-    Writes a report card comment for each student from the student notes you paste: strengths and a next step. Each student's data stays separate. A second step makes sure no comment contains a fact that is not in that student's notes. The result is a Markdown, Word and HTML document.
+    Paste your notes about the students; get a report card comment for each one, with strengths and a next step.
 version: "1.0"
 category: education
 
@@ -19,18 +19,18 @@ inputs:
     required: true
     label: {tr: "Öğrenci notları", en: "Student notes"}
     description:
-      tr: "Her öğrenciyi adıyla başlatın; öğrencileri boş satırla ayırın."
-      en: "Start each student with the name; separate students with an empty line."
+      tr: "Her öğrenciyi adıyla başlatın, aralarına boş satır koyun; örnek: 'Ali: okumada hızlandı, ödevleri eksik.'"
+      en: "Start each student with the name and leave an empty line between them, e.g. 'Ali: reads faster, homework often missing.'"
   - id: length
     type: choice
-    label: {tr: "Uzunluk", en: "Length"}
+    label: {tr: "Yorum uzunluğu", en: "Comment length"}
     options:
       - {value: short, label: {tr: "Kısa (2 cümle)", en: "Short (2 sentences)"}}
       - {value: medium, label: {tr: "Orta (4 cümle)", en: "Medium (4 sentences)"}}
     default: short
   - id: tone
     type: choice
-    label: {tr: "Ton", en: "Tone"}
+    label: {tr: "Üslup", en: "Tone"}
     options:
       - {value: encouraging, label: {tr: "Cesaretlendirici", en: "Encouraging"}}
       - {value: neutral, label: {tr: "Nötr", en: "Neutral"}}
@@ -42,11 +42,11 @@ inputs:
     default: ""
     label: {tr: "Ders ya da alan", en: "Subject"}
     description:
-      tr: "İsteğe bağlı."
-      en: "Optional."
+      tr: "İsteğe bağlı; örnek: 'Matematik' ya da 'Sınıf öğretmenliği'."
+      en: "Optional, e.g. 'Maths' or 'Homeroom'."
   - id: language
     type: language
-    label: {tr: Çıktı dili, en: Output language}
+    label: {tr: Yorumların dili, en: Comment language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -55,7 +55,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Yorum taslakları", en: "Comment drafts"}
+    label: {tr: "Yorumları yaz", en: "Write the comments"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -96,7 +96,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Yorumları denetle", en: "Check the comments"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -132,7 +132,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Yorumları kaydet, en: Save the comments}
     config:
       source: "{{nodes.check.text}}"
       title: "Report card comments"
@@ -145,6 +145,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Yorumlar (Markdown), en: Comments (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Yorumlar (Word), en: Comments (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Yorumlar (HTML), en: Comments (HTML)}}

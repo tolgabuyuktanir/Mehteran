@@ -6,13 +6,11 @@ name:
   en: "Pull request description"
 description:
   tr: >-
-    Bir diff'ten ya da commit listesinden pull request açıklaması yazar: başlık, özet, neleri değiştirdiği, nasıl
-    test edileceği ve riskler. Değişikliğin nedenini yalnızca siz yazdıysanız belirtir. İkinci bir adım açıklamayı
-    değişikliğe karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Bir diff ya da commit listesi verin; başlık, özet, değişenler, test adımları ve risklerle bir pull request
+    açıklaması alın.
   en: >-
-    Writes a pull request description from a diff or a commit list: a title, a summary, what changed, how to test it
-    and the risks. It states the reason for the change only if you wrote it. A second step checks the description
-    against the change. The result is a Markdown, Word and HTML document.
+    Give a diff or a commit list; get a pull request description with a title, a summary, the changes, how to
+    test them and the risks.
 version: "1.0"
 category: developers
 
@@ -24,28 +22,28 @@ inputs:
     default: ""
     label: {tr: "Diff ya da commit listesi", en: "Diff or commit list"}
     description:
-      tr: "Yapıştırın."
-      en: "Paste it."
+      tr: "'git diff' ya da 'git log' çıktısını buraya yapıştırın."
+      en: "Paste the output of 'git diff' or 'git log' here."
   - id: changes_file
     type: file
     required: false
-    label: {tr: "Değişiklik dosyası", en: "Changes file"}
+    label: {tr: "Ya da dosya olarak", en: "Or as a file"}
     description:
-      tr: "İsteğe bağlı. Yapıştırmak yerine dosya yükleyebilirsiniz."
-      en: "Optional. A file instead of pasted text."
+      tr: "İsteğe bağlı: yapıştırmak yerine diff'i dosya olarak yükleyin."
+      en: "Optional: upload the diff as a file instead of pasting it."
     formats: [md, txt, pdf, docx]
   - id: why
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Neden (isteğe bağlı)", en: "Why (optional)"}
+    label: {tr: "Değişikliğin nedeni", en: "Reason for the change"}
     description:
-      tr: "Bu değişikliğin nedeni, ilgili iş ya da hata numarası."
-      en: "The reason for this change, the related task or issue number."
+      tr: "İsteğe bağlı; örnek: 'Giriş sayfası mobilde açılmıyordu, #142'."
+      en: "Optional, e.g. 'The login page did not open on mobile, #142'."
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: Açıklamanın dili, en: Description language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -60,7 +58,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "Açıklamayı yaz", en: "Write the description"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -97,7 +95,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Açıklamayı denetle", en: "Check the description"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -135,7 +133,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Açıklamayı kaydet", en: "Save the description"}
     config:
       source: "{{nodes.review.text}}"
       title: "Pull request"

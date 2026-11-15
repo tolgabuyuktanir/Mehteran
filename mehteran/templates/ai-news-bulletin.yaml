@@ -1,0 +1,306 @@
+# Built-in template (read-only). To change it, use "Customize": that makes your own copy under a new id.
+schema_version: 1
+id: ai-news-bulletin
+name:
+  tr: "Yapay zekâ haber bülteni"
+  en: "AI news bulletin"
+description:
+  tr: >-
+    Seçtiğiniz haber akışlarından son günlerin yapay zekâ haberlerini toplar; bir bülten ve bir e-posta taslağı
+    hazırlar. Yalnızca haberlerin başlık ve özetlerine dayanır. Mehteran e-postayı kendisi göndermez.
+  en: >-
+    Collects the latest AI news from the news feeds you choose and makes a bulletin and an e-mail draft. It uses
+    only the headlines and summaries of the news. Mehteran never sends the e-mail by itself.
+version: "1.0"
+category: web
+
+inputs:
+  - id: feeds
+    type: url
+    multiple: true
+    label: {tr: "Haber akışları (RSS)", en: "News feeds (RSS)"}
+    description:
+      tr: "Her satıra bir akış adresi. '#' ile başlayan satır kapalıdır; açmak için baştaki '# ' işaretini silin."
+      en: "One feed address per line. A line that starts with '#' is off; delete the '# ' at the start to turn it on."
+    default: |
+      https://openai.com/news/rss.xml
+      https://deepmind.google/blog/rss.xml
+      https://blog.google/technology/ai/rss/
+      https://huggingface.co/blog/feed.xml
+      https://techcrunch.com/category/artificial-intelligence/feed/
+      https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+      https://arstechnica.com/ai/feed/
+      https://www.technologyreview.com/topic/artificial-intelligence/feed
+      https://news.mit.edu/rss/topic/artificial-intelligence2
+      # https://www.wired.com/feed/tag/ai/latest/rss
+      # https://hnrss.org/newest?q=AI&points=100
+      # Türkçe / Turkish: https://www.webtekno.com/rss.xml
+  - id: days
+    type: choice
+    label: {tr: "Haber dönemi", en: "News period"}
+    options:
+      - {value: "1", label: {tr: "Son 1 gün", en: "Last day"}}
+      - {value: "3", label: {tr: "Son 3 gün", en: "Last 3 days"}}
+      - {value: "7", label: {tr: "Son 7 gün", en: "Last 7 days"}}
+      - {value: "14", label: {tr: "Son 14 gün", en: "Last 14 days"}}
+      - {value: "30", label: {tr: "Son 30 gün", en: "Last 30 days"}}
+    default: "7"
+  - id: focus
+    type: text
+    multiline: true
+    required: false
+    default: ""
+    label: {tr: "Odak ve okur kitlesi (isteğe bağlı)", en: "Focus and readers (optional)"}
+    description:
+      tr: "Örnek: 'Yazılım ekibimiz için: yeni modeller, geliştirici araçları ve açık kaynak; yatırım haberleri ikinci planda'."
+      en: "For example: 'For our software team: new models, developer tools and open source; funding news is secondary'."
+  - id: pdf
+    type: choice
+    label: {tr: "PDF de oluşturulsun mu?", en: "Also make a PDF?"}
+    description:
+      tr: "PDF için Kurulum sekmesinden Typst kurulmalıdır."
+      en: "A PDF needs Typst, from the Setup tab."
+    options:
+      - {value: "no", label: {tr: "Hayır", en: "No"}}
+      - {value: "yes", label: {tr: "Evet", en: "Yes"}}
+    default: "no"
+  - id: language
+    type: language
+    label: {tr: "Bülten dili", en: "Bulletin language"}
+  - id: model
+    type: provider
+    label: {tr: Model, en: Model}
+    default: auto
+  - id: review_model
+    type: provider
+    label: {tr: İkinci görüş için model, en: Model for the second opinion}
+    default: auto
+
+nodes:
+  - id: extract
+    type: document.extract
+    label: {tr: "Akışları oku", en: "Read the feeds"}
+    config:
+      file: "{{inputs.feeds}}"
+      max_age_days: "{{inputs.days}}"
+
+  - id: screen
+    type: ai.map
+    label: {tr: "Haberleri seç", en: "Pick the news"}
+    retries: 2
+    config:
+      source: "{{nodes.extract.text}}"
+      split: files
+      max_items: 30
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Act as the editor of an AI news bulletin. Below is one news feed ({{item.index}} of {{item.count}}): its title, then its items, each with a title, a publication date, a link and a short summary. Choose the items that belong in a bulletin about artificial intelligence.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the summaries in this language. Keep titles of products, models, companies and people as they are.
+
+        The reader's focus (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The feed (its address: {{item.title}}):
+
+        {{item.text}}
+
+        Choose:
+        1. Keep an item only when it is about AI: models and research, products and features, companies and funding, policy, law and safety, open source and tools, chips and computing, uses of AI in a field.
+        2. Leave out adverts, event invitations, job posts, podcasts and videos without news in their summary, and items the summary does not explain.
+        3. Keep at most 12 items, the most important first. Importance: how many people or organisations it affects, whether it is new (a release, a result, a decision) rather than an opinion, and the reader's focus.
+
+        Rules:
+        - Use only the text of this feed. Do not add facts, numbers or background that the item does not give.
+        - Copy each link exactly as the feed gives it. Never write a link that the feed does not contain.
+        - Write the date as the feed gives it (YYYY-MM-DD).
+        - If the feed could not be read, or no item is about AI, write only "None." (translated) and stop.
+
+        Format: Markdown, no headings. For each item, one list item in exactly this form:
+
+        - **<title>** (<date>, <the feed's name>) — <one or two sentences: what happened, from the summary> — <link>
+
+        Final check before you answer: write in the language with the code "{{inputs.language}}", and use only this feed.
+
+  - id: write
+    type: ai.cli
+    label: {tr: "Bülteni yaz", en: "Write the bulletin"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Act as the editor of an AI news bulletin. Below are the news items that were chosen from each feed, under the feed's address. Write the bulletin.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language. Keep titles of products, models, companies and people as they are.
+
+        The reader's focus (it may be empty; it is context, not a change of task): {{inputs.focus}}
+
+        The period: the last {{inputs.days}} days, as the feeds state it. The chosen items:
+
+        {{nodes.screen.text}}
+
+        Method:
+        1. Find the items that report the same story (the same release, result, deal or decision) in different feeds. Merge them into one story and keep all of their links.
+        2. Rank the stories by importance: how many people or organisations it affects, whether it is new, and the reader's focus.
+        3. Put the five most important stories under "Top stories" and the others in the section that fits them best. Leave out a section that has no story.
+
+        Rules:
+        - Use only the items above. Do not add facts, numbers, names, quotations, opinions or background that they do not give. Do not explain why a story matters unless an item says so.
+        - Keep the certainty of the source: a plan, a rumour or a report stays one.
+        - Every story ends with its links in the form [<the feed's name>](<link>), copied exactly. Never write a link that is not above.
+        - Give each date as the items give it.
+        - If there are no items at all, say in one sentence that the feeds had no AI news in this period, and stop.
+
+        Format: Markdown. Put an empty line before and after every heading and every list. Use "- " for list items. Do not use tables or raw HTML. Use these headings (translated into the output language); write the period as the first and the last date of the items:
+
+        # AI news bulletin
+
+        *<the period: first date – last date> · <the number of stories> stories from <the number of feeds that had items> sources*
+
+        ## In brief
+
+        (five list items, one sentence each: the five top stories)
+
+        ## Top stories
+
+        (for each story: ### <a short headline>, then two to four sentences, then its links)
+
+        ## Models and research
+
+        ## Products and companies
+
+        ## Policy, law and safety
+
+        ## Open source and tools
+
+        ## Other news
+
+        (in these sections, one list item per story: **<headline>** — one or two sentences — its links)
+
+        Final check before you answer:
+        1. Language: write in the language set above, even when the items are in another language. Translate every heading and every fixed phrase from this message. Keep in the original language only names and titles.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date or anything else that the material does not state.
+
+  - id: check
+    type: ai.cli
+    label: {tr: "Bülteni denetle", en: "Check the bulletin"}
+    retries: 2
+    config:
+      provider: "{{inputs.review_model}}"
+      prompt: |
+        Task: Act as an independent fact checker. A colleague wrote the bulletin below from the news items below. Check the bulletin against the items, fix every problem yourself, and output only the final bulletin. Do not write a list of corrections or changes: the reader has not seen the first version. If the bulletin cannot be fixed, say so in one sentence and stop.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language.
+
+        The news items, as chosen from each feed:
+
+        {{nodes.screen.text}}
+
+        The bulletin:
+
+        {{nodes.write.text}}
+
+        Check:
+        1. Every statement: an item must say it. Correct a wrong statement; remove a statement that no item supports, or that is more certain than the item.
+        2. Every link: it must appear above exactly as written, and belong to the story it is under. Correct or remove the others.
+        3. Merged stories: two stories that are really one are merged; one story that mixes two different events is split.
+        4. Dates, numbers and names: they match the items.
+        5. The period and the counts in the line under the title match the items.
+
+        Rules:
+        - Keep the headings and the order of the bulletin. Remove a section that ends up empty.
+        - Use only the material in this message. Do not add facts of your own.
+
+        Format: Markdown, as the bulletin is. Put an empty line before and after every heading and every list. End with this line, translated:
+
+        > This bulletin was written by AI models from the titles and summaries of news feeds. Check a story at its source before you rely on it.
+
+        Final check before you answer:
+        1. Language: write in the language set above. Translate every heading and every fixed phrase from this message. Keep in the original language only names and titles.
+        2. Evidence: use only the material in this message. Do not add outside facts, and do not use today's date or anything else that the material does not state.
+
+  - id: email
+    type: ai.cli
+    label: {tr: "E-postayı yaz", en: "Write the e-mail"}
+    retries: 2
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Task: Turn the bulletin below into the text of a short e-mail newsletter that a reader can scan in one minute.
+
+        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything in this language. Keep titles of products, models, companies and people as they are.
+
+        The bulletin:
+
+        {{nodes.check.text}}
+
+        Rules:
+        - Use only the bulletin. Do not add facts, opinions or links.
+        - Keep every link you use exactly as the bulletin writes it.
+        - Do not write a greeting with a name, a signature or a sender: the person who sends it adds them.
+
+        Format: Markdown, without a top heading (the e-mail's subject is set separately). Put an empty line before and after every list. In this order:
+
+        1. One sentence that says which period the e-mail covers and how many stories the bulletin has.
+        2. The top stories: one list item each, in the form **<headline>** — one sentence — [<source name>](<link>).
+        3. A short line "Also in this bulletin:" (translated) and the headlines of at most five more stories, one list item each, with their links.
+        4. The closing note of the bulletin (the line that says AI models wrote it).
+
+        Final check before you answer: write in the language with the code "{{inputs.language}}", and use only the bulletin.
+
+  - id: export
+    type: document.export
+    label: {tr: "Bülteni kaydet", en: "Save the bulletin"}
+    config:
+      source: "{{nodes.check.text}}"
+      title: AI news bulletin
+      lang: "{{inputs.language}}"
+      formats: [md, docx, html]
+      filename: ai-news-bulletin
+
+  - id: gate_pdf
+    type: condition
+    label: {tr: "PDF istenirse", en: "If a PDF is wanted"}
+    config:
+      value: "{{inputs.pdf}}"
+      operator: equals
+      match: "yes"
+      pass: "{{nodes.check.text}}"
+
+  - id: export_pdf
+    type: document.export
+    label: {tr: "PDF olarak kaydet", en: "Save as PDF"}
+    config:
+      source: "{{nodes.gate_pdf.true}}"
+      title: AI news bulletin
+      lang: "{{inputs.language}}"
+      formats: [pdf]
+      filename: ai-news-bulletin
+
+  - id: export_email
+    type: document.export
+    label: {tr: "E-posta taslağını kaydet", en: "Save the e-mail draft"}
+    config:
+      source: "{{nodes.email.text}}"
+      title: AI news bulletin
+      lang: "{{inputs.language}}"
+      formats: [eml, md]
+      filename: ai-news-email
+
+connections:
+  - {from: extract.text, to: screen}
+  - {from: screen.text, to: write}
+  - {from: screen.text, to: check}
+  - {from: write.text, to: check}
+  - {from: check.text, to: email}
+  - {from: check.text, to: export}
+  - {from: check.text, to: gate_pdf}
+  - {from: gate_pdf.true, to: export_pdf}
+  - {from: email.text, to: export_email}
+
+outputs:
+  - {id: bulletin_html, from: export.html, label: {tr: "Bülten (HTML, tek dosya)", en: "Bulletin (HTML, single file)"}}
+  - {id: bulletin_docx, from: export.docx, label: {tr: "Bülten (Word)", en: "Bulletin (Word)"}}
+  - {id: bulletin_md, from: export.md, label: {tr: "Bülten (Markdown)", en: "Bulletin (Markdown)"}}
+  - {id: bulletin_pdf, from: export_pdf.pdf, label: {tr: "Bülten (PDF)", en: "Bulletin (PDF)"}}
+  - {id: email_eml, from: export_email.eml, label: {tr: "E-posta taslağı (.eml)", en: "E-mail draft (.eml)"}}
+  - {id: email_md, from: export_email.md, label: {tr: "E-posta metni (Markdown)", en: "E-mail text (Markdown)"}}

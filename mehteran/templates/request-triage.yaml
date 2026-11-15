@@ -6,17 +6,11 @@ name:
   en: Request and complaint triage
 description:
   tr: >-
-    Gelen bir müşteri talebini ya da şikâyetini değerlendirir ve iki yoldan birini seçer. Bir model önce talebin
-    acil olup olmadığına (güvenlik, hukuki risk, büyük maddi zarar, açık bir öfke) evet ya da hayır diye karar
-    verir ve gerekçesini yazar. Acilse yöneticiye bir yükseltme notu ve müşteriye bir ilk cevap taslağı yazılır;
-    değilse standart bir cevap taslağı yazılır. Seçilmeyen yol hiç çalışmaz. Sonuç Markdown, Word ve HTML
-    rapordur.
+    Bir müşteri talebini ya da şikâyetini yapıştırın; acil olup olmadığını öğrenin. Acilse yöneticiye bir not ve
+    müşteriye ilk cevap, değilse standart bir cevap taslağı alın.
   en: >-
-    Assesses an incoming customer request or complaint and takes one of two paths. A model first decides yes or
-    no whether the request is urgent (safety, legal risk, major financial harm, open anger) and gives its
-    reasons. If it is urgent, an escalation note for a manager and a first reply to the customer are drafted;
-    otherwise a standard reply is drafted. The path not taken never runs. The result is a Markdown, Word and HTML
-    report.
+    Paste a customer request or complaint; find out if it is urgent. If it is, you get a note for a manager and
+    a first reply; if not, a standard reply draft.
 version: "1.0"
 category: business
 
@@ -24,16 +18,19 @@ inputs:
   - id: message
     type: text
     multiline: true
-    label: {tr: Talep ya da şikâyet metni, en: Text of the request or complaint}
+    label: {tr: Talep ya da şikâyet, en: Request or complaint}
+    description:
+      tr: "Müşterinin e-postasını ya da mesajını olduğu gibi yapıştırın."
+      en: "Paste the customer's email or message as it is."
   - id: company_context
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: Şirket bilgisi, en: Company context}
+    label: {tr: Şirket bilgisi, en: About your company}
     description:
-      tr: "Örnek: ürün, iade politikası, cevap tonu. Boş bırakılabilir."
-      en: "For example: the product, the return policy, the tone of replies. May be left empty."
+      tr: "İsteğe bağlı; örnek: ürün, iade politikası, cevaplardaki üslup."
+      en: "Optional, e.g. the product, the return policy, the tone of replies."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -45,7 +42,7 @@ inputs:
 nodes:
   - id: assess
     type: ai.cli
-    label: {tr: Aciliyet, en: Urgency}
+    label: {tr: Aciliyeti değerlendir, en: Judge the urgency}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -65,14 +62,14 @@ nodes:
 
   - id: gate
     type: condition
-    label: {tr: Acilse, en: If urgent}
+    label: {tr: Yolu seç, en: Choose the path}
     config:
       value: "{{nodes.assess.text}}"
       operator: is_yes
 
   - id: escalate
     type: ai.cli
-    label: {tr: Yükseltme notu ve ilk cevap, en: Escalation note and first reply}
+    label: {tr: Acil notu yaz, en: Write the urgent note}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,7 +103,7 @@ nodes:
 
   - id: reply
     type: ai.cli
-    label: {tr: Standart cevap, en: Standard reply}
+    label: {tr: Standart cevap yaz, en: Write a standard reply}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -139,14 +136,14 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.escalate.text}}{{nodes.reply.text}}
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Triage

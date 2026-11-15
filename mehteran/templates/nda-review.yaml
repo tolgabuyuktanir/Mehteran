@@ -6,17 +6,11 @@ name:
   en: NDA review
 description:
   tr: >-
-    Bir gizlilik sözleşmesini (NDA) sizin rolünüze göre (bilgiyi alan, bilgiyi veren veya karşılıklı) inceler.
-    Bir model standart başlıkları tek tek kontrol eder ve her biri için NDA'nın ne dediğini alıntılar; ikinci bir
-    model bu rol için tek taraflı, geniş veya olağan dışı hükümleri ve gizli yükümlülükleri bulur. Son model kısa
-    bir değerlendirme ve müzakere noktaları yazar. Sonuç, hukuki tavsiye olmadığını belirten Markdown, Word ve
-    HTML rapordur.
+    Bir gizlilik sözleşmesini (NDA) sizin tarafınızdan inceler; olağan dışı hükümleri ve müzakere noktalarını
+    gösteren bir rapor verir. Hukuki tavsiye değildir.
   en: >-
-    Reviews a non-disclosure agreement from your role (receiving party, disclosing party, or mutual). One model
-    goes through the standard topics one by one and quotes what the NDA says on each; a second model finds
-    clauses that are one-sided, broad or unusual for this role, and hidden obligations. A final model writes a
-    short verdict and negotiation points. The result is a Markdown, Word and HTML report, marked as not legal
-    advice.
+    Reviews a non-disclosure agreement (NDA) from your side and gives a report of unusual clauses and points to
+    negotiate. It is not legal advice.
 version: "1.0"
 category: legal
 
@@ -39,10 +33,10 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Özel endişeler, en: Specific concerns}
+    label: {tr: Endişeleriniz, en: Your concerns}
     description:
-      tr: "Örnek: 'Aynı alanda başka müşterilerle çalışmaya devam edeceğiz.'"
-      en: "For example: 'We will keep working with other clients in the same field.'"
+      tr: "İsteğe bağlı. Örnek: 'Aynı alanda başka müşterilerle çalışmaya devam edeceğiz.'"
+      en: "Optional. For example: 'We will keep working with other clients in the same field.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -58,13 +52,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Sözleşmeyi oku, en: Read the NDA}
     config:
       file: "{{inputs.nda}}"
 
   - id: checklist
     type: ai.cli
-    label: {tr: Kontrol listesi, en: Checklist}
+    label: {tr: Standart başlıkları denetle, en: Check the standard topics}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -117,7 +111,7 @@ nodes:
 
   - id: unusual
     type: ai.cli
-    label: {tr: Olağan dışı hükümler, en: Unusual clauses}
+    label: {tr: Olağan dışı hükümleri bul, en: Find unusual clauses}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -170,7 +164,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Değerlendirme, en: Verdict}
+    label: {tr: Değerlendirmeyi yaz, en: Write the verdict}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -220,7 +214,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -231,7 +225,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: NDA review

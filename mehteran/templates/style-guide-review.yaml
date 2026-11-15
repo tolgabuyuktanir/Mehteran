@@ -6,23 +6,19 @@ name:
   en: Editorial review against a style guide
 description:
   tr: >-
-    Bir metni sizin verdiğiniz yazım kılavuzuna göre değerlendirir. Bir model kılavuzdan denetlenebilir
-    kuralları numaralı bir liste olarak çıkarır; ikinci bir model metindeki her ihlali kural numarası, alıntı ve
-    düzeltme önerisiyle listeler; üçüncü bir model aynı anda yapı, açıklık ve okura uygunluk açısından genel bir
-    editoryal değerlendirme yapar. Sonuç: öncelikli düzeltmeler içeren Markdown, Word ve HTML rapor.
+    Bir metin ve yazım kılavuzunuzu verin; kılavuza uymayan her yeri düzeltme önerisiyle, ayrıca yapı ve açıklık
+    üzerine görüşleri ve öncelikli düzeltmeleri içeren bir rapor alın.
   en: >-
-    Assesses a text against the style guide you supply. One model turns the guide into a numbered list of
-    checkable rules; a second model lists every breach in the text with the rule number, a quotation and a
-    suggested fix; a third model, at the same time, assesses structure, clarity and fit for the audience. The
-    result is a Markdown, Word and HTML report with prioritised fixes.
+    Give a text and your style guide; get a report with every place that breaks the guide and a suggested fix,
+    notes on structure and clarity, and the fixes to make first.
 version: "1.0"
 category: writing
 
 inputs:
   - id: document
     type: file
-    label: {tr: Değerlendirilecek metin, en: Text to review}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    label: {tr: İncelenecek metin, en: Text to review}
+    description: {tr: "Metin dosyası: PDF, Word, EPUB, Markdown veya düz metin.", en: "The text file: PDF, Word, EPUB, Markdown or plain text."}
     formats: [pdf, docx, epub, md, txt]
   - id: guide
     type: file
@@ -37,8 +33,8 @@ inputs:
     default: ""
     label: {tr: Hedef okur, en: Intended readers}
     description:
-      tr: "Örnek: 'Müşterilere giden bülten', 'Akademik dergi okurları'."
-      en: "For example: 'Customer newsletter', 'Readers of an academic journal'."
+      tr: "İsteğe bağlı. Örnek: 'Müşterilere giden bülten', 'Akademik dergi okurları'."
+      en: "Optional. For example: 'Customer newsletter', 'Readers of an academic journal'."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -50,19 +46,19 @@ inputs:
 nodes:
   - id: extract_document
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract the text}
+    label: {tr: Metni oku, en: Read the text}
     config:
       file: "{{inputs.document}}"
 
   - id: extract_guide
     type: document.extract
-    label: {tr: Kılavuzu çıkar, en: Extract the guide}
+    label: {tr: Kılavuzu oku, en: Read the guide}
     config:
       file: "{{inputs.guide}}"
 
   - id: rules
     type: ai.cli
-    label: {tr: Denetlenebilir kurallar, en: Checkable rules}
+    label: {tr: Kuralları listele, en: List the rules}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -107,7 +103,7 @@ nodes:
 
   - id: compliance
     type: ai.cli
-    label: {tr: Kılavuza uygunluk, en: Compliance with the guide}
+    label: {tr: Kılavuza uyumu denetle, en: Check against the guide}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -158,7 +154,7 @@ nodes:
 
   - id: editorial
     type: ai.cli
-    label: {tr: Editoryal değerlendirme, en: Editorial assessment}
+    label: {tr: Yapıyı ve açıklığı değerlendir, en: Assess structure and clarity}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -217,7 +213,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Öncelikli düzeltmeler, en: Priority fixes}
+    label: {tr: Düzeltmeleri sırala, en: Rank the fixes}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -262,7 +258,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -275,7 +271,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Editorial review

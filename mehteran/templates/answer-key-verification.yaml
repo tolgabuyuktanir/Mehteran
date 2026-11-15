@@ -6,24 +6,18 @@ name:
   en: "Answer key verification"
 description:
   tr: >-
-    Bir sınav dosyasını ve cevap anahtarını okur. Önce sınav, anahtar olmadan sorulara ayrılır; sonra bir model
-    her soruyu anahtarı görmeden tek tek çözer (sorular aynı anda işlenir). Başka bir model anahtarla kör
-    çözümleri karşılaştırır ve uyuşmayanları listeler. Uyuşmazlık varsa üçüncü bir adım her tartışmalı soruyu
-    yeniden çözer ve anahtarın mı, çözücünün mü yoksa sorunun mu hatalı olduğuna karar verir. Bir öğretmen
-    onaylamadan sonuç kaydedilmez. Yapay zekâ da hata yapar: son kararı öğretmen verir.
+    Bir sınavı ve cevap anahtarını verin: yapay zekâ soruları anahtara bakmadan çözer ve anahtardaki olası
+    hataları listeler. Sonuç öğretmen onaylayınca kaydedilir; son karar öğretmenindir.
   en: >-
-    Reads an exam file and its answer key. First the exam is split into questions without the key; then a model
-    solves every question on its own without seeing the key (the questions run at the same time). Another model
-    compares the key with the blind solutions and lists every mismatch. If there is a mismatch, a third step
-    solves each disputed question again and decides whether the key, the solver or the question is at fault.
-    Nothing is saved until a teacher approves. AI makes mistakes too: the teacher decides.
+    Give an exam and its answer key: the AI solves the questions without the key and lists possible errors in the
+    key. The result is saved when a teacher approves it; the teacher decides.
 version: "1.0"
 category: education
 
 inputs:
   - id: exam
     type: file
-    label: {tr: "Sınav", en: "Exam"}
+    label: {tr: "Sınav dosyası", en: "Exam file"}
     description:
       tr: "Soruların olduğu dosya. Cevap anahtarı bu dosyada olmamalı."
       en: "The file with the questions. The key should not be in this file."
@@ -32,8 +26,8 @@ inputs:
     type: file
     label: {tr: "Cevap anahtarı", en: "Answer key"}
     description:
-      tr: "Soru numarası ve doğru cevap."
-      en: "Question number and the correct answer."
+      tr: "Her sorunun numarası ve doğru cevabı, örnek: '1-B, 2-D'."
+      en: "The number and correct answer of each question, for example '1-B, 2-D'."
     formats: [pdf, docx, md, txt, csv, tsv, xlsx, png, jpg, jpeg]
   - id: subject
     type: text
@@ -70,7 +64,7 @@ nodes:
 
   - id: prepare
     type: ai.cli
-    label: {tr: "Soruları ayır", en: "Split into questions"}
+    label: {tr: "Soruları ayır", en: "Split the questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -91,7 +85,7 @@ nodes:
 
   - id: solve
     type: ai.map
-    label: {tr: "Kör çözüm", en: "Blind solutions"}
+    label: {tr: "Soruları çöz", en: "Solve the questions"}
     retries: 2
     config:
       source: "{{nodes.prepare.text}}"
@@ -164,7 +158,7 @@ nodes:
 
   - id: adjudicate
     type: ai.cli
-    label: {tr: "Tartışmalı soruları çöz", en: "Resolve the disputed questions"}
+    label: {tr: "Uyuşmazlıkları incele", en: "Review the mismatches"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -201,7 +195,7 @@ nodes:
 
   - id: bundle
     type: text.merge
-    label: {tr: "Raporu birleştir", en: "Assemble the report"}
+    label: {tr: "Raporu birleştir", en: "Combine the report"}
     config:
       template: |
         {{nodes.compare.text}}

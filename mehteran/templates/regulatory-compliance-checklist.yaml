@@ -6,32 +6,26 @@ name:
   en: Regulatory compliance checklist
 description:
   tr: >-
-    Kurumunuzun bir belgesini (politika, aydınlatma metni, prosedür, sözleşme) sizin yüklediğiniz bir mevzuat
-    metnine karşı denetler. Bir model mevzuattaki yükümlülükleri madde numaralarıyla listeler; ikinci bir model
-    her yükümlülüğün belgede karşılanıp karşılanmadığını alıntılarıyla belirler. Bir uyum sorumlusu
-    değerlendirmeyi onaylar veya düzeltme notu yazar; ardından öncelikli kontrol listesi yazılır. Sonuç, hukuki
-    tavsiye olmadığını belirten Markdown, Word ve HTML rapordur.
+    Kurum belgenizi ve bir mevzuat ya da standart metnini (ör. KVKK, ISO 27001) verin; eksikleri gösteren bir
+    kontrol listesi alın. Önce değerlendirmeyi siz onaylarsınız. Hukuki tavsiye değildir.
   en: >-
-    Checks one of your organisation's documents (a policy, privacy notice, procedure or contract) against the
-    text of a regulation that you upload. One model lists the regulation's obligations with their article
-    numbers; a second model decides, with quotations, whether the document meets each one. A compliance officer
-    approves the assessment or writes corrections; then the prioritised checklist is written. The result is a
-    Markdown, Word and HTML report, marked as not legal advice.
-version: "1.0"
+    Give your organisation's document and a regulation or standard (e.g. GDPR, ISO 27001); get a checklist of
+    what is missing. You approve the assessment first. Not legal advice.
+version: "1.1"
 category: legal
 
 inputs:
   - id: document
     type: file
     label: {tr: Kurumun belgesi, en: Your document}
-    description: {tr: "Denetlenecek belge. PDF, Word, EPUB, Markdown veya düz metin.", en: "The document to check. PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Denetlenecek belge; örnek: aydınlatma metni, politika ya da prosedür.", en: "The document to check, e.g. a privacy notice, a policy or a procedure."}
     formats: [pdf, docx, epub, md, txt]
   - id: regulation
     type: file
     label: {tr: Mevzuat metni, en: Regulation text}
     description:
-      tr: "Kanun, yönetmelik veya tebliğin metni (ya da ilgili bölümleri). Rapor yalnızca bu metne dayanır."
-      en: "The text of the law, regulation or guideline (or its relevant parts). The report relies on this text alone."
+      tr: "Kanun, yönetmelik ya da standardın metni veya ilgili bölümleri. Rapor yalnızca bu metne dayanır."
+      en: "The law, regulation or standard, or its relevant parts. The report relies on this text alone."
     formats: [pdf, docx, epub, md, txt]
   - id: scope
     type: text
@@ -40,8 +34,8 @@ inputs:
     default: ""
     label: {tr: Kapsam, en: Scope}
     description:
-      tr: "Örnek: 'Biz veri sorumlusuyuz; yalnızca çalışan verileri; 12. madde kapsam dışı.'"
-      en: "For example: 'We are the data controller; employee data only; article 12 is out of scope.'"
+      tr: "İsteğe bağlı; örnek: 'Biz veri sorumlusuyuz; yalnızca çalışan verileri; 12. madde kapsam dışı.'"
+      en: "Optional, e.g. 'We are the data controller; employee data only; article 12 is out of scope.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -53,19 +47,19 @@ inputs:
 nodes:
   - id: extract_document
     type: document.extract
-    label: {tr: Belge metni, en: Document text}
+    label: {tr: Belgeyi oku, en: Read the document}
     config:
       file: "{{inputs.document}}"
 
   - id: extract_regulation
     type: document.extract
-    label: {tr: Mevzuat metni, en: Regulation text}
+    label: {tr: Mevzuatı oku, en: Read the regulation}
     config:
       file: "{{inputs.regulation}}"
 
   - id: obligations
     type: ai.cli
-    label: {tr: Yükümlülükler, en: Obligations}
+    label: {tr: Yükümlülükleri listele, en: List the obligations}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -116,7 +110,7 @@ nodes:
 
   - id: assess
     type: ai.cli
-    label: {tr: Uyum değerlendirmesi, en: Compliance assessment}
+    label: {tr: Uyumu değerlendir, en: Assess compliance}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -171,7 +165,7 @@ nodes:
 
   - id: review
     type: approval
-    label: {tr: Uyum sorumlusunun onayı, en: Compliance officer's approval}
+    label: {tr: Değerlendirmeyi onayla, en: Approve the assessment}
     config:
       show: "{{nodes.assess.text}}"
       instructions:
@@ -186,7 +180,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: Kontrol listesi, en: Checklist}
+    label: {tr: Kontrol listesini yaz, en: Write the checklist}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -243,7 +237,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.final.text}}"
       title: Compliance checklist

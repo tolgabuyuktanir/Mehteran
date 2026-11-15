@@ -6,18 +6,11 @@ name:
   en: Invoice and expense anomaly notes
 description:
   tr: >-
-    Yapıştırdığınız fatura veya harcama satırlarını (örneğin bir tablodan CSV/TSV metni olarak kopyalanmış)
-    inceler. Bir model mükerrer kayıtları, tutmayan toplamları ve KDV'yi (hesabı göstererek), onay sınırına
-    yakın yuvarlak veya bölünmüş tutarları, olağan dışı tarihleri, eksik alanları, numara boşluklarını ve
-    belirttiğiniz harcama kurallarına aykırı kalemleri satırı alıntılayarak listeler. İkinci bir model her satırı
-    ve hesabı yeniden doğrular. Sonuç, kontrol edilecek noktaları içeren Markdown, Word ve HTML nottur; hata veya
-    usulsüzlük kanıtı değildir.
+    Fatura ya da harcama satırlarını yapıştırın; mükerrer kayıt, tutmayan toplam ve kurala aykırı kalemler için
+    bir kontrol notu alın. Hata ya da usulsüzlük kanıtı değildir.
   en: >-
-    Reviews invoice or expense lines that you paste (for example copied from a spreadsheet as CSV or TSV text).
-    One model lists duplicates, totals and VAT that do not add up (showing the calculation), round or split
-    amounts near approval limits, unusual dates, missing fields, gaps in numbering, and items that break the
-    expense rules you give, quoting each line. A second model re-verifies every line and calculation. The result
-    is a Markdown, Word and HTML note of points to check; it is not proof of error or fraud.
+    Paste invoice or expense lines and get a note of points to check: duplicates, totals that do not add up and
+    items that break your rules. It is not proof of error or fraud.
 version: "1.0"
 category: business
 
@@ -25,14 +18,12 @@ inputs:
   - id: lines
     type: text
     multiline: true
-    label: {tr: Fatura veya harcama satırları, en: Invoice or expense lines}
+    label: {tr: Fatura ya da harcama satırları, en: Invoice or expense lines}
     description:
       tr: >-
-        Satırları buraya yapıştırın (CSV, TSV veya düz metin), başlık satırıyla birlikte. Excel dosyası doğrudan
-        okunamaz; hücreleri kopyalayıp yapıştırın.
+        Satırları başlık satırıyla birlikte yapıştırın; Excel'de hücreleri seçip kopyalamanız yeterli.
       en: >-
-        Paste the lines here (CSV, TSV or plain text), with the header row. Spreadsheet files cannot be read
-        directly; copy the cells and paste them.
+        Paste the lines with the header row; in Excel, just select the cells and copy them.
   - id: policy
     type: text
     multiline: true
@@ -40,8 +31,8 @@ inputs:
     default: ""
     label: {tr: Harcama kuralları, en: Expense rules}
     description:
-      tr: "Örnek: 'Yemek kişi başı en çok 500 TL; 5.000 TL üzeri harcama yönetici onayı gerektirir.'"
-      en: "For example: 'Meals at most 40 EUR per person; spending above 500 EUR needs manager approval.'"
+      tr: "İsteğe bağlı. Örnek: 'Yemek kişi başı en çok 500 TL; 5.000 TL üzeri harcama yönetici onayı gerektirir.'"
+      en: "Optional. For example: 'Meals at most 40 EUR per person; spending above 500 EUR needs manager approval.'"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -57,13 +48,13 @@ inputs:
 nodes:
   - id: wrap
     type: text.merge
-    label: {tr: Satırlar, en: Lines}
+    label: {tr: Satırları al, en: Take the lines}
     config:
       template: "{{inputs.lines}}"
 
   - id: anomalies
     type: ai.cli
-    label: {tr: Tutarsızlıkları bul, en: Find anomalies}
+    label: {tr: Tutarsızlıkları bul, en: Find the anomalies}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -134,7 +125,7 @@ nodes:
 
   - id: recheck
     type: ai.cli
-    label: {tr: Yeniden doğrula, en: Re-verify}
+    label: {tr: Bulguları denetle, en: Check the findings}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -190,7 +181,7 @@ nodes:
 
   - id: summary
     type: ai.cli
-    label: {tr: Kontrol notu, en: Review note}
+    label: {tr: Kontrol notunu yaz, en: Write the review note}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -240,7 +231,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.summary.text}}
@@ -251,7 +242,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Expense anomaly notes

@@ -6,18 +6,11 @@ name:
   en: Data analysis plan and interpretation
 description:
   tr: >-
-    Yapıştırdığınız bir tabloyu (CSV, TSV veya düz metin) ve sorunuzu alır. Bir model sütunları, veri
-    türlerini, eksik ve tuhaf değerleri tanımlar; ikinci bir model sorunuzu yanıtlamak için bir analiz planı
-    yazar (değişkenler, yöntemler, varsayımlar, verinin yanıtlayamayacakları); üçüncü bir model görünen
-    satırlardan yalnızca basit, denetlenebilir betimleyici bulguları hesabı göstererek çıkarır; dördüncü bir
-    model bu sayıları yeniden hesaplar ve aşırı yorumları işaretler. Kod çalıştırılmaz. Sonuç Markdown, Word ve
-    HTML rapordur.
+    Bir tablo yapıştırın ve sorunuzu yazın: verinin tanımını, bir analiz planını ve denetlenmiş basit bulguları
+    alırsınız. Kod çalıştırılmaz; büyük tablolar için bir istatistik aracı kullanın.
   en: >-
-    Takes a table that you paste (CSV, TSV or plain text) and your question. One model describes the columns,
-    data types, and missing or odd values; a second model writes an analysis plan to answer the question
-    (variables, methods, assumptions, what the data cannot answer); a third model draws only simple, checkable
-    descriptive findings from the visible rows, showing each calculation; a fourth model recomputes these numbers
-    and flags overclaiming. No code is run. The result is a Markdown, Word and HTML report.
+    Paste a table and ask your question: you get a description of the data, an analysis plan and simple, checked
+    findings. No code is run; use a statistics tool for large tables.
 version: "1.0"
 category: data
 
@@ -28,17 +21,15 @@ inputs:
     label: {tr: Tablo, en: Table}
     description:
       tr: >-
-        Tabloyu başlık satırıyla birlikte yapıştırın (CSV, TSV veya düz metin). Excel dosyası doğrudan okunamaz;
-        hücreleri kopyalayıp yapıştırın. Küçük örnekler en iyi sonucu verir; büyük tablolarda hesaplar bir
-        istatistik aracında yapılmalıdır.
+        Tabloyu başlık satırıyla yapıştırın; Excel'deki hücreleri kopyalayıp yapıştırabilirsiniz. Küçük tablolar en
+        iyi sonucu verir.
       en: >-
-        Paste the table with its header row (CSV, TSV or plain text). Spreadsheet files cannot be read directly;
-        copy the cells and paste them. Small samples work best; for large tables the computations belong in a
-        statistics tool.
+        Paste the table with its header row; you can copy the cells from Excel and paste them. Small tables work
+        best.
   - id: question
     type: text
     multiline: true
-    label: {tr: Soru, en: Question}
+    label: {tr: Sorunuz, en: Your question}
     description:
       tr: "Örnek: 'Hangi bölgede satışlar en çok arttı ve bu indirimle ilişkili mi?'"
       en: "For example: 'Which region grew sales most, and is that related to the discount?'"
@@ -49,10 +40,10 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: Veri hakkında bilgi, en: About the data}
+    label: {tr: Veri hakkında (isteğe bağlı), en: About the data (optional)}
     description:
-      tr: "Örnek: kaynağı, toplama yöntemi, birimler, sütunların anlamı."
-      en: "For example: the source, how it was collected, units, what the columns mean."
+      tr: "Örnek: kaynağı, birimler ve sütunların anlamı."
+      en: "For example: the source, the units and what the columns mean."
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
@@ -68,13 +59,13 @@ inputs:
 nodes:
   - id: wrap
     type: text.merge
-    label: {tr: Tablo, en: Table}
+    label: {tr: Tabloyu hazırla, en: Prepare the table}
     config:
       template: "{{inputs.table}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: Veri profili, en: Data profile}
+    label: {tr: Veriyi tanımla, en: Describe the data}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -126,7 +117,7 @@ nodes:
 
   - id: plan
     type: ai.cli
-    label: {tr: Analiz planı, en: Analysis plan}
+    label: {tr: Analizi planla, en: Plan the analysis}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -188,7 +179,7 @@ nodes:
 
   - id: interpret
     type: ai.cli
-    label: {tr: İlk bulgular, en: First findings}
+    label: {tr: İlk bulguları çıkar, en: Draw the first findings}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -296,7 +287,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: Raporu birleştir, en: Assemble report}
+    label: {tr: Raporu birleştir, en: Combine the report}
     config:
       template: |
         {{nodes.profile.text}}
@@ -309,7 +300,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Raporu kaydet, en: Save report}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.report.text}}"
       title: Data analysis plan

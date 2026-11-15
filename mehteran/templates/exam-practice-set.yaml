@@ -6,25 +6,11 @@ name:
   en: "Exam practice set (SAT, LGS, YKS)"
 description:
   tr: >-
-    Seçtiğiniz sınav için özgün alıştırma soruları üretir: SAT Matematik, SAT Okuma ve Yazma, LGS ya da YKS
-    (TYT/AYT). İsterseniz örnek soruları (dosya ya da yapıştırma) verin; önce profilleri çıkarılır ve yeni
-    sorular aynı becerileri ölçer ama kopya değildir. Bir model soruları yazar, ikinci bir model cevap anahtarını
-    ve gerekçeleri yazar, üçüncü bir model her soruyu anahtarı görmeden tek tek çözer ve başka bir seçeneğin de
-    savunulabilir olup olmadığına bakar (sorular aynı anda işlenir). Bir model anahtarla kör çözümleri ve
-    referanslara yakınlığı karşılaştırır; son adım işaretlenen her soruyu düzeltir, yenisiyle değiştirir ya da
-    çıkarır. Bir kişi onayladıktan sonra set Markdown, Word ve HTML olarak kaydedilir. Sorular özgündür; gerçek
-    sınav sorularını kopyalamaz ve College Board, MEB ya da ÖSYM ile ilgisi yoktur. Müfredat değişebilir; bir
-    öğretmen setin güncel müfredata uygunluğunu kontrol etmelidir.
+    SAT, LGS ya da YKS için özgün alıştırma soruları ve cevap anahtarı hazırlar; seti siz onaylarsınız. Gerçek
+    soruları kopyalamaz, sınav kurumlarıyla ilgisi yoktur; bir öğretmen kontrol etmelidir.
   en: >-
-    Writes original practice questions for the exam you choose: SAT Math, SAT Reading and Writing, LGS or YKS
-    (TYT/AYT). You may give example questions (files or pasted); their profile is made first, and the new
-    questions test the same skills but are not copies. One model writes the questions, a second writes the answer
-    key and the reasons, and a third solves every question on its own without the key and checks whether another
-    choice is also defensible (the questions run at the same time). A model compares the key and the blind
-    solutions and the closeness to the references; a last step fixes, replaces or drops every flagged question.
-    After a person approves, the set is saved as Markdown, Word and HTML. The questions are original; they do
-    not copy real exam questions, and the set is not affiliated with College Board, MEB or ÖSYM. The curriculum
-    can change; a teacher should check that the set fits the current curriculum.
+    Writes original practice questions with an answer key for SAT, LGS or YKS; you approve the set. It copies no
+    real questions, is not affiliated with the exam bodies, and a teacher should check it.
 version: "1.0"
 category: exams
 
@@ -45,16 +31,16 @@ inputs:
     default: ""
     label: {tr: "Ders ya da alan", en: "Subject or domain"}
     description:
-      tr: "LGS ve YKS için ders (örnek: 'Fen Bilimleri', 'Fizik'). SAT için alan (örnek: 'cebir', 'geometri', 'bilgi ve fikirler', 'noktalama'). Boş bırakılırsa karışık kullanılır."
-      en: "For LGS and YKS, the school subject (for example 'Science', 'Physics'). For SAT, the domain (for example 'algebra', 'geometry', 'information and ideas', 'punctuation'). Left empty, a mix is used."
+      tr: "İsteğe bağlı. Örnek: LGS ve YKS için 'Fizik', SAT için 'cebir'; boşsa karışık."
+      en: "Optional. For example 'Physics' for LGS and YKS, or 'algebra' for SAT; left empty, a mix."
   - id: topic
     type: text
     required: false
     default: ""
     label: {tr: "Konu", en: "Topic"}
     description:
-      tr: "Örnek: 'ikinci derece denklemler', 'Üslü ifadeler', 'Paragraf'. Boş bırakılabilir."
-      en: "For example: 'quadratic equations', 'Exponents', 'Paragraph questions'. May be left empty."
+      tr: "İsteğe bağlı. Örnek: 'ikinci derece denklemler' ya da 'Paragraf'."
+      en: "Optional. For example: 'quadratic equations' or 'Paragraph questions'."
   - id: difficulty
     type: choice
     label: {tr: "Zorluk", en: "Difficulty"}
@@ -73,26 +59,29 @@ inputs:
     type: file
     required: false
     multiple: true
-    label: {tr: "Referans sorular (dosya)", en: "Reference questions (files)"}
+    label: {tr: "Örnek sorular (dosya)", en: "Example questions (files)"}
     description:
-      tr: "İsteğe bağlı. Yeni soruların örnek alacağı sorular; taranmış sayfa ya da fotoğraf metin tanımayla okunur. Soruları kopyalamaz, yalnızca tarzını öğrenir."
-      en: "Optional. Questions that the new ones should be modelled on; scans and photos are read by text recognition. The new questions are never copies, only the style is learned."
+      tr: "İsteğe bağlı. Yeni sorular bunların tarzında yazılır ama kopyalanmaz; tarama ve fotoğraf da olur."
+      en: "Optional. New questions follow their style but never copy them; scans and photos work too."
     formats: [pdf, docx, md, txt, png, jpg, jpeg]
   - id: reference_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Referans sorular (yapıştır)", en: "Reference questions (paste)"}
+    label: {tr: "Örnek sorular (metin)", en: "Example questions (text)"}
     description:
-      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu (varsa cevabıyla) buraya yapıştırın."
-      en: "Optional. Paste one or more example questions here (with their answers, if you have them)."
+      tr: "İsteğe bağlı. Bir ya da birkaç örnek soruyu, varsa cevabıyla, buraya yapıştırın."
+      en: "Optional. Paste one or more example questions here, with their answers if you have them."
   - id: generation_mode
     type: choice
-    label: {tr: "Üretim biçimi", en: "Generation mode"}
+    label: {tr: "Örneklere benzerlik", en: "Likeness to the examples"}
+    description:
+      tr: "Örnek soru verdiyseniz yeni soruların onlara ne kadar benzeyeceği."
+      en: "If you gave example questions: how close the new ones stay to them."
     options:
-      - {value: similar, label: {tr: "Benzer (aynı beceri, zorluk ve biçim; yeni sayılar ve bağlam)", en: "Similar (same skill, difficulty and format; new numbers and context)"}}
-      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, tamamen farklı bir gerçek hayat bağlamı)", en: "New scenario (same skill in a different real-world context)"}}
+      - {value: similar, label: {tr: "Benzer (aynı beceri, yeni sayılar ve bağlam)", en: "Similar (same skill, new numbers and context)"}}
+      - {value: new_scenario, label: {tr: "Yeni senaryo (aynı beceri, başka bir gerçek hayat bağlamı)", en: "New scenario (same skill, another real-life setting)"}}
       - {value: harder, label: {tr: "Daha zor", en: "Harder"}}
       - {value: easier, label: {tr: "Daha kolay", en: "Easier"}}
       - {value: mixed, label: {tr: "Karışık", en: "Mixed"}}
@@ -112,13 +101,13 @@ inputs:
 nodes:
   - id: refs
     type: document.extract
-    label: {tr: "Referans soruları oku", en: "Read the reference questions"}
+    label: {tr: "Örnek soruları oku", en: "Read the example questions"}
     config:
       file: "{{inputs.reference_questions}}"
 
   - id: profile
     type: ai.cli
-    label: {tr: "Referans soru profili", en: "Profile of the references"}
+    label: {tr: "Örnekleri incele", en: "Study the examples"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -160,7 +149,7 @@ nodes:
 
   - id: items
     type: ai.cli
-    label: {tr: "Sorular", en: "Questions"}
+    label: {tr: "Soruları yaz", en: "Write the questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -211,7 +200,7 @@ nodes:
 
   - id: key
     type: ai.cli
-    label: {tr: "Cevap anahtarı", en: "Answer key"}
+    label: {tr: "Cevap anahtarını yaz", en: "Write the answer key"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -239,7 +228,7 @@ nodes:
 
   - id: solve
     type: ai.map
-    label: {tr: "Kör çözüm", en: "Blind solutions"}
+    label: {tr: "Anahtarsız çöz", en: "Solve without the key"}
     retries: 2
     config:
       source: "{{nodes.items.text}}"
@@ -269,7 +258,7 @@ nodes:
 
   - id: compare
     type: ai.cli
-    label: {tr: "Anahtar ile karşılaştır", en: "Compare with the key"}
+    label: {tr: "Anahtarı denetle", en: "Check the key"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -319,7 +308,7 @@ nodes:
 
   - id: fix
     type: ai.cli
-    label: {tr: "İşaretlenenleri düzelt", en: "Fix the flagged questions"}
+    label: {tr: "Sorunlu soruları düzelt", en: "Fix flagged questions"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -389,7 +378,7 @@ nodes:
 
   - id: report
     type: text.merge
-    label: {tr: "Belgeyi birleştir", en: "Assemble the document"}
+    label: {tr: "Seti birleştir", en: "Combine the set"}
     config:
       template: |
         {{nodes.fix.text}}

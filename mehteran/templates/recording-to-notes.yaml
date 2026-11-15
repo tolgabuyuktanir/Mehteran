@@ -6,17 +6,13 @@ name:
   en: "Notes from a meeting or lecture recording"
 description:
   tr: >-
-    Bir ses ya da video kaydını (ya da hazır bir döküm dosyasını) metne çevirir ve düzenli nota dönüştürür.
-    Toplantılarda kararlar, görev listesi (sorumlu ve tarihle), açık sorular ve kısa özet; derslerde ana
-    başlıklar, tanımlar ve çalışma soruları çıkar. İkinci bir geçiş notları kayıtla karşılaştırır ve kayıtta
-    olmayan sorumlu, tarih ya da karar varsa siler. Sonuç Markdown, Word ve HTML belgedir.
+    Bir toplantı ya da ders kaydı (ses, video ya da döküm) verin; düzenli notlar alın: toplantıda kararlar ve
+    görevler, derste ana konular ve çalışma soruları.
   en: >-
-    Turns an audio or video recording (or a ready transcript file) into text and then into tidy notes. For
-    meetings: decisions, an action list (with owner and date), open questions and a short summary; for lectures:
-    the main topics, definitions and review questions. A second pass compares the notes with the recording and
-    removes any owner, date or decision that was not said. The result is a Markdown, Word and HTML document.
+    Give a meeting or lecture recording (audio, video or a transcript); get tidy notes: decisions and tasks for
+    a meeting, main topics and review questions for a lecture.
 version: "1.0"
-category: everyday
+category: documents
 tier: core
 
 inputs:
@@ -24,8 +20,8 @@ inputs:
     type: file
     label: {tr: "Kayıt ya da döküm", en: "Recording or transcript"}
     description:
-      tr: "Ses/video kaydı ya da hazır bir metin dökümü."
-      en: "An audio or video recording, or a ready transcript."
+      tr: "Ses ya da video kaydı (örnek: .mp3, .mp4) ya da hazır bir metin dökümü."
+      en: "An audio or video recording (e.g. .mp3, .mp4), or a ready transcript."
     formats: [mp3, wav, m4a, ogg, opus, flac, aac, mp4, webm, mov, mkv, pdf, docx, md, txt]
   - id: kind
     type: choice
@@ -39,13 +35,13 @@ inputs:
     type: text
     required: false
     default: ""
-    label: {tr: "Bağlam (katılımcılar, konu)", en: "Context (people, topic)"}
+    label: {tr: "Katılımcılar ve konu", en: "People and topic"}
     description:
-      tr: "İsteğe bağlı. İsimlerin yazımını ve konuyu belirtmek kaydın doğru anlaşılmasına yardım eder."
-      en: "Optional. Spelling of names and the topic help the notes to be right."
+      tr: "İsteğe bağlı; örnek: 'Bütçe toplantısı; Ayşe Kaya, Mert Demir'. İsimler doğru yazılır."
+      en: "Optional, e.g. 'Budget meeting; Anna Berg, Tom Lee'. It helps to spell names right."
   - id: language
     type: language
-    label: {tr: "Rapor dili", en: "Report language"}
+    label: {tr: "Notların dili", en: "Notes language"}
   - id: model
     type: provider
     label: {tr: "Model", en: "Model"}
@@ -64,7 +60,7 @@ nodes:
 
   - id: notes
     type: ai.cli
-    label: {tr: "Notlar", en: "Notes"}
+    label: {tr: "Notları yaz", en: "Write the notes"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -112,7 +108,7 @@ nodes:
 
   - id: verify
     type: ai.cli
-    label: {tr: "Kayıtla karşılaştır", en: "Check against the recording"}
+    label: {tr: "Notları denetle", en: "Check the notes"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

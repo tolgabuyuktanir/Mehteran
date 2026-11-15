@@ -6,13 +6,11 @@ name:
   en: "Weekly study plan"
 description:
   tr: >-
-    Derslerinizden, sınav tarihlerinizden, haftalık sürenizden ve hedeflerinizden gün gün bir haftalık çalışma planı
-    çıkarır. Yalnızca sizin yazdığınız tarihleri ve saatleri kullanır. İkinci bir adım planı girdilerinize karşı
-    denetler ve sürelerin aşılmadığını doğrular. Sonuç Markdown, Word ve HTML belgedir.
+    Derslerinizi, sınav tarihlerinizi ve haftalık sürenizi yazın; gün gün bir haftalık çalışma planı alın. Plan
+    yalnızca sizin yazdığınız tarihleri ve saatleri kullanır.
   en: >-
-    Builds a day-by-day study plan for one week from your subjects, exam dates, weekly hours and goals. It uses only
-    the dates and hours you wrote. A second step checks the plan against your inputs and confirms that the hours are
-    not exceeded. The result is a Markdown, Word and HTML document.
+    Write your subjects, exam dates and weekly hours; get a day-by-day study plan for one week. The plan uses only
+    the dates and hours you give.
 version: "1.0"
 category: education
 
@@ -24,8 +22,8 @@ inputs:
     default: ""
     label: {tr: "Dersler ve konular", en: "Subjects and topics"}
     description:
-      tr: "Her ders için konuları ya da bölümleri yazın."
-      en: "For each subject, write the topics or chapters."
+      tr: "Her ders için konuları ya da bölümleri yazın. Örnek: 'Kimya: asitler, bazlar'."
+      en: "For each subject, write the topics or chapters. For example: 'Chemistry: acids, bases'."
   - id: deadlines
     type: text
     multiline: true
@@ -49,13 +47,13 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Hedefler (isteğe bağlı)", en: "Goals (optional)"}
+    label: {tr: "Hedefler", en: "Goals"}
     description:
-      tr: "Örnek: 'Kimyada zayıfım, daha çok zaman ver.'"
-      en: "For example: 'I am weak in chemistry, give it more time.'"
+      tr: "İsteğe bağlı. Örnek: 'Kimyada zayıfım, daha çok zaman ver.'"
+      en: "Optional. For example: 'I am weak in chemistry, give it more time.'"
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: Plan dili, en: Plan language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -64,7 +62,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Plan", en: "Plan"}
+    label: {tr: "Planı yaz", en: "Write the plan"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -106,7 +104,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Planı denetle", en: "Check the plan"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -147,7 +145,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "Planı kaydet", en: "Save the plan"}
     config:
       source: "{{nodes.review.text}}"
       title: "Weekly study plan"

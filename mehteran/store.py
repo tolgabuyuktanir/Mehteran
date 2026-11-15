@@ -44,12 +44,13 @@ CREATE TABLE IF NOT EXISTS calls (
 CREATE INDEX IF NOT EXISTS calls_time ON calls (started);
 """
 # Columns added later; a database made before them gets them on open (old rows: NULL, their text is shown).
-ADDED = {"runs": ("error_key", "error_params", *"label note batch output_dir output_state main_input".split()),
+ADDED = {"runs": ("error_key", "error_params", *"label note batch output_dir output_state main_input schedule notified".split()),
          "nodes": ("error_key", "error_params"), "events": ("key", "params")}
 # The history's own columns of a run (history.py): label and note (the user's name for it), batch (the batch id of a
 # run started "once per file"), output_dir and output_state (save the results to a folder after success), main_input
-# (the first file name or the start of the first text input, computed once).
-HISTORY_COLUMNS = ("label", "note", "batch", "output_dir", "output_state", "main_input")
+# (the first file name or the start of the first text input, computed once), schedule (the schedule that started the
+# run, schedules.py) and notified (the run status of the last desktop notification about it).
+HISTORY_COLUMNS = ("label", "note", "batch", "output_dir", "output_state", "main_input", "schedule")
 
 
 def _keyed(fields: dict) -> dict:

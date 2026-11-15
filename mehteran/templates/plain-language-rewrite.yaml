@@ -6,19 +6,11 @@ name:
   en: Plain-language writing
 description:
   tr: >-
-    Karmaşık bir metni sade bir dille yazar. "Yeniden yaz" kipinde (resmî yazı, teknik açıklama, bilgilendirme metni)
-    metin seçtiğiniz okur için baştan yazılır. "Koşulları ve politikayı açıkla" kipinde bir kullanım koşulları ya da
-    gizlilik politikası, neyi kabul ettiğiniz, ne ödediğiniz, verilerinizin ne olduğu ve haklarınız gibi başlıklarla ve
-    madde numaralarıyla açıklanır; hukuki tavsiye olmadığı belirtilir. İkinci bir model yeni metni özgün metinle
-    karşılaştırır: atlanan, değişen veya eklenen bilgileri bulur. Üçüncü adım metni bu bulgulara göre düzeltir. Sonuç
-    Markdown, Word ve HTML belgedir.
+    Karmaşık bir metin (resmî yazı, kullanım koşulları, gizlilik politikası) verin; seçtiğiniz okur için sade
+    bir sürümünü alın. Koşul açıklamaları hukuki tavsiye değildir.
   en: >-
-    Writes a complex text in plain language. In the "Rewrite" mode (an official letter, a technical explanation, an
-    information sheet) the text is written again for the readers you choose. In the "Explain terms and policies" mode
-    a terms of service or privacy policy is explained under headings such as what you agree to, what you pay, what
-    happens to your data and your rights, with section references; it is marked as not legal advice. A second model
-    compares the new text with the original and finds information that was left out, changed or added. A third step
-    corrects the text from these findings. The result is a Markdown, Word and HTML document.
+    Give a complex text (an official letter, terms of service, a privacy policy); get a plain version for the
+    readers you choose. Explanations of terms are not legal advice.
 version: "1.1"
 category: writing
 tier: core
@@ -27,18 +19,18 @@ inputs:
   - id: document
     type: file
     label: {tr: Özgün metin, en: Original text}
-    description: {tr: "PDF, Word, EPUB, Markdown veya düz metin.", en: "PDF, Word, EPUB, Markdown or plain text."}
+    description: {tr: "Sadeleştirilecek metin; örnek: bir resmî yazı ya da gizlilik politikası.", en: "The text to simplify, e.g. an official letter or a privacy policy."}
     formats: [pdf, docx, epub, md, txt]
   - id: mode
     type: choice
     label: {tr: "Ne yapılsın?", en: "What to do"}
     options:
       - {value: rewrite, label: {tr: Metni sade dille yeniden yaz, en: Rewrite the text in plain language}}
-      - {value: explain, label: {tr: Koşulları ve gizlilik politikasını sade dille açıkla, en: Explain terms and a privacy policy in plain language}}
+      - {value: explain, label: {tr: Kullanım koşullarını ya da gizlilik politikasını açıkla, en: Explain terms of service or a privacy policy}}
     default: rewrite
   - id: audience
     type: text
-    label: {tr: Okur, en: Readers}
+    label: {tr: Okurlar, en: Readers}
     default: "general public"
     description:
       tr: "Metni kim okuyacak? Örnek: 'genel okur', 'lise öğrencileri', 'Türkçeyi yeni öğrenen yetişkinler'."
@@ -46,10 +38,10 @@ inputs:
     required: false
   - id: text_language
     type: choice
-    label: {tr: Yeni metnin dili, en: Language of the rewrite}
+    label: {tr: Sade metnin dili, en: Language of the plain text}
     description:
-      tr: "Sade metin hangi dilde yazılsın? 'Özgün metinle aynı' çeviri yapmaz."
-      en: "The language of the plain text. 'Same as the original' does not translate."
+      tr: "'Özgün metinle aynı' seçilirse çeviri yapılmaz."
+      en: "Choose 'Same as the original' to keep the language and not translate."
     options:
       - {value: same, label: {tr: Özgün metinle aynı, en: Same as the original}}
       - {value: en, label: {tr: İngilizce, en: English}}
@@ -58,6 +50,7 @@ inputs:
   - id: language
     type: language
     label: {tr: Notların dili, en: Language of the notes}
+    description: {tr: "Başlıklar ve açıklama notları bu dilde yazılır.", en: "The headings and the notes are written in this language."}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -70,13 +63,13 @@ inputs:
 nodes:
   - id: extract
     type: document.extract
-    label: {tr: Metni çıkar, en: Extract text}
+    label: {tr: Metni oku, en: Read the text}
     config:
       file: "{{inputs.document}}"
 
   - id: rewrite
     type: ai.cli
-    label: {tr: Sade dille yaz, en: Rewrite plainly}
+    label: {tr: Sade dille yaz, en: Write it plainly}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -136,7 +129,7 @@ nodes:
 
   - id: fidelity
     type: ai.cli
-    label: {tr: Anlam denetimi, en: Fidelity check}
+    label: {tr: Anlamı denetle, en: Check the meaning}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"
@@ -200,7 +193,7 @@ nodes:
 
   - id: final
     type: ai.cli
-    label: {tr: Düzeltilmiş metin, en: Corrected rewrite}
+    label: {tr: Metni düzelt, en: Correct the text}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -246,7 +239,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save document}
+    label: {tr: Sade metni kaydet, en: Save the plain text}
     config:
       source: "{{nodes.final.text}}"
       title: Plain-language version

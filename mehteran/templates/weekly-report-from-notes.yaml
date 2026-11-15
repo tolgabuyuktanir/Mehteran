@@ -6,9 +6,9 @@ name:
   en: "Weekly report from notes"
 description:
   tr: >-
-    Dağınık haftalık notlarınızdan düzenli bir rapor çıkarır: yapılanlar, süren işler, engeller ve gelecek hafta. Notlarda olmayan bir iş, tarih ya da sonuç eklemez. İkinci adım raporu notlara karşı denetler. Sonuç Markdown, Word ve HTML belgedir.
+    Dağınık haftalık notlarınızı verin; yapılanlar, süren işler, engeller ve gelecek hafta başlıklarıyla düzenli bir rapor alın. Notlarda olmayan hiçbir şey eklenmez.
   en: >-
-    Turns your messy weekly notes into a tidy report: done, in progress, blockers and next week. It adds no task, date or result that the notes do not contain. A second step checks the report against the notes. The result is a Markdown, Word and HTML document.
+    Give your messy weekly notes; get a tidy report with done, in progress, blockers and next week. Nothing that is not in the notes is added.
 version: "1.0"
 category: business
 
@@ -19,14 +19,14 @@ inputs:
     required: true
     label: {tr: "Haftalık notlar", en: "Weekly notes"}
     description:
-      tr: "Notları olduğu gibi yapıştırın."
-      en: "Paste the notes as they are."
+      tr: "Notları olduğu gibi, herhangi bir sırayla yapıştırın."
+      en: "Paste the notes as they are, in any order."
   - id: audience
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Raporu kim okuyacak?", en: "Who reads the report?"}
+    label: {tr: "Raporun okuru", en: "Report readers"}
     description:
       tr: "İsteğe bağlı: örnek 'yönetici', 'müşteri'."
       en: "Optional: for example 'my manager', 'a client'."
@@ -48,7 +48,7 @@ inputs:
 nodes:
   - id: draft
     type: ai.cli
-    label: {tr: "Rapor taslağı", en: "Report draft"}
+    label: {tr: "Raporu yaz", en: "Write the report"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -92,7 +92,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "Raporu denetle", en: "Check the report"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -127,7 +127,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: Belgeyi kaydet, en: Save the document}
+    label: {tr: Raporu kaydet, en: Save the report}
     config:
       source: "{{nodes.check.text}}"
       title: "Weekly report"
@@ -140,6 +140,6 @@ connections:
   - {from: check.text, to: export}
 
 outputs:
-  - {id: report_md, from: export.md, label: {tr: Belge (Markdown), en: Document (Markdown)}}
-  - {id: report_docx, from: export.docx, label: {tr: Belge (Word), en: Document (Word)}}
-  - {id: report_html, from: export.html, label: {tr: Belge (HTML), en: Document (HTML)}}
+  - {id: report_md, from: export.md, label: {tr: Rapor (Markdown), en: Report (Markdown)}}
+  - {id: report_docx, from: export.docx, label: {tr: Rapor (Word), en: Report (Word)}}
+  - {id: report_html, from: export.html, label: {tr: Rapor (HTML), en: Report (HTML)}}

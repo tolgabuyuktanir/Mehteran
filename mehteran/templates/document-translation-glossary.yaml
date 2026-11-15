@@ -6,51 +6,45 @@ name:
   en: "Document translation with glossary and consistency check"
 description:
   tr: >-
-    Genel bir belgeyi (sözleşme, rapor, kılavuz, e-posta) başka bir dile çevirir. İsterseniz bir sözlük dosyası
-    ya da terim listesi verin: listedeki terimler her yerde aynı karşılıkla kullanılır. Belge bölümlere ayrılır
-    ve bölümler aynı anda çevrilir. İkinci bir model çeviriyi kaynakla karşılaştırır: atlanan cümleler, sayı ve
-    tarih hataları, sözlükten sapma ve tutarsız terimler. Çeviri ve denetim raporu ayrı belgeler olarak
-    kaydedilir. Kitap çevirisi için değildir; resmî ya da yeminli çeviri yerine geçmez.
+    Bir belgeyi (sözleşme, rapor, kılavuz) başka bir dile çevirir, terimlerinizi her yerde aynı tutar ve
+    çeviriyi denetler. Kitaplar için değildir; resmî ya da yeminli çevirinin yerine geçmez.
   en: >-
-    Translates a general document (contract, report, manual, email) into another language. You can give a
-    glossary file or a term list: the listed terms are used with the same rendering everywhere. The document is
-    split into parts that are translated at the same time. A second model compares the translation with the
-    source: skipped sentences, number and date errors, deviations from the glossary and inconsistent terms. The
-    translation and the check report are saved as separate documents. It is not for books and does not replace
-    an official or sworn translation.
+    Translates a document (contract, report, manual) into another language, keeps your terms the same everywhere
+    and checks the translation. Not for books; it does not replace an official or sworn translation.
 version: "1.0"
-category: everyday
+category: writing
 
 inputs:
   - id: document
     type: file
     label: {tr: "Belge", en: "Document"}
+    description: {tr: "Çevrilecek belge: PDF, Word, EPUB ya da düz metin.", en: "The document to translate: PDF, Word, EPUB or plain text."}
     formats: [pdf, docx, epub, md, txt, odt, rtf]
   - id: glossary
     type: file
     required: false
     label: {tr: "Sözlük dosyası", en: "Glossary file"}
     description:
-      tr: "İsteğe bağlı. İki sütun: kaynak terim, hedef karşılık."
-      en: "Optional. Two columns: source term, target rendering."
+      tr: "İsteğe bağlı. İki sütunlu bir tablo: kaynak terim ve karşılığı."
+      en: "Optional. A table with two columns: the source term and its translation."
     formats: [csv, tsv, xlsx, md, txt, docx]
   - id: glossary_text
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Terimler (yapıştır)", en: "Terms (paste)"}
+    label: {tr: "Terim listesi", en: "Term list"}
     description:
-      tr: "Örnek: 'Purchaser = Alıcı'. Satır başına bir terim."
-      en: "For example: 'Purchaser = Alıcı'. One term per line."
+      tr: "İsteğe bağlı. Satır başına bir terim, örneğin 'Purchaser = Alıcı'."
+      en: "Optional. One term per line, for example 'Purchaser = Alıcı'."
   - id: style
     type: text
     required: false
     default: ""
-    label: {tr: "Üslup notu", en: "Style note"}
+    label: {tr: "Üslup", en: "Style"}
     description:
-      tr: "Örnek: 'resmî', 'sen dili', 'Britanya İngilizcesi'."
-      en: "For example: 'formal', 'informal you', 'British English'."
+      tr: "İsteğe bağlı. Örnek: 'resmî', 'sen dili' ya da 'Britanya İngilizcesi'."
+      en: "Optional. For example: 'formal', 'informal you' or 'British English'."
   - id: language
     type: language
     label: {tr: "Hedef dil", en: "Target language"}
@@ -78,7 +72,7 @@ nodes:
 
   - id: translate
     type: ai.map
-    label: {tr: "Çeviri", en: "Translation"}
+    label: {tr: "Belgeyi çevir", en: "Translate the document"}
     retries: 2
     config:
       source: "{{nodes.document.text}}"
@@ -115,7 +109,7 @@ nodes:
 
   - id: check
     type: ai.cli
-    label: {tr: "Tutarlılık denetimi", en: "Consistency check"}
+    label: {tr: "Çeviriyi denetle", en: "Check the translation"}
     retries: 2
     config:
       provider: "{{inputs.review_model}}"

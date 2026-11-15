@@ -43,6 +43,8 @@ ALIASES = {
     "lgs-yks-practice": "exam-practice-set",
     "ap-mcq-from-notes": "ap-question-generator",
     "ap-frq-generator": "ap-question-generator",
+    "policy-gap-analysis": "regulatory-compliance-checklist",
+    "client-follow-up-email": "email-reply-draft",
 }
 
 

@@ -6,13 +6,11 @@ name:
   en: "README from code"
 description:
   tr: >-
-    Kodunuzdan bir README taslağı yazar: ne işe yaradığı, kurulum, kullanım, yapılandırma ve katkı bölümleri.
-    Yalnızca kodda ve sizin yazdığınız bilgilerde görünenleri kullanır; komutları ve sürümleri uydurmaz. İkinci bir
-    adım taslağı koda karşı denetler ve düzeltir. Sonuç Markdown, Word ve HTML belgedir.
+    Kodunuzu verin; projenin ne yaptığını, kurulumunu ve kullanımını anlatan bir README taslağı alın. Kodda
+    olmayan komut ya da sürüm eklenmez.
   en: >-
-    Writes a README draft from your code: what it does, install, usage, configuration and contributing. It uses only
-    what the code and your own notes show; it does not invent commands or versions. A second step checks the draft
-    against the code and corrects it. The result is a Markdown, Word and HTML document.
+    Give your code; get a README draft that explains what the project does, how to install it and how to use it.
+    No command or version is added that the code does not show.
 version: "1.0"
 category: developers
 
@@ -22,31 +20,31 @@ inputs:
     multiline: true
     required: false
     default: ""
-    label: {tr: "Kod (yapıştırılmış)", en: "Code (pasted)"}
+    label: {tr: "Kod", en: "Code"}
     description:
-      tr: "Önemli dosyaları yapıştırın."
-      en: "Paste the important files."
+      tr: "Önemli dosyaların içeriğini yapıştırın; örnek: ana dosya ve ayar dosyası."
+      en: "Paste the main files, e.g. the entry file and the settings file."
   - id: code_file
     type: file
     required: false
     multiple: true
-    label: {tr: "Kod dosyaları", en: "Code files"}
+    label: {tr: "Ya da kod dosyaları", en: "Or code files"}
     description:
-      tr: "Bir ya da birkaç dosya (metin olarak kaydedilmiş kod, PDF, Word). Birden çok dosya seçebilirsiniz."
-      en: "One or several files (code saved as text, PDF, Word). You may choose several files."
+      tr: "Yapıştırmak yerine bir ya da birkaç dosya seçin; kodu .txt olarak kaydedebilirsiniz."
+      en: "Choose one or more files instead of pasting; you can save code as .txt."
     formats: [md, txt, pdf, docx]
   - id: about
     type: text
     multiline: true
     required: false
     default: ""
-    label: {tr: "Proje hakkında (isteğe bağlı)", en: "About the project (optional)"}
+    label: {tr: "Proje hakkında", en: "About the project"}
     description:
-      tr: "Adı, amacı, kimin için olduğu, kurulum ve çalıştırma komutları."
-      en: "Its name, purpose, audience, install and run commands."
+      tr: "İsteğe bağlı: adı, amacı, kimin için olduğu, kurulum ve çalıştırma komutları."
+      en: "Optional: its name, purpose, users, and the install and run commands."
   - id: language
     type: language
-    label: {tr: Rapor dili, en: Report language}
+    label: {tr: README dili, en: README language}
   - id: model
     type: provider
     label: {tr: Model, en: Model}
@@ -61,7 +59,7 @@ nodes:
 
   - id: draft
     type: ai.cli
-    label: {tr: "Taslak", en: "Draft"}
+    label: {tr: "README'yi yaz", en: "Write the README"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -97,7 +95,7 @@ nodes:
 
   - id: review
     type: ai.cli
-    label: {tr: "Denetle ve düzelt", en: "Check and correct"}
+    label: {tr: "README'yi denetle", en: "Check the README"}
     retries: 2
     config:
       provider: "{{inputs.model}}"
@@ -135,7 +133,7 @@ nodes:
 
   - id: export
     type: document.export
-    label: {tr: "Belgeyi kaydet", en: "Save the document"}
+    label: {tr: "README'yi kaydet", en: "Save the README"}
     config:
       source: "{{nodes.review.text}}"
       title: "README"
