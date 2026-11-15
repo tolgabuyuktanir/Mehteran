@@ -55,7 +55,7 @@
     <div class="grid">
       <div class="card"><h3>Workflow</h3><p>A graph of steps, saved as one YAML file. You build it on a canvas or write it by hand.</p></div>
       <div class="card"><h3>Step</h3><p>One box of the workflow: read a document, ask a model, a condition, a loop, an approval, a merge or an export.</p></div>
-      <div class="card"><h3>Template</h3><p>A ready-made workflow that comes with Mehteran (72 of them). Open one and save it as your own to change it.</p></div>
+      <div class="card"><h3>Template</h3><p>A ready-made workflow that comes with Mehteran (77 of them). Open one and save it as your own to change it.</p></div>
       <div class="card"><h3>Run</h3><p>One execution of a workflow with your inputs. It keeps a frozen copy of the workflow, every prompt and every result.</p></div>
       <div class="card"><h3>AI tool</h3><p>The program that calls a model: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama or a local server.</p></div>
     </div>
@@ -133,10 +133,12 @@
     <figure><div class="shot"><img src="assets/screens/en-runform.png" alt="The Run section of a workflow's page" width="1360" height="860" loading="lazy"></div><figcaption>The Run section of "Document summary": the number of steps with a link to their instructions, then the inputs; the options and "Start the run" come below them.</figcaption></figure>
     <h3>Options of the Run section</h3>
     <ul>
-      <li><b>Only models on this computer</b>: every step must use a local model. <code>auto</code> becomes <code>auto:local</code>; any other model is refused before the run starts. A workflow can require this with <code>privacy: local</code>.</li>
+      <li><b>Only models on this computer</b>: every step must use a local model. <code>auto</code> becomes <code>auto:local</code>; any other model is refused before the run starts. A workflow can require this with <code>privacy: local</code>. A workflow with a browser agent cannot: the box is off and says why.</li>
       <li><b>Run once for each file</b>: choose up to 50 files. Each file becomes its own run with the same other inputs. At most 2 runs of the batch work at the same time.</li>
       <li><b>Also save the results to this folder</b>: type the full path of a folder. Mehteran confirms it the first time and never overwrites a file: an existing name gets " (2)", " (3)" and so on.</li>
     </ul>
+    <h3>Search sites for you</h3>
+    <p>Two templates search sites with a read-only browser agent (Claude Code, the browser of the Setup tab) and compare what they find. <b>Find home or car listings</b>: the kind, buy or rent, the place, the features you want and a budget; you get a table of listings with links, each wanted feature marked ✓, ✗ or ?. <b>Find a place to stay (hotel)</b>: the place, the dates, the guests, a budget and your wishes; you get stays with total and nightly prices, rating, breakfast and cancellation terms. Both run without a window and take about 15 to 20 minutes. They never book, sign in or contact anyone. A site that blocks the search is named in the report with a link, so that you can look there yourself. If a site asks for a check, open it once under Setup → Browser.</p>
     <h3>Stop, resume, retry</h3>
     <p>Everything that runs has a stop button (■): in the run list, on the run page and in the header's activity list. <b>Resume</b> continues a failed, cancelled or interrupted run; the steps that finished are kept. A failed step can be retried alone. A run whose program ended (a closed terminal) shows as "interrupted" and can be resumed.</p>
   </section>
@@ -144,6 +146,7 @@
   <section id="results">
     <h2>Results and history</h2>
     <ul>
+      <li><b>On the page</b>: when a run ends, its first text result is shown formatted on the run's page, with a download for each file the workflow saved ("↓ Word", "↓ Markdown"). <b>Open in full</b> opens the reader. <b>Run again</b> opens the Run section with the same values (files are chosen again).</li>
       <li><b>Read</b>: a Markdown result opens formatted (headings, lists, tables, links). <b>Formatted / Plain text</b> switches the view. Arabic, Persian or Urdu paragraphs read right to left.</li>
       <li><b>Compare</b>: put the result next to the same result of another finished run of the same workflow. The paragraphs that differ are highlighted.</li>
       <li><b>Edit</b>: change the text with a live preview and save it. The original output never changes; the reader then offers "Original" and "Edited".</li>
@@ -343,7 +346,7 @@ outputs:
     <h3>A scanned PDF gives no text</h3>
     <p>Install Tesseract OCR on the Setup tab, with the languages of the document.</p>
     <h3>The page says the code changed</h3>
-    <p>Close the terminal window of Mehteran and start it again.</p>
+    <p>Click <b>Restart</b> on the message: Mehteran starts again with the new code and the page reloads. It waits while a run is going on. A Mehteran started before this button existed is restarted by hand once: close its terminal window and start it again.</p>
   </section>
 
   <section id="reference">
@@ -372,7 +375,7 @@ outputs:
     <div class="grid">
       <div class="card"><h3>İş akışı</h3><p>Tek bir YAML dosyası olarak saklanan adımlar çizimi. Tuvalde kurulur ya da elle yazılır.</p></div>
       <div class="card"><h3>Adım</h3><p>İş akışındaki bir kutu: belge okuma, modele sorma, koşul, döngü, onay, birleştirme ya da dışa aktarma.</p></div>
-      <div class="card"><h3>Şablon</h3><p>Mehteran'la gelen hazır bir iş akışı (72 tane). Değiştirmek için açıp kendi akışınız olarak kaydedin.</p></div>
+      <div class="card"><h3>Şablon</h3><p>Mehteran'la gelen hazır bir iş akışı (77 tane). Değiştirmek için açıp kendi akışınız olarak kaydedin.</p></div>
       <div class="card"><h3>Çalıştırma</h3><p>Bir iş akışının sizin girdilerinizle bir kez yürütülmesi. İş akışının dondurulmuş kopyasını, her istemi ve her sonucu saklar.</p></div>
       <div class="card"><h3>Yapay zekâ aracı</h3><p>Modeli çağıran program: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama ya da yerel bir sunucu.</p></div>
     </div>
@@ -450,10 +453,12 @@ outputs:
     <figure><div class="shot"><img src="assets/screens/tr-runform.png" alt="Bir iş akışı sayfasının Çalıştır bölümü" width="1360" height="860" loading="lazy"></div><figcaption>"Belge özeti" iş akışının Çalıştır bölümü: adım sayısı ve talimatlara bağlantı, sonra girdiler; seçenekler ve "Çalıştırmayı başlat" onların altındadır.</figcaption></figure>
     <h3>Çalıştır bölümünün seçenekleri</h3>
     <ul>
-      <li><b>Yalnızca bu bilgisayardaki modeller</b>: her adım yerel bir model kullanmak zorundadır. <code>auto</code>, <code>auto:local</code> olur; başka bir model çalıştırma başlamadan reddedilir. Bir iş akışı bunu <code>privacy: local</code> ile zorunlu kılabilir.</li>
+      <li><b>Yalnızca bu bilgisayardaki modeller</b>: her adım yerel bir model kullanmak zorundadır. <code>auto</code>, <code>auto:local</code> olur; başka bir model çalıştırma başlamadan reddedilir. Bir iş akışı bunu <code>privacy: local</code> ile zorunlu kılabilir. Tarayıcı ajanı olan bir iş akışı bunu yapamaz: kutu kapalıdır ve nedenini yazar.</li>
       <li><b>Her dosya için ayrı çalıştır</b>: en fazla 50 dosya seçin. Her dosya, diğer girdileri aynı olan ayrı bir çalıştırma olur. Toplu çalıştırmanın aynı anda en fazla 2 çalıştırması çalışır.</li>
       <li><b>Sonuçları şu klasöre de kaydet</b>: bir klasörün tam yolunu yazın. Mehteran ilk seferde onayınızı ister ve hiçbir dosyanın üzerine yazmaz: var olan bir ada " (2)", " (3)" gibi bir ek getirir.</li>
     </ul>
+    <h3>Sizin için sitelerde arama</h3>
+    <p>İki şablon, yalnızca okuyan bir tarayıcı ajanıyla (Claude Code ve Kurulum sekmesindeki tarayıcı) sitelerde arar ve bulduklarını karşılaştırır. <b>Ev ya da araba ilanı bul</b>: tür, satın alma ya da kiralama, yer, istediğiniz özellikler ve bütçe; bağlantılı bir ilan tablosu alırsınız, istenen her özellik ✓, ✗ ya da ? ile işaretlidir. <b>Konaklama bul (otel)</b>: yer, tarihler, kişiler, bütçe ve istekleriniz; toplam ve gecelik fiyatı, puanı, kahvaltıyı ve iptal koşullarını gösteren seçenekler alırsınız. İkisi de pencere açmadan çalışır ve yaklaşık 15-20 dakika sürer. Rezervasyon yapmaz, oturum açmaz, kimseyle iletişime geçmez. Aramayı engelleyen bir site raporda bağlantısıyla yazılır; oraya kendiniz bakabilirsiniz. Bir site doğrulama isterse onu Kurulum → Tarayıcı'dan bir kez açın.</p>
     <h3>Durdurma, devam ettirme, yeniden deneme</h3>
     <p>Çalışan her şeyin bir durdurma düğmesi (■) vardır: çalıştırma listesinde, çalıştırma sayfasında ve üst çubuktaki etkinlik listesinde. <b>Devam ettir</b>, başarısız, iptal edilmiş ya da yarıda kalmış bir çalıştırmayı sürdürür; biten adımlar korunur. Başarısız bir adım tek başına yeniden denenebilir. Programı kapanan (terminali kapatılan) bir çalıştırma "yarıda kaldı" olarak görünür ve devam ettirilebilir.</p>
   </section>
@@ -461,6 +466,7 @@ outputs:
   <section id="tr-sonuclar">
     <h2>Sonuçlar ve geçmiş</h2>
     <ul>
+      <li><b>Sayfada</b>: çalıştırma bitince ilk metin sonucu çalıştırmanın sayfasında biçimli olarak görünür; iş akışının kaydettiği her dosya için bir indirme vardır ("↓ Word", "↓ Markdown"). <b>Tamamını aç</b> okuyucuyu açar. <b>Yeniden çalıştır</b>, Çalıştır bölümünü aynı değerlerle açar (dosyalar yeniden seçilir).</li>
       <li><b>Okuma</b>: Markdown sonuç biçimlendirilmiş açılır (başlıklar, listeler, tablolar, bağlantılar). <b>Biçimli / Düz metin</b> görünümü değiştirir. Arapça, Farsça ya da Urduca paragraflar sağdan sola okunur.</li>
       <li><b>Karşılaştırma</b>: sonucu, aynı iş akışının bitmiş başka bir çalıştırmasının aynı sonucuyla yan yana koyar. Farklı paragraflar vurgulanır.</li>
       <li><b>Düzenleme</b>: metni canlı önizlemeyle değiştirip kaydedin. Asıl çıktı hiç değişmez; okuyucu bundan sonra "Özgün" ve "Düzenlenmiş" seçeneklerini sunar.</li>
@@ -660,7 +666,7 @@ outputs:
     <h3>Taranmış bir PDF'ten metin çıkmıyor</h3>
     <p>Kurulum sekmesinde Tesseract OCR'ı belgenin dilleriyle birlikte kurun.</p>
     <h3>Sayfa kodun değiştiğini söylüyor</h3>
-    <p>Mehteran'ın terminal penceresini kapatıp yeniden başlatın.</p>
+    <p>Mesajdaki <b>Yeniden başlat</b>'a tıklayın: Mehteran yeni kodla yeniden başlar ve sayfa yenilenir. Bir çalıştırma sürerken bekler. Bu düğmeden önce başlatılmış bir Mehteran bir kez elle yeniden başlatılır: terminal penceresini kapatıp yeniden başlatın.</p>
   </section>
 
   <section id="tr-basvuru">
