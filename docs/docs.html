@@ -9,7 +9,7 @@
 <meta name="description" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
 <meta name="description-en" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
 <meta name="description-tr" content="Mehteran'ı kurma, yapay zekâ araçlarınızı bağlama, iş akışlarını çalıştırma ve oluşturma, yerel modelleri kullanma ve iş akışı dosya biçimi.">
-<meta name="theme-color" content="#0d5644">
+<meta name="theme-color" content="#1f4fbf">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/site.js" defer></script>
@@ -83,10 +83,13 @@
         <tr><td>Interface (double-click)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
         <tr><td>Interface (terminal)</td><td><code>./mehter ui</code></td><td><code>mehter ui</code></td></tr>
         <tr><td>Command line</td><td><code>./mehter &lt;command&gt;</code></td><td><code>mehter &lt;command&gt;</code></td></tr>
+        <tr><td>With npm (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;command&gt;]</code></td></tr>
       </tbody>
     </table>
+    <h3>With npm</h3>
+    <p>If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), run <code>npx mehteran</code>. The first run installs Mehteran into <code>~/Mehteran</code> (with <code>git clone</code> when git is on the computer) and opens the interface. Next time, run <code>npx mehteran</code> again. Every command works the same way: <code>npx mehteran templates</code> is <code>./mehter templates</code>. Commands run in the Mehteran folder, so give file paths as full paths. To use another folder, set <code>MEHTERAN_DIR</code>.</p>
     <h3>Updates</h3>
-    <p>If you got Mehteran with <code>git clone</code>, it updates itself from GitHub before the interface starts. If you downloaded a zip file, download the new zip; your workflows and runs are not in the code folder, so nothing needs to be moved (see <a href="#data">Where your data is</a>). When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
+    <p>If you got Mehteran with <code>git clone</code>, it updates itself from GitHub before the interface starts. A copy installed with <code>npx mehteran</code> does the same when git was on the computer at install time; without git, it is like a zip copy. If you downloaded a zip file, download the new zip. Your workflows and runs are not in the code folder, so they stay where they are (see <a href="#data">Where your data is</a>). For the book translation, move <code>books/</code>, <code>glossary/</code>, <code>config.toml</code> and the <code>.md</code> files of <code>prompts/</code> (and <code>prompts/custom/</code>) from the old folder into the new one. When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
     <h3>Where the tools go</h3>
     <p>The tools that Mehteran installs go into the code folder (<code>.runtime/</code>) or into your user folder (Claude Code, Antigravity CLI and the private Python: <code>~/.local/bin</code>; on Windows under <code>%LOCALAPPDATA%</code>). No administrator rights are needed.</p>
   </section>
@@ -396,10 +399,13 @@ outputs:
         <tr><td>Arayüz (çift tıklama)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
         <tr><td>Arayüz (terminal)</td><td><code>./mehter ui</code></td><td><code>mehter ui</code></td></tr>
         <tr><td>Komut satırı</td><td><code>./mehter &lt;komut&gt;</code></td><td><code>mehter &lt;komut&gt;</code></td></tr>
+        <tr><td>npm ile (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;komut&gt;]</code></td></tr>
       </tbody>
     </table>
+    <h3>npm ile</h3>
+    <p>Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) <code>npx mehteran</code> komutunu çalıştırın. İlk çalıştırma Mehteran'ı <code>~/Mehteran</code> klasörüne kurar (bilgisayarda git varsa <code>git clone</code> ile) ve arayüzü açar. Sonraki seferlerde yine <code>npx mehteran</code> yazın. Her komut aynı şekilde çalışır: <code>npx mehteran templates</code>, <code>./mehter templates</code> ile aynıdır. Komutlar Mehteran klasöründe çalışır; dosya yollarını tam yol olarak verin. Başka bir klasör için <code>MEHTERAN_DIR</code> değişkenini ayarlayın.</p>
     <h3>Güncellemeler</h3>
-    <p>Mehteran'ı <code>git clone</code> ile aldıysanız, arayüz başlamadan önce kendini GitHub'dan günceller. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, bu yüzden hiçbir şeyi taşımanız gerekmez (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
+    <p>Mehteran'ı <code>git clone</code> ile aldıysanız, arayüz başlamadan önce kendini GitHub'dan günceller. <code>npx mehteran</code> ile kurulan kopya, kurulumda bilgisayarda git varsa aynısını yapar; git yoksa zip kopyası gibidir. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, oldukları yerde kalırlar (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Kitap çevirisi için eski klasördeki <code>books/</code>, <code>glossary/</code>, <code>config.toml</code> ve <code>prompts/</code> içindeki <code>.md</code> dosyalarını (ve <code>prompts/custom/</code>) yeni klasöre taşıyın. Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
     <h3>Araçlar nereye kurulur</h3>
     <p>Mehteran'ın kurduğu araçlar kod klasörüne (<code>.runtime/</code>) ya da kullanıcı klasörünüze gider (Claude Code, Antigravity CLI ve özel Python: <code>~/.local/bin</code>; Windows'ta <code>%LOCALAPPDATA%</code> altı). Yönetici yetkisi gerekmez.</p>
   </section>
@@ -675,6 +681,7 @@ outputs:
       <a href="https://github.com/tolgabuyuktanir/Mehteran">GitHub</a>
     </nav>
   </div>
+  <span class="wordmark" aria-hidden="true">Mehteran</span>
 </footer>
 </body>
 </html>

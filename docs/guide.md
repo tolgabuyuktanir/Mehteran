@@ -1,4 +1,4 @@
-# Translation Pipeline: user guide
+# Islamic book translation: user guide
 
 [Türkçe](guide.tr.md) · [Back to the README](../README.md)
 
@@ -23,7 +23,7 @@ Sign-in methods:
 
 - Claude: "With Claude account" opens a terminal window. Sign in in the browser.
 - Codex (ChatGPT): "With ChatGPT account" opens a terminal window. Alternative: an OpenAI API key.
-- Antigravity (Gemini models): "With Google account" opens a terminal window. Antigravity starts the Google sign-in in the browser; when it is done, type `/exit`. Then check with the "Test" button. Antigravity also offers some Claude models; the default is a Gemini model. Each call is stored by Antigravity as a conversation; the pipeline deletes the ones it made.
+- Antigravity (Gemini models): "With Google account" opens a terminal window. Antigravity starts the Google sign-in in the browser; when it is done, type `/exit`. Then check with the "Test" button. Antigravity also offers some Claude models; the default is a Gemini model. Each call is stored by Antigravity as a conversation; the translation app deletes the ones it made.
 - Gemini CLI: since 18 June 2026 Google accepts only API keys and company (Google Cloud) accounts here, no personal accounts. "With Google account" opens a terminal window. When Gemini starts, sign in with Google, then type `/quit`. Then check with the "Test" button that the account is accepted. Alternative: an API key from https://aistudio.google.com/apikey (saved in `~/.gemini/.env`).
 
 After you sign in, click "Refresh status".
@@ -65,7 +65,7 @@ The workflow is drawn as boxes joined by arrows, from left to right: preparation
 
 ## Export
 
-The pipeline writes Markdown (`output/<lang>.md`, `output/<lang>.report.md`). In the Books tab you can export each of them:
+The translation app writes Markdown (`output/<lang>.md`, `output/<lang>.report.md`). In the Books tab you can export each of them:
 
 - Word (.docx): headings as Word headings, footnotes as real Word footnotes. The text is justified and hyphenated automatically; each main chapter starts on a new page; the footer has the page number. Arabic passages inside the text run right to left, and paragraphs made only of Arabic (âyat, hadîth) are centred. For target languages such as Arabic, Persian and Urdu the whole document is right to left.
 - PDF: when Chrome or Edge is on the computer, a PDF file is made directly (Windows always has Edge). It is set as a book: justified and hyphenated text, indented paragraphs, page numbers, each main chapter on a new page, footnotes at the end of their chapter. Without such a browser, a print-ready page opens; choose "Save as PDF" in the print dialog.
@@ -148,7 +148,7 @@ Every text a model returns (steps 1, 3, 4 and 6) passes a completeness gate befo
 
 The reviewers (steps 2 and 5) must give a reading proof: they write back the last three words of every paragraph. If the proof does not match the text, the answer is rejected and requested again. Thus the answer "no problems" cannot hide that the text was not read. The model that applies the reviews (steps 3 and 6) must give a decision for every finding. The "Reviewer audit" section of the report shows in how many segments each reviewer wrote no findings, and the segments where a reviewer wrote nothing but serious errors were found later.
 
-If the glossary, the references or the instructions change after a segment was produced, the pipeline detects it. The segment is not produced again by itself; the report and the interface tell you which segments still use old inputs, and from which step. The "Prepare to produce again" button in the interface fills the form; on the command line, use `--redo <step> --segments <segments>`.
+If the glossary, the references or the instructions change after a segment was produced, the translation app detects it. The segment is not produced again by itself; the report and the interface tell you which segments still use old inputs, and from which step. The "Prepare to produce again" button in the interface fills the form; on the command line, use `--redo <step> --segments <segments>`.
 
 The mechanical checks use no AI. They compare the translation with the source: Arabic-script passages, numbers, footnote marks and their texts, number of paragraphs, headings and sentences per paragraph, length of the translation.
 
@@ -169,7 +169,7 @@ glossary/<lang>.tsv     one glossary per language; edited by hand; shared by all
 books/<book>/
   source/               the Turkish book (one file)
   references/           existing translations: da.docx, sv.epub ...
-  work/                 intermediate files; produced by the pipeline
+  work/                 intermediate files; produced by the translation app
   output/               <lang>.md and <lang>.report.md
   logs/                 the log of each run
 pipeline/               the code (pipeline/i18n.py: messages; pipeline/ui/: web interface)
@@ -192,7 +192,7 @@ The translation rules are in `prompts/translate.md`. Examples: how verses and ha
 
 - The output is Markdown; export gives Word, PDF and HTML. Headings, footnotes, italics, bold and numbered items are kept. Tables, images and colours of the source are not. Print typesetting is a separate step.
 - Windows support is written for and tested on macOS only; it has not run on a Windows computer yet.
-- If the source file changes after the first run, the pipeline stops. To start again with a new source, click "Reset work" in the interface, or delete `books/<book>/work/`.
+- If the source file changes after the first run, the translation app stops. To start again with a new source, click "Reset work" in the interface, or delete `books/<book>/work/`.
 - If a reference translation is organised very differently from the Turkish book, some segments have no reference passage. These segments are translated without a reference and listed in the report.
 - AI review does not replace human review. Before publication, the human translator and the human editor must read the book.
 

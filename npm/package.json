@@ -1,0 +1,21 @@
+{
+  "name": "mehteran",
+  "version": "0.1.0",
+  "description": "Local AI workflows on the AI tools you already use (Claude Code, Codex, Antigravity CLI, local models). This package installs and starts Mehteran.",
+  "bin": {
+    "mehteran": "bin/mehteran.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tolgabuyuktanir/Mehteran.git"
+  },
+  "homepage": "https://tolgabuyuktanir.github.io/Mehteran/",
+  "keywords": ["ai", "workflow", "claude", "codex", "ollama", "translation"],
+  "license": "MIT"
+}

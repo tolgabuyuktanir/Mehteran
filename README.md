@@ -37,6 +37,16 @@ You do not need to install anything first. An internet connection is enough.
 
 Next time, start it the same way (double-click is enough after the first time).
 
+### With npm
+
+If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), one command is enough:
+
+```
+npx mehteran
+```
+
+The first run installs Mehteran into `~/Mehteran` (with `git clone` when git is on the computer) and opens the interface. Next time, run `npx mehteran` again. Every command works the same way: `npx mehteran templates` is `./mehter templates`. To use another folder, set `MEHTERAN_DIR`.
+
 ## AI tools
 
 | Tool | How it is paid | Where the text goes |
@@ -68,6 +78,8 @@ What the default translation workflow needs:
 
 If you got the application with git (`git clone` or `gh repo clone`), it updates itself from GitHub each time the interface starts. Without internet or without a GitHub sign-in, it starts as it is.
 
+A copy installed with `npx mehteran` updates itself the same way when git was on the computer at install time. Without git, it is like a zip copy.
+
 If you downloaded a zip file, download the new zip. Mehteran's workflows and runs are kept outside the code folder, so they stay where they are. For the book translation, move these from the old folder into the new one: `books/`, `glossary/`, `config.toml` and the `.md` files directly in `prompts/` (and `prompts/custom/`).
 
 Codex, Node.js and the PDF reader go into the application's own folder (`.runtime/`). Claude Code, Antigravity CLI and the private Python (uv) go into your user folder (`~/.local/bin`; Windows: under `%LOCALAPPDATA%`). To remove the application, delete its folder and Mehteran's data folder (see the docs).
@@ -76,10 +88,15 @@ Codex, Node.js and the PDF reader go into the application's own folder (`.runtim
 
 - [Website](https://tolgabuyuktanir.github.io/Mehteran/) and [docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html): install, connect your AI tools, run and build workflows, local models, the workflow file, troubleshooting.
 - [Mehteran full reference](docs/mehteran.md): every screen, setting, API route and limit.
-- [Book translation user guide](docs/guide.md).
+- [Islamic book translation user guide](docs/guide.md).
 
 ## Development
 
 - Code: `mehteran/` (Mehteran) and `pipeline/` (the book translation), Python standard library only; the interface is plain JavaScript with no build step.
 - Tests: `python3 -m unittest discover tests`. They use a fake AI tool and make no network calls.
+- The npm package (`npx mehteran`) is in `npm/`: one Node script with no dependencies, which installs the code folder and starts its launcher. To publish a new version, raise `version` in `npm/package.json`, then run `cd npm && npm publish`.
 - The website is static HTML in `docs/` (`index.html`, `docs.html`, `assets/`); it loads nothing from other servers.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

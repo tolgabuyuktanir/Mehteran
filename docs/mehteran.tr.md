@@ -4,7 +4,7 @@
 
 Mehteran, yapay zekâ iş akışlarını bu bilgisayarda çalıştırır. Bir iş akışı bir YAML dosyasıdır: düğümlerden oluşan bir çizge (belge oku, modele sor, metinleri birleştir, bir kişiye onaylat, rapor kaydet). Modeller, çeviri uygulamasının zaten kullandığı komut satırı araçlarıyla çağrılır (Claude Code, Codex, Antigravity CLI, Gemini CLI). Mehteran'ın kendi anahtarı ya da hesabı yoktur.
 
-Çeviri uygulaması Mehteran arayüzünün bir parçasıdır: İş akışları sekmesindeki "Kitap çevirisi" kartı çeviri uygulamasını bütün özellikleriyle, Mehteran'ın kendi sayfasında açar (aşağıya bakın). Çeviri uygulamasının Python kodu değişmez; `./translate ui` kendi başına çalışmayı sürdürür.
+Çeviri uygulaması Mehteran arayüzünün bir parçasıdır: İş akışları sekmesindeki "İslami kitap çevirisi" kartı çeviri uygulamasını bütün özellikleriyle, Mehteran'ın kendi sayfasında açar (aşağıya bakın). Çeviri uygulamasının Python kodu değişmez; `./translate ui` kendi başına çalışmayı sürdürür.
 
 ## Başlatma
 
@@ -13,6 +13,7 @@ Mehteran, yapay zekâ iş akışlarını bu bilgisayarda çalıştırır. Bir i�
 | Web arayüzü (çift tıklama) | `Open Mehteran.command` | `Open Mehteran.bat` |
 | Web arayüzü | `./mehter ui` | `mehter ui` |
 | Komut satırı | `./mehter <komut>` | `mehter <komut>` |
+| npm ile (Node.js 18+): ilk çalıştırmada `~/Mehteran` klasörüne (ya da `MEHTERAN_DIR`) kurar | `npx mehteran [<komut>]` | `npx mehteran [<komut>]` |
 
 Arayüz `http://127.0.0.1:8766/` adresinde açılır. Arayüz çalışırken kod değişirse (bir güncelleme) sayfa bunu bir uyarıyla söyler: sunucunun terminal penceresini kapatıp yeniden başlatın. Port doluyken `mehter ui` ikinci kez başlatılırsa, çalışan sunucu eskiyse aynı şeyi söyler. Terminal penceresi açık kaldıkça çalışır. Başlatıcı çeviri uygulamasınınki gibi çalışır (`scripts/start.sh`, `scripts/start.cmd`): Python 3.11 veya üstünü kullanır, bilgisayarda yoksa ayrı bir Python (uv) kurar ve `ui` öncesinde kod klasörünün git kopyasını günceller (`python -m pipeline update`, çeviri uygulamasının kendi güncelleme adımı).
 
@@ -23,7 +24,7 @@ Dil düğmesi (bir bayrak ve dilin adı) sağ üsttedir: 18 arayüz dili vardır
 Arayüz, çeviri uygulamasınınkiyle aynı tasarımdadır ve üç sekmesi vardır: İş akışları, Çalıştırmalar, Kurulum. Önceki sürümlerin adresleri (`#templates`, `#workflow/...`, `#runs/new/...`) karşılık gelen ekranı açmayı sürdürür. Araçlar hazır değilken ilk ekran Kurulum'dur, hazırsa en son kullanılan sekme; sol üstteki Mehteran adı da oraya götürür.
 
 - **İslami kitap çevirisi** (İş akışları kitaplığının en üstündeki, kitap simgeli sabit kart; adresi `#workflows/translation[/books|workflow|prompts]`, eski `#translation...` adresleri oraya gider): çeviri uygulamasının kendisi, bütün özellikleriyle: Kitaplar, çeviri akışı ve talimatları, "← Akışlar" bağlantısının yanında bölümler olarak. Kart bir iş akışının kartı gibidir (simge, rozetler, ad, açıklama, yıldız, ana düğme); kaç kitap olduğunu ve kaçının çevrilmekte olduğunu gösterir. Yıldızı onu favori yapar (`library.json` içinde `app:translation`, `PUT /api/templates/app/translation/favorite`). Kurulum sekmesi Mehteran'ın Kurulum sekmesidir: ona giden her bağlantı onu açar. Dil düğmesi ikisini birlikte değiştirir. Nasıl çalıştığı: aşağıda "Kitap çevirisi".
-- **İş akışları**: kitaplık ve görsel düzenleyici. Kitaplığın iki görünümü vardır. "Akışlarım" (kendi iş akışınız, favoriniz ya da çalıştırmanız olduktan sonra ilk görünüm) kendi iş akışlarınızı, taslakları, favorileri, son çalıştırdıklarınızı ve yıldızlıysa ya da kitabı varsa kitap çevirisini gösterir. "Şablonlar" bir "Buradan başlayın" grubu (yaklaşık 20 genel şablon), kitap çevirisi ve sonra kategori başına bir grup gösterir. Her kart bir çalıştırmanın ne istediğini söyler, örneğin "1 belge · 2 model çağrısı" (bir seçim tek dalı seçiyorsa "en çok"); büyük-küçük harfe ve aksanlara (Türkçe olanlar da: "sozlesme", "Sözleşme"yi bulur) bakmayan bir arama ve kategori süzgeci vardır. Bir kart; açıklamayı, çizimi, girdileri ve sonuçları, YAML metnini ve şu işlemleri içeren bir panel açar: "Çalıştır", "Düzenle" (düzenleyiciyi açar; hazır bir şablon kaydedilmemiş kendi kopyanız olarak açılır), "Çoğalt" (yeni bir kimlikle kendi kopyanız; geldiği şablonu ve sürümü `based_on` içinde kaydeder; hazır şablonun sonraki bir güncellemesi onu hiç değiştirmez), "YAML olarak indir", "Sil" (yalnızca sizin iş akışlarınız). Sizin iş akışlarınızın orada bir YAML düzenleyicisi de vardır; "İçe aktar" bir iş akışı dosyası ekler; "Yeni iş akışı" boş bir tane başlatır.
+- **İş akışları**: kitaplık ve görsel düzenleyici. Kitaplığın iki görünümü vardır. "Akışlarım" (kendi iş akışınız, favoriniz ya da çalıştırmanız olduktan sonra ilk görünüm) kendi iş akışlarınızı, taslakları, favorileri, son çalıştırdıklarınızı ve yıldızlıysa ya da kitabı varsa kitap çevirisini gösterir. "Şablonlar" bir "Buradan başlayın" grubu (yaklaşık 20 genel şablon), kitap çevirisi ve sonra kategori başına bir grup gösterir. Her kart bir çalıştırmanın ne istediğini söyler, örneğin "1 belge · 2 model çağrısı" (bir seçim tek dalı seçiyorsa "en çok"); büyük-küçük harfe ve aksanlara (Türkçe olanlar da: "sozlesme", "Sözleşme"yi bulur) bakmayan bir arama ve kategori süzgeci vardır. Her kartta yıldız (favori), "Düzenle" ve "Aç" düğmeleri vardır. "Aç" ya da kartın kendisi; açıklamayı, çizimi, girdileri ve sonuçları, YAML metnini ve şu işlemleri içeren bir panel açar: "Çalıştır", "Düzenle" (düzenleyiciyi açar; hazır bir şablon kaydedilmemiş kendi kopyanız olarak açılır), "Çoğalt" (yeni bir kimlikle kendi kopyanız; geldiği şablonu ve sürümü `based_on` içinde kaydeder; hazır şablonun sonraki bir güncellemesi onu hiç değiştirmez), "YAML olarak indir", "Sil" (yalnızca sizin iş akışlarınız). Sizin iş akışlarınızın orada bir YAML düzenleyicisi de vardır; "İçe aktar" bir iş akışı dosyası ekler; "Yeni iş akışı" boş bir tane başlatır.
 - **Çalıştırmalar**: solda çalıştırma geçmişi, sağda bir çalıştırma: akışı canlı (düzenleyicinin tuvali, salt okunur; her kutu durumunun rengiyle), her düğüm için bir ilerleme satırı, sonuçlar (biçimli okuyun, başka bir çalıştırmayla karşılaştırın, düzenleyip dışa aktarın: aşağıda "Bir çalıştırmanın sonuçları") ve seçili düğümün paneli: çıktıları (okuyucuda okuyun ya da indirin), modele gönderilen istem, onayla ya da reddet, yeniden dene. Liste, iş akışı çalıştırmalarının altında kitap çevirisinin her kitabının son çalıştırmasını da gösterir (`GET /api/translation/runs`; her kitabın `work/run.json` dosyasından okunur); tıklayınca kitaplar açılır. Çalışan her şeyin listede bir durdurma düğmesi (■) vardır. "Devam ettir" başarısız, iptal edilmiş ya da yarıda kalmış bir çalıştırmayı sürdürür; "İptal et" durdurur; "Yeniden çalıştır" aynı iş akışıyla çalıştırma penceresini açar.
 - **Kurulum**: çeviri uygulamasının Kurulum sekmesindeki araç kartlarının aynısı, aynı kodla (`pipeline.tools`, `pipeline.runtime`): kurulu ve oturum durumu, "Eksikleri kur" (çeviri akışının ve şablonların kullandığı araçlar ve PDF okuyucu), her araç için kurma düğmesi, oturum açma yolları (hesap; Codex ve Gemini için API anahtarı da), "Dene", son kullanım sınırı ve bir başlangıç kutusu. Her kart aracı kimin kullandığını söyler (Çeviri, şablonlar). Araçlar çeviri uygulamasınınkiyle aynı `<kod klasörü>/.runtime` içine kurulur; ikisi tek kurulumu paylaşır. Her yapay zekâ aracı kartı ücretlendirmesini de gösterir (abonelik, ücretsiz hesap, yerel ya da API anahtarı (ücretli); aşağıdaki "İş akışlarının yapay zekâ araçları" bölümüne bakın). Kartların altındaki "İş akışlarının yapay zekâ araçları" paneli `auto` için model sırasını, araç başına aynı anda yapılacak çağrı sayısını ve "API anahtarına izin ver (ücretli)" seçeneğini içerir. Her kart "Gerekli" (bir şablonun ya da çevirinin kullandığı araçlar ve PDF okuyucu) ya da "İsteğe bağlı" olarak işaretlidir. Altlarında "Yerel araçlar" (hepsi isteğe bağlı): Ollama kartı (durum; sürümü, kaynağı ve klasörü söyleyen bir onaydan sonra kurulum; İptal düğmesiyle kurulum günlüğü), modelleri (kurulu olanlar ve Sil; boyutu, belleği ve dilleriyle önerilenler, bu bilgisayar için büyük olana uyarı; adıyla başka bir model; ilerlemesi ve İptal düğmesiyle aynı anda bir indirme) Tesseract OCR kartı (onaydan sonra kurulum, eklenecek diller) ve Typst, Pandoc, konuşmayı metne çevirme (modelleriyle) ve qpdf kartları (sürümü, indirme boyutunu, kaynağı ve klasörü söyleyen bir onaydan sonra kurulum; İptal düğmesiyle kurulum günlüğü). Yerel modeller, model seçilen her yerde "yerel" olarak işaretlidir.
 
@@ -173,7 +174,22 @@ conda-forge kurulumları (konuşmayı metne çevirme, qpdf) micromamba ister; yo
 ./mehter install-local qpdf                       qpdf'i kurar
 ```
 
-Kurulum sekmesinin API'si ve JSON biçimleri İngilizce kılavuzdadır: [Local models and OCR](mehteran.md#local-models-ollama-and-text-recognition-ocr).
+Kurulum sekmesinin API'si:
+
+| Yol | Cevap |
+|---|---|
+| `GET /api/local-tools` | `{tools: [ollama, ocr, typst, pandoc, speech, qpdf], pull}` (aşağıda) |
+| `POST /api/local-tools/(ollama\|ocr\|typst\|pandoc\|speech\|qpdf)/install` | kurulum işini başlatır; `{message}` |
+| `POST /api/local-tools/ocr-languages/install` `{languages: [..]}` | dil verisi ekler |
+| `POST /api/local-tools/speech-models/install` `{models: [..]}` | konuşma modeli ekler; bilinmeyen bir ad için 400 |
+| `POST /api/local-tools/(ollama\|ocr\|ocr-languages\|typst\|pandoc\|speech\|speech-models\|qpdf)/cancel` | o işi durdurur; `{cancelled}` |
+| `GET /api/ollama/models` | `{running, installed: [{name, size, modified}], recommended: [{name, size, ram, languages, notes: {tr, en}, installed}], memory, disk_free}` (kuruluysa Ollama'yı başlatır) |
+| `POST /api/ollama/pull` `{name, force?}` | `{started, warnings}`; disk çok doluysa ya da bir indirme sürüyorsa `problems` ile 409 |
+| `GET /api/ollama/pull` | `{name, status, completed, total, percent, done, error, cancelled, started}` |
+| `POST /api/ollama/pull/cancel` | `{cancelled}` |
+| `POST /api/ollama/delete` `{name}` | `{ok}` |
+
+`ollama`: `{id, name, installed, source ("system" | "mehteran" | null), path, version, running, started_by_mehteran, url, pinned_version, size, install_dir, models_dir, disk_free, memory, job}`. `ocr`: `{id, name, installed, source, path, version, pinned_version, pdftoppm, size, languages, available_languages: [{code, size, installed}], job, languages_job}`. `typst`, `pandoc`, `speech`, `qpdf`: `{id, name, installed, source, path, version, pinned_version, size, download_size, install_dir, disk_free, job}`; `typst` ayrıca `arabic_font` ekler; `speech` ayrıca `ffmpeg` (yolu ya da null), `ffmpeg_source`, `ffmpeg_version`, `poppler_first`, `models`, `available_models: [{name, size, installed}]`, `models_job` ekler; `qpdf` ayrıca `poppler_first` ekler (true: önce micromamba ve Poppler gelir). Önerilen bir modelin `kind` alanı olabilir: `"vision"` ya da `"embedding"`. Bir `job` ya `null` ya da `/api/tools` içindeki gibi `{running, code, log}` olur. Boyutlar bayt cinsindendir.
 
 ## İş akışlarının yapay zekâ araçları (sağlayıcılar)
 
@@ -218,12 +234,48 @@ API: `GET /api/providers` → `{providers: [{name, label, vendor, local, adapter
 
 ## Kullanım, bir adımın modelini değiştirme, canlı günlük
 
-- **Kullanım** (`GET /api/usage`): Mehteran her model çağrısını sayar (sağlayıcı, model, süre, sonuç: `ok`, `failed`, `quota`, `aborted`; sınırda ne zamana kadar). Sağlayıcı başına toplamlar, bugün / son 5 saat / son 7 gün pencereleri, model başına sayılar, son kullanım sınırı ve sıfırlanma zamanı. `tool_reported` yalnızca aracın kendi yazdığıdır, bilinmiyorsa `null`: Codex oturum günlüklerindeki sınırlar (5 saatlik ve haftalık pencerenin yüzdesi, sıfırlanma zamanı; Mehteran'ın kendi Codex çağrıları `--ephemeral` olduğu için değer son etkileşimli kullanımdandır), Claude Code'un `rate_limit_event` bilgisi (Mehteran'ın Claude bağdaştırıcısı stream-json kullanır, bu yüzden her iş akışı çağrısı bu değeri günceller; istenince `POST /api/usage/probe/<sağlayıcı>` en küçük modelle tek kelimelik bir çağrıyla da sorar). Gemini CLI, Antigravity CLI ve Ollama sınır bildirmez. Çeviri uygulamasının `.jobs/quota.json` kaydı ve Kurulum sekmesindeki son model denemesinin sınırı da gösterilir. Kimlik bilgisi dosyası okunmaz.
-- **Model değiştirme** (`POST /api/runs/<çalıştırma>/nodes/<düğüm>/switch` `{provider: "gemini/<model>"}`): kullanım sınırı bekleyen, başarısız, iptal edilmiş ya da yarıda kalmış bir yapay zekâ adımı için. Bekleyen adım beklemeyi hemen bırakır ve yeni modelle yeniden çalışır; diğerleri yeniden denenir; bir döngü bitmiş parçalarını korur. Olay günlüğüne "Model değiştirildi: eski → yeni" yazılır. İsteğe bağlı `fallback_provider` (düğümde, `retries` yanında): adımın modeli kullanım sınırına takılınca beklemeden ona geçilir; o da takılırsa beklenir.
-- **Canlı günlük** (`GET /api/runs/<çalıştırma>/log?node=<düğüm>&offset=<bayt>` → `{text, offset, size, done, status}`): her düğüm çalışırken `nodes/<düğüm>/log.txt` dosyasına yazar (denemeler, model çağrıları ve cevapları, 30 saniyede bir "hâlâ çalışıyor", beklemeler, model değişiklikleri, döngü parçaları). Gizli anahtara benzeyenler maskelenir; günlük en çok 2 MB'tır. Ollama'nın cevabı yazıldıkça akar. Komut satırı araçları Mehteran'ın bağdaştırıcılarıyla (`mehteran/providers/base.py` `run`) çağrılır; `on_output` geri çağrısı aracın standart çıktısındaki her satırı geldiği anda verir, işçi süreç de onu günlüğe yazar (`mehteran/toolstream.py`). Çağrının döndürdüğü cevap değişmez. Kullanıcının `config.toml` dosyasına eklediği bir sağlayıcı `pipeline.providers.run` ile çalışır ve cevabını sonunda gösterir. Bir araç canlı olarak yalnızca çalışırken standart çıktıya yazdığını gösterir: Antigravity CLI (`--output-format stream-json`) JSON olaylarını metne çevrilmiş olarak gösterir (yazıldıkça cevabın metni, başarısız bir sonucun hata satırı). Claude Code (Mehteran'ın bağdaştırıcısı, `--output-format stream-json --verbose`) asistanın metnini her mesaj geldikçe ve her araç kullanımını kısa bir satır olarak (`· tool: Read`) gösterir, ham JSON'u asla göstermez; `rate_limit_event` bilgisi kullanım sayfası için saklanır. Codex (`codex exec ... -o <dosya>`) son mesajını sonunda standart çıktıya yazar; ilerlemesi standart hataya gider ve canlı gösterilmez. Gemini CLI (`-o json`) sonunda tek bir JSON belgesi yazar; canlı bir şey gösterilmez. Akan metin bütün satırlar hâlinde yazılır (uzun bir satır sondan bir önceki kelimesine kadar), böylece gizli anahtarlar bütün olarak maskelenir; bir döngünün parçaları etiketleriyle (`part 3: `) bütün satırlar yazar. Akan metin cevapla bitiyorsa cevap ikinci kez yazılmaz.
-- **Etkinlik** (`GET /api/activity`): süren ve bekleyen çalıştırmalar, çalışan düğümleri, geçen süre, bekleme nedeni; çeviri uygulamasının şu anda çevirdiği kitaplar. JSON biçimleri İngilizce kılavuzda.
+**Kullanım** (`GET /api/usage`). Mehteran her model çağrısını sayar (`calls` tablosu: sağlayıcı, model, başlangıç, saniye, sonuç `ok` / `failed` / `quota` / `aborted`, bir sınırda ne zamana kadar). Sağlayıcı başına:
 
-**Arayüzde** (`mehteran/ui/live.js`): Kurulum'daki her yapay zekâ aracı kartında "Kullanım" bölümü (Mehteran'ın kendi sayımları: bugün, son 5 saat, son 7 gün; son kullanım sınırı ve açılmasına kalan süre; aracın kendi bildirdiği sınırlar, bildirmiyorsa "bilinmiyor"; Claude Code için çok kısa tek bir model çağrısı yapan "Kullanımı kontrol et"). Çalıştırma formunda ve model seçiminde aracın yanında kısa bir kullanım ipucu ("5 saat: %54"; sınıra yakınken uyarı renginde). Çalıştırma sayfasında genel ilerleme çubuğu, geçen süreler, denemeler, bekleme nedenleri ve seçili (ya da çalışan) adımın canlı günlüğü (sona kendiliğinden kayar; yukarı kaydırınca durur; "Kopyala"). Kullanım sınırı bekleyen, hata veren, iptal edilen ya da yarıda kalan adımda "Bekle" (varsayılan) ve "Başka modelle devam et". Düzenleyicide model alan adımların gelişmiş ayarlarında "Yedek model" (boşsa kapalı). Üst çubukta şu an çalışanlar ("2 çalışıyor"); tıklayınca çalıştırmalar ve çevrilen kitaplar, her birinin durdurma düğmesiyle (■) listelenir. Kitaplıkta yıldızla favoriler (`<veri>/configurations/library.json`), kitap çevirisinin hemen altında "Favoriler" bölümü ve "★ Favoriler" süzgeci, "Son kullanılanlar"; çalıştırma formu her iş akışının son değerlerini bu tarayıcıda hatırlar (dosyalar ve anahtar/parola gibi adlandırılanlar hariç): "Geçen seferki gibi". "/" arama kutusuna gider.
+```
+{generated, providers: [{provider, tool ("claude"|"codex"|"gemini"|"antigravity"|"ollama"|null), configured,
+  calls, ok, failed, quota, aborted, seconds, last_call,
+  windows: {today|5h|7d: {calls, ok, failed, quota, aborted, seconds}}, models: {<model>: {...aynı sayılar}},
+  last_quota: {at, until, message}|null, resets_at (until, gelecekte olduğu sürece)|null,
+  tool_reported: {...}|null, translation_quota: <çeviri uygulamasının .jobs/quota.json kaydı>|null,
+  setup_quota: <Kurulum'daki son model denemesinin sınırı>|null}]}
+```
+
+`tool_reported` yalnızca bir aracın kendi yazdığıdır; `null` bilinmiyor demektir:
+
+- Codex: oturum günlükleri (`~/.codex/sessions/**/rollout-*.jsonl`, `$CODEX_HOME`) kullanım sınırlarını tutar; en yeni kayıt: `{source: "codex-session-log", observed_at, plan, limit_reached, windows: [{name: "primary"|"secondary", used_percent, window_minutes, resets_at, expired}]}` (primary: 5 saatlik pencere, secondary: haftalık pencere; `expired`: pencere o zamandan beri sıfırlandı). Mehteran'ın kendi Codex çağrıları `--ephemeral` olduğu için oturum günlüğü yazmaz; değer son etkileşimli Codex kullanımından gelir. Kimlik bilgisi dosyası okunmaz.
+- Claude Code: sınırlarını yalnızca stream-json çıktısında (`rate_limit_event`) bildirir. Mehteran'ın Claude bağdaştırıcısı stream-json kullanır, bu yüzden her iş akışı çağrısı değeri günceller. `POST /api/usage/probe/<sağlayıcı>` (yalnızca bir Claude sağlayıcısı) en küçük modelle ve tek kelimelik bir istemle bir kez sorar ve cevabı saklar: `{source: "claude-rate-limit-event", observed_at, status, limit_type, resets_at, windows: [{name: "five_hour"|"seven_day", utilization (0–1), resets_at, status}]}`.
+- Gemini CLI, Antigravity CLI, Ollama: sınır bildirmez (`null`).
+
+**Bir adımın modelini değiştirme** (`POST /api/runs/<çalıştırma>/nodes/<düğüm>/switch` `{provider: "gemini/<model>"}` → `{ok}`): kullanım sınırı bekleyen, başarısız, iptal edilmiş ya da yarıda kalmış bir yapay zekâ adımı için. Sağlayıcı yapılandırılmış olmalıdır. Olay günlüğüne "Model değiştirildi: eski → yeni" yazılır (anahtar `event_switched`). Bekleyen bir adım beklemeyi hemen bırakır ve yeni modelle yeniden çalışır; diğerleri yeniden denenir. Bir döngü elindeki parçaları korur (bir parçanın cevabı modele göre değil, istemine göre saklanır). Değiştirmemek, eskisi gibi beklemek demektir. Çalıştırma yeni modeli saklar (çalıştırmanın `providers` alanı).
+
+Bir adım bir yedek model adlandırabilir (yazılmadıkça kapalı): `retries` yanında `fallback_provider: gemini/gemini-2.5-pro` (ya da bir `provider` girdisi, `"{{inputs.backup}}"`). Adımın modeli kullanım sınırı bildirince adım beklemeden hemen ona geçer (olay anahtarı `event_switched_auto`); yedek de sınır bildirirse adım bekler. Yalnızca yapay zekâ adımları (ve model soran koşullar) bunu alır; denetim diğerlerini ve sağlayıcı adı olmayan adları reddeder.
+
+**Canlı günlük** (`GET /api/runs/<çalıştırma>/log?node=<düğüm>&offset=<bayt>` → `{text, offset, size, done, status}`): her düğüm çalışırken `nodes/<düğüm>/log.txt` dosyasına yazar: denemeler, her model çağrısı (ve cevabı), 30 saniyede bir "hâlâ çalışıyor" satırı, kullanım sınırı beklemeleri, model değişiklikleri, döngü parçaları. `offset` 0'dan okuyun, sonra dönen `offset` değerinden devam edin; düğüm bittiğinde ve her şey okunduğunda `done` true olur. Cevap başına en çok 64 KB, günlük başına 2 MB; açık gizli anahtarlar (`sk-…`, `Bearer …`, Google ve GitHub anahtarları) maskelenir. Günlük, çalıştırmanın dilinde yazılır.
+
+Neler akar: Ollama'nın cevabı model yazdıkça günlüğe akar. Komut satırı araçları (Claude Code, Codex, Gemini CLI, Antigravity) Mehteran'ın bağdaştırıcılarıyla (`mehteran/providers/base.py` `run`) çağrılır; `on_output` geri çağrısı aracın standart çıktısındaki her satırı geldiği anda verir, işçi süreç de onu günlüğe yazar (`mehteran/toolstream.py`). Çağrının döndürdüğü cevap onsuz olanla aynıdır. Kullanıcının `config.toml` dosyasına eklediği bir sağlayıcı `pipeline.providers.run` ile çalışır ve cevabını sonunda gösterir. Bir araç canlı olarak yalnızca çalışırken standart çıktıya yazdığını gösterir:
+
+- Antigravity CLI (`--output-format stream-json`): JSON olayları metne çevrilir: yazıldıkça cevabın metni ve başarısız bir sonucun hata satırı.
+- Claude Code (`--output-format stream-json --verbose`, Mehteran'ın bağdaştırıcısı): her mesaj geldikçe asistanın metni ve her araç kullanımı kısa bir satır olarak (`· tool: Read`); ham JSON asla gösterilmez. `rate_limit_event` bilgisi kullanım sayfası için saklanır.
+- Codex (`codex exec ... -o <dosya>`): son mesajını sonunda standart çıktıya yazar; ilerlemesi standart hataya gider ve canlı gösterilmez. Cevap sonda görünür.
+- Gemini CLI (`-o json`): sonunda tek bir JSON belgesi yazar; canlı bir şey gösterilmez, cevap sonda görünür.
+
+Bu arada günlük, çağrıyı ve "hâlâ çalışıyor" satırlarını gösterir. Akan metin bütün satırlar hâlinde yazılır (uzun bir satır sondan bir önceki kelimesine kadar), böylece gizli anahtarlar bütün olarak maskelenir; bir döngünün parçaları etiketleriyle (`part 3: `) bütün satırlar yazar. Akan metin zaten cevapla bitiyorsa cevap ikinci kez yazılmaz.
+
+**Etkinlik** (`GET /api/activity` → `{runs: [...], translation: [...], time}`), üst çubuktaki gösterge için yeterince ucuz: süren, sırada bekleyen ya da bekleyen her çalıştırma `{id, workflow_name, status, started, elapsed, done, total, waiting_quota, nodes: [{id, status, started, elapsed, attempts, waiting_reason, progress}]}` (yalnızca çalışan ya da bekleyen düğümler) ve çeviri uygulamasının şu anda çevirdiği her kitap `{book, state ("running"|"waiting_quota"), stage, started, elapsed, quota}` (kitabın `run.json` dosyası, yalnızca okunur).
+
+**Arayüzde** (`mehteran/ui/live.js`):
+
+- Kurulum: her yapay zekâ aracı kartında bir "Kullanım" bölümü vardır: Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün: çağrılar, hatalar, kullanım sınırları, süre), açılmasına kalan süreyle son kullanım sınırı ve aracın kendi bildirdiği sınırlar (bildirmiyorsa "bilinmiyor"). Claude Code kartında çok kısa tek bir model çağrısı yapan "Kullanımı kontrol et" düğmesi vardır (`POST /api/usage/probe/<sağlayıcı>`).
+- Çalıştırma formu ve bir adımın model seçimi aracın yanında kısa bir kullanım ipucu gösterir ("5 saat: %54"); sınıra yakınken uyarı rengindedir.
+- Çalıştırma sayfası: genel ilerleme çubuğu, geçen süreler, her adımın denemeleri ve bekleme nedeni ve seçili adımın (yoksa şu an çalışan adımın) canlı günlüğü: eş aralıklı yazı, sona kendiliğinden kayar, yukarı kaydırınca durur ("Duraklatıldı · sona git"), "Kopyala". Kullanım sınırı bekleyen, başarısız, iptal edilmiş ya da yarıda kalmış bir adım "Bekle" (varsayılan) ve "Başka modelle devam et" seçeneklerini sunar (yapılandırılmış her model, kullanım ipucuyla); adımın paneli model değişikliklerini listeler.
+- Düzenleyici: model alan bir adımın gelişmiş ayarlarında "Yedek model" (boşsa kapalı).
+- Üst çubuk şu an çalışanları gösterir ("2 çalışıyor"; bir şey kullanım sınırı beklerken uyarı renginde). Tıklayınca çalıştırmalar ve çevrilen kitaplar listelenir; her biri bir bağlantıdır ve bir durdurma düğmesi (■) vardır. Bir şey çalışırken 4 saniyede bir, yoksa 20 saniyede bir sorar; pencere gizliyken daha seyrek sorar.
+- Kitaplık: her karttaki ve iş akışı panelindeki yıldız bir favoriyi işaretler (`<veri>/configurations/library.json` içinde saklanır; `PUT /api/templates/<kaynak>/<id>/favorite {on}`; listedeki `favorite` işareti). "Favoriler" kitap çevirisinin hemen altında gelir ve bir "★ Favoriler" süzgeci vardır. "Son kullanılanlar" son çalıştırmaların iş akışlarını listeler; her birinde iş akışının sayfasını açan bir "Aç" düğmesi vardır. Çalıştırma formu her iş akışının son değerlerini bu tarayıcıda hatırlar (modeller, seçimler, metinler; dosyalar ve anahtar ya da parola gibi adlandırılan hiçbir şey hatırlanmaz): "Geçen seferki gibi" bunları doldurur. "/" imleci arama kutusuna koyar.
 
 ## Komut satırı
 
@@ -305,21 +357,74 @@ Mehteran verilerini kod klasörünün dışında tutar:
 
 ## İş akışı dosyası başvurusu (schema_version 1)
 
-Örnek dosya ve alanların tam listesi İngilizce kılavuzdadır: [Workflow file reference](mehteran.md#workflow-file-reference-schema_version-1). Özet:
+```yaml
+schema_version: 1
+id: my-review                 # küçük harf, rakam, "-" ve "_"; en çok 64
+author: Ayşe Yılmaz           # isteğe bağlı, en çok 80 karakter: dosyayı paylaşan ("Paylaş"); based_on da öyle
+name: {tr: İnceleme, en: Review}   # bir metin ya da {tr, en} eşlemesi (description ve etiketler için de aynı)
+description: İş akışının ne yaptığı.
+version: "1.0"
+category: research
+inputs:
+  - {id: paper, type: file, label: {tr: Makale, en: Paper}, formats: [pdf, docx, epub, md, txt]}
+  - {id: sources, type: file, multiple: true, required: false, formats: [pdf, md, csv, xlsx]}   # birden çok dosya
+  - {id: language, type: language}   # çıktı dili: bayraklı listeden seçilen herhangi bir dil (aşağıya bakın)
+  - {id: model, type: provider, default: auto}
+  - {id: note, type: text, multiline: true, required: false, default: ""}
+nodes:
+  - id: extract
+    type: document.extract
+    config: {file: "{{inputs.paper}}"}
+  - id: review
+    type: ai.cli
+    retries: 2                 # ek denemeler (0–10)
+    timeout: 900               # deneme başına saniye
+    config:
+      provider: "{{inputs.model}}"   # ya da sabit bir ad: claude, claude/opus, claude/opus@high
+      prompt: |
+        Review this paper. Write in {{inputs.language}}.
+        {{nodes.extract.text}}
+  - id: save
+    type: document.export
+    config: {source: "{{nodes.review.text}}", title: Review, lang: "{{inputs.language}}", formats: [md, docx, html]}
+connections:
+  - {from: extract.text, to: review}
+  - {from: review.text, to: save}
+outputs:
+  - {id: report, from: save.docx, label: Report}
+layout:                        # isteğe bağlı: düzenleyicinin her düğümü çizdiği yer
+  extract: {x: 0, y: 0}
+  review: {x: 324, y: 0}
+  save: {x: 648, y: 0}
+```
 
-- Üst düzey: `schema_version: 1`, `id`, `name`, `description`, `version`, `category`, `tier` (isteğe bağlı; `core`: "Buradan başlayın" grubu), `based_on`, `author` (paylaşan, isteğe bağlı), `inputs`, `nodes`, `connections`, `outputs`, `layout`. `name`, `description` ve etiketler bir metin ya da `{tr, en}` eşlemesidir.
-- `layout` (isteğe bağlı) görsel düzenleyicinin yazdığı yerleşimdir: her düğüm için kutusunun tuvaldeki konumu, piksel olarak (`extract: {x: 0, y: 0}`). Yalnızca iş akışının düğüm kimlikleri, her biri tam olarak `x` ve `y` ile, −100000 ile 100000 arasında tam sayılar. Motor onu yok sayar. Yoksa düzenleyici kutuları akış sırasına göre kendiliğinden yerleştirir.
-- Girdi türleri: `file` (`formats`: `pdf`, `docx`, `epub`, `md`, `txt`, `csv`, `tsv`, `xlsx` OCR ile okunan resimler `png`, `jpg`, `jpeg`, `tif`, `tiff`, Pandoc ile okunan `odt`, `rtf` ve konuşması metne çevrilen ses ve video dosyaları `mp3`, `wav`, `m4a`, `ogg`, `opus`, `flac`, `aac`, `mp4`, `webm`, `mov`, `mkv`; `multiple: true` ile 1–20 dosya, toplam en çok 500 MB), `text` (`multiline`), `choice` (`options`), `provider` (araç, isteğe bağlı model ve düşünme düzeyi), `language` (kayıttaki bir dilin kodu; "Çıktı dili" bölümüne bakın), `url` (`document.extract` adımının okuduğu bir web sayfası). `required: false` yazılmadıkça zorunludur.
-- Web sayfaları: `file` ayarı bir `url` girdisi olan (ya da `file` ayarı olmadan iş akışının tek dosya ya da adres girdisini okuyan) bir `document.extract` adımı o adresteki sayfayı okur. Yalnızca `http` ve `https`; adreste kullanıcı adı ya da parola olamaz. Önce sunucu adı çözülür: çözüldüğü her adres herkese açık olmalıdır; bu bilgisayarın (`127.0.0.1`, `::1`), yerel ağın (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`), bağlantı-yerel (`169.254.x`, `fe80::`), çoklu yayın ve ayrılmış adresler reddedilir; bağlantı denetlenen adrese kurulur. En çok 3 yönlendirme, her biri aynı biçimde denetlenir; vekil sunucu (proxy) kullanılmaz; 10 saniye; en çok 5 MB. HTML sayfası okunur metne çevrilir (başlık, ara başlıklar, paragraflar, listeler; betik, stil, gezinme ve formlar çıkarılır); düz metin olduğu gibi kalır; PDF yüklenmiş bir PDF gibi okunur. JavaScript çalıştırılmaz: metnini tarayıcıda kuran bir sayfa az metin verir ya da hiç vermez. Kod: `mehteran/urlfetch.py`.
-- `ai.cli` için `output: json` (isteğe bağlı `json_schema` ile): istem yalnızca JSON ister, şema verilmişse onu da ekler (bir JSON Schema nesnesi; olmayan bir metni denetim reddeder). Cevap JSON olarak okunur (```` ```json ```` bloğunun içinden de); JSON değilse ya da şemaya uymuyorsa (`type`, `enum`, `const`, `required`, `properties`, `additionalProperties: false`, `items`, `minItems`, `maxItems`, `minLength`, `maxLength`, `minimum`, `maximum`) model hatayla bir kez daha sorulur; ikinci yanlış cevap denemeyi o hatayla başarısız kılar. Okuyucu sonucu düzenli girintili JSON olarak gösterir. Tahmin böyle bir adım için deneme başına 2 çağrı sayar.
-- `document.export` biçimleri ayrıca: `eml` (bir e-posta programının düzenleyip göndermek için açtığı taslak, `X-Unsent: 1`: konu başlıktır, metin düz metin ve HTML olarak; gönderen ve alıcı yok; Mehteran hiçbir zaman e-posta göndermez), `json` ve `csv` (metin JSON ise ya da bir Markdown tablosu içeriyorsa: `json` JSON'un kendisini ya da ilk tabloyu nesne listesi olarak yazar; `csv` ilk tabloyu ya da nesne/liste listesi olan JSON'u yazar, Excel için BOM'lu UTF-8; `=`, `+`, `-` ya da `@` ile başlayan ve sayı olmayan bir hücrenin başına `'` konur, tablo programı onu formül olarak çalıştırmaz). İkisi de yoksa adım hiçbir şey yazmadan başarısız olur. Bir sonucun düzenlenmiş sürümü de bu biçimlere aktarılabilir.
-- Tablolar: CSV, TSV ya da Excel (.xlsx) dosyası Markdown tablolarına okunur; ilk satır başlıktır. CSV ayırıcısı `,`, `;`, sekme ya da `|` olabilir (kendiliğinden bulunur); kodlama UTF-8, değilse Windows Türkçe (cp1254). Bir .xlsx dosyasının görünen her sayfası `## <sayfa adı>` altında bir tablodur; tarih biçimli sayılar tarih olur (`2024-01-31`). Sınırlar (kesildiği yerde metin bunu söyler): tablo başına 1.000 satır ve 40 sütun, hücre başına 300 karakter, 20 sayfa, dosya başına 500.000 karakter.
-- Düğüm türleri: `document.extract` (`file`, `max_chars` dosya başına, `ocr`: `auto`, `always`, `never`, `ocr_languages`, `speech_model`, `speech_language`; isteğe bağlı bir dosya girdisi boş bırakılmışsa metni boştur; birden çok dosyada her dosya `<document name="<dosya>" index="<n>">` ile `</document>` arasındadır), `ai.cli` (`provider`, `prompt`), `text.merge` (`template`), `approval` (`show`, `instructions`), `document.export` (`source`, `title`, `lang`, `formats`: `md`, `docx`, `html`, `pdf`, `epub`; `filename`, `converter`: `auto`, `builtin`, `pandoc`; Markdown tabloları Word, HTML ve PDF'te gerçek tablo olur), `condition` (`value`, `operator`: `contains`, `not_contains`, `equals`, `regex`, `is_yes`, `empty`; `match`, `is_yes` ve `empty` dışında gerekli; `case_sensitive`; çıktısı yalnızca seçilen dal: `true` ya da `false`), `ai.map` (`source`, `split`: `headings`, `paragraphs`, `chunks`, `files`; `chunk_chars`, `max_items` en çok 200, `provider`, `prompt`, `heading`; çıktısı `text`). Her düğüm `retries` (0–10) ve `timeout` (saniye) alabilir; onay düğümü almaz. Örnekler İngilizce kılavuzda.
-- Yalnızca talimat: bir adım yalnızca bir talimat ve bir modelden oluşabilir; bağlantılar hangi metinler üzerinde çalışacağını söyler. Talimat hiçbir veri adlandırmıyorsa (`{{nodes.*}}` ya da dosya girdisi yoksa) bağlı adımların metinleri bağlantı sırasıyla, her biri adımının başlığıyla ve veri etiketleri arasında talimatın arkasına eklenir; iş akışında `language` girdisi varsa ve talimat onu kullanmıyorsa sona "Write the answer in <dil>." satırı eklenir. Verisini adlandıran adımlar (bütün hazır şablonlar böyledir) tam olarak eskisi gibi çalışır. `template` olmayan `text.merge` ve `source` olmayan `document.export`, bağlı metinleri sırayla (birden çoksa `## <başlık>` altında, atlanan dallar olmadan) birleştirir; `source` olmayan `ai.map` bağlı metni böler ve `{{item.text}}` yoksa her parçayı talimatın arkasına veri olarak ekler; `show` olmayan `approval` bağlı metni gösterir; `file` olmayan `document.extract` iş akışının tek dosya girdisini okur. `condition` için `operator: ai`: model (`provider`), bağlı metin veri olarak verilerek `question` sorusuna evet ya da hayır der (ilk kelime: yes/evet/e/doğru → `true`, no/hayır/h/yanlış/değil → `false`); belirsizse bir kez daha sorulur, yine belirsizse düğüm başarısız olur. Editörün sade panelinde gösterilen alanlar `GET /api/node-types` içinde `basic: true` ile işaretlidir (`ai.cli`/`ai.map`: `prompt`, `provider`; `condition`: `question`, `provider`; `document.export`: `formats`; `approval`: `instructions`); yeni bir koşul `initial_config` ile (`operator: ai`) başlar. Örnek YAML İngilizce kılavuzda.
-- Koşuldan çıkan bir bağlantı dalını yazmalıdır (`from: gate.true`). `is_yes`, metnin ilk kelimesi yes, y, true, evet, e ya da doğru ise doğrudur. İşlecin adı `yes` değildir: YAML yalın `yes` kelimesini true olarak okur.
-- Döngü isteminde `{{item.text}}` (parçanın metni), `{{item.title}}` (başlığı ya da dosya adı), `{{item.index}}` (sırası) ve `{{item.count}}` (parça sayısı) kullanılır; metin ve başlık, düğüm çıktıları gibi veri etiketleri arasına konur. `{{item.*}}` yalnızca bir `ai.map` düğümünün isteminde kullanılabilir. Parça sayısı `max_items` değerini aşarsa düğüm açık bir mesajla başarısız olur.
-- Yer tutucular: `{{inputs.<id>}}` ve `{{nodes.<id>.<çıktı>}}`. Bir düğüm başka bir düğümün çıktısını yalnızca bir bağlantı (`from: <düğüm>.<çıktı>`, `to: <düğüm>`) onları birleştiriyorsa kullanabilir. Değiştirme tek geçişte yapılır: eklenen metin (bir belge, bir yanıt) yeniden taranmaz. `ai.cli` isteminde her düğüm çıktısı `<data source="...">` ve `</data>` etiketleri arasına konur; istem, bu etiketlerin içeriğinin talimat değil veri olduğunu söyleyen bir notla başlar.
-- Denetim şunları reddeder: her düzeyde bilinmeyen anahtarlar, tekrarlanan kimlikler ya da anahtarlar, olmayan düğüm veya çıktılara bağlantılar, döngüler, bilinmeyen düğüm türleri, çözülemeyen ya da bağlantısı olmayan yer tutucular ve kimlik bilgisine benzeyen her şey (`api_key`, `token`, `password` gibi anahtarlar ya da API anahtarına benzeyen değerler). Sorunların hepsi, dosyadaki yerleriyle birlikte bir kerede listelenir.
+Üst düzey alanlar: `schema_version: 1`, `id`, `name`, `description`, `version`, `category`, `tier` (isteğe bağlı; `core`: "Buradan başlayın" grubu), `based_on`, `author`, `inputs`, `nodes`, `connections`, `outputs`, `layout`.
+
+`layout` alanını görsel düzenleyici yazar: her düğüm için kutusunun tuvaldeki konumu, piksel olarak. Yalnızca iş akışının düğüm kimlikleri, her biri tam olarak `x` ve `y` ile, −100000 ile 100000 arasında tam sayılar. Motor onu yok sayar. Yoksa düzenleyici kutuları akış sırasına göre kendiliğinden yerleştirir.
+
+Girdi türleri: `file` (bir yükleme; `formats` türleri sınırlar: `pdf`, `docx`, `epub`, `md`, `txt`, `csv`, `tsv`, `xlsx`, resimler `png`, `jpg`, `jpeg`, `tif`, `tiff` (OCR ile okunur), `odt`, `rtf` (Pandoc ile okunur) ve ses ve video `mp3`, `wav`, `m4a`, `ogg`, `opus`, `flac`, `aac`, `mp4`, `webm`, `mov`, `mkv` (konuşma metne çevrilir); `multiple: true` 1–20 dosya alır, toplam en çok 500 MB), `text` (`multiline`), `choice` (`options`: metinler ya da `{value, label}`), `provider` (bir araç, isteğe bağlı model ve düşünme düzeyiyle), `language` (kayıttaki bir dilin kodu; "Çıktı dili" bölümüne bakın), `url` (`document.extract` adımının okuduğu bir web sayfası ya da haber akışı; aşağıya bakın; `multiple: true` her satıra bir tane olmak üzere en çok 30 adres alır, boş satırları ve `#` ile başlayan satırları atlar). `required: false` yazılmadıkça girdiler zorunludur.
+
+Web sayfaları: `file` ayarı bir `url` girdisi olan (ya da `file` ayarı olmadan iş akışının tek dosya ya da adres girdisini okuyan) bir `document.extract` adımı o adresteki sayfayı okur. Yalnızca `http` ve `https`; adreste kullanıcı adı ya da parola olamaz. Önce sunucu adı çözülür: çözüldüğü her adres herkese açık olmalıdır. Bu bilgisayarın (`127.0.0.1`, `::1`), yerel ağın (`10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`), bağlantı-yerel (`169.254.x`, `fe80::`), çoklu yayın ve ayrılmış adresler reddedilir; bağlantı denetlenen adrese kurulur. En çok 3 yönlendirme, her biri aynı biçimde denetlenir; vekil sunucu (proxy) kullanılmaz; 10 saniye; en çok 5 MB. HTML sayfası okunur metne çevrilir (başlık, ara başlıklar, paragraflar, listeler; betik, stil, gezinme ve formlar çıkarılır); düz metin olduğu gibi kalır; PDF yüklenmiş bir PDF gibi okunur. JavaScript çalıştırılmaz: metnini tarayıcıda kuran bir sayfa az metin verir ya da hiç vermez. Kod: `mehteran/urlfetch.py`.
+
+Haber akışları: bir RSS (0.9x, 1.0, 2.0) ya da Atom akışı (türünden ya da sunucu onu HTML veya metin diye bildirdiğinde başlangıcından tanınır) öğelerinin listesine çevrilir; en yenisi önce, en çok 50 öğe: akışın başlığı, sonra her öğenin başlığı, UTC olarak yayın tarihi, bağlantısı ve en çok 600 karakterlik özeti. Adımın `max_age_days` ayarı (`{{inputs.days}}` gibi bir yer tutucu olabilir) yalnızca son günlerin öğelerini tutar; tarihi olmayan öğe tutulur. Öğelerden önceki bir satır kaç öğenin hangi dönem için tutulduğunu söyler. DTD (`<!DOCTYPE>`, `<!ENTITY>`) içeren akış, nerede olursa olsun ve hangi kodlamada olursa olsun reddedilir: hiçbir varlık açılmaz, dışarıdan bir şey yüklenmez. Birden çok adreste her metin `<document name="<adres>" index="<n>">` ile `</document>` arasındadır (`split: files` ayarlı bir `ai.map` her parçada bir adres alır); okunamayan adres yerinde not edilir, adım yalnızca hiçbir adres okunamazsa başarısız olur.
+
+Tablolar: CSV, TSV ya da Excel (.xlsx) dosyası Markdown tablolarına okunur; ilk satır başlıktır. CSV ayırıcısı `,`, `;`, sekme ya da `|` olabilir (kendiliğinden bulunur); kodlama UTF-8, değilse Windows Türkçe (cp1254). Bir .xlsx dosyasının görünen her sayfası `## <sayfa adı>` altında bir tablodur; tarih biçimli sayılar tarih olur (`2024-01-31`). Sınırlar (kesildiği yerde metin bunu söyler): tablo başına 1.000 satır ve 40 sütun, hücre başına 300 karakter, 20 sayfa, dosya başına 500.000 karakter.
+
+Düğüm türleri:
+
+| Tür | Ayarlar (`config`) | Çıktılar | Varsayılan yeniden deneme / zaman aşımı |
+|---|---|---|---|
+| `document.extract` | `file` (tam olarak bir dosya yer tutucusu), `max_chars` (dosya başına), `max_age_days` (akışlar), `ocr` (`auto`, `always`, `never`), `ocr_languages`, `speech_model`, `speech_language` | `text` (isteğe bağlı bir dosya girdisi boş bırakılmışsa boş; birden çok dosyada her dosya `<document name="<dosya>" index="<n>">` ile `</document>` arasında) | 0 / 3600 sn |
+| `ai.cli` | `provider`, `prompt`, `output` (`text` ya da `json`), `json_schema` (isteğe bağlı, `json` ile) | `text` (`json` ile: cevap, düzenli girintili JSON olarak) | 2 / `config.toml` içindeki `timeout` |
+| `condition` | `value` (sınanacak metin; varsayılan: bağlı metin), `operator` (`ai`, `contains`, `not_contains`, `equals`, `regex`, `is_yes`, `empty`; varsayılan `contains`), `question` ve `provider` (`ai` için), `match` (`ai`, `is_yes` ve `empty` dışında), `case_sensitive` (varsayılan false), `pass` (dalın taşıdığı metin; varsayılan: `value`) | `true` ya da `false`: yalnızca seçilen dal, `pass` ya da `value` metnini taşır | 0 / 60 sn |
+| `ai.map` | `source`, `split` (`headings`, `paragraphs`, `chunks`, `files`), `chunk_chars` (500–200000, varsayılan 12000), `max_items` (1–200, varsayılan 50), `provider`, `prompt` (`{{item.text}}`, `{{item.title}}`, `{{item.index}}`, `{{item.count}}` kullanabilir), `heading` (varsayılan true) | `text`: cevaplar sırayla, her biri `## <parça başlığı>` altında | 2 / `config.toml` içindeki `timeout`, model çağrısı başına |
+| `text.merge` | `template` | `text` | 0 / 60 sn |
+| `approval` | `show` (onaylanacak metin), `instructions` | `text`, `comment` | yok (bir kişiyi bekler) |
+| `document.export` | `source`, `title`, `lang`, `formats` (`md`, `docx`, `html`, `pdf`, `epub`, `eml`, `json`, `csv`), `filename`, `converter` (`auto`, `builtin`, `pandoc`) | biçim başına bir dosya; Markdown tabloları Word, HTML ve PDF'te gerçek tablo olur; bağlantılar (`[metin](https://…)`, `<https://…>`) HTML, PDF ve e-postada bağlantı, Word'de "metin (adres)" olur | 0 / 300 sn |
+
+- `output: json` (bir yapay zekâ adımı): istem yalnızca JSON ister, `json_schema` verilmişse şemayı da ekler (bir JSON Schema nesnesi; olmayan bir metni denetim reddeder). Cevap JSON olarak okunur (```` ```json ```` bloğunun içinden de). JSON değilse ya da şemaya uymuyorsa (`type`, `enum`, `const`, `required`, `properties`, `additionalProperties: false`, `items`, `minItems`, `maxItems`, `minLength`, `maxLength`, `minimum`, `maximum`), model hatayla bir kez daha sorulur. İkinci yanlış cevap denemeyi o hatayla başarısız kılar. Çalıştırmanın okuyucusu sonucu düzenli girintili gösterir. Tahmin böyle bir adım için deneme başına 2 çağrı sayar.
+- `eml`: bir e-posta programının düzenleyip göndermek için açtığı taslak (`X-Unsent: 1`): başlık konu olur, metin düz metin ve HTML olarak; gönderen yok, alıcı yok. Mehteran hiçbir zaman e-posta göndermez.
+- `json`, `csv`: metin JSON ise (```` ```json ```` bloğunda da) ya da bir Markdown tablosu içeriyorsa. `json`: JSON'un kendisi ya da ilk tablo, nesne listesi olarak. `csv`: ilk tablo ya da nesne veya liste listesi olan JSON; Excel için BOM'lu UTF-8. `=`, `+`, `-` ya da `@` ile başlayan ve sayı olmayan bir hücrenin başına `'` konur, böylece tablo programı onu formül olarak çalıştırmaz. İkisi de yoksa adım hiçbir şey yazmadan başarısız olur. Bir sonucun düzenlenmiş sürümü de bu biçimlere aktarılabilir.
 
 ### Çıktı dili (şablon yazarları için)
 
@@ -330,6 +435,89 @@ Bir iş akışının yazacağı dil için `language` türünde bir girdi kullan�
 - Komut satırından ya da API'den değer verilmeden (ve varsayılan olmadan) başlatılan bir çalıştırma mesaj dilini kullanır (`--lang`, `X-Lang`).
 - `language` girdisinde `options` kullanılamaz. Yalnızca bazı dilleri sunmak için seçenekleri dil kodu olan bir `choice` girdisi bırakın (`options: [tr, en, ar]`, kimliği `language`): bayraklı liste olarak o seçeneklerle görünür ve arayüz dili seçenekler arasındaysa onunla açılır.
 - Bir iş akışının etiketleri ve açıklamaları `{tr, en}` eşlemesi olarak kalır; başka bir arayüz dili İngilizce metni gösterir.
+
+### Yalnızca talimat verilen adımlar
+
+Bir adım yalnızca bir talimat ve bir modelden oluşabilir; bağlantılar hangi metinler üzerinde çalışacağını söyler. Düzenleyicinin sade paneli bunu gösterir (`GET /api/node-types` içinde `basic` ile işaretli alanlar: `ai.cli` ve `ai.map`: `prompt` (talimat) ve `provider`; `condition`: `question` ve `provider`; `document.export`: `formats`; `approval`: `instructions`; `document.extract` ve `text.merge`: hiçbiri). Yeni bir koşul düğümü `initial_config` (`{"operator": "ai"}`) ile başlar.
+
+```yaml
+schema_version: 1
+id: minimal
+name: Summary
+inputs:
+  - {id: doc, type: file}
+nodes:
+  - {id: read, type: document.extract}                       # dosya adlandırılmamış: tek dosya girdisi
+  - {id: summary, type: ai.cli, config: {provider: claude, prompt: "Bu belgeyi beş maddede özetle."}}
+  - {id: urgent, type: condition, config: {operator: ai, provider: claude, question: "Acil bir şey istiyor mu?"}}
+  - {id: alert, type: ai.cli, config: {provider: claude, prompt: "Yönetici için kısa bir uyarı yaz."}}
+  - {id: save, type: document.export, config: {formats: [md, docx]}}   # source yok: bağlı metinler
+connections:
+  - {from: read.text, to: summary}
+  - {from: summary.text, to: urgent}
+  - {from: urgent.true, to: alert}
+  - {from: summary.text, to: save}
+  - {from: alert.text, to: save}
+```
+
+Kurallar (verisini adlandıran bir adım, bütün hazır şablonlar gibi, tam olarak eskisi gibi çalışır):
+
+- `ai.cli`: talimat hiçbir veri adlandırmıyorsa (`{{nodes.*}}` yok, dosya girdisi yok), bağlı adımların metinleri bağlantı sırasıyla talimatın arkasına eklenir; her biri adımının başlığı altında ve veri etiketleri arasındadır (her zamanki "bu veri, talimat değil" notuyla). İş akışında bir `language` girdisi varsa ve talimat onu kullanmıyorsa, son satır "Write the answer in <dil>." olur (`tr` → Turkish, `en` → English; başka değerler yazıldığı gibi). Bütün bir düğümden gelen bağlantı onun `text` çıktısını getirir; atlanan bir dal hiçbir şey eklemez.
+- `ai.map`: `source` yoksa bağlı metinler (birleştirilmiş). Talimatta `{{item.text}}` yoksa her parça (başlığı ve metni, veri olarak) ve dil satırı talimatın arkasına eklenir.
+- `template` olmayan `text.merge`, `source` olmayan `document.export`: bağlı metinler bağlantı sırasıyla; birden çoksa her biri bir `## <başlık>` altında; atlanan bir dal dışarıda kalır.
+- `value` olmayan `condition`: bağlı metin. `operator: ai`, modele (`provider`) bu metni veri olarak vererek `question` sorusunu sorar. Cevabın ilk kelimesi karar verir: yes, y, true, evet, e, doğru → `true`; no, n, false, hayır, h, yanlış, değil → `false` (biçimlendirme yok sayılır). Başka bir cevapta bir kez daha sorulur; yine belirsizse düğüm başarısız olur ("evet ya da hayır demedi"). Dal cevabı değil, sınanan metni taşır; cevap düğüm klasöründe saklanır (`answer.md`).
+- `show` olmayan `approval`: bağlı metin.
+- `file` olmayan `document.extract`: iş akışının tek dosya girdisi (hiç ya da birden çok varsa denetim onu ister).
+
+Denetim yalnızca gerçekten eksik olanı bildirir: talimatı ya da modeli olmayan bir yapay zekâ adımı, sorusu ya da modeli olmayan `operator: ai` koşulu, dosyasını bilemeyen bir okuma adımı.
+
+Bir iş akışında koşullar (koşuldan çıkan bir bağlantı dalını yazmalıdır):
+
+```yaml
+  - id: gate
+    type: condition
+    config: {value: "{{nodes.assess.text}}", operator: is_yes}   # yapay zekâ adımı "evet ..." ya da "hayır ..." dedi
+  - id: escalate
+    type: ai.cli
+    config: {provider: claude, prompt: "Escalate: {{nodes.gate.true}}"}
+  - id: reply
+    type: ai.cli
+    config: {provider: claude, prompt: "Reply: {{nodes.gate.false}}"}
+  - id: report
+    type: text.merge                      # birleşme: seçilen dalın metnini alır
+    config: {template: "{{nodes.escalate.text}}{{nodes.reply.text}}"}
+connections:
+  - {from: assess.text, to: gate}
+  - {from: gate.true, to: escalate}
+  - {from: gate.false, to: reply}
+  - {from: escalate.text, to: report}
+  - {from: reply.text, to: report}
+```
+
+`is_yes`, metnin ilk kelimesi yes, y, true, evet, e ya da doğru ise doğrudur (büyük/küçük harf ve biçimlendirme yok sayılır). `equals` iki uçtaki boşlukları yok sayar. `regex` Python söz dizimini kullanır ve `match` yer tutucu içermiyorsa denetlenir. İşlecin adı `yes` değildir: YAML yalın `yes` kelimesini true olarak okur.
+
+Bir döngü:
+
+```yaml
+  - id: chapters
+    type: ai.map
+    config:
+      source: "{{nodes.extract.text}}"
+      split: headings          # bulunan en üst başlık düzeyi; ilk başlıktan önceki metin de bir parçadır
+      max_items: 150           # daha fazla parça: düğüm açık bir mesajla başarısız olur
+      provider: "{{inputs.model}}"
+      prompt: "Summarise chapter {{item.index}} of {{item.count}}: {{item.title}} {{item.text}}"
+```
+
+`split: paragraphs` her paragraf için bir parça yapar; `chunks` paragrafları yaklaşık `chunk_chars` karakterlik parçalarda toplar (çeviri uygulamasının bölücüsü); `files` çok dosyalı bir okumanın her dosyası için bir parça yapar (başlık dosya adıdır). İstemde `{{item.text}}` ve `{{item.title}}`, düğüm çıktıları gibi veri etiketleri arasına konur. `{{item.*}}` yalnızca bir `ai.map` düğümünün isteminde kullanılabilir.
+
+Yer tutucular: `{{inputs.<id>}}` ve `{{nodes.<id>.<çıktı>}}` (bir döngünün isteminde ayrıca `{{item.*}}`). Birden çok dosyalı bir dosya girdisi yollarını her satıra bir tane olarak verir. Kurallar:
+
+- Bir düğüm başka bir düğümün çıktısını yalnızca bir bağlantı onları birleştiriyorsa kullanabilir (`from: <düğüm>.<çıktı>`, `to: <düğüm>`). Böylece çizim gerçek veri akışıdır.
+- Yer tutucular tek geçişte değiştirilir: bir yer tutucunun eklediği metin (bir belge, bir cevap) yeniden taranmaz.
+- Bir `ai.cli` isteminde her düğüm çıktısı `<data source="...">` ve `</data>` etiketleri arasına konur; istem, bu etiketlerin içeriğinin talimat değil veri olduğunu söyleyen bir notla başlar. Metnin içindeki bir `</data>` bölünür, böylece bloğu bitiremez.
+
+Denetim şunları reddeder: her düzeyde bilinmeyen anahtarlar, tekrarlanan kimlikler ya da anahtarlar, olmayan düğüm veya çıktılara bağlantılar, döngüler, bilinmeyen düğüm türleri, çözülemeyen ya da bağlantısı olmayan yer tutucular ve kimlik bilgisine benzeyen her şey (`api_key`, `token`, `password` gibi anahtarlar ya da API anahtarına benzeyen değerler). Sorunların hepsi, dosyadaki yerleriyle birlikte bir kerede listelenir.
 
 ## Güvenlik
 
@@ -374,5 +562,5 @@ Bilerek dışarıda bırakılanlar: eklentiler ve eklenti kaydı, arayüzden her
 
 - Testler: `python3 -m unittest discover tests` (Mehteran testleri `tests/test_mehteran_*.py` dosyalarıdır; sahte araç `tests/mehteran_fake_llm.py` ile çalışır, `MEHTERAN_HOME` değişkenini geçici bir klasöre ayarlar ve ağa bağlanmaz).
 - Kod: `mehteran/` (yalnızca standart kitaplık). YAML: PyYAML 6.0.2, saf Python, `mehteran/_vendor/yaml/` içinde (MIT lisansı orada); yalnızca güvenli yükleyici ve güvenli yazıcı ile kullanılır.
-- Yeni bir düğüm türü: `mehteran/nodes.py` dosyasına başlığı, açıklaması ve etiketli ayar alanlarıyla bir `NodeType` ekleyin (`register(...)`). Şema ve motor onu kendiliğinden tanır. `GET /api/node-types`, düzenleyicinin formları için her türü anlatır (başlık, açıklama, çıktılar, ayar alanları: tür, seçenekler, varsayılan, yardım metni; biçimi İngilizce kılavuzda).
+- Yeni bir düğüm türü: `mehteran/nodes.py` dosyasına başlığı, açıklaması ve etiketli ayar alanlarıyla bir `NodeType` ekleyin (`register(...)`). Şema ve motor onu kendiliğinden tanır. `GET /api/node-types`, düzenleyicinin formları için her türü anlatır : `[{type, label, description, outputs: [{name, kind}], outputs_from (document.export için "formats", yoksa null), joins, branches, takes_retries, default_retries, default_timeout, timeout_per_call, config: [{name, kind (template | localized | int | bool | choice | formats | id), widget ("area", "provider" ya da ""), required, default, label, help, options: [{value, label}], min, max (yalnızca int), item_fields ({{item.*}} alan alanlar)}]}]`; başlıklar ve yardım metinleri `{tr, en}` biçimindedir.
 - Arayüz: `mehteran/ui/` (saf JavaScript, derleme adımı yok): `app.js` (sekmeler, kitap çevirisi, kitaplık, çalıştırma penceresi, Çalıştırmalar, Kurulum), `editor.js` (görsel düzenleyici), `canvas.js` (tuval; çalıştırma izleme de kullanır). Kitap çevirisinin arayüzü çeviri uygulamasının `pipeline/ui/app.js` ve `style.css` dosyalarıdır; `/tr/app.js` ve `/tr/style.css` olarak sunulur (`mehteran/translation.py`). Her öğe DOM çağrıları ve metin düğümleriyle yapılır, hiçbir zaman HTML metninden değil.

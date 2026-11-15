@@ -1,22 +1,28 @@
 /* Mehteran's web site (GitHub Pages): the landing page and the docs page.
-   The colours and type follow the app (mehteran/ui/style.css). Nothing is loaded from other servers. */
+   The colours follow the blue pen of the logo; the type follows the app (mehteran/ui/style.css). Nothing is loaded from other servers. */
 :root {
-  --bg: #eef0ec;
-  --paper: #f7f6f1;
+  /* Blue ink on paper: the logo is a mehter band drawn with a blue pen (#1f4fbf). Brass is the band's instruments. */
+  --bg: #f3f6fb;
+  --paper: #e9eef8;
   --surface: #ffffff;
-  --surface-2: #e6e9e3;
-  --ink: #16211d;
-  --muted: #5c6863;
-  --line: #d6dbd4;
-  --accent: #0d5644;
+  --surface-2: #e2e9f6;
+  --ink: #0f1b33;
+  --muted: #55607a;
+  --line: #d2dbeb;
+  --accent: #1f4fbf;
   --accent-ink: #ffffff;
-  --accent-soft: #dcebe4;
-  --gold: #a87a1c;
-  --gold-soft: #f4e8cc;
+  --accent-soft: #dfe8fb;
+  --gold: #a87414;
+  --gold-soft: #f3e4c2;
   --pen: #1f4fbf;
   --warn-soft: #fbefd9;
+  --tide: #0b1630;              /* the deep night blue of the start band, the code blocks and the footer */
+  --tide-ink: #e8eefc;
+  --tide-muted: #9fb0d3;
+  --tide-line: rgba(143, 176, 255, .22);
+  --glow: #8fb0ff;
   --radius: 12px;
-  --shadow: 0 1px 2px rgba(22, 33, 29, .06), 0 12px 32px -18px rgba(22, 33, 29, .28);
+  --shadow: 0 1px 2px rgba(15, 27, 51, .06), 0 12px 32px -18px rgba(15, 27, 51, .30);
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -24,9 +30,10 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111614; --paper: #151b18; --surface: #19201d; --surface-2: #222b27; --ink: #e6ebe7; --muted: #98a39d;
-    --line: #2d3833; --accent: #4cb08a; --accent-ink: #0c1310; --accent-soft: #1c372d;
+    --bg: #0a1222; --paper: #0e1729; --surface: #121d33; --surface-2: #1a2742; --ink: #e6ecf8; --muted: #9aa7c2;
+    --line: #26344f; --accent: #8fb0ff; --accent-ink: #0a1222; --accent-soft: #1b2a4d;
     --gold: #d9ac52; --gold-soft: #3a2f17; --pen: #8fb0ff; --warn-soft: #362b18;
+    --tide: #060c1a; --tide-line: rgba(143, 176, 255, .18);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -18px rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
@@ -131,7 +138,7 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .ticks { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 12px; }
 .ticks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
 .ticks li::before { content: ""; width: 18px; height: 18px; margin-top: 4px; border-radius: 50%;
-  background: var(--accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.5l2.6 2.5L13 6.5' fill='none' stroke='%230d5644' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
+  background: var(--accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.5l2.6 2.5L13 6.5' fill='none' stroke='%231f4fbf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
 .ticks b { font-weight: 600; }
 
 /* the workflow drawing on the landing page */
@@ -172,21 +179,26 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .langs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .langs span { padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 14px; }
 
-.start { background: var(--accent); color: var(--accent-ink); border-radius: 20px; padding: clamp(28px, 5vw, 56px); }
+.start { background: radial-gradient(120% 90% at 50% 0%, rgba(31, 79, 191, .55), transparent 62%), var(--tide); color: var(--tide-ink);
+  border: 1px solid var(--tide-line); border-radius: 20px; padding: clamp(28px, 5vw, 56px); }
 .start h2 { font-size: clamp(30px, 4vw, 44px); }
 .start p { opacity: .85; margin-top: 10px; max-width: 60ch; }
 .start ol { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); counter-reset: s; }
-.start li { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .18); border-radius: 12px; padding: 18px; }
+.start li { background: rgba(143, 176, 255, .07); border: 1px solid var(--tide-line); border-radius: 12px; padding: 18px; }
 .start li::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
   background: var(--gold-soft); color: #5a3f08; font-weight: 700; margin-bottom: 10px; }
 .start code { background: rgba(255, 255, 255, .14); color: inherit; }
-.start .btn { margin-top: 28px; background: var(--accent-ink); color: var(--accent); border-color: transparent; }
-@media (prefers-color-scheme: dark) { .start li::before { color: #2a1d03; } }
+.start .btn { margin-top: 28px; background: var(--tide-ink); color: var(--tide); border-color: transparent; }
+@media (prefers-color-scheme: dark) { .start li::before { background: var(--gold); color: #2a1d03; } }
 
-.foot { padding: 40px 0 56px; color: var(--muted); font-size: 14px; }
-.foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+/* The footer: a deep-blue band that ends with the name, set large and cut by the bottom edge. */
+.foot { background: var(--tide); color: var(--tide-muted); font-size: 14px; margin-top: 40px; overflow: hidden; }
+.foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; padding-top: 44px; }
 .foot nav { display: flex; gap: 18px; flex-wrap: wrap; }
-.foot a { color: var(--muted); }
+.foot a { color: var(--tide-ink); text-decoration-color: var(--tide-line); }
+.foot a:hover { text-decoration-color: currentColor; }
+.foot .wordmark { display: block; width: min(1120px, 100% - 32px); margin: 40px auto -0.18em; font: 600 clamp(72px, 19vw, 248px)/.9 var(--serif);
+  letter-spacing: -.035em; color: transparent; -webkit-text-stroke: 1.5px var(--glow); user-select: none; white-space: nowrap; }
 
 /* --- docs page ---------------------------------------------------------------------------------------- */
 .docs { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; padding: 40px 0 80px; }
@@ -199,9 +211,9 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .toc .search { width: 100%; margin-bottom: 14px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface);
   color: var(--ink); font: inherit; }
 @media (max-width: 900px) {
-  .docs { grid-template-columns: 1fr; gap: 20px; }
+  .docs { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .toc { position: static; max-height: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
-  .toc ol { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
 }
 
 .prose { max-width: 780px; }
@@ -219,9 +231,9 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
   overflow: hidden; display: block; overflow-x: auto; }
 .prose th, .prose td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
 .prose thead th { border-top: 0; background: var(--surface-2); font-weight: 600; white-space: nowrap; }
-.prose pre { background: #14201b; color: #e3ece7; padding: 16px 18px; border-radius: 10px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+.prose pre { background: var(--tide); color: var(--tide-ink); padding: 16px 18px; border-radius: 10px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
 .prose pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
-.prose pre .c { color: #8fa69b; }
+.prose pre .c { color: var(--tide-muted); }
 .note { padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); border-left: 3px solid var(--accent); }
 .note.warn { background: var(--warn-soft); border-left-color: var(--gold); }
 .prose figure { margin: 6px 0 18px; }

@@ -37,6 +37,16 @@ macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
 
 Sonraki seferlerde aynı şekilde başlatın (ilk seferden sonra çift tıklamak yeterlidir).
 
+### npm ile
+
+Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) tek komut yeterlidir:
+
+```
+npx mehteran
+```
+
+İlk çalıştırma Mehteran'ı `~/Mehteran` klasörüne kurar (bilgisayarda git varsa `git clone` ile) ve arayüzü açar. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
+
 ## Yapay zekâ araçları
 
 | Araç | Nasıl ödenir | Metin nereye gider |
@@ -68,6 +78,8 @@ Hazır çeviri akışının gerektirdikleri:
 
 Uygulamayı git ile aldıysanız (`git clone` veya `gh repo clone`), arayüz her açılışta GitHub'dan kendini günceller. İnternet veya GitHub girişi yoksa olduğu gibi açılır.
 
+`npx mehteran` ile kurulan kopya, kurulumda bilgisayarda git varsa aynı şekilde kendini günceller. git yoksa zip kopyası gibidir.
+
 Zip dosyası indirdiyseniz yeni zip'i indirin. Mehteran'ın iş akışları ve çalıştırmaları kod klasörünün dışında saklanır; oldukları yerde kalırlar. Kitap çevirisi için eski klasördeki şunları yenisine taşıyın: `books/`, `glossary/`, `config.toml` ve `prompts/` klasörünün içindeki `.md` dosyaları (ve `prompts/custom/`).
 
 Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurulur. Claude Code, Antigravity CLI ve ayrı Python (uv) kullanıcı klasörünüze (`~/.local/bin`; Windows'ta `%LOCALAPPDATA%` altına) kurulur. Uygulamayı silmek için klasörünü ve Mehteran'ın veri klasörünü silin (bkz. belgeler).
@@ -76,10 +88,15 @@ Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurul
 
 - [Web sitesi](https://tolgabuyuktanir.github.io/Mehteran/?lang=tr) ve [belgeler](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr): kurulum, yapay zekâ araçlarını bağlama, iş akışı çalıştırma ve oluşturma, yerel modeller, iş akışı dosyası, sorun giderme.
 - [Mehteran ayrıntılı başvuru](docs/mehteran.tr.md): her ekran, ayar, API yolu ve sınır.
-- [Kitap çevirisi kullanım kılavuzu](docs/guide.tr.md).
+- [İslami kitap çevirisi kullanım kılavuzu](docs/guide.tr.md).
 
 ## Geliştirme
 
 - Kod: `mehteran/` (Mehteran) ve `pipeline/` (kitap çevirisi), yalnızca Python standart kütüphanesi; arayüz derleme adımı olmayan düz JavaScript'tir.
 - Testler: `python3 -m unittest discover tests`. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz.
+- npm paketi (`npx mehteran`) `npm/` klasöründedir: kod klasörünü kuran ve başlatıcısını çalıştıran, bağımlılığı olmayan tek bir Node betiği. Yeni bir sürüm yayımlamak için `npm/package.json` içindeki `version` değerini artırın, sonra `cd npm && npm publish` komutunu çalıştırın.
 - Web sitesi `docs/` içindeki statik HTML'dir (`index.html`, `docs.html`, `assets/`); başka sunuculardan hiçbir şey yüklemez.
+
+## Lisans
+
+MIT. Ayrıntılar: [LICENSE](LICENSE).

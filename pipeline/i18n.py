@@ -235,7 +235,7 @@ MESSAGES = {
     "type_language": {"tr": "dil", "en": "language"},
 
     # --- command line ---
-    "cli_description": {"tr": "İslami kitaplar için LLM çeviri pipeline'ı", "en": "LLM translation pipeline for Islamic books"},
+    "cli_description": {"tr": "İslami kitap çevirisi: yapay zekâ modelleriyle çok adımlı kitap çevirisi", "en": "Islamic book translation: multi-step book translation with AI models"},
     "cli_lang": {"tr": "arayüz dili (tr veya en)", "en": "interface language (tr or en)"},
     "cli_setup": {"tr": "claude / gemini / codex araçları kurulu ve yanıt veriyor mu, denetler",
                   "en": "checks that the claude / gemini / codex tools are installed and answer"},
@@ -556,8 +556,8 @@ MESSAGES = {
     "prompt_align": {"tr": "Hazırlık: referans tercümede karşılığı bulma", "en": "Preparation: finding the passage in the reference translation"},
     "placeholders_missing": {"tr": "eksik yer tutucular: {names}", "en": "missing placeholders: {names}"},
     "placeholders_unknown": {"tr": "tanınmayan yer tutucular: {names}", "en": "unknown placeholders: {names}"},
-    "prompt_not_saved": {"tr": "Kaydedilmedi; {problems}. Yer tutucular pipeline'ın metni koyduğu yerlerdir.",
-                         "en": "Not saved; {problems}. Placeholders are where the pipeline inserts the text."},
+    "prompt_not_saved": {"tr": "Kaydedilmedi; {problems}. Yer tutucular, çeviri uygulamasının metni koyduğu yerlerdir.",
+                         "en": "Not saved; {problems}. Placeholders are where the translation app inserts the text."},
     "prompt_saved": {"tr": "Kaydedildi. Bundan sonra işlenen bölümlerde kullanılır.",
                      "en": "Saved. It applies to the segments processed from now on."},
     "prompt_restored": {"tr": "Varsayılan talimat geri yüklendi.", "en": "The default instructions are restored."},

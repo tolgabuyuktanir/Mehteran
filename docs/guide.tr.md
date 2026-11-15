@@ -1,4 +1,4 @@
-# Çeviri Pipeline'ı: kullanım kılavuzu
+# İslami kitap çevirisi: kullanım kılavuzu
 
 [English](guide.md) · [README'ye dön](../README.tr.md)
 
@@ -23,7 +23,7 @@ Oturum açma yöntemleri:
 
 - Claude: "Claude hesabıyla" düğmesi bir terminal penceresi açar. Tarayıcıda oturum açın.
 - Codex (ChatGPT): "ChatGPT hesabıyla" düğmesi bir terminal penceresi açar. Alternatif: OpenAI API anahtarı.
-- Antigravity (Gemini modelleri): "Google hesabıyla" düğmesi bir terminal penceresi açar. Antigravity tarayıcıda Google girişini başlatır; giriş bitince `/exit` yazın. Ardından "Dene" düğmesiyle kontrol edin. Antigravity bazı Claude modellerini de sunar; varsayılanı bir Gemini modelidir. Antigravity her çağrıyı bir konuşma olarak saklar; pipeline kendi açtıklarını siler.
+- Antigravity (Gemini modelleri): "Google hesabıyla" düğmesi bir terminal penceresi açar. Antigravity tarayıcıda Google girişini başlatır; giriş bitince `/exit` yazın. Ardından "Dene" düğmesiyle kontrol edin. Antigravity bazı Claude modellerini de sunar; varsayılanı bir Gemini modelidir. Antigravity her çağrıyı bir konuşma olarak saklar; çeviri uygulaması kendi açtıklarını siler.
 - Gemini CLI: Google 18 Haziran 2026'dan beri burada yalnızca API anahtarlarını ve şirket (Google Cloud) hesaplarını kabul ediyor, kişisel hesapları kabul etmiyor. "Google hesabıyla" düğmesi bir terminal penceresi açar. Gemini açılınca Google ile oturum açın, sonra `/quit` yazın. Ardından "Dene" düğmesiyle hesabın kabul edildiğini kontrol edin. Alternatif: https://aistudio.google.com/apikey adresinden alınan bir API anahtarı (`~/.gemini/.env` dosyasına kaydedilir).
 
 Oturumu açtıktan sonra "Durumu yenile" düğmesine basın.
@@ -65,7 +65,7 @@ Referans, aynı kitabın başka bir dile daha önce yapılmış, yayımlanmış 
 
 ## Dışa aktarma
 
-Pipeline Markdown yazar (`output/<dil>.md`, `output/<dil>.report.md`). Kitaplar sekmesinden her birini dışa aktarabilirsiniz:
+Çeviri uygulaması Markdown yazar (`output/<dil>.md`, `output/<dil>.report.md`). Kitaplar sekmesinden her birini dışa aktarabilirsiniz:
 
 - Word (.docx): başlıklar Word başlığı, dipnotlar gerçek Word dipnotu olur. Metin iki yana yaslanır ve otomatik hecelenir; her ana bölüm yeni sayfada başlar; altbilgide sayfa numarası vardır. Metin içindeki Arapça parçalar sağdan sola yazılır, yalnızca Arapçadan oluşan paragraflar (âyet, hadîs) ortalanır. Arapça, Farsça, Urduca gibi hedef dillerde bütün belge sağdan soladır.
 - PDF: bilgisayarda Chrome veya Edge varsa doğrudan PDF dosyası üretilir (Windows'ta Edge her zaman vardır). Kitap dizgisiyle basılır: iki yana yaslı ve hecelenmiş metin, paragraf girintisi, sayfa numarası, her ana bölüm yeni sayfada, dipnotlar bölüm sonunda. Tarayıcı bulunamazsa yazdırmaya hazır bir sayfa açılır; yazdırma penceresinde "PDF olarak kaydet" seçin.
@@ -148,7 +148,7 @@ Bir modelin döndürdüğü her metin (1., 3., 4. ve 6. adım), sonraki adım ku
 
 Tashihçiler (2. ve 5. adım) okuma kanıtı vermek zorundadır: her paragrafın son üç kelimesini geri yazarlar. Kanıt metinle uyuşmazsa cevap reddedilir ve yeniden istenir. Böylece "sorun yok" cevabı, metne bakılmadığını gizleyemez. Tashihleri uygulayan model (3. ve 6. adım) her bulgu için karar vermek zorundadır. Rapordaki "Tashihçi denetimi" bölümü her tashihçinin kaç bölümde bulgu yazmadığını ve bulgu yazmadığı hâlde sonradan ciddi hata çıkan bölümleri gösterir.
 
-Bir bölüm üretildikten sonra sözlük, referanslar veya talimatlar değişirse pipeline bunu fark eder. Bölüm kendiliğinden yeniden üretilmez; rapor ve arayüz hangi bölümlerin hangi adımdan itibaren eski girdilerle durduğunu söyler. Arayüzdeki "Yeniden üretmeye hazırla" düğmesi formu doldurur; komut satırında `--redo <adım> --segments <bölümler>` kullanın.
+Bir bölüm üretildikten sonra sözlük, referanslar veya talimatlar değişirse çeviri uygulaması bunu fark eder. Bölüm kendiliğinden yeniden üretilmez; rapor ve arayüz hangi bölümlerin hangi adımdan itibaren eski girdilerle durduğunu söyler. Arayüzdeki "Yeniden üretmeye hazırla" düğmesi formu doldurur; komut satırında `--redo <adım> --segments <bölümler>` kullanın.
 
 Mekanik denetimler yapay zekâ kullanmaz. Şunları kaynakla karşılaştırır: Arap harfli ibareler, sayılar, dipnot işaretleri ve metinleri, paragraf ve başlık sayısı, paragraf başına cümle sayısı, çeviri uzunluğu.
 
@@ -169,7 +169,7 @@ glossary/<dil>.tsv      dil başına terim sözlüğü; elle düzenlenir, bütü
 books/<kitap>/
   source/               Türkçe kitap (tek dosya)
   references/           mevcut tercümeler: da.docx, sv.epub ...
-  work/                 ara dosyalar; pipeline üretir
+  work/                 ara dosyalar; çeviri uygulaması üretir
   output/               <dil>.md ve <dil>.report.md
   logs/                 her çalıştırmanın günlüğü
 pipeline/               kod (pipeline/i18n.py: mesajlar; pipeline/ui/: web arayüzü)
@@ -192,7 +192,7 @@ Desteklenen dosya türleri: `.docx`, `.epub`, `.md`, `.txt`, `.pdf`. Mümkünse 
 
 - Çıktı Markdown'dır; dışa aktarma Word, PDF ve HTML verir. Başlıklar, dipnotlar, italik, kalın ve numaralı maddeler korunur. Kaynaktaki tablolar, resimler ve renkler korunmaz. Matbaa dizgisi ayrıca yapılır.
 - Windows desteği yazıldı ama yalnızca macOS'ta denendi; henüz bir Windows bilgisayarda çalıştırılmadı.
-- Kaynak dosya ilk çalıştırmadan sonra değişirse pipeline durur. Yeni kaynakla başlamak için arayüzde "Çalışmayı sıfırla" düğmesine basın veya `books/<kitap>/work/` klasörünü silin.
+- Kaynak dosya ilk çalıştırmadan sonra değişirse çeviri uygulaması durur. Yeni kaynakla başlamak için arayüzde "Çalışmayı sıfırla" düğmesine basın veya `books/<kitap>/work/` klasörünü silin.
 - Referans tercüme Türkçe kitaptan çok farklı düzenlenmişse bazı bölümlerin referansı bulunamaz. Bu bölümler referanssız çevrilir ve raporda listelenir.
 - Yapay zekâ tashihi insan kontrolünün yerini tutmaz. Yayından önce kitabı insan tercüman ve insan editör okumalıdır.
 
