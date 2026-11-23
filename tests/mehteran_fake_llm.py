@@ -63,7 +63,7 @@ if os.environ.get("MEHTERAN_FAKE_LOG"):
         log.write(f"{tag} {start:.3f} {time.time():.3f}\n")
 if "Encode the approved script as JSON" in prompt:
     import json
-    scene = {"narration": "A tree grows.", "background": "ffffff", "boxes": [[20, 30, 10, 50, "448855"]]}
+    scene = {"narration": "A tree grows.", "visual": "A young tree in the morning sun"}
     print(json.dumps([[scene, scene], [scene]]))
     sys.exit(0)
 answer = re.search(r"ANSWER=(\S+)", prompt)

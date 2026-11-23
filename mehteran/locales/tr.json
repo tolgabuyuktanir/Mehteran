@@ -1,5 +1,19 @@
 {
  "ui": {
+  "video_settings_title": "Video servisleri",
+  "video_settings_help": "Sosyal medya video akışı için OpenAI Images ve ElevenLabs’ı ayarlayın. Yeni değerler bu bilgisayarda saklanır. Mevcut ayarı korumak için alanı boş bırakın. Seslendirme dilini ana dili olarak konuşan bir ses seçin.",
+  "video_openai_key": "OpenAI API anahtarı",
+  "video_elevenlabs_key": "ElevenLabs API anahtarı",
+  "video_voice_id": "ElevenLabs ses kimliği (isteğe bağlı)",
+  "video_paste_key": "Yeni anahtarı yapıştırın",
+  "video_voice_reset": "Sesi sıfırla",
+  "video_key_remove": "Kayıtlı anahtarı kaldır",
+  "video_settings_saving": "Kaydediliyor…",
+  "video_settings_saved": "Video ayarları kaydedildi.",
+  "video_source_saved": "Bu bilgisayarda kayıtlı",
+  "video_source_environment": "Başlatma ortamından alınıyor",
+  "video_source_default": "Varsayılan ses kullanılıyor",
+  "video_source_missing": "Anahtar gerekli",
   "tagline": "Yerel yapay zekâ iş akışları",
   "nav_library": "Şablonlar",
   "nav_runs": "Çalıştırmalar",
@@ -929,6 +943,7 @@
   "privacy_local_web": "Bu iş akışı siteleri Claude Code ile tarayıcıda okur; yalnızca bu bilgisayardaki modellerle çalışamaz."
  },
  "messages": {
+  "video_settings_invalid": "Anahtarı veya ses kimliğini kontrol edin. Yalnızca değeri boşluksuz yapıştırın.",
   "yaml_too_large": "Dosya çok büyük (en çok 1 MB).",
   "yaml_invalid": "YAML okunamadı: {error}",
   "not_a_mapping": "anahtar: değer biçiminde bir eşleme olmalı.",

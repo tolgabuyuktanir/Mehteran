@@ -21,10 +21,38 @@ class VideoTests(HomeCase):
         self.assertEqual(self.calls(), [])
 
 
-    def test_render_series(self):
-        if not all(shutil.which(tool) for tool in ("ffmpeg", "ffprobe", "pango-view")) or not (shutil.which("say") or shutil.which("espeak-ng")):
-            self.skipTest("FFmpeg and local speech synthesis required")
+    def test_premium_requires_credentials(self):
         engine = self.engine()
+        yaml = templates.read("builtin", "topic-video-series", self.home)
+        with (patch.dict("os.environ", {"OPENAI_API_KEY": "", "ELEVENLABS_API_KEY": ""}),
+              patch.object(video, "ffmpeg", return_value=(self.tmp / "ffmpeg", None)),
+              patch.object(video.shutil, "which", return_value="/fixture/tool")):
+            rid = engine.start(yaml, {"topics": "Olives", "model": "fake"})
+            self.assertEqual(engine.wait(rid, 30), "failed")
+        self.assertIn("ElevenLabs", engine.get(rid)["nodes"]["check"]["error"])
+        self.assertEqual(self.calls(), [])
+
+    def test_render_series(self):
+        if not all(shutil.which(tool) for tool in ("ffmpeg", "ffprobe", "pango-view")):
+            self.skipTest("FFmpeg and Pango required")
+        engine = self.engine()
+        art = self.tmp / "fixture.png"
+        speech = self.tmp / "fixture.mp3"
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=green:s=96x64",
+                        "-frames:v", "1", str(art)], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=duration=1",
+                        str(speech)], check=True)
+        video.video_media.save(engine.home, {"openai_key": "fixture-openai-key", "elevenlabs_key": "fixture-eleven-key",
+                                             "voice_id": "FixtureVoiceId01"})
+        with patch.object(video.video_media, "image", side_effect=lambda prompt, portrait, path, abort, config: shutil.copyfile(art, path)) as images, \
+             patch.object(video.video_media, "speech", side_effect=lambda line, lang, path, abort, config: shutil.copyfile(speech, path)) as voices:
+            self._test_platforms(engine)
+        self.assertEqual(images.call_count, 8)
+        self.assertEqual(voices.call_count, 12)
+        self.assertEqual(images.call_args.args[-1]["openai_key"], "fixture-openai-key")
+        self.assertEqual(voices.call_args.args[-1]["voice_id"], "FixtureVoiceId01")
+
+    def _test_platforms(self, engine):
         for mode, platform, seconds, size in (("short", "youtube", 20, (720, 1280)),
                                               ("standard", "instagram", 40, (1280, 720)),
                                               ("standard", "tiktok", 40, (720, 1280)),

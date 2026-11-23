@@ -288,6 +288,8 @@ Bu arada günlük, çağrıyı ve "hâlâ çalışıyor" satırlarını gösteri
 
 Sosyal medya videosu akışını aşağıdaki komutla başlatın. Web arayüzü, CLI ve zamanlayıcı aynı iş akışı motorunu kullanır. CLI senaryo onayında çalıştırma kimliğini, ses onayında önizleme dosyasının yolunu ve tamamlandığında ZIP yolunu gösterir.
 
+Kurulum → Video servisleri bölümünde OpenAI ve ElevenLabs API anahtarlarını kaydedin. Kayıtlı anahtarları değiştirmek için yeni değerleri girin veya Kayıtlı anahtarı kaldır düğmesini kullanın. Başlatma ortamındaki `OPENAI_API_KEY` ve `ELEVENLABS_API_KEY` değerleri, yerel kayıt yoksa kullanılır. Varsayılan senaryo modeli Claude Code ile Opus’tur. Türkçe telaffuzu iyileştirmek için ElevenLabs hesabınızda erişebildiğiniz Türkçe bir sesin kimliğini aynı ekranda girebilirsiniz. Ortam değişkeni olarak `MEHTERAN_VIDEO_VOICE_ID` de kullanılabilir.
+
 ```sh
 ./mehter run builtin:topic-video-series --input "topics=Zeytin ağacı nasıl büyür?" --input language=tr
 ./mehter approve RUN_ID review

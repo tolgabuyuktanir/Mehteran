@@ -8,6 +8,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from . import video_media
 from .localtools import run
 from .speech import ffmpeg
 
@@ -35,7 +36,7 @@ def narration_command(speaker, voice, folder):
     return [speaker, "-v", voice, "-w", str(audio), "-f", str(folder / "line.txt")], audio
 
 
-def preview_voice(plan, language, folder, abort):
+def preview_voice(plan, language, folder, abort, premium=False, home=None):
     try:
         line = plan[0][0]["narration"]
     except (KeyError, TypeError, IndexError):
@@ -47,12 +48,18 @@ def preview_voice(plan, language, folder, abort):
     with tempfile.TemporaryDirectory(dir=folder) as tmp:
         work = Path(tmp)
         (work / "line.txt").write_text(line, encoding="utf-8")
-        cmd, audio = narration_command(*narration_voice(language), work)
-        for args in (cmd, [encoder, "-nostdin", "-loglevel", "error", "-i", str(audio), "-ar", "22050",
-                           "-ac", "1", str(work / "preview.wav")]):
-            code, error = run(args, abort, 120)
+        if premium:
+            audio = work / "voice.mp3"
+            video_media.speech(line, language, audio, abort, video_media.credentials(home))
+        else:
+            cmd, audio = narration_command(*narration_voice(language), work)
+            code, error = run(cmd, abort, 120)
             if code:
                 raise ValueError(error)
+        code, error = run([encoder, "-nostdin", "-loglevel", "error", "-i", str(audio), "-ar", "22050",
+                           "-ac", "1", str(work / "preview.wav")], abort, 120)
+        if code:
+            raise ValueError(error)
         target = folder / "preview.wav"
         (work / "preview.wav").replace(target)
         return target
@@ -70,7 +77,7 @@ def validate_topics(topics):
     return titles
 
 
-def video_tools(language):
+def video_tools(language, premium=False, config=None):
     encoder, _ = ffmpeg()
     probe = shutil.which("ffprobe", path=str(encoder.parent)) if encoder else None
     probe = probe or shutil.which("ffprobe")
@@ -79,11 +86,15 @@ def video_tools(language):
         raise ValueError("Video rendering requires ffprobe and pango-view (Pango).")
     if not encoder:
         raise ValueError("Video rendering requires FFmpeg.")
-    speaker, voice = narration_voice(language)
+    if premium:
+        video_media.check(config)
+        speaker, voice = video_media.VOICE_MODEL, video_media.voice_id(config)
+    else:
+        speaker, voice = narration_voice(language)
     return encoder, probe, captioner, speaker, voice
 
 
-def render_series(plan, topics, language, platform, mode, folder, abort):
+def render_series(plan, topics, language, platform, mode, folder, abort, premium=False, home=None):
     titles = validate_topics(topics)
     # Some local models wrap each scene separately even for a single requested topic.
     if len(titles) == 1 and isinstance(plan, list) and len(plan) > 1 and all(isinstance(part, list) for part in plan):
@@ -92,7 +103,8 @@ def render_series(plan, topics, language, platform, mode, folder, abort):
         raise ValueError("Expected one storyboard per topic (1–8 topics).")
     if not re.fullmatch(r"[a-z]{2,3}(?:-[A-Za-z]{2,4})?", language) or mode not in ("short", "standard") or platform not in ("instagram", "youtube", "tiktok", "whatsapp"):
         raise ValueError("Invalid narration language or video layout.")
-    encoder, probe, captioner, speaker, voice = video_tools(language)
+    config = video_media.credentials(home) if premium else None
+    encoder, probe, captioner, speaker, voice = video_tools(language, premium, config)
     width, height = (720, 1280) if mode == "short" or platform in ("tiktok", "whatsapp") else (1280, 720)
     cache = folder / "scenes"
     cache.mkdir(exist_ok=True)
@@ -118,24 +130,54 @@ def render_series(plan, topics, language, platform, mode, folder, abort):
                         raise ValueError("Invalid scene.")
                     line, bg, boxes = (scene.get(k) for k in ("narration", "background", "boxes"))
                     validate_line(line)
-                    if not isinstance(bg, str) or not re.fullmatch("[0-9A-Fa-f]{6}", bg) or not isinstance(boxes, list) or not 1 <= len(boxes) <= 32:
-                        raise ValueError("Invalid scene background or illustration.")
-                    filters = []
-                    for box in boxes:
-                        if not isinstance(box, list) or len(box) != 5 or not all(type(v) is int and 0 <= v <= 100 for v in box[:4]):
-                            raise ValueError("Expected a rectangle in percentage coordinates.")
-                        x, y, w, h, color = box
-                        if not w or not h or not isinstance(color, str) or not re.fullmatch("[0-9A-Fa-f]{6}", color):
-                            raise ValueError("Invalid rectangle size or color.")
-                        filters.append(f"drawbox={width*x//100}:{height*y//100}:{max(1,width*w//100)}:{max(1,height*h//100)}:0x{color}:t=fill")
-                    key = hashlib.sha256(json.dumps([scene, width, height, seconds, speaker, voice], sort_keys=True).encode()).hexdigest()
+                    visual = scene.get("visual")
+                    if premium:
+                        if not isinstance(visual, str) or not 12 <= len(visual.strip()) <= 600:
+                            raise ValueError("Every scene needs a detailed visual description.")
+                        filters = [
+                            f"scale={width * 2}:{height * 2}:force_original_aspect_ratio=increase",
+                            f"crop={width * 2}:{height * 2}",
+                            f"zoompan=z='1+0.045*min(1,on/{max(1, round(seconds * 24))})':"
+                            f"x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s={width}x{height}:fps=24",
+                            "setsar=1",
+                        ]
+                    else:
+                        if not isinstance(bg, str) or not re.fullmatch("[0-9A-Fa-f]{6}", bg) or not isinstance(boxes, list) or not 1 <= len(boxes) <= 32:
+                            raise ValueError("Invalid scene background or illustration.")
+                        filters = []
+                        for box in boxes:
+                            if not isinstance(box, list) or len(box) != 5 or not all(type(v) is int and 0 <= v <= 100 for v in box[:4]):
+                                raise ValueError("Expected a rectangle in percentage coordinates.")
+                            x, y, w, h, color = box
+                            if not w or not h or not isinstance(color, str) or not re.fullmatch("[0-9A-Fa-f]{6}", color):
+                                raise ValueError("Invalid rectangle size or color.")
+                            filters.append(f"drawbox={width*x//100}:{height*y//100}:{max(1,width*w//100)}:{max(1,height*h//100)}:0x{color}:t=fill")
+                    signature = [scene, width, height, seconds, speaker, voice]
+                    if premium:
+                        signature.extend([title, language, video_media.IMAGE_MODEL])
+                    key = hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()
                     clip = cache / (key + ".mp4")
                     clips.append("file '../scenes/" + clip.name + "'")
                     if clip.exists():
                         continue
                     (work / "line.txt").write_text(line, encoding="utf-8")
-                    cmd, audio = narration_command(speaker, voice, work)
-                    execute(cmd)
+                    if premium:
+                        audio = cache / (key + ".mp3")
+                        art = cache / (key + ".png")
+                        if not audio.exists():
+                            video_media.speech(line, language, work / "voice.mp3", abort, config)
+                            (work / "voice.mp3").replace(audio)
+                        if not art.exists():
+                            prompt = ("Editorial documentary still with realistic lighting and a clear visual subject. "
+                                      "No text, glyphs, logos or watermarks. Keep the lower quarter visually quiet for captions. "
+                                      f"Series subject: {title[:180]}. Scene: {visual}")
+                            video_media.image(prompt, width < height, work / "art.png", abort, config)
+                            (work / "art.png").replace(art)
+                        visual_input = ["-loop", "1", "-framerate", "24", "-i", str(art)]
+                    else:
+                        cmd, audio = narration_command(speaker, voice, work)
+                        execute(cmd)
+                        visual_input = ["-f", "lavfi", "-i", f"color=c=0x{bg}:s={width}x{height}:r=24"]
                     spoken = float(subprocess.check_output([probe, "-v", "error", "-show_entries", "format=duration",
                         "-of", "default=nw=1:nk=1", str(work / audio)], text=True, timeout=10))
                     if not 0 < spoken <= seconds * 1.6:
@@ -145,7 +187,7 @@ def render_series(plan, topics, language, platform, mode, folder, abort):
                              "--background=#13201e", "--foreground=white", "--output=caption.png", "line.txt"])
                     filters.append("format=yuv420p")
                     graph = "[0:v]" + ",".join(filters) + "[art];[art][2:v]overlay=(W-w)/2:H*0.78-h/2[v]"
-                    execute(ff + ["-f", "lavfi", "-i", f"color=c=0x{bg}:s={width}x{height}:r=24", "-i", audio,
+                    execute(ff + visual_input + ["-i", audio,
                                   "-i", "caption.png", "-filter_complex", graph, "-map", "[v]", "-map", "1:a",
                                   "-af", f"atempo={max(1, spoken/seconds):.6f},apad", "-t", f"{seconds:.6f}",
                                   "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100",

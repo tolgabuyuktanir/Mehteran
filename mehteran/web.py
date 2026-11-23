@@ -239,6 +239,19 @@ class App:
                 "formats": list(FORMATS), "file_formats": list(schema.FILE_FORMATS), "input_types": list(schema.INPUT_TYPES)}
 
     # --- settings that Mehteran keeps itself (<data>/configurations) ---
+    def video_settings_get(self, m, body) -> dict:
+        from . import video_media
+        return video_media.status(self.home)
+
+    def video_settings_put(self, m, body) -> dict:
+        from . import video_media
+        with self.conf_lock:
+            try:
+                video_media.save(self.home, body)
+            except ValueError:
+                raise HTTPError(400, t("video_settings_invalid")) from None
+            return video_media.status(self.home)
+
     def _read_conf(self, name: str) -> dict:
         try:
             data = json.loads((self.configurations / name).read_text(encoding="utf-8"))
@@ -1296,6 +1309,8 @@ ROUTES = [
     ("PUT", rf"/api/templates/(user)/{ID}/draft", App.template_save_draft),
     ("GET", r"/api/node-types", App.node_types),
     ("GET", r"/api/local-tools", App.local_tools),
+    ("GET", r"/api/video-settings", App.video_settings_get),
+    ("PUT", r"/api/video-settings", App.video_settings_put),
     ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf|browser)/install", App.local_install),
     ("POST", r"/api/local-tools/(ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf|browser)/cancel", App.local_cancel),
     ("POST", r"/api/browser/signin", App.browser_signin),

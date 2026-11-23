@@ -1264,11 +1264,18 @@ register(NodeType("ai.map", {
                    "the answers in order. Finished parts are kept; a resumed run does not ask for them again.")))
 
 
+def _premium_video(ctx: Ctx) -> bool:
+    premium = ctx.config.get("premium", False)
+    if premium and ctx.provider_cfg.get("privacy") == "local":
+        raise NodeError(t("privacy_refused", name="OpenAI Images / ElevenLabs"))
+    return premium
+
+
 def _video_series(ctx: Ctx) -> dict:
     from .video import render_series
     try:
         result = render_series(parse_json_answer(render(ctx, "source")), render(ctx, "topics"), render(ctx, "lang"),
-                               render(ctx, "platform"), render(ctx, "mode"), ctx.node_dir, ctx.abort)
+                               render(ctx, "platform"), render(ctx, "mode"), ctx.node_dir, ctx.abort, _premium_video(ctx), ctx.run_dir.parent.parent)
     except InterruptedError:
         raise Aborted() from None
     except ValueError as err:
@@ -1277,6 +1284,7 @@ def _video_series(ctx: Ctx) -> dict:
 
 
 register(NodeType("video.series", {
+    "premium": Field("bool", default=False, label=_l("Bulut görseli ve seslendirme", "Cloud image and narration")),
     "source": Field("template", required=True, label=_l("Sahne planı (JSON)", "Storyboard (JSON)")),
     "topics": Field("template", required=True, label=_l("Konular", "Topics")),
     "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language")),
@@ -1289,7 +1297,8 @@ register(NodeType("video.series", {
 def _voice_preview(ctx: Ctx) -> dict:
     from .video import preview_voice
     try:
-        return {"audio": preview_voice(parse_json_answer(render(ctx, "source")), render(ctx, "lang"), ctx.node_dir, ctx.abort)}
+        return {"audio": preview_voice(parse_json_answer(render(ctx, "source")), render(ctx, "lang"), ctx.node_dir, ctx.abort,
+                                       _premium_video(ctx), ctx.run_dir.parent.parent)}
     except InterruptedError:
         raise Aborted() from None
     except ValueError as err:
@@ -1297,6 +1306,7 @@ def _voice_preview(ctx: Ctx) -> dict:
 
 
 register(NodeType("video.preview", {
+    "premium": Field("bool", default=False, label=_l("Bulut görseli ve seslendirme", "Cloud image and narration")),
     "source": Field("template", required=True, label=_l("Sahne planı", "Storyboard")),
     "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language"))},
     lambda c: {"audio": "file"}, _voice_preview, label=_l("Ses önizlemesi", "Voice preview"),
@@ -1304,16 +1314,20 @@ register(NodeType("video.preview", {
 
 
 def _video_check(ctx: Ctx) -> dict:
+    from . import video_media
     from .video import validate_topics, video_tools
     try:
         topics = validate_topics(render(ctx, "topics"))
-        video_tools(render(ctx, "lang"))
+        premium = _premium_video(ctx)
+        config = video_media.credentials(ctx.run_dir.parent.parent) if premium else None
+        video_tools(render(ctx, "lang"), premium, config)
     except (ValueError, OSError, subprocess.SubprocessError) as err:
         raise NodeError(str(err)) from err
     return {"text": "\n".join(topics)}
 
 
 register(NodeType("video.check", {
+    "premium": Field("bool", default=False, label=_l("Bulut görseli ve seslendirme", "Cloud image and narration")),
     "topics": Field("template", required=True, label=_l("Konular", "Topics")),
     "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language"))},
     lambda c: {"text": "text"}, _video_check,

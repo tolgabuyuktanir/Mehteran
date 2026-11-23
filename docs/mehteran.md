@@ -288,6 +288,8 @@ Meanwhile the log shows the call and the heartbeat lines. Streamed text is writt
 
 Run the social video workflow with the command below. The web interface, CLI and scheduler use the same workflow engine. The CLI prints the run ID at the script approval, the audio preview path at the voice approval, and the ZIP path at completion.
 
+Save your OpenAI and ElevenLabs API keys under Setup → Video services. Paste a new value to replace a key or use Remove saved key. When there is no saved key, Mehteran uses `OPENAI_API_KEY` and `ELEVENLABS_API_KEY` from its startup environment. The default script model is Opus through Claude Code. Enter the voice ID on the same screen to select a voice available in your ElevenLabs account, such as a native Turkish narrator. The `MEHTERAN_VIDEO_VOICE_ID` environment variable is also supported.
+
 ```sh
 ./mehter run builtin:topic-video-series --input "topics=Zeytin ağacı nasıl büyür?" --input language=tr
 ./mehter approve RUN_ID review

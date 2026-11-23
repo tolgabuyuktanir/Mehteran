@@ -1,5 +1,19 @@
 {
  "ui": {
+  "video_settings_title": "Video services",
+  "video_settings_help": "Set up OpenAI Images and ElevenLabs for the social video workflow. New values are saved on this computer. Leave fields blank to keep their current settings. Use a native voice for the narration language.",
+  "video_openai_key": "OpenAI API key",
+  "video_elevenlabs_key": "ElevenLabs API key",
+  "video_voice_id": "ElevenLabs voice ID (optional)",
+  "video_paste_key": "Paste a new key",
+  "video_voice_reset": "Reset voice",
+  "video_key_remove": "Remove saved key",
+  "video_settings_saving": "Saving…",
+  "video_settings_saved": "Video settings saved.",
+  "video_source_saved": "Saved on this computer",
+  "video_source_environment": "From the startup environment",
+  "video_source_default": "Using the default voice",
+  "video_source_missing": "Key required",
   "tagline": "Local AI workflows",
   "nav_library": "Templates",
   "nav_runs": "Runs",
@@ -929,6 +943,7 @@
   "privacy_local_web": "This workflow reads sites in the browser with Claude Code; it cannot run with only the models on this computer."
  },
  "messages": {
+  "video_settings_invalid": "Check the key or voice ID. Paste only the value, without spaces.",
   "yaml_too_large": "The file is too large (at most 1 MB).",
   "yaml_invalid": "Cannot read the YAML: {error}",
   "not_a_mapping": "must be a mapping (key: value).",

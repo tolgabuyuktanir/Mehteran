@@ -62,6 +62,35 @@ class WebTests(HomeCase):
         status, body, _ = self.call(*args, **kwargs)
         return status, json.loads(body)
 
+    def test_video_settings_are_write_only_and_support_environment_fallback(self):
+        import os
+        from mehteran import video_media
+
+        url = "/api/video-settings"
+        updates = {"openai_key": "fixture-openai-key", "elevenlabs_key": "fixture-eleven-key",
+                   "voice_id": "FixtureVoiceId01"}
+        with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "fixture-environment-key",
+                                          "ELEVENLABS_API_KEY": "", "MEHTERAN_VIDEO_VOICE_ID": ""}):
+            self.assertEqual(self.json("GET", url, token=False)[0], 403)
+            self.assertEqual(self.json("PUT", url, updates, token=False)[0], 403)
+            status, response = self.json("PUT", url, updates)
+            self.assertEqual(status, 200)
+            self.assertEqual(response["sources"], {key: "saved" for key in updates})
+            self.assertEqual(response["voice_id"], updates["voice_id"])
+            self.assertNotIn(updates["openai_key"], json.dumps(response))
+            self.assertNotIn(updates["elevenlabs_key"], json.dumps(self.json("GET", url)[1]))
+            self.assertEqual(video_media.credentials(self.home), updates)
+            file = self.home / "configurations" / video_media.SETTINGS_FILE
+            if sys.platform != "win32":
+                self.assertEqual(file.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(self.json("PUT", url, {"voice_id": "invalid/value", "openai_key": "fixture-other-key"})[0], 400)
+            self.assertEqual(video_media.credentials(self.home), updates)
+            status, removed = self.json("PUT", url, {"openai_key": None, "voice_id": None})
+            self.assertEqual(status, 200)
+            self.assertEqual(removed["sources"]["openai_key"], "environment")
+            self.assertEqual(removed["voice_id"], video_media.DEFAULT_VOICE)
+            self.assertEqual(video_media.credentials(self.home)["openai_key"], "fixture-environment-key")
+
     def test_restart_stops_the_server_only_when_nothing_runs(self):
         fake = mock.Mock()
         self.assertEqual(self.json("POST", "/api/restart", {})[0], 409)  # no server of serve() to stop

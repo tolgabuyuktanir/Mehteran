@@ -1826,6 +1826,7 @@ async function boot() {
   document.querySelectorAll("#translation .subtab").forEach((b) => b.addEventListener("click", () => go("workflows/translation/" + b.dataset.sub)));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => go(b.dataset.goto)));
   $("#brand").addEventListener("click", (e) => { e.preventDefault(); go(home()); });
+  $("#video-settings-details").addEventListener("toggle", (e) => { if (e.currentTarget.open) loadVideoSettings(); });
   $("#tools-refresh").addEventListener("click", () => { loadTools(); loadLocal(); loadProviders(true); });
   $("#reader-close").addEventListener("click", () => $("#reader").close());
   $("#template-search").addEventListener("input", (e) => { state.tplQuery = e.target.value; renderLibrary(); });

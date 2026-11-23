@@ -414,3 +414,62 @@ function speechModels(tool) {
     h("div", {class: "row"}, h("button", {type: "button", class: "btn", disabled: busy, onclick: download}, S("speech_install_models"))),
     jobBox(tool.models_job, "speech-models"));
 }
+
+// Saved API keys are write-only. The server returns their source and the selected voice ID.
+async function loadVideoSettings() {
+  const panel = $("#video-settings");
+  if (panel.dataset.loaded) return;
+  panel.dataset.loaded = "1";
+  fill(panel, h("p", {class: "muted"}, S("loading")));
+  try {
+    drawVideoSettings(await api("GET", "/api/video-settings"));
+  } catch (err) {
+    delete panel.dataset.loaded;
+    fill(panel, problemsBox(err), h("button", {type: "button", class: "btn", onclick: loadVideoSettings}, S("retry")));
+  }
+}
+
+function drawVideoSettings(settings, notice = "") {
+  const fields = [
+    ["openai_key", "video_openai_key"],
+    ["elevenlabs_key", "video_elevenlabs_key"],
+    ["voice_id", "video_voice_id"],
+  ];
+  const controls = new Map();
+  const status = h("p", {class: "small", role: "status"}, notice);
+  const update = async (button, changes) => {
+    button.disabled = true;
+    status.textContent = S("video_settings_saving");
+    try {
+      const updated = await api("PUT", "/api/video-settings", changes);
+      drawVideoSettings(updated, S("video_settings_saved"));
+      $("#video-settings button[type=submit]").focus();
+    } catch (err) {
+      status.textContent = err.message;
+    } finally {
+      button.disabled = false;
+    }
+  };
+  const form = h("form", {class: "stack video-settings-form", onsubmit: (event) => {
+    event.preventDefault();
+    const changes = Object.fromEntries([...controls].map(([key, input]) => [key, input.value.trim()]).filter(([, value]) => value));
+    if (Object.keys(changes).length) update(event.submitter, changes);
+  }},
+  h("p", {class: "small muted"}, S("video_settings_help")),
+  fields.map(([key, label]) => {
+    const voice = key === "voice_id";
+    const id = "video-setting-" + key;
+    const input = h("input", {id, type: voice ? "text" : "password", maxlength: voice ? 64 : 512,
+      autocomplete: "off", spellcheck: "false", dir: "ltr", placeholder: voice ? settings.voice_id : S("video_paste_key")});
+    controls.set(key, input);
+    const source = settings.sources[key];
+    return h("div", {class: "stack video-settings-field"},
+      h("label", {class: "fld-label", for: id}, S(label)),
+      h("div", {class: "row"}, input,
+        source === "saved" ? h("button", {type: "button", class: "btn small", onclick: (event) =>
+          update(event.currentTarget, {[key]: null})}, S(voice ? "video_voice_reset" : "video_key_remove")) : null),
+      h("span", {class: "small muted"}, S("video_source_" + source)));
+  }),
+  h("div", {class: "row"}, h("button", {type: "submit", class: "btn primary"}, S("save")), status));
+  fill($("#video-settings"), form);
+}
