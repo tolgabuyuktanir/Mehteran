@@ -61,6 +61,11 @@ if quota:
 if os.environ.get("MEHTERAN_FAKE_LOG"):
     with open(os.environ["MEHTERAN_FAKE_LOG"], "a", encoding="utf-8") as log:
         log.write(f"{tag} {start:.3f} {time.time():.3f}\n")
+if "Encode the approved script as JSON" in prompt:
+    import json
+    scene = {"narration": "A tree grows.", "background": "ffffff", "boxes": [[20, 30, 10, 50, "448855"]]}
+    print(json.dumps([[scene, scene], [scene]]))
+    sys.exit(0)
 answer = re.search(r"ANSWER=(\S+)", prompt)
 retry = re.search(r"ONRETRY=(\S+)", prompt)  # the answer to a JSON step's second question (nodes._json_answer)
 if retry and "previous answer was rejected" in prompt:

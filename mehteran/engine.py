@@ -524,12 +524,14 @@ class Engine:
             run["status"] = "interrupted"
         return run
 
-    def list(self, before: str = "") -> list[dict]:
-        runs = self.store.runs(before=before)
+    def list(self, before: str = "", *, matches=None) -> list[dict]:
+        runs = self.store.runs(before=before, matches=matches)
         for run in runs:
             run["workflow_name"] = display_name(run["workflow_name"])
             if run["status"] == "running":
-                run["status"] = self.get(run["id"])["status"]
+                detail = self.get(run["id"])
+                run["status"] = detail["status"]
+                run["waiting_quota"] = any(n["status"] == "waiting_quota" for n in detail["nodes"].values())
         return runs
 
     def _keep_awake(self) -> None:

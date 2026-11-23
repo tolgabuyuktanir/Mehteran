@@ -69,7 +69,7 @@ The optional local tools (Ollama, Tesseract OCR, Typst for PDF, Pandoc, whisper.
 
 ## Optional book translation
 
-If an updated installation has an existing book project, translation history, or the old translation favorite, the **Go to Book translation** link in Workflows keeps it accessible.
+Book translation opens in its standalone app by default. Existing books, settings and translation history are available there.
 
 Run the separate translation app with `Open Interface.command` (macOS), `Open Interface.bat` (Windows) or `./translate ui` (Linux). Open `http://127.0.0.1:8765/` and configure your books, models and instructions using the [translation guide](docs/guide.md).
 

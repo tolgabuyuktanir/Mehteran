@@ -115,7 +115,7 @@
 
   <!-- RUNS: the history and one run -->
   <section id="runs" class="panel" role="tabpanel" hidden>
-    <div class="books runs-layout">
+    <div class="runs-layout">
       <aside class="book-list">
         <div class="row run-side-head">
           <h2 data-i18n="tab_runs"></h2>
@@ -124,7 +124,10 @@
         <div id="run-tools" class="run-tools"></div>
         <ul id="run-list"></ul>
       </aside>
-      <div id="run" class="book-detail"></div>
+      <div class="run-detail">
+        <a class="run-back" href="#runs" hidden><span aria-hidden="true">‹</span> <span data-i18n="tab_runs"></span></a>
+        <div id="run" class="book-detail"></div>
+      </div>
     </div>
   </section>
 

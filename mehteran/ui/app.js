@@ -253,6 +253,7 @@ async function route() {
   // #runs/new/<source>/<id> of earlier versions: the Run section of the workflow's page
   if (parts[0] === "runs" && parts[1] === "new" && parts.length === 4) parts = ["workflows", parts[2], parts[3], "run"];
   parts = current(parts);
+  if (parts[0] === "workflows" && parts[1] === "translation" && !embeddedTranslation()) parts = ["workflows"];
   if (!TABS.includes(parts[0])) parts = [home()];
   const hash = parts.map(encodeURIComponent).join("/");
   if (location.hash !== "#" + hash) history.replaceState(null, "", "#" + hash);
@@ -323,6 +324,10 @@ async function trStrings(lang) {
   return state.trStrings[lang];
 }
 
+function embeddedTranslation() {
+  return INFO.translation.running || INFO.translation.error === "translation_failed";
+}
+
 async function showTranslation(parts) {
   const sub = TR_TABS.includes(parts[0]) ? parts[0] : state.trTab;
   const info = INFO.translation;
@@ -358,7 +363,7 @@ function recentTemplates(limit = 6) {
     // a run of a merged template names its old id: the template lists it under "aliases"
     const item = (state.templates || []).find((t) => `${t.source}:${t.id}` === run.template
       || (t.source === "builtin" && (t.aliases || []).some((old) => `builtin:${old}` === run.template)));
-    if (!item || seen.has(`${item.source}:${item.id}`)) continue;
+    if (!item || !templateMatches(item) || seen.has(`${item.source}:${item.id}`)) continue;
     seen.add(`${item.source}:${item.id}`);
     out.push({item, at: run.created});
     if (out.length === limit) break;
@@ -434,7 +439,7 @@ function needsLine(item) {
 }
 
 function renderLibrary() {
-  $("#existing-book-translation").hidden = !(INFO.translation.running || INFO.translation.error === "translation_failed");
+  $("#existing-book-translation").hidden = !embeddedTranslation();
   if (!state.libView) state.libView = hasOwnWork() ? "mine" : "all";
   const view = state.libView;
   const categories = [...new Set(state.templates.filter((t) => t.source === "builtin").map((t) => t.category || ""))]
@@ -444,7 +449,7 @@ function renderLibrary() {
   const tab = (value, label) => h("button", {type: "button", class: "pick view-tab", "aria-pressed": String(view === value),
     onclick: () => { state.libView = value; state.tplCategory = ""; state.tplOnly = null; renderLibrary(); }}, label);
   const builtin = state.templates.filter((t) => t.source === "builtin");
-  const categoriesOpen = Boolean(state.libCategories || state.tplCategory || state.tplOnly || state.tplQuery.trim());
+  const categoriesOpen = Boolean(state.libCategories);
   const categoryList = h("div", {id: "category-list", class: "pick-chips cat-filter", role: "group",
     hidden: !categoriesOpen, "aria-label": S("filter_category")},
     chip("", S("all"), state.templates.length),
@@ -469,7 +474,8 @@ function renderLibrary() {
     const match = state.templates.filter(templateMatches);
     const favs = match.filter((t) => t.favorite), own = match.filter((t) => t.source === "user" && !t.draft && !t.favorite);
     const drafts = match.filter((t) => t.source === "user" && t.draft && !t.favorite);
-    const recent = searching ? [] : recentTemplates();
+    const recent = recentTemplates();
+    total = recent.filter(({item}) => item.source !== "user" && !item.favorite).length;
     if (favs.length) { sections.push(group("lib-favorites", "★ " + S("favorites"), favs)); total += favs.length; }
     // Like the cards: "Open" goes to the workflow's page, where it is run.
     if (recent.length) sections.push(h("section", {class: "lib-recent"}, h("h3", {class: "lib-group-title"}, S("recently_used")),
@@ -608,6 +614,7 @@ function welcomeGo(choice, title) {
   state.tplQuery = "";
   state.libView = "all";
   state.tplCategory = choice.action === "category" ? choice.category : "";
+  state.libCategories = true;
   state.tplOnly = choice.action === "templates" ? {ids: choice.templates, label: title} : null;
   renderLibrary();
   $(".lib-tools").scrollIntoView({behavior: calm() ? "auto" : "smooth", block: "start"});
@@ -1450,8 +1457,9 @@ const reader = {view: recall("mehteran.readerView") === "plain" ? "plain" : "for
 // The workflow's results; a workflow that names none shows the files its steps saved (an export step's documents).
 function runResults(run) {
   if ((run.outputs || []).length) return run.outputs.filter((o) => o.path);
+  const upstream = new Set(run.graph.edges.map((edge) => edge.from));
   return run.graph.nodes.flatMap((g) => Object.entries(run.nodes[g.id].outputs || {})
-    .filter(([port]) => (run.node_info[g.id].ports || {})[port] === "file")
+    .filter(([port, path]) => (run.node_info[g.id].ports || {})[port] === "file" || (!upstream.has(g.id) && isMarkdown(path)))
     .map(([port, path]) => ({id: `${g.id}.${port}`, label: `${L(run.node_info[g.id].label) || g.id} · ${port}`, path})));
 }
 
@@ -1475,8 +1483,8 @@ function resultsBox(run, runId, outputs) {
           h("button", {type: "button", class: "btn", title: S("read"), onclick: () => openReader(runId, o.path, name(o))}, name(o)),
           h("a", {class: "btn", href: fileUrl(runId, o.path, true), title: S("download"), "aria-label": `${S("download")}: ${name(o)}`}, "↓"))
         : h("a", {class: "btn", href: fileUrl(runId, o.path, true)}, "↓ " + name(o))),
-      saved.map((f) => h("a", {class: "btn small", href: fileUrl(runId, f.path, true), title: f.path.split("/").pop()}, "↓ " + (FORMAT_NAMES[f.port] || f.port))),
-      shown && !saved.length ? h("a", {class: "btn small", href: fileUrl(runId, shown.path, true)}, "↓ " + name(shown)) : null),
+      saved.filter((f) => !outputs.some((o) => o !== shown && o.path === f.path)).map((f) => h("a", {class: "btn small", href: fileUrl(runId, f.path, true), title: f.path.split("/").pop()}, "↓ " + (FORMAT_NAMES[f.port] || f.port))),
+      shown && !saved.some((f) => f.path === shown.path) ? h("a", {class: "btn small", href: fileUrl(runId, shown.path, true)}, "↓ " + name(shown)) : null),
     shown ? resultPreview(runId, shown, name(shown)) : null);
 }
 
@@ -1486,7 +1494,7 @@ function resultPreview(runId, output, title) {
   api("GET", `/api/runs/${runId}/files/${filePath(output.path)}`).then((text) => {
     fill(box, h("div", {class: "result-preview-head"}, h("b", {}, title),
       h("button", {type: "button", class: "btn small", onclick: () => openReader(runId, output.path, title)}, S("open_full"))),
-    resultView(typeof text === "string" ? text : JSON.stringify(text, null, 2), true));
+    resultView(typeof text === "string" ? text : JSON.stringify(text, null, 2), true, undefined, "formatted"));
   }).catch((err) => fill(box, h("p", {class: "small muted"}, err.message)));
   return box;
 }
@@ -1540,11 +1548,11 @@ function viewToggle(redraw) {
 }
 
 // A text as the reader shows it; mark(src): true for a paragraph to mark as different (the compare view).
-function resultView(text, markdown, mark) {
+function resultView(text, markdown, mark, view = reader.view) {
   if (!text) return h("p", {class: "muted reader-pane"}, S("empty_output"));
   const json = jsonPretty(text);  // history.js: the answer of an AI step with "output: json"
   if (json) return h("pre", {class: "md-plain json-view reader-pane", dir: "ltr"}, json);
-  if (markdown && reader.view === "formatted") {
+  if (markdown && view === "formatted") {
     const el = Markdown.render(text, {mark});
     el.classList.add("reader-pane");
     return el;
@@ -1581,7 +1589,7 @@ function drawReader() {
   fill($("#reader-tools"), !r.editing && isMarkdown(r.rel) ? viewToggle(drawReader) : null,
     !r.editing && isEditable(r.rel) && r.limit ? h("button", {type: "button", class: "btn", onclick: startEdit}, "✎ " + S("edit_action")) : null);
   if (r.editing) return drawEditor();
-  fill($("#reader-body"), r.edited || r.notice ? versionBar() : null, resultView(edited ? r.edited.text : r.original, isMarkdown(r.rel)));
+  fill($("#reader-body"), r.limit || r.notice ? versionBar() : null, resultView(edited ? r.edited.text : r.original, isMarkdown(r.rel)));
 }
 
 // Original / Edited, when the user saved an edited version; and the export of the edited version.
@@ -1589,7 +1597,7 @@ function versionBar() {
   const r = reader;
   const status = h("p", {class: "small reader-status", role: "status", "aria-live": "polite"}, r.notice || "");
   r.notice = null;
-  if (!r.edited) return h("div", {class: "reader-bar"}, status);
+  if (!r.limit) return h("div", {class: "reader-bar"}, status);
   const pick = (version) => h("button", {type: "button", class: "tab" + (r.version === version ? " active" : ""), "aria-pressed": String(r.version === version),
     onclick: () => { r.version = version; drawReader(); }}, S(version === "edited" ? "version_edited" : "version_original"));
   const names = {md: "Markdown (.md)", docx: "Word (.docx)", html: "HTML (.html)", pdf: "PDF (.pdf)", epub: "EPUB (.epub)",
@@ -1597,14 +1605,14 @@ function versionBar() {
   const format = h("select", {"aria-label": S("export_format")}, ((INFO && INFO.formats) || Object.keys(names)).map((f) => h("option", {value: f}, names[f] || f)));
   format.value = recall("mehteran.exportFormat") || "docx";
   if (!format.value) format.value = "md";
-  const exportButton = h("button", {type: "button", class: "btn", title: S("export_hint"), onclick: async (e) => {
+  const exportButton = h("button", {type: "button", class: "btn", onclick: async (e) => {
     const button = e.currentTarget, seq = reader.seq;
     remember("mehteran.exportFormat", format.value);
     button.disabled = true;
     status.className = "small reader-status muted";
     status.textContent = S("export_working");
     try {
-      const out = await api("POST", `/api/runs/${r.runId}/edits/${filePath(r.rel)}`, {format: format.value});
+      const out = await api("POST", `/api/runs/${r.runId}/edits/${filePath(r.rel)}`, {format: format.value, version: r.version});
       if (seq !== reader.seq) return;
       h("a", {href: fileUrl(r.runId, out.path, true)}).click();  // an attachment: the page stays
       status.className = "small reader-status good-text";
@@ -1616,8 +1624,8 @@ function versionBar() {
   }}, "⇩ " + S("export_action"));
   return h("div", {class: "reader-bar"},
     h("div", {class: "row"},
-      h("div", {class: "seg", role: "group", "aria-label": S("version_label")}, pick("original"), pick("edited")),
-      h("span", {class: "small muted"}, S("edit_modified", {time: fmtTime(r.edited.modified)})),
+      r.edited ? h("div", {class: "seg", role: "group", "aria-label": S("version_label")}, pick("original"), pick("edited")) : null,
+      r.edited ? h("span", {class: "small muted"}, S("edit_modified", {time: fmtTime(r.edited.modified)})) : null,
       h("span", {class: "grow"}),
       h("label", {class: "row export-row"}, h("span", {class: "small muted"}, S("export_label")), format), exportButton),
     status);

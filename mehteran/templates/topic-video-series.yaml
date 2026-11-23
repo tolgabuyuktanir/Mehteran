@@ -1,0 +1,116 @@
+schema_version: 1
+id: topic-video-series
+version: "1.2"
+category: education
+name: {tr: "Sosyal medya video serisi", en: "Social video series"}
+description:
+  tr: "Her satıra bir konu yazın. Senaryoyu onaylayın ve her konu için seslendirmeli, geometrik çizimli ve görüntüye işlenmiş altyazılı bir MP4 indirin. FFmpeg, ffprobe, Pango ve eSpeak NG veya macOS sistem sesi gerekir."
+  en: "Enter one topic per line. Approve the script and download one narrated MP4 per topic with geometric illustrations and burned-in captions. Requires FFmpeg, ffprobe, Pango and eSpeak NG or a macOS system voice."
+inputs:
+  - id: topics
+    type: text
+    multiline: true
+    label: {tr: "Konular (satır başına bir konu, en fazla 8)", en: "Topics (one per line, up to 8)"}
+  - id: platform
+    type: choice
+    label: {tr: "Yayın platformu", en: "Publishing platform"}
+    default: instagram
+    options:
+      - {value: instagram, label: {tr: Instagram, en: Instagram}}
+      - {value: youtube, label: {tr: YouTube, en: YouTube}}
+      - {value: tiktok, label: {tr: TikTok, en: TikTok}}
+      - {value: whatsapp, label: {tr: WhatsApp, en: WhatsApp}}
+  - id: mode
+    type: choice
+    label: {tr: "Video türü", en: "Video format"}
+    default: short
+    options:
+      - {value: short, label: {tr: "Reels / Shorts / Durum · 20 saniye", en: "Reels / Shorts / Status · 20 seconds"}}
+      - {value: standard, label: {tr: "Standart video · 40 saniye", en: "Standard video · 40 seconds"}}
+  - id: language
+    type: language
+    label: {tr: "Seslendirme ve altyazı dili", en: "Narration and caption language"}
+  - id: model
+    type: provider
+    default: ollama/qwen2.5:latest
+    label: {tr: "Model", en: "Model"}
+nodes:
+  - id: check
+    type: video.check
+    label: {tr: "Konuları ve video araçlarını kontrol et", en: "Check topics and video tools"}
+    config:
+      topics: "{{inputs.topics}}"
+      lang: "{{inputs.language}}"
+  - id: script
+    type: ai.cli
+    label: {tr: "Konu konu senaryo yaz", en: "Write a script for each topic"}
+    config:
+      provider: "{{inputs.model}}"
+      prompt: |
+        Write a short educational video script in {{inputs.language}} for each topic below, in order.
+        Target platform: {{inputs.platform}}. Format: {{inputs.mode}}. For short videos use 3 scenes and 30–40 words total for 20 seconds; for standard videos use 5 scenes and 65–80 words total for 40 seconds. Keep scenes similar in spoken length. Use each topic as a heading. Give each scene one spoken sentence
+        and a concrete suggestion for a simple geometric illustration. Keep the narration factual.
+        Topics:
+        {{nodes.check.text}}
+  - id: review
+    type: approval
+    label: {tr: "Senaryoları onayla", en: "Review the scripts"}
+    config:
+      show: "{{nodes.script.text}}"
+      instructions: {tr: "Anlatımı ve sahneleri inceleyin. Çizim için önerilerinizi yorumda belirtin.", en: "Review the narration and scenes. Add illustration suggestions in the comment."}
+  - id: storyboard
+    type: ai.cli
+    label: {tr: "Sahne çizimlerini tasarla", en: "Design the scene illustrations"}
+    config:
+      provider: "{{inputs.model}}"
+      output: json
+      json_schema: |
+        {"type":"array","minItems":1,"maxItems":8,"items":{"type":"array","minItems":1,"maxItems":8,"items":{
+          "type":"object","required":["narration","background","boxes"],"properties":{
+          "narration":{"type":"string","minLength":1,"maxLength":180},"background":{"type":"string","minLength":6,"maxLength":6},
+          "boxes":{"type":"array","minItems":1,"maxItems":32,"items":{"type":"array","minItems":5,"maxItems":5}}}}}}
+      prompt: |
+        Encode the approved script as JSON. Return an outer array, one inner array per topic in the original order.
+        Original topic list (one line per topic): {{inputs.topics}}
+        For one topic return exactly one inner array containing ALL its scenes.
+        Each inner array contains 1–8 scenes. Each scene has narration (one plain sentence, up to 180 characters,
+        no brackets or markup), background (six hex digits without #), and boxes (1–32 colored rectangles).
+        Each rectangle is [x,y,width,height,"RRGGBB"], using integer percentages of the frame, positive sizes.
+        Compose recognizable geometric illustrations for each scene. Compose for {{inputs.platform}}, format {{inputs.mode}}. Keep key shapes above the caption band.
+        Exact shape for a single topic with one scene:
+        [[{"narration":"A tree grows.","background":"eeeecc","boxes":[[45,30,8,40,"774422"],[30,12,40,22,"338844"]]}]]
+        Never wrap the arrays in an object. Write colors without a leading hash.
+        Keep narration in {{inputs.language}}. Approved script: {{nodes.review.text}}
+        Reviewer notes: {{nodes.review.comment}}
+  - id: voice
+    type: video.preview
+    label: {tr: "İlk sahneyi seslendir", en: "Narrate the first scene"}
+    config:
+      source: "{{nodes.storyboard.text}}"
+      lang: "{{inputs.language}}"
+  - id: listen
+    type: approval
+    label: {tr: "Sesi dinle ve onayla", en: "Listen and approve"}
+    config:
+      show: "{{nodes.storyboard.text}}"
+      instructions: {tr: "İlk cümleyi dinleyin. Videoları oluşturmak için onaylayın.", en: "Play the first sentence. Approve to render the videos."}
+  - id: render
+    type: video.series
+    label: {tr: "Videoları seslendir ve kaydet", en: "Narrate and render the videos"}
+    config:
+      source: "{{nodes.listen.text}}"
+      topics: "{{inputs.topics}}"
+      lang: "{{inputs.language}}"
+      platform: "{{inputs.platform}}"
+      mode: "{{inputs.mode}}"
+connections:
+  - {from: check.text, to: script}
+  - {from: script.text, to: review}
+  - {from: review.text, to: storyboard}
+  - {from: review.comment, to: storyboard}
+  - {from: storyboard.text, to: voice}
+  - {from: voice.audio, to: listen}
+  - {from: storyboard.text, to: listen}
+  - {from: listen.text, to: render}
+outputs:
+  - {id: videos, from: render.zip, label: {tr: "MP4 video serisi (ZIP)", en: "MP4 video series (ZIP)"}}

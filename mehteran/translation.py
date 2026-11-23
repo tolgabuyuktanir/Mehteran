@@ -14,7 +14,6 @@ The interface is the translation app's own file pipeline/ui/app.js (and style.cs
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -23,16 +22,6 @@ from . import paths
 PREFIX = "/api/tr"
 STATIC = paths.REPO / "pipeline" / "ui"
 FILES = {"/tr/app.js": ("app.js", "text/javascript"), "/tr/style.css": ("style.css", "text/css")}
-
-
-def has_local_books(root: Path) -> bool:
-    """Recognize existing book projects without opening sources, results or credentials."""
-    for book in (root / "books").glob("*"):
-        if (book.is_dir() and re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,63}", book.name)
-                and (any((book / name).is_dir() for name in ("source", "references", "output"))
-                     or (book / "work" / "run.json").is_file())):
-            return True
-    return False
 
 
 class Translation:

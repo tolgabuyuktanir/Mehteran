@@ -86,13 +86,64 @@ def inlines(text: str) -> list[tuple[str, str]]:
     return parts
 
 
+def _report_blocks(markdown: str) -> list[dict]:
+    """Read report structure line by line, including compact Markdown from model outputs."""
+    blocks, notes = [], {}
+    fence = ""
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        if fence:
+            if re.fullmatch(re.escape(fence[0]) + "{" + str(len(fence)) + ",}", stripped):
+                fence = ""
+            else:
+                blocks[-1]["lines"].append(line)
+            continue
+        opener = re.match(r"^(`{3,}|~{3,})", stripped)
+        if opener:
+            fence = opener[1]
+            blocks.append({"type": "code", "lines": []})
+            continue
+        note = _NOTE_LINE.match(stripped)
+        if note:
+            notes[note[1]] = note[2]
+            continue
+        if not stripped:
+            blocks.append({"type": "break"})
+            continue
+        heading = re.match(r"^(#{1,6})\s+(.+)$", line)
+        bullet = re.match(r"^( *)([-*+])\s+(.+)$", line)
+        number = re.match(r"^ *(\d{1,9})[.)]\s+(.+)$", line)
+        if heading:
+            blocks.append({"type": "heading", "level": len(heading[1]), "lines": [heading[2]]})
+        elif bullet:
+            blocks.append({"type": "bullet", "level": 1 + len(bullet[1]) // 2, "lines": [bullet[3]]})
+        elif number:
+            blocks.append({"type": "ordered", "number": int(number[1]), "lines": [number[2]]})
+        else:
+            kind = "quote" if line.startswith(">") else "para"
+            value = line.lstrip("> ") if kind == "quote" else line
+            if blocks and blocks[-1]["type"] == kind:
+                blocks[-1]["lines"].append(value)
+            else:
+                blocks.append({"type": kind, "lines": [value]})
+    result = []
+    for block in blocks:
+        if block["type"] != "break":
+            block["text"] = "\n".join(block.pop("lines"))
+            block["notes"] = notes
+            result.append(block)
+    return result
+
+
 def parse(markdown: str, lists: bool = True) -> list[dict]:
-    """Returns blocks: {"type": heading|para|bullet|quote, "level", "text", "notes": {n: text}}.
+    """Returns blocks with a type, text, footnotes, and optional heading or list metadata.
 
     A footnote text is looked up first in its own block, then in the whole document (a model may have moved
     the "[^n]: text" line to another paragraph). lists=False keeps lines that start with "- " (a dialogue dash in
     a book) as normal paragraphs.
     """
+    if lists:
+        return _report_blocks(markdown)
     all_notes = {m.group(1): m.group(2) for m in (_NOTE_LINE.match(line.strip()) for line in markdown.splitlines()) if m}
     blocks = []
     for chunk in re.split(r"\n\s*\n", markdown.replace("\r\n", "\n").strip()):
@@ -112,10 +163,6 @@ def parse(markdown: str, lists: bool = True) -> list[dict]:
         notes = {**all_notes, **notes}
         if heading and len(body) == 1:
             blocks.append({"type": "heading", "level": len(heading.group(1)), "text": heading.group(2), "notes": notes})
-        elif lists and all(re.match(r"\s*- ", line) for line in body) and body[0].startswith("- "):
-            for line in body:  # "  - " is an item under the item above it
-                indent = len(line) - len(line.lstrip(" "))
-                blocks.append({"type": "bullet", "level": 1 + indent // 2, "text": line.lstrip(" ")[2:], "notes": notes})
         elif all(line.startswith(">") for line in body):
             blocks.append({"type": "quote", "text": "\n".join(line.lstrip("> ") for line in body), "notes": notes})
         else:
@@ -181,21 +228,28 @@ def to_html(markdown: str, title: str, lang: str, print_on_load: bool = False, l
 
     blocks = parse(markdown, lists)
     top = min((b["level"] for b in blocks if b["type"] == "heading"), default=None)
-    in_list = False
+    in_list = ""
     for block in blocks:
-        if block["type"] != "bullet" and in_list:
-            body.append("</ul>")
-            in_list = False
+        list_tag = {"ordered": "ol", "bullet": "ul"}.get(block["type"], "")
+        if in_list and list_tag != in_list:
+            body.append(f"</{in_list}>")
+            in_list = ""
         if block["type"] == "heading" and block["level"] == top and not lists:
             notes_html()  # the notes of a chapter stand at its end
+        if block["type"] == "code":
+            body.append("<pre><code>" + html.escape(block["text"]) + "</code></pre>")
+            continue
         text = render(block["text"], block["notes"])
         if block["type"] == "heading":
             level = min(block["level"], 6)
             body.append(f"<h{level}>{text}</h{level}>")
-        elif block["type"] == "bullet":
+        elif list_tag:
             if not in_list:
-                body.append("<ul>")
-                in_list = True
+                body.append(f"<{list_tag}>")
+                in_list = list_tag
+            if list_tag == "ol":
+                body.append(f'<li value="{block["number"]}">{text}</li>')
+                continue
             body.append(f'<li class="sub">{text}</li>' if block.get("level", 1) > 1 else f"<li>{text}</li>")
         elif block["type"] == "quote":
             body.append(f"<blockquote>{text}</blockquote>")
@@ -206,7 +260,7 @@ def to_html(markdown: str, title: str, lang: str, print_on_load: bool = False, l
         else:
             body.append(f"<p>{text}</p>")
     if in_list:
-        body.append("</ul>")
+        body.append(f"</{in_list}>")
     notes_html()
 
     script = "<script>window.addEventListener('load', () => setTimeout(() => window.print(), 300));</script>" if print_on_load else ""
@@ -252,6 +306,7 @@ def to_html(markdown: str, title: str, lang: str, print_on_load: bool = False, l
   .notes {{ font-size: 10pt; line-height: 1.4; margin: 1.6em 0 1.2em; padding: .6em 0 0 1.6em; border-top: .5pt solid #888; text-align: start; }}
   .notes li {{ margin-bottom: .25em; }}
   .notes .back {{ text-decoration: none; color: #888; }}
+  pre {{ overflow-x: auto; }}
   code {{ font-family: Menlo, Consolas, monospace; font-size: 10pt; }}
   @page {{ size: {page}; {page_number} }}
   @media print {{ body {{ max-width: none; margin: 0; padding: 0; }} a {{ color: inherit; }} .notes .back {{ display: none; }} }}
@@ -342,7 +397,14 @@ def _docx_body(markdown: str, lang: str, lists: bool, ids: dict, first_note: int
         else:
             props = f"<w:pPr>{style_xml}{bidi}</w:pPr>"
         text = ({1: "• ", 2: "◦ "}.get(block.get("level", 1), "◦ ") if block["type"] == "bullet" else "") + block["text"]
-        paragraphs.append(f"<w:p>{props}{content(text, block['notes'])}</w:p>")
+        if block["type"] == "ordered":
+            text = f"{block['number']}. {text}"
+        if block["type"] == "code":
+            monospace = '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>'
+            for line in text.split("\n"):
+                paragraphs.append(f"<w:p>{props}{_runs(line, rtl, monospace)}</w:p>")
+        else:
+            paragraphs.append(f"<w:p>{props}{content(text, block['notes'])}</w:p>")
 
     # The notes are rendered after the body, so their own marks do not change the numbering above.
     notes = []

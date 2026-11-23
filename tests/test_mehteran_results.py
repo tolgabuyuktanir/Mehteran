@@ -140,6 +140,18 @@ class EditTests(HomeCase):
         self.assertEqual(status, 200)
         self.assertEqual((self.run_dir / "nodes" / "write" / "text.md").read_text(encoding="utf-8"), self.original)
 
+    def test_export_original_without_a_saved_edit(self):
+        status, original = self.json("POST", self.edits, {"format": "html", "version": "original"})
+        self.assertEqual(status, 200)
+        self.assertIn("## Answer", self.original)
+        self.assertIn("<h2>Answer write</h2>", (self.run_dir / original["path"]).read_text(encoding="utf-8"))
+        self.assertFalse((self.run_dir / "edited" / "write.text.md").exists())
+        self.json("PUT", self.edits, {"text": "## Edited"})
+        status, edited = self.json("POST", self.edits, {"format": "html", "version": "edited"})
+        self.assertEqual(status, 200)
+        self.assertNotEqual(original["path"], edited["path"])
+        self.assertIn("<h2>Edited</h2>", (self.run_dir / edited["path"]).read_text(encoding="utf-8"))
+
     def test_missing_tool_says_what_to_install(self):
         self.json("PUT", self.edits, {"text": "Text."})
         with mock.patch.object(typst, "binary", return_value=(None, None)):

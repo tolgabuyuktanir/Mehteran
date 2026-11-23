@@ -68,12 +68,24 @@ def _follow(engine: Engine, run_id: str) -> int:
         engine.cancel(run_id)
         engine.wait(run_id, timeout=30)
         run = engine.get(run_id)
+    folder = engine.run_dir(run_id)
     if run["status"] == "waiting_approval":
+        wf = schema.parse(run["workflow_yaml"])
         for node_id, info in run["nodes"].items():
-            if info["status"] == "waiting_approval":
-                _print(t("cli_waiting", node=node_id, run=run_id,
-                         path=engine.run_dir(run_id) / info["outputs"].get("text", "")))
-    _print(t("cli_result", status=t("status_" + run["status"]), path=engine.run_dir(run_id)))
+            if info["status"] != "waiting_approval":
+                continue
+            _print(t("cli_waiting", node=node_id, run=run_id, path=folder / info["outputs"].get("text", "")))
+            for edge in wf.graph()["edges"]:
+                if edge["to"] != node_id or wf.ports(edge["from"]).get(edge["port"]) != "file":
+                    continue
+                rel = run["nodes"][edge["from"]]["outputs"].get(edge["port"])
+                if rel:
+                    _print(f"- {folder / rel}")
+    _print(t("cli_result", status=t("status_" + run["status"]), path=folder))
+    if run["status"] == "succeeded":
+        from .history import results
+        for _, rel in results(engine, run):
+            _print(f"- {folder / rel}")
     if run["error"]:
         _print(run["error"])
     return EXIT.get(run["status"], 1)
