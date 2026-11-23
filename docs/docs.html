@@ -56,7 +56,7 @@
     <div class="grid">
       <div class="card"><h3>Workflow</h3><p>A graph of steps, saved as one YAML file. You build it on a canvas or write it by hand.</p></div>
       <div class="card"><h3>Step</h3><p>One box of the workflow: read a document, ask a model, a condition, a loop, an approval, a merge or an export.</p></div>
-      <div class="card"><h3>Template</h3><p>A ready-made workflow that comes with Mehteran (77 of them). Open one and save it as your own to change it.</p></div>
+      <div class="card"><h3>Template</h3><p>A ready-made workflow that comes with Mehteran (78 of them). Open one and save it as your own to change it.</p></div>
       <div class="card"><h3>Run</h3><p>One execution of a workflow with your inputs. It keeps a frozen copy of the workflow, every prompt and every result.</p></div>
       <div class="card"><h3>AI tool</h3><p>The program that calls a model: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama or a local server.</p></div>
     </div>
@@ -274,6 +274,21 @@ outputs:
     <p class="note">Mehteran sizes the context of each Ollama call to the prompt. When a document is still too long for the model, the step fails with a clear message instead of answering from a cut text. Use a loop step (<code>ai.map</code>) or a model with a larger context.</p>
   </section>
 
+  <section id="video">
+    <h2>Social video series</h2>
+    <p>The <b>Social video series</b> template makes one narrated video per topic, with captions burned in, for Instagram, YouTube, TikTok or WhatsApp. Choose <b>Reels / Shorts / Status</b> for about 20 seconds or <b>Standard video</b> for about 40 seconds.</p>
+    <ol>
+      <li>On the <b>Setup</b> tab, open <b>Video services</b> at the bottom of the page. Paste your OpenAI API key (scene images) and your ElevenLabs API key (narration). Optional: enter an ElevenLabs voice ID, for example a native narrator for the narration language.</li>
+      <li>Install FFmpeg and Pango on this computer. The first step of the workflow checks them before any model call.</li>
+      <li>Write up to 8 topics, one per line, and start the run.</li>
+      <li>Approve the script. Then listen to the first sentence and approve the voice. Only then are all the videos rendered.</li>
+    </ol>
+    <p class="note">Claude Code writes the script (Opus by default). The image and voice requests go to OpenAI and ElevenLabs with your keys, and they may be charged. The keys stay on this computer; the page never shows a saved key. Without a saved key, Mehteran uses <code>OPENAI_API_KEY</code> and <code>ELEVENLABS_API_KEY</code> from its startup environment.</p>
+<pre><code>./mehter run topic-video-series --input "topics=How does an olive tree grow?" --input language=en
+./mehter approve &lt;run&gt; review
+./mehter approve &lt;run&gt; listen</code></pre>
+  </section>
+
   <section id="cli">
     <h2>Command line</h2>
 <pre><code>./mehter templates                          <span class="c"># list the templates</span>
@@ -295,7 +310,7 @@ outputs:
 
   <section id="languages">
     <h2>Languages</h2>
-    <p>The language button at the top right offers 18 interface languages: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 and 日本語. Arabic, Persian and Urdu turn the page right to left.</p>
+    <p>The language button at the top right offers 18 interface languages: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 and 日本語. Arabic, Persian and Urdu turn the page right to left. Every language is complete: the whole interface and every message. Only the labels of the step settings in the editor are in English.</p>
     <p>The output language of a workflow is separate: a <code>language</code> input offers every language of the registry and starts at your interface language. Mehteran stores its own messages with their keys, so a run's log appears in the language of whoever reads it.</p>
   </section>
 
@@ -373,7 +388,7 @@ outputs:
     <div class="grid">
       <div class="card"><h3>İş akışı</h3><p>Tek bir YAML dosyası olarak saklanan adımlar çizimi. Tuvalde kurulur ya da elle yazılır.</p></div>
       <div class="card"><h3>Adım</h3><p>İş akışındaki bir kutu: belge okuma, modele sorma, koşul, döngü, onay, birleştirme ya da dışa aktarma.</p></div>
-      <div class="card"><h3>Şablon</h3><p>Mehteran'la gelen hazır bir iş akışı (77 tane). Değiştirmek için açıp kendi akışınız olarak kaydedin.</p></div>
+      <div class="card"><h3>Şablon</h3><p>Mehteran'la gelen hazır bir iş akışı (78 tane). Değiştirmek için açıp kendi akışınız olarak kaydedin.</p></div>
       <div class="card"><h3>Çalıştırma</h3><p>Bir iş akışının sizin girdilerinizle bir kez yürütülmesi. İş akışının dondurulmuş kopyasını, her istemi ve her sonucu saklar.</p></div>
       <div class="card"><h3>Yapay zekâ aracı</h3><p>Modeli çağıran program: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama ya da yerel bir sunucu.</p></div>
     </div>
@@ -591,6 +606,21 @@ outputs:
     <p class="note">Mehteran her Ollama çağrısının bağlam boyutunu isteme göre ayarlar. Belge model için yine de çok uzunsa adım, kesilmiş bir metinden cevap vermek yerine açık bir mesajla başarısız olur. Bir döngü adımı (<code>ai.map</code>) ya da bağlamı daha büyük bir model kullanın.</p>
   </section>
 
+  <section id="tr-video">
+    <h2>Sosyal medya video serisi</h2>
+    <p><b>Sosyal medya video serisi</b> şablonu her konu için Instagram, YouTube, TikTok ya da WhatsApp'a uygun, seslendirmeli ve altyazılı bir video üretir. Yaklaşık 20 saniye için <b>Reels / Shorts / Durum</b>, yaklaşık 40 saniye için <b>Standart video</b> seçin.</p>
+    <ol>
+      <li><b>Kurulum</b> sekmesinin en altındaki <b>Video servisleri</b> bölümünü açın. OpenAI API anahtarınızı (sahne görselleri) ve ElevenLabs API anahtarınızı (seslendirme) yapıştırın. İsterseniz bir ElevenLabs ses kimliği girin; örneğin seslendirme dilinin anadili konuşanı olan bir anlatıcı.</li>
+      <li>Bu bilgisayara FFmpeg ve Pango kurun. İş akışının ilk adımı, model çağrılmadan önce bunları kontrol eder.</li>
+      <li>Satır başına bir konu olmak üzere en fazla 8 konu yazın ve çalıştırmayı başlatın.</li>
+      <li>Senaryoyu onaylayın. Sonra ilk cümleyi dinleyip sesi onaylayın. Bütün videolar ancak bundan sonra üretilir.</li>
+    </ol>
+    <p class="note">Senaryoyu Claude Code yazar (varsayılan Opus). Görsel ve ses istekleri anahtarlarınızla OpenAI'a ve ElevenLabs'a gider ve ücretli olabilir. Anahtarlar bu bilgisayarda kalır; sayfa kayıtlı bir anahtarı hiçbir zaman göstermez. Kayıtlı anahtar yoksa Mehteran başlatma ortamındaki <code>OPENAI_API_KEY</code> ve <code>ELEVENLABS_API_KEY</code> değişkenlerini kullanır.</p>
+<pre><code>./mehter run topic-video-series --input "topics=Zeytin ağacı nasıl büyür?" --input language=tr
+./mehter approve &lt;run&gt; review
+./mehter approve &lt;run&gt; listen</code></pre>
+  </section>
+
   <section id="tr-komut">
     <h2>Komut satırı</h2>
 <pre><code>./mehter templates                          <span class="c"># şablonları listele</span>
@@ -612,7 +642,7 @@ outputs:
 
   <section id="tr-diller">
     <h2>Diller</h2>
-    <p>Sağ üstteki dil düğmesi 18 arayüz dili sunar: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 ve 日本語. Arapça, Farsça ve Urduca sayfayı sağdan sola çevirir.</p>
+    <p>Sağ üstteki dil düğmesi 18 arayüz dili sunar: Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文 ve 日本語. Arapça, Farsça ve Urduca sayfayı sağdan sola çevirir. Her dil eksiksizdir: arayüzün tamamı ve her mesaj. Yalnızca düzenleyicideki adım ayarlarının etiketleri İngilizcedir.</p>
     <p>Bir iş akışının çıktı dili ayrıdır: <code>language</code> girdisi kayıttaki her dili sunar ve arayüz dilinizle başlar. Mehteran kendi mesajlarını anahtarlarıyla saklar; bir çalıştırmanın günlüğü onu okuyan kişinin dilinde görünür.</p>
   </section>
 
