@@ -54,12 +54,14 @@ def update(root: Path) -> int:
         saved = {path: path.read_bytes() for path in user_files(root)}
         # An older copy still has some user files in git: their changes are put back after the update.
         tracked = [str(p.relative_to(root)) for p in saved if _git(root, "ls-files", "--error-unmatch", str(p)).returncode == 0]
-        if tracked:
-            _git(root, "checkout", "--", *tracked)
-        result = _git(root, "merge", "--ff-only", "--quiet", "@{upstream}", timeout=120)
-        for path, data in saved.items():  # written back whatever happened
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(data)
+        try:
+            if tracked:
+                _git(root, "checkout", "--", *tracked)
+            result = _git(root, "merge", "--ff-only", "--quiet", "@{upstream}", timeout=120)
+        finally:
+            for path, data in saved.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
         if result.returncode != 0:
             lines = (result.stderr or result.stdout).strip().splitlines()
             say(t("update_skipped_local", reason=lines[-1] if lines else ""))

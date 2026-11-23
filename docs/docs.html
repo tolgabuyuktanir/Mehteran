@@ -45,6 +45,7 @@
   <header>
     <span class="eyebrow">Documentation</span>
     <h1>Mehteran docs</h1>
+    <p><a href="#run">Run your first workflow</a> · <a href="#build">Build a workflow</a> · <a href="#troubleshooting">Troubleshoot</a></p>
     <p>Everything you need to install Mehteran, connect your AI tools, run and build workflows. The <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">full reference</a> has every detail, the API and the internals.</p>
   </header>
   <p class="empty-search" hidden>No section contains these words.</p>
@@ -145,6 +146,8 @@
 
   <section id="results">
     <h2>Results and history</h2>
+    <p><b>Run again</b> uses the YAML saved in the selected run, even if its template has since changed or disappeared. Text inputs come from that run. Choose file inputs again. Model calls use the tools available now.</p>
+    <p>Mehteran keeps local copies of used built-in templates and can recover a removed template from a saved run. New schedules keep their original workflow version. For older schedules, Mehteran uses the last saved run if available, then the current template.</p>
     <ul>
       <li><b>On the page</b>: when a run ends, its first text result is shown formatted on the run's page, with a download for each file the workflow saved ("↓ Word", "↓ Markdown"). <b>Open in full</b> opens the reader. <b>Run again</b> opens the Run section with the same values (files are chosen again).</li>
       <li><b>Read</b>: a Markdown result opens formatted (headings, lists, tables, links). <b>Formatted / Plain text</b> switches the view. Arabic, Persian or Urdu paragraphs read right to left.</li>
@@ -286,14 +289,8 @@ outputs:
   </section>
 
   <section id="translation">
-    <h2>Islamic book translation</h2>
-    <p>The book translation is built in, as the pinned "Islamic book translation" card of the Workflows tab. It translates Turkish Islamic books into new languages. The Turkish source is the authority; published translations of the same book in related languages are used as references. Several models translate, review and check the text in turn. The result is the translated book and a report for the human translator.</p>
-    <ul>
-      <li><b>Open</b> shows the books: upload the Turkish source and the references, choose the target language, start or stop the translation, read and export the result.</li>
-      <li><b>Edit</b> opens the translation workflow, where you choose the model of each step, and its instructions.</li>
-    </ul>
-    <figure><div class="shot"><img src="assets/screens/en-translation.png" alt="The book translation" width="1360" height="860" loading="lazy"></div><figcaption>The book translation inside Mehteran: Books, the translation workflow and its instructions.</figcaption></figure>
-    <p>The translation has its own detailed <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.md">user guide</a>. It can also run on its own with <code>./translate ui</code>.</p>
+    <h2>Optional book translation</h2>
+    <p>Run the separate translation app with <code>./translate ui</code>. Configure your books, models and instructions with the <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.md">translation guide</a>.</p>
   </section>
 
   <section id="languages">
@@ -365,6 +362,7 @@ outputs:
   <header>
     <span class="eyebrow">Belgeler</span>
     <h1>Mehteran belgeleri</h1>
+    <p><a href="#tr-calistir">İlk iş akışınızı çalıştırın</a> · <a href="#tr-olustur">Kendi akışınızı oluşturun</a> · <a href="#tr-sorunlar">Sorun giderin</a></p>
     <p>Mehteran'ı kurmak, yapay zekâ araçlarınızı bağlamak, iş akışlarını çalıştırmak ve oluşturmak için gereken her şey. Bütün ayrıntılar, API ve iç yapı <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">ayrıntılı başvuru belgesinde</a>.</p>
   </header>
   <p class="empty-search" hidden>Bu kelimeleri içeren bir bölüm yok.</p>
@@ -465,6 +463,8 @@ outputs:
 
   <section id="tr-sonuclar">
     <h2>Sonuçlar ve geçmiş</h2>
+    <p><b>Yeniden çalıştır</b>, şablon sonradan değişse veya kaldırılsa bile seçilen çalıştırmanın kaydettiği YAML’ı kullanır. Metin alanları geçmişten doldurulur. Dosyaları yeniden seçin. Model çağrıları mevcut araçlarla yapılır.</p>
+    <p>Mehteran kullanılan hazır şablonların yerel kopyasını saklar. Kaldırılmış bir şablonu kayıtlı çalıştırmadan da kurtarabilir. Yeni zamanlamalar oluşturuldukları sürümü korur. Eski zamanlamalar için önce kaydedilmiş son çalıştırma, o yoksa güncel şablon kullanılır.</p>
     <ul>
       <li><b>Sayfada</b>: çalıştırma bitince ilk metin sonucu çalıştırmanın sayfasında biçimli olarak görünür; iş akışının kaydettiği her dosya için bir indirme vardır ("↓ Word", "↓ Markdown"). <b>Tamamını aç</b> okuyucuyu açar. <b>Yeniden çalıştır</b>, Çalıştır bölümünü aynı değerlerle açar (dosyalar yeniden seçilir).</li>
       <li><b>Okuma</b>: Markdown sonuç biçimlendirilmiş açılır (başlıklar, listeler, tablolar, bağlantılar). <b>Biçimli / Düz metin</b> görünümü değiştirir. Arapça, Farsça ya da Urduca paragraflar sağdan sola okunur.</li>
@@ -606,14 +606,8 @@ outputs:
   </section>
 
   <section id="tr-ceviri">
-    <h2>İslami kitap çevirisi</h2>
-    <p>Kitap çevirisi yerleşiktir: İş akışları sekmesinin başına sabitlenmiş "İslami kitap çevirisi" kartı. Türkçe İslami kitapları yeni dillere çevirir. Türkçe kaynak belirleyicidir; aynı kitabın yakın dillerdeki yayımlanmış çevirileri referans olarak kullanılır. Birden çok model metni sırayla çevirir, inceler ve kontrol eder. Sonuç, çevrilmiş kitap ve insan çevirmen için bir rapordur.</p>
-    <ul>
-      <li><b>Aç</b> kitapları gösterir: Türkçe kaynağı ve referansları yükleyin, hedef dili seçin, çeviriyi başlatın ya da durdurun, sonucu okuyun ve dışa aktarın.</li>
-      <li><b>Düzenle</b> çeviri akışını açar: her adımın modelini ve talimatlarını orada seçersiniz.</li>
-    </ul>
-    <figure><div class="shot"><img src="assets/screens/tr-translation.png" alt="Kitap çevirisi" width="1360" height="860" loading="lazy"></div><figcaption>Mehteran içinde kitap çevirisi: Kitaplar, çeviri akışı ve talimatlar.</figcaption></figure>
-    <p>Çevirinin kendi ayrıntılı <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.tr.md">kullanım kılavuzu</a> vardır. <code>./translate ui</code> ile tek başına da çalışabilir.</p>
+    <h2>İsteğe bağlı kitap çevirisi</h2>
+    <p>Bağımsız çeviri uygulamasını <code>./translate ui</code> ile başlatın. Kitapları, modelleri ve talimatları kurmak için <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.tr.md">çeviri kılavuzunu</a> izleyin.</p>
   </section>
 
   <section id="tr-diller">
@@ -684,8 +678,10 @@ outputs:
 <footer class="foot">
   <div class="wrap">
     <span>Mehteran · <span data-l="en">local AI workflows</span><span data-l="tr">yerel yapay zekâ iş akışları</span></span>
-    <nav>
+    <nav aria-label="Documentation links">
       <a href="./"><span data-l="en">Home</span><span data-l="tr">Ana sayfa</span></a>
+      <a data-l="en" href="#install">Install</a><a data-l="tr" href="#tr-kurulum">Kurulum</a>
+      <a data-l="en" href="#reference">Reference</a><a data-l="tr" href="#tr-basvuru">Başvuru</a>
       <a href="https://github.com/tolgabuyuktanir/Mehteran">GitHub</a>
     </nav>
   </div>

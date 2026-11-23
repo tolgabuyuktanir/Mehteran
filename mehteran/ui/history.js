@@ -6,7 +6,7 @@
 // - The workflow drawer's "Share", and the preview before an import (also by dropping a file on the library).
 // Loaded before app.js; it uses app.js's helpers (h, S, api, ...) only when called.
 
-const runHistory = {query: "", folded: null, openBatches: new Set(), flowOpen: {}};
+const runHistory = {query: "", folded: null, openBatches: new Set(), flowOpen: {}, older: [], end: false};
 
 function foldedGroups() {
   if (!runHistory.folded) {
@@ -17,34 +17,72 @@ function foldedGroups() {
 
 const runTitle = (r) => r.label || r.workflow_name;
 
-// --- the list ---------------------------------------------------------------------------------------------
-function historyMatches(r) {
-  const q = fold(runHistory.query.trim());
-  if (!q) return true;
-  const text = fold([r.workflow_name, r.label, r.note, r.main_input, r.id, S("status_" + r.status)].filter(Boolean).join(" "));
-  return q.split(/\s+/).every((word) => text.includes(word));
+function eventHistory(runId, initial) {
+  let events = initial;
+  const format = (ev) => [fmtTime(ev.time), ev.node_id, ev.kind, ev.message].filter(Boolean).join(" ");
+  const log = h("pre", {class: "log"}, events.map(format).join("\n"));
+  const more = h("button", {type: "button", class: "btn small", hidden: events.length < 300,
+    onclick: async (e) => {
+      const older = await act(e.currentTarget, () => api("GET", `/api/runs/${runId}/events?before=${events[0].id}`));
+      if (!older) return;
+      events = [...older, ...events];
+      log.textContent = events.map(format).join("\n");
+      more.hidden = older.length < 300;
+    }}, S("events_load_older"));
+  return h("details", {class: "logbox"}, h("summary", {}, S("events")), more, log);
 }
 
+// --- the list ---------------------------------------------------------------------------------------------
 function historyTools(refresh) {
   const box = $("#run-tools");
   if (!box || box.dataset.ready) return;
   box.dataset.ready = "1";
   const search = h("input", {type: "search", class: "run-search", placeholder: S("runs_search"), "aria-label": S("runs_search"),
-    value: runHistory.query, oninput: (e) => { runHistory.query = e.target.value; refresh(); }});
+    value: runHistory.query, oninput: (e) => {
+      runHistory.query = e.target.value;
+      clearTimeout(runHistory.searchTimer);
+      runHistory.searchTimer = setTimeout(() => {
+        if (state.tab === "runs") showRuns(state.hash.split("/").slice(1));
+      }, 200);
+    }});
   const days = h("select", {"aria-label": S("runs_cleanup_age")}, [30, 90, 365].map((d) => h("option", {value: d}, S("runs_older_days", {days: d}))));
-  const clean = h("button", {type: "button", class: "btn small", onclick: (e) => cleanupRuns(e.currentTarget, Number(days.value), refresh)}, S("runs_cleanup"));
-  box.append(search, h("details", {class: "run-cleanup"}, h("summary", {class: "small muted"}, S("runs_cleanup_title")),
-    h("div", {class: "row"}, days, clean)));
+  const prune = h("input", {type: "checkbox"});
+  const clean = h("button", {type: "button", class: "btn small", onclick: (e) =>
+    cleanupRuns(e.currentTarget, Number(days.value), refresh, prune.checked)}, S("runs_cleanup"));
+  const trashItems = h("ul", {class: "plain"});
+  const trash = h("details", {ontoggle: async (e) => {
+    if (!e.currentTarget.open) return;
+    try {
+      const runs = await api("GET", "/api/runs/trash");
+      fill(trashItems, runs.length ? runs.map((r) => h("li", {class: "row"}, r.name,
+        h("button", {type: "button", class: "btn small", onclick: async (ev) => {
+          if (await act(ev.currentTarget, () => api("POST", `/api/runs/${r.id}/restore`, {}))) {
+            trash.open = false;
+            refresh(true);
+          }
+        }}, S("run_restore")))) : h("li", {}, S("no_runs")));
+    } catch (err) { fill(trashItems, h("li", {}, err.message)); }
+  }}, h("summary", {class: "small muted"}, S("runs_trash")), trashItems);
+  const storage = h("p", {class: "small muted", role: "status"});
+  box.append(search, trash, h("details", {class: "run-cleanup", ontoggle: async (e) => {
+    if (!e.currentTarget.open) return;
+    try {
+      const space = await api("GET", "/api/storage");
+      storage.textContent = S("run_storage_space", {used: fileSize(space.used), free: fileSize(space.free)});
+    } catch (err) { storage.textContent = err.message; }
+  }}, h("summary", {class: "small muted"}, S("runs_cleanup_title")),
+    storage, h("p", {class: "small muted"}, S("run_storage_sensitive")),
+    h("div", {class: "row"}, days, clean), h("label", {class: "row"}, prune, S("usage_prune_old"))));
 }
 
-async function cleanupRuns(button, days, refresh) {
+async function cleanupRuns(button, days, refresh, pruneUsage) {
   const preview = await act(button, () => api("POST", "/api/runs/cleanup", {days, dry_run: true}));
   if (!preview) return;
-  if (!preview.count) return toast(S("runs_cleanup_none", {days}));
+  if (!preview.count && !pruneUsage) return toast(S("runs_cleanup_none", {days}));
   const ok = await askConfirm(S("runs_cleanup_confirm_title"), [S("runs_cleanup_confirm", {count: preview.count, days, size: fileSize(preview.size)}),
-    S("runs_delete_note")], S("delete"), true);
+    pruneUsage ? S("usage_prune_old") : S("runs_delete_note")], S("delete"), true);
   if (!ok) return;
-  const done = await act(button, () => api("POST", "/api/runs/cleanup", {days}));
+  const done = await act(button, () => api("POST", "/api/runs/cleanup", {days, prune_usage: pruneUsage}));
   if (!done) return;
   toast(S("runs_cleanup_done", {count: done.deleted, size: fileSize(done.size)}));
   refresh(true);
@@ -96,9 +134,8 @@ function historyList(runs, selected) {
   const draw = (reload) => (reload ? showRuns(selected ? [selected] : []) : historyList(runs, selected));
   historyTools(draw);
   const books = state.trRuns || [];
-  const shown = runs.filter(historyMatches);
   const groups = new Map();
-  for (const r of shown) {
+  for (const r of runs) {
     const key = r.template || r.workflow_id;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(r);
@@ -125,7 +162,17 @@ function historyList(runs, selected) {
     b.active || b.status === "queued" ? h("span", {class: "dot"}) : badge(b.waiting_quota ? "waiting_quota" : b.status)),
     b.active ? stopButton(S("stop_named", {name: b.book}), (btn) => stopBook(btn, b.book, () => draw(true))) : null));
   if (bookItems.length) items.push(...historyGroup("translation", S("translation_card_title"), bookItems, bookItems.length, draw, iconTile("translation")));
-  fill($("#run-list"), items.length ? items : h("li", {class: "muted small pl-empty"}, S(runs.length || books.length ? "runs_no_match" : "no_runs")));
+  if (!items.length) items.push(h("li", {class: "muted small pl-empty"}, S(runs.length || books.length ? "runs_no_match" : "no_runs")));
+  if (runs.length && !runHistory.end) items.push(h("li", {},
+    h("button", {type: "button", class: "btn small", onclick: async (e) => {
+      const query = runHistory.query;
+      const older = await act(e.currentTarget, () => api("GET", historyUrl(runs.at(-1).id)));
+      if (!older || state.tab !== "runs" || query !== runHistory.query) return;
+      runHistory.end = older.length < 200;
+      runHistory.older.push(...older);
+      historyList([...runs, ...older], selected);
+    }}, S("runs_load_older"))));
+  fill($("#run-list"), items);
   animateBars(document.querySelectorAll("#run-list .fill[data-w]"), "run-list");
 }
 
@@ -258,10 +305,10 @@ async function deleteRun(button, run, runId) {
   if (!info) return;
   if (!info.deletable) return toast(S("run_delete_busy"), true);
   const ok = await askConfirm(S("run_delete_title", {name: runTitle(run)}),
-    [S("run_delete_text", {size: fileSize(info.size)}), S("runs_delete_note")], S("delete"), true);
+    [S("run_trash_text")], S("runs_trash"), true);
   if (!ok) return;
-  if (await act(button, () => api("DELETE", `/api/runs/${runId}`, {}))) {
-    toast(S("run_deleted", {size: fileSize(info.size)}));
+  if (await act(button, () => api("DELETE", `/api/runs/${runId}`, {trash: true}))) {
+    toast(S("runs_trash"));
     go("runs");
   }
 }

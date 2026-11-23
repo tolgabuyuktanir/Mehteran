@@ -21,6 +21,7 @@ Independent of the web interface; the command line and the tests use it directly
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -156,16 +157,28 @@ class Engine:
             for input_id, spec in wf.inputs.items():
                 if spec["type"] == "provider":
                     inputs[input_id] = every_step  # the run's record says which model the steps used
-        providers, auto = self._resolve_providers(wf, inputs, problems, privacy or wf.data.get("privacy") or "",
+        privacy = "local" if "local" in (privacy, wf.data.get("privacy")) else ""
+        providers, auto = self._resolve_providers(wf, inputs, problems, privacy,
                                                   every_step)
         if problems:
             raise RunError(problems)
+        input_bytes = sum(Path(item).stat().st_size for value in (files or {}).values() for item in _as_list(value))
+        if input_bytes > shutil.disk_usage(self.home).free:
+            raise RunError([t("run_disk_full")])
+        cap = engine_options(self.home).get("max_run_storage_gib")
+        if type(cap) is int and cap > 0:
+            from .history import folder_size
+            if folder_size(self.home / "executions") + input_bytes >= cap * 1024**3:
+                raise RunError([t("run_storage_limit", gib=cap)])
 
         run_id = new_run_id()
+        if template.startswith("builtin:"):
+            from .templates import remember_builtin
+            remember_builtin(template, workflow_yaml, self.home)
         run_dir = self.run_dir(run_id)
         (run_dir / "inputs").mkdir(parents=True)
         try:
-            self._create(run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files, auto)
+            self._create(run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files, auto, privacy)
         except BaseException:
             shutil.rmtree(run_dir, ignore_errors=True)  # no run without its database row
             raise
@@ -179,7 +192,7 @@ class Engine:
         self._launch(run_id)
 
     def _create(self, run_id, run_dir, wf, workflow_yaml, template, inputs, providers, files, move_files,
-                auto: dict | None = None) -> None:
+                auto: dict | None = None, privacy: str = "") -> None:
         for input_id, source in (files or {}).items():
             target_dir = run_dir / "inputs" / input_id
             target_dir.mkdir()
@@ -198,6 +211,8 @@ class Engine:
                 for name in [*providers.values(), *(c for found in auto["candidates"].values() for c in found)]}
         cfg = self.provider_cfg
         frozen = {"providers": {name: cfg["providers"][name] for name in sorted(used)}, "general": cfg["general"]}
+        if privacy:
+            frozen["privacy"] = privacy
         if auto["nodes"]:  # the steps of an `auto` model and the models each kind may move to (frozen with the run)
             frozen["auto"] = auto
         self.store.create_run({"id": run_id, "workflow_id": wf.id, "workflow_name": json.dumps(wf.data["name"], ensure_ascii=False),
@@ -489,7 +504,7 @@ class Engine:
     def get(self, run_id: str) -> dict:
         self.run_dir(run_id)  # checks the form of the id
         run = self.store.run(run_id)
-        if run is None:
+        if run is None or run.get("trashed_at"):
             raise RunError([t("run_not_found", id=run_id)])
         run["nodes"] = self.store.nodes(run_id)
         for info in run["nodes"].values():
@@ -509,8 +524,8 @@ class Engine:
             run["status"] = "interrupted"
         return run
 
-    def list(self) -> list[dict]:
-        runs = self.store.runs()
+    def list(self, before: str = "") -> list[dict]:
+        runs = self.store.runs(before=before)
         for run in runs:
             run["workflow_name"] = display_name(run["workflow_name"])
             if run["status"] == "running":
@@ -529,7 +544,7 @@ class Engine:
         """Resumes the runs that were running (or waiting for a usage limit) when the previous process ended. A run
         that another process drives is left alone. Returns the ids. They continue with their frozen settings."""
         resumed = []
-        for run in self.store.runs():
+        for run in self.store.runs(status="running"):
             if run["status"] != "running" or self.is_active(run["id"]):
                 continue
             try:
@@ -669,6 +684,39 @@ class Engine:
         finished = None if status == "waiting_approval" else time.time()
         self.store.update_run(run_id, status=status, error=error, finished=finished)
         self.store.event(run_id, None, status, error or "")
+        try:
+            self.write_manifest(run_id)
+        except OSError as exc:
+            self.store.event(run_id, None, "manifest_error", str(exc))
+
+    def write_manifest(self, run_id: str) -> None:
+        """Write a portable index of the saved workflow, input files and current node outputs."""
+        run = self.store.run(run_id)
+        folder = self.run_dir(run_id)
+        nodes = self.store.nodes(run_id)
+        files = {"workflow.yaml"}
+        wf = schema.parse(run["workflow_yaml"])
+        for name, spec in wf.inputs.items():
+            if spec["type"] == "file":
+                files.update(p for p in _as_list(run["inputs"].get(name)) if p)
+        for node in nodes.values():
+            files.update(node["outputs"].values())
+        entries = []
+        for rel in sorted(files):
+            path = paths.inside(folder, rel)
+            if path is None or not path.is_file():
+                continue
+            with path.open("rb") as stream:
+                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            entries.append({"path": rel, "bytes": path.stat().st_size, "sha256": digest})
+        data = {key: run[key] for key in ("id", "workflow_id", "created", "finished", "status", "providers")}
+        data.update(schema_version=1, files=entries)
+        tmp = folder / "manifest.json.tmp"
+        try:
+            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            paths.replace(tmp, folder / "manifest.json")
+        finally:
+            tmp.unlink(missing_ok=True)
 
     def _ask_approval(self, run: dict, wf: schema.Workflow, node_id: str) -> None:
         node_dir = self.run_dir(run["id"]) / "nodes" / node_id
@@ -750,9 +798,20 @@ class Engine:
         quota_since = None
         waited = None  # the provider this step waited for last (stream P: known usage limits)
         log = node_dir / livelog.NAME
+        saved = self.store.nodes(run_id)[node_id]
+        wake_at = float(saved.get("quota_until") or 0)
+        if wake_at > time.time():
+            provider_before = run["providers"].get(node_id)
+            until = time.strftime("%H:%M", time.localtime(wake_at))
+            message = t("quota_waiting", time=until)
+            self.store.update_node(run_id, node_id, status="waiting_quota", error=message)
+            self.store.event(run_id, node_id, "quota_wait", message)
+            while time.time() < wake_at and not cancel.wait(min(0.5, max(0.0, wake_at - time.time()))):
+                if self.store.run(run_id)["providers"].get(node_id) != provider_before:
+                    break
         while True:
             if cancel.is_set():
-                self.store.update_node(run_id, node_id, status="cancelled", finished=time.time())
+                self.store.update_node(run_id, node_id, status="cancelled", finished=time.time(), quota_until=None)
                 return
             attempt = self.store.begin_attempt(run_id, node_id)
             fresh = self.store.run(run_id)  # the model may have been switched (switch, fallback_provider)
@@ -842,7 +901,7 @@ class Engine:
                 if time.time() + delay - quota_since <= general.get("quota_max_hours", 24) * 3600:
                     until = time.strftime("%H:%M", time.localtime(time.time() + delay))
                     message = t("quota_waiting", time=until)
-                    self.store.update_node(run_id, node_id, status="waiting_quota", error=message)
+                    self.store.update_node(run_id, node_id, status="waiting_quota", error=message, quota_until=time.time() + delay)
                     self.store.event(run_id, node_id, "quota_wait", t("quota_wait_event", time=until, error=limit))
                     livelog.append(log, str(t("quota_wait_event", time=until, error=limit)), stamp=True)
                     # Wait, but end the wait when the model of this node is switched (switch(), any process).
@@ -880,11 +939,18 @@ class Engine:
         if status not in ("waiting_quota", "failed", "interrupted", "cancelled"):
             raise RunError([t("node_not_switchable", id=node_id, status=t("status_" + status))])
         provider = str(provider or "").strip()
+        provider = adapters.canonical(provider, self.provider_cfg["providers"])
+        local_only = run["provider_cfg"].get("privacy") == "local" or wf.data.get("privacy") == "local"
+        if provider in adapters.AUTO:
+            provider = self.resolve_model("auto:local" if local_only else provider)
         problem = self.provider_problem(provider)
         if problem:
             raise RunError([problem])
+        if local_only and not self.is_local(provider):
+            raise RunError([t("privacy_refused", name=provider)])
         self._set_provider(run_id, node_id, provider, auto=False)
         if status != "waiting_quota":  # the waiting thread sees the switch by itself
+            self.store.update_node(run_id, node_id, quota_until=None)
             self.resume(run_id, node_id)
 
     def _set_provider(self, run_id: str, node_id: str, provider: str, auto: bool) -> None:
@@ -981,15 +1047,18 @@ def _as_list(value) -> list:
     return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
-def resume_on_start() -> bool:
-    """The opt-in setting "resume_interrupted = true" of <data>/configurations/engine.toml: `mehter ui` then resumes
-    the runs that the previous process left running (see Engine.resume_interrupted). Off when the file is missing."""
+def engine_options(home: Path) -> dict:
     import tomllib
     try:
-        with (paths.home() / "configurations" / "engine.toml").open("rb") as f:
-            return tomllib.load(f).get("resume_interrupted") is True
+        with (home / "configurations" / "engine.toml").open("rb") as f:
+            return tomllib.load(f)
     except (OSError, tomllib.TOMLDecodeError):
-        return False
+        return {}
+
+
+def resume_on_start(home: Path | None = None) -> bool:
+    """Whether the server automatically resumes work left by an earlier process."""
+    return engine_options(home if home is not None else paths.home()).get("resume_interrupted") is True
 
 
 _FRAME = re.compile(r"^\s+|^(Traceback \(most recent call last\)|During handling|The above exception|\^+$)")

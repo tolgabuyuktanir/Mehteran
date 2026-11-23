@@ -159,7 +159,7 @@ class WelcomeTests(WebCase):
     def test_shown_at_first_with_choices_that_exist(self):
         status, found = self.json("GET", "/api/welcome")
         self.assertEqual((status, found["show"]), (200, True))
-        self.assertEqual([c["id"] for c in found["choices"]], ["document", "writing", "data", "education", "research", "translation"])
+        self.assertEqual([c["id"] for c in found["choices"]], ["document", "writing", "data", "education", "research"])
         known = {item["id"]: item for item in templates.listing(self.home) if item["source"] == "builtin"}
         for choice in found["choices"]:
             self.assertEqual({"run": 1}.get(choice["action"], len(choice["templates"])), len(choice["templates"]))
@@ -191,11 +191,13 @@ class WelcomeTests(WebCase):
         stored = json.loads((self.home / "configurations" / "library.json").read_text(encoding="utf-8"))
         self.assertEqual(stored["welcome_closed"], "used")
 
-    def test_not_shown_after_a_book_translation(self):
+    def test_standalone_book_translation_does_not_hide_welcome(self):
         work = self.tmp / "trroot" / "books" / "kitap" / "work"
         work.mkdir(parents=True)
         (work / "run.json").write_text(json.dumps({"state": "finished", "started": 1.0}), encoding="utf-8")
-        self.assertEqual(self.json("GET", "/api/welcome"), (200, {"show": False}))
+        status, data = self.json("GET", "/api/welcome")
+        self.assertEqual(status, 200)
+        self.assertTrue(data["show"])
 
 
 if __name__ == "__main__":

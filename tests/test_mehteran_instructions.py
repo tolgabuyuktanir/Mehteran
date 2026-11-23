@@ -185,7 +185,8 @@ class NodeTypeBasicTests(HomeCase):
         self.assertEqual(basic, {"document.extract": [], "ai.cli": ["provider", "prompt"], "text.merge": [],
                                  "approval": ["instructions"], "document.export": ["formats"],
                                  "condition": ["question", "provider"], "ai.map": ["provider", "prompt"],
-                                 "ai.agent": ["provider", "prompt", "sites", "mode"], "share.x": ["text"]})
+                                 "ai.agent": ["provider", "prompt", "sites", "mode"], "share.x": ["text"],
+                                 "expense.validate": []})
         self.assertEqual(types["condition"]["initial_config"], {"operator": "ai"})
         self.assertEqual(next(f for f in types["ai.cli"]["config"] if f["name"] == "prompt")["label"]["tr"], "Talimat")
 

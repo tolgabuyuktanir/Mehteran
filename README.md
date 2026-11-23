@@ -8,6 +8,10 @@
 
 ![The Mehteran workflow library](docs/assets/screens/en-library.png)
 
+**Try a workflow:** Give **Meeting minutes and actions** your meeting notes. The workflow drafts a summary and action list, waits for your review, and exports the result as Word, HTML or Markdown.
+
+[Run your first workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#run) · [Make it your own](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#build)
+
 Mehteran turns the AI tools you already use into repeatable workflows. A workflow reads a document, asks a model, checks the answer, lets a person approve and saves a Word or PDF file. Mehteran calls the AI through the command-line tools of your subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own, and it costs nothing on top of what you already pay.
 
 It runs on macOS, Windows and Linux, in 18 interface languages.
@@ -46,7 +50,7 @@ If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are
 npx mehteran
 ```
 
-The first run installs Mehteran into `~/Mehteran` (with `git clone` when git is on the computer) and opens the interface. Next time, run `npx mehteran` again. Every command works the same way: `npx mehteran templates` is `./mehter templates`. To use another folder, set `MEHTERAN_DIR`.
+The first run installs the source bundled with the npm release into `~/Mehteran` and opens the interface. The installer needs `tar`. Next time, run `npx mehteran` again. Every command works the same way: `npx mehteran templates` is `./mehter templates`. To use another folder, set `MEHTERAN_DIR`.
 
 ## AI tools
 
@@ -63,23 +67,31 @@ You need at least one of them. The Setup tab installs the tools, signs you in an
 
 The optional local tools (Ollama, Tesseract OCR, Typst for PDF, Pandoc, whisper.cpp for speech to text, qpdf) are installed only when you ask, as pinned versions checked against SHA-256 sums.
 
-## Islamic book translation
+## Optional book translation
 
-Mehteran grew out of a book translation pipeline, and the translation is still inside, as the pinned "Islamic book translation" card of the Workflows tab. It translates Turkish Islamic books into new languages. The Turkish source is the authority. Existing translations of the same book in related languages are used as references. ChatGPT, Gemini and Claude translate, review and check the text in turn. The result is the translated book and a report for the human translator.
+If an updated installation has an existing book project, translation history, or the old translation favorite, the **Go to Book translation** link in Workflows keeps it accessible.
 
-The translation app also runs on its own: `Open Interface.command` (macOS), `Open Interface.bat` (Windows) or `./translate ui` (Linux), at `http://127.0.0.1:8765/`. Its [user guide](docs/guide.md) describes it in detail.
+Run the separate translation app with `Open Interface.command` (macOS), `Open Interface.bat` (Windows) or `./translate ui` (Linux). Open `http://127.0.0.1:8765/` and configure your books, models and instructions using the [translation guide](docs/guide.md).
 
-What the default translation workflow needs:
+## Run storage
 
-- **Accounts:** a Claude Pro/Max subscription (or Anthropic Console), a paid ChatGPT plan (or an OpenAI API key), and a Google account for Antigravity CLI, which runs the Gemini models (a Google AI Pro or Ultra subscription gives higher usage limits). Since 18 June 2026 Google does not accept personal accounts in Gemini CLI any more; Antigravity CLI replaces it. Without an account for one of the tools, assign another model to its steps in the translation workflow.
-- **Books as PDF:** the Setup tab installs the PDF reader (Poppler). A `.docx` or `.epub` source is read more completely.
-- **Exporting the book to PDF:** needs Chrome or Edge (Windows always has Edge). Without them, a print-ready page opens; choose "Save as PDF" in the print dialog.
+Restore individual runs from Trash in the Runs tab. Cleaning up old runs permanently deletes their files. The cleanup section shows Mehteran’s data size and free disk space.
+
+Add these optional settings to `configurations/engine.toml` in the data folder to enable automatic maintenance. Automatic deletion is off by default.
+
+```toml
+retain_runs_days = 90
+retain_usage_days = 365
+max_run_storage_gib = 10
+```
+
+Maintenance runs when the interface starts and once a day while it stays open. `retain_runs_days` permanently deletes old finished runs, including those in Trash. `retain_usage_days` clears old usage records. The storage limit is checked before admitting new runs. Active runs can still write output beyond it.
 
 ## Updates
 
 If you got the application with git (`git clone` or `gh repo clone`), it updates itself from GitHub each time the interface starts. Without internet or without a GitHub sign-in, it starts as it is.
 
-A copy installed with `npx mehteran` updates itself the same way when git was on the computer at install time. Without git, it is like a zip copy.
+For a new npm release, use `MEHTERAN_DIR` to install it in a new folder. Existing folders are reused so their book files and settings remain available.
 
 If you downloaded a zip file, download the new zip. Mehteran's workflows and runs are kept outside the code folder, so they stay where they are. For the book translation, move these from the old folder into the new one: `books/`, `glossary/`, `config.toml` and the `.md` files directly in `prompts/` (and `prompts/custom/`).
 

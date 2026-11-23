@@ -65,6 +65,9 @@ class OpenAILocal(Adapter):
         try:
             with _open(base + "/models", None, 3) as res:
                 data = json.loads(res.read())
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            return []
         except (OSError, ValueError):
             return []
         return [str(m["id"]) for m in data.get("data") or [] if isinstance(m, dict) and isinstance(m.get("id"), str)][:200]
@@ -100,7 +103,8 @@ class OpenAILocal(Adapter):
                             if on_text:
                                 on_text(text)
         except urllib.error.HTTPError as e:
-            detail = e.read(2000).decode("utf-8", "replace")
+            with e:
+                detail = e.read(2000).decode("utf-8", "replace")
             if e.code == 429:
                 raise UsageLimit(detail or "429 Too Many Requests", time.time() + 60) from None
             raise CallError(f"HTTP {e.code}: {detail[:500]}") from None

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import atexit
 import os
 import re
 import shlex
@@ -125,27 +126,37 @@ def is_locked(path: Path) -> bool:
 
 # --- sleep --------------------------------------------------------------------
 
+def _start_inhibitor(argv: list[str]) -> bool:
+    try:
+        proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return False
+
+    def stop() -> None:
+        if proc.poll() is not None:
+            return
+        proc.terminate()
+        try:
+            proc.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+
+    atexit.register(stop)
+    return True
+
+
 def keep_awake() -> bool:
     """Prevents the computer from sleeping while this process runs. Returns False when this is not possible."""
     if IS_MAC and shutil.which("caffeinate"):
-        try:
-            subprocess.Popen(["caffeinate", "-i", "-s", "-w", str(os.getpid())],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return True
-        except OSError:
-            return False
+        return _start_inhibitor(["caffeinate", "-i", "-s", "-w", str(os.getpid())])
     if IS_WINDOWS:
         import ctypes
         ES_CONTINUOUS, ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
         return bool(ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED))
     if shutil.which("systemd-inhibit"):
-        try:
-            subprocess.Popen(["systemd-inhibit", "--what=sleep:idle", "--why=translation",
-                              "sh", "-c", f"while kill -0 {os.getpid()} 2>/dev/null; do sleep 30; done"],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return True
-        except OSError:
-            return False
+        return _start_inhibitor(["systemd-inhibit", "--what=sleep:idle", "--why=translation",
+                                 "sh", "-c", f"while kill -0 {os.getpid()} 2>/dev/null; do sleep 30; done"])
     return False
 
 

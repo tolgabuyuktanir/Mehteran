@@ -6,7 +6,7 @@
 - The Scheduler thread of the web server starts a schedule's run when its time has come. Times that passed while
   Mehteran was closed start one run when it opens again, not one per missed time. While the schedule's last run is
   still queued or running, the time is skipped. A run that waits for an approval does not hold up the next one.
-- Each run uses the workflow as it is at that moment, so a changed template applies from the next run on.
+- New schedules keep their workflow YAML. At startup, older schedules acquire a snapshot when one is available.
 - File inputs cannot be scheduled: a schedule keeps only text values.
 - A desktop notification tells when a scheduled run waits for an approval, succeeded or failed (notify()).
 """
@@ -107,6 +107,27 @@ def _workflow(ref: str, home: Path) -> tuple[str, str]:
     return templates.read(source, template_id, home), f"{source}:{template_id}"
 
 
+def pin_legacy_schedules(engine) -> None:
+    """Prefer a schedule's own last executed version, then its current template."""
+    with _lock:
+        items = load(engine.home)
+        changed = False
+        for item in items:
+            if "workflow_yaml" in item:
+                continue
+            prior = engine.store.run(item["last_run"]) if item.get("last_run") else None
+            try:
+                text = prior["workflow_yaml"] if prior and prior.get("schedule") == item["id"] else \
+                    _workflow(item["template"], engine.home)[0]
+                _check_inputs(engine, text, item.get("values") or {})
+            except (RunError, templates.TemplateError, schema.WorkflowError):
+                continue
+            item["workflow_yaml"] = text
+            changed = True
+        if changed:
+            _save(engine.home, items)
+
+
 def _check_inputs(engine, text: str, values: dict) -> None:
     wf = schema.parse(text)
     if any(spec["type"] == "file" and spec.get("required", True) for spec in wf.inputs.values()):
@@ -128,7 +149,7 @@ def create(engine, ref: str, values: dict, rule, name: str = "", every_step: str
         raise RunError([t("label_too_long", limit=NAME_LIMIT)])
     now = time.time()
     item = {"id": secrets.token_hex(6), "name": name or i18n.localized(schema.parse(text).data.get("name")) or ref,
-            "template": ref, "values": values, "every_step": every_step or "", "privacy": privacy or "",
+            "template": ref, "workflow_yaml": text, "values": values, "every_step": every_step or "", "privacy": privacy or "",
             "output_dir": output_dir, "lang": i18n.current(), "rule": rule, "enabled": True, "created": now,
             "next_at": next_time(rule, now), "last_at": None, "last_run": None, "last_error": None}
     with _lock:
@@ -170,7 +191,8 @@ def listing(engine) -> list[dict]:
     out = []
     for item in load(engine.home):
         run = engine.store.run(item["last_run"]) if item.get("last_run") else None
-        out.append({**item, "last_status": run["status"] if run else None})
+        out.append({**{key: value for key, value in item.items() if key != "workflow_yaml"},
+                    "last_status": run["status"] if run else None})
     return out
 
 
@@ -179,7 +201,10 @@ def start(engine, item: dict, kick=None) -> str:
     previous = getattr(i18n._local, "lang", None)  # the request's own language, or None (not the default)
     i18n.set_request(item.get("lang"))
     try:
-        text, ref = _workflow(item["template"], engine.home)
+        ref = item["template"]
+        text = item.get("workflow_yaml")
+        if text is None:
+            text, ref = _workflow(ref, engine.home)
         _check_inputs(engine, text, item.get("values") or {})
         run_id = engine.start(text, item.get("values") or {}, {}, template=ref, launch=False,
                               privacy=item.get("privacy") or "", every_step=item.get("every_step") or "")
@@ -204,21 +229,33 @@ def run_now(engine, schedule_id: str, kick=None) -> str:
 # --- the thread of the web server ----------------------------------------------------------------------------
 
 class Scheduler:
-    def __init__(self, engine, kick=None, notify_fn=None):
+    def __init__(self, engine, kick=None, notify_fn=None, maintenance=None):
         self.engine = engine
         self.kick = kick
         self.notify = notify_fn or notify
         self.wake = threading.Event()
+        self.stopping = threading.Event()
+        self.maintenance = maintenance
+        self.next_maintenance = 0.0
         self.thread: threading.Thread | None = None
 
     def begin(self) -> None:
         self.thread = threading.Thread(target=self._loop, name="mehteran-scheduler", daemon=True)
         self.thread.start()
 
+    def stop(self) -> None:
+        self.stopping.set()
+        self.wake.set()
+        if self.thread:
+            self.thread.join(timeout=2)
+
     def _loop(self) -> None:
-        while True:
+        while not self.stopping.is_set():
             try:
                 self.tick()
+                if self.maintenance and time.monotonic() >= self.next_maintenance:
+                    self.next_maintenance = time.monotonic() + 86400
+                    self.maintenance()
             except Exception as e:  # noqa: BLE001 - the thread must not die; shown in the terminal (or the log)
                 print(f"[mehteran scheduler] {type(e).__name__}: {e}", flush=True)
             self.wake.wait(TICK)

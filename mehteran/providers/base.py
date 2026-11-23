@@ -122,12 +122,16 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
 
     def write_input() -> None:
         try:
-            proc.stdin.write(stdin)
-            proc.stdin.close()
+            with proc.stdin:
+                proc.stdin.write(stdin)
         except OSError:  # the tool ended without reading all of it
             pass
 
     def read_output() -> None:
+        with proc.stdout:
+            read_lines()
+
+    def read_lines() -> None:
         for line in proc.stdout:
             out.append(line)
             reason = guard(line) if guard else None
@@ -141,8 +145,12 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
                 except Exception:  # noqa: BLE001 - a live log must never break the call
                     pass
 
+    def read_error() -> None:
+        with proc.stderr:
+            err.append(proc.stderr.read())
+
     readers = [threading.Thread(target=read_output, daemon=True),
-               threading.Thread(target=lambda: err.append(proc.stderr.read()), daemon=True)]
+               threading.Thread(target=read_error, daemon=True)]
     for thread in [threading.Thread(target=write_input, daemon=True), *readers]:
         thread.start()
     deadline = time.monotonic() + timeout
@@ -152,7 +160,12 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
         proc.kill()
         proc.wait()
         raise subprocess.TimeoutExpired(argv, timeout)
-    proc.wait(max(1.0, deadline - time.monotonic()))
+    try:
+        proc.wait(max(1.0, deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        raise
     if stopped:
         raise Stopped(stopped[0])
     return proc.returncode, "".join(out), "".join(err)

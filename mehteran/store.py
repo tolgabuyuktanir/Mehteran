@@ -42,10 +42,11 @@ CREATE TABLE IF NOT EXISTS calls (
   run_id TEXT NOT NULL, node_id TEXT NOT NULL, provider TEXT NOT NULL, model TEXT NOT NULL DEFAULT '',
   started REAL NOT NULL, seconds REAL NOT NULL, outcome TEXT NOT NULL, until REAL, message TEXT);
 CREATE INDEX IF NOT EXISTS calls_time ON calls (started);
+CREATE TABLE IF NOT EXISTS pending_purges (run_id TEXT PRIMARY KEY);
 """
 # Columns added later; a database made before them gets them on open (old rows: NULL, their text is shown).
-ADDED = {"runs": ("error_key", "error_params", *"label note batch output_dir output_state main_input schedule notified".split()),
-         "nodes": ("error_key", "error_params"), "events": ("key", "params")}
+ADDED = {"runs": ("error_key", "error_params", *"label note batch output_dir output_state main_input schedule notified trashed_at".split()),
+         "nodes": ("error_key", "error_params", "quota_until"), "events": ("key", "params")}
 # The history's own columns of a run (history.py): label and note (the user's name for it), batch (the batch id of a
 # run started "once per file"), output_dir and output_state (save the results to a folder after success), main_input
 # (the first file name or the start of the first text input, computed once), schedule (the schedule that started the
@@ -124,21 +125,49 @@ class Store:
             run[key] = json.loads(run[key])
         return run
 
-    def runs(self, limit: int = 200) -> list[dict]:
-        return [_localized(row, "error", "error_key", "error_params") for row in
-                self._rows("SELECT id, workflow_id, workflow_name, template, status, created, started, finished, error, "
-                           "error_key, error_params, " + ", ".join(HISTORY_COLUMNS) +
-                           " FROM runs ORDER BY created DESC LIMIT ?", (limit,))]
+    def runs(self, limit: int = 200, *, status: str | None = None, before: str = "", trash: bool = False,
+             matches=None) -> list[dict]:
+        where = " WHERE trashed_at IS NOT NULL" if trash else " WHERE trashed_at IS NULL"
+        args = []
+        if status is not None:
+            where += " AND status=?"
+            args.append(status)
+        if before:
+            where += " AND (created, id) < (SELECT created, id FROM runs WHERE id=?)"
+            args.append(before)
+        if matches is not None:
+            where += " AND matches_run(workflow_name, label, note, main_input, id, status)"
+        query = ("SELECT id, workflow_id, workflow_name, template, status, created, started, finished, error, "
+                 "error_key, error_params, " + ", ".join(HISTORY_COLUMNS) +
+                 " FROM runs" + where + " ORDER BY created DESC, id DESC LIMIT ?")
+        args.append(-1 if status is not None else limit)
+        with closing(self._connect()) as db:
+            if matches is not None:
+                db.create_function("matches_run", 6, matches)
+            return [_localized(dict(row), "error", "error_key", "error_params") for row in db.execute(query, args)]
 
     # --- the history (history.py) ---
-    def delete_run(self, run_id: str) -> None:
+    def delete_run(self, run_id: str, *, purge_files: bool = False) -> None:
         """The run's rows (its nodes and events too). Its model calls stay: they are the usage history."""
         with closing(self._connect()) as db:
             db.execute("BEGIN IMMEDIATE")
+            if purge_files:
+                db.execute("INSERT INTO pending_purges (run_id) VALUES (?)", (run_id,))
             for table in ("nodes", "events"):
                 db.execute(f"DELETE FROM {table} WHERE run_id=?", (run_id,))
             db.execute("DELETE FROM runs WHERE id=?", (run_id,))
             db.execute("COMMIT")
+
+    def pending_purges(self) -> list[str]:
+        return [row["run_id"] for row in self._rows("SELECT run_id FROM pending_purges")]
+
+    def finish_purge(self, run_id: str) -> None:
+        self._do("DELETE FROM pending_purges WHERE run_id=?", (run_id,))
+
+    def restore_run(self, run_id: str) -> bool:
+        with closing(self._connect()) as db:
+            return db.execute("UPDATE runs SET trashed_at=NULL WHERE id=? AND trashed_at IS NOT NULL",
+                              (run_id,)).rowcount == 1
 
     def update_run(self, run_id: str, **fields) -> None:
         fields = _keyed(fields)
@@ -181,7 +210,7 @@ class Store:
         with closing(self._connect()) as db:
             db.execute("BEGIN IMMEDIATE")
             db.execute("UPDATE nodes SET status='running', attempts=attempts+1, started=?, finished=NULL, error=NULL, "
-                       "error_key=NULL, error_params=NULL WHERE run_id=? AND node_id=?", (time.time(), run_id, node_id))
+                       "error_key=NULL, error_params=NULL, quota_until=NULL WHERE run_id=? AND node_id=?", (time.time(), run_id, node_id))
             attempts = db.execute("SELECT attempts FROM nodes WHERE run_id=? AND node_id=?", (run_id, node_id)).fetchone()[0]
             db.execute("COMMIT")
         return attempts
@@ -204,6 +233,11 @@ class Store:
     def calls(self, since: float) -> list[dict]:
         return self._rows("SELECT * FROM calls WHERE started >= ? ORDER BY started", (since,))
 
+    def prune_calls(self, before: float) -> int:
+        with closing(self._connect()) as db:
+            return db.execute("DELETE FROM calls WHERE started < ? AND (until IS NULL OR until < ?)",
+                              (before, time.time())).rowcount
+
     # --- events ---
     def event(self, run_id: str, node_id: str | None, kind: str, message: str = "") -> None:
         keyed = isinstance(message, i18n.Msg) and bool(message.key)
@@ -211,11 +245,13 @@ class Store:
                  (run_id, time.time(), node_id, kind, str(message)[:2000], message.key if keyed else None,
                   json.dumps(message.params, ensure_ascii=False) if keyed else None))
 
-    def events(self, run_id: str, limit: int = 300) -> list[dict]:
+    def events(self, run_id: str, limit: int = 300, before: int | None = None) -> list[dict]:
         """{time, node_id, kind, message, text, key, params}: message and text in the current language (the stored
         text for a row without a key); key and params let a page render the message itself."""
-        rows = self._rows("SELECT time, node_id, kind, message, key, params FROM events WHERE run_id=? "
-                          "ORDER BY time DESC LIMIT ?", (run_id, limit))[::-1]
+        cutoff = " AND rowid < ?" if before is not None else ""
+        args = (run_id, before, limit) if before is not None else (run_id, limit)
+        rows = self._rows("SELECT rowid AS id, time, node_id, kind, message, key, params FROM events WHERE run_id=?"
+                          + cutoff + " ORDER BY rowid DESC LIMIT ?", args)[::-1]
         for row in rows:
             _localized(row, "message", "key", "params")
             row["text"] = row["message"]

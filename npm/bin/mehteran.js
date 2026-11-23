@@ -2,8 +2,7 @@
 // Starts Mehteran from npm: "npx mehteran [command ...]" (default: ui).
 // Mehteran is a Python application that keeps the book translation's files (books/, config.toml, prompts/,
 // glossary/, .runtime/) inside its code folder, so the code lives in a fixed folder that npm never deletes:
-// ~/Mehteran, or MEHTERAN_DIR. The first run installs it there (git clone; without git, the GitHub archive),
-// later runs start it. The launcher in that folder finds Python and brings a git copy up to date.
+// ~/Mehteran, or MEHTERAN_DIR. The first run extracts the source bundled with this npm release.
 "use strict";
 
 const fs = require("fs");
@@ -11,7 +10,6 @@ const os = require("os");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 
-const REPO = "https://github.com/tolgabuyuktanir/Mehteran";
 const dir = path.resolve(process.env.MEHTERAN_DIR || path.join(os.homedir(), "Mehteran"));
 const win = process.platform === "win32";
 
@@ -28,38 +26,19 @@ function isEmpty(d) {
   return !fs.existsSync(d) || fs.readdirSync(d).length === 0;
 }
 
-function hasGit() {
-  return spawnSync("git", ["--version"], { stdio: "ignore" }).status === 0;
-}
-
-async function install() {
+function install() {
   console.log(`Installing Mehteran into ${dir} ...\nMehteran ${dir} klasörüne kuruluyor ...`);
-  if (hasGit()) {
-    if (fs.existsSync(dir)) fs.rmdirSync(dir); // empty: git clone wants to create it
-    const r = spawnSync("git", ["clone", REPO + ".git", dir], { stdio: "inherit" });
-    if (r.status !== 0) fail("git clone failed.", "git clone başarısız oldu.");
-    return;
-  }
-  const partial = dir + ".partial";
-  fs.rmSync(partial, { recursive: true, force: true });
-  fs.mkdirSync(partial, { recursive: true });
-  const archive = path.join(os.tmpdir(), `mehteran-${process.pid}.tar.gz`);
+  fs.mkdirSync(path.dirname(dir), { recursive: true });
+  const partial = fs.mkdtempSync(dir + ".partial-");
+  const archive = path.join(__dirname, "..", "mehteran.tar.gz");
   try {
-    const res = await fetch(`${REPO}/archive/refs/heads/main.tar.gz`);
-    if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}.\nİndirme başarısız: HTTP ${res.status}.`);
-    fs.writeFileSync(archive, Buffer.from(await res.arrayBuffer()));
-    const r = spawnSync("tar", ["-xzf", archive, "--strip-components=1", "-C", partial], { stdio: "inherit" });
+    const r = spawnSync("tar", ["-xzf", archive, "-C", partial], { stdio: "inherit" });
     if (r.status !== 0) throw new Error("Unpacking failed (tar).\nArşiv açılamadı (tar).");
-  } catch (e) {
-    fs.rmSync(partial, { recursive: true, force: true });
-    throw e;
+    if (fs.existsSync(dir)) fs.rmdirSync(dir);
+    fs.renameSync(partial, dir);
   } finally {
-    fs.rmSync(archive, { force: true });
+    fs.rmSync(partial, { recursive: true, force: true });
   }
-  if (fs.existsSync(dir)) fs.rmdirSync(dir);
-  fs.renameSync(partial, dir);
-  console.log("Installed without git: install git for automatic updates.\n"
-    + "git olmadan kuruldu: otomatik güncellemeler için git kurun.");
 }
 
 function start(args) {
@@ -79,7 +58,7 @@ async function main() {
       fail(`${dir} exists and is not a Mehteran folder. Choose another folder with MEHTERAN_DIR.`,
         `${dir} var ve bir Mehteran klasörü değil. MEHTERAN_DIR ile başka bir klasör seçin.`);
     }
-    await install();
+    install();
   }
   const args = process.argv.slice(2);
   start(args.length ? args : ["ui"]);

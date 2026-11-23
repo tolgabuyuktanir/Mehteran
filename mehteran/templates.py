@@ -13,6 +13,7 @@ from __future__ import annotations
 import copy
 import os
 import re
+import tempfile
 from pathlib import Path
 
 from . import paths, schema, yamlio
@@ -65,11 +66,60 @@ def _path(source: str, template_id: str, home: Path) -> Path:
         raise TemplateError([t("template_not_found", id=template_id)], 404)
     if source == BUILTIN:
         template_id = ALIASES.get(template_id, template_id)
-    return folder(source, home) / f"{template_id}.yaml"
+    path = folder(source, home) / f"{template_id}.yaml"
+    if source == BUILTIN and not path.is_file():
+        saved = home / "workflows" / "used-builtins" / path.name
+        if saved.is_file():
+            return saved
+    return path
+
+
+def remember_builtin(ref: str, text: str, home: Path) -> None:
+    source, _, ident = ref.partition(":")
+    if source != BUILTIN or not ID_RE.fullmatch(ident):
+        return
+    target = home / "workflows" / "used-builtins" / f"{ident}.yaml"
+    if target.is_file():
+        shipped = folder(BUILTIN, home) / target.name
+        if not shipped.is_file() or shipped.read_text(encoding="utf-8") != text:
+            return  # Replay of an older version must not replace the library's saved copy.
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, delete=False, suffix=".tmp") as stream:
+        tmp = Path(stream.name)
+    try:
+        tmp.write_bytes(text.encode("utf-8"))
+        paths.replace(tmp, target)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def recover_used_builtins(engine) -> None:
+    """Backfill the local archive from the latest usable snapshots of older runs."""
+    for row in engine.store._rows("SELECT DISTINCT template FROM runs WHERE template LIKE 'builtin:%'"):
+        ref = row["template"]
+        ident = ref.partition(":")[2]
+        if not ID_RE.fullmatch(ident):
+            continue
+        saved = engine.home / "workflows" / "used-builtins" / f"{ident}.yaml"
+        if saved.is_file():
+            continue
+        snapshots = engine.store._rows("SELECT workflow_yaml FROM runs WHERE template=? "
+                                       "ORDER BY created DESC, id DESC LIMIT 1", (ref,))
+        if snapshots:
+            text = snapshots[0]["workflow_yaml"]
+            try:
+                schema.parse(text)
+            except schema.WorkflowError:
+                continue
+            remember_builtin(ref, text, engine.home)
 
 
 def ids(source: str, home: Path) -> list[str]:
-    return sorted(p.stem for p in folder(source, home).glob("*.yaml") if ID_RE.match(p.stem))
+    found = {p.stem for p in folder(source, home).glob("*.yaml") if ID_RE.fullmatch(p.stem)}
+    if source == BUILTIN:
+        found.update(p.stem for p in (home / "workflows" / "used-builtins").glob("*.yaml")
+                     if ID_RE.fullmatch(p.stem) and p.stem not in ALIASES)
+    return sorted(found)
 
 
 def read(source: str, template_id: str, home: Path) -> str:

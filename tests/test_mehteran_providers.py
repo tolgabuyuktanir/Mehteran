@@ -230,6 +230,15 @@ class ConcurrencyTests(HomeCase):
 
 
 class PrivacyTests(HomeCase):
+    def test_a_local_run_cannot_switch_to_a_cloud_model(self):
+        engine = self.engine()
+        run_id = engine.start(workflow(ai("a", "TASK:a", provider="ollama/qwen3:8b"), []),
+                              privacy="local", launch=False)
+        engine.store.update_node(run_id, "a", status="waiting_quota")
+        with self.assertRaisesRegex(RunError, "accepts only local models"):
+            engine.switch(run_id, "a", "claude")
+        self.assertEqual(engine.get(run_id)["providers"]["a"], "ollama/qwen3:8b")
+
     def engine(self):
         cfg = adapter_cfg()
         cfg["providers"]["ollama"] = providers.spec("ollama", EMPTY)

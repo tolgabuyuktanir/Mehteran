@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <title>Mehteran</title>
-<!-- the translation app's stylesheet first: Mehteran's own copy of the same base rules comes after it -->
+<!-- Shared styles first, then Mehteran-specific rules. -->
 <link rel="stylesheet" href="/tr/style.css">
 <link rel="stylesheet" href="/style.css">
 <script src="/tr/app.js" defer></script>
@@ -17,6 +17,8 @@
 <script src="/live.js" defer></script>
 <script src="/markdown.js" defer></script>
 <script src="/history.js" defer></script>
+<script src="/runs.js" defer></script>
+<script src="/setup.js" defer></script>
 <script src="/app.js" defer></script>
 </head>
 <body>
@@ -77,6 +79,9 @@
         <div id="template-filters"></div>
         <span id="library-count" class="small muted" role="status" aria-live="polite"></span>
       </div>
+      <p id="existing-book-translation" hidden>
+        <a class="btn" href="#workflows/translation/books" data-i18n="go_translation"></a>
+      </p>
       <div id="template-grid"></div>
     </div>
     <!-- the book translation: the translation app's own interface (/tr/app.js), mounted here by app.js -->

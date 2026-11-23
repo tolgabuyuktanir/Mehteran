@@ -37,6 +37,7 @@ class Server(HomeCase):
     def setUp(self):
         super().setUp()
         self.app = App(self.engine())
+        self.addCleanup(self.app.automation.stop)
         self.app.automation.interval = 0.05
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), None)
         self.port = self.server.server_address[1]
@@ -83,6 +84,63 @@ class MainInputTests(unittest.TestCase):
 
 
 class HistoryTests(Server):
+    def test_history_search_and_event_cursor(self):
+        eng = self.app.engine
+        run_id = eng.start(TEXT_FLOW, {"topic": "test"}, launch=False)
+        eng.store.update_run(run_id, label="İstanbul")
+        eng.store.event(run_id, None, "marker", "second")
+        status, rows = self.json("GET", "/api/runs?q=istanbul")
+        self.assertEqual((status, [r["id"] for r in rows]), (200, [run_id]))
+        cursor = eng.store.events(run_id)[-1]["id"]
+        status, events = self.json("GET", f"/api/runs/{run_id}/events?before={cursor}")
+        self.assertEqual((status, [e["kind"] for e in events]), (200, ["created"]))
+
+    def test_finished_run_contains_a_manifest(self):
+        run_id = self.run_flow()
+        folder = self.app.engine.run_dir(run_id)
+        manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual((manifest["id"], manifest["status"]), (run_id, "succeeded"))
+        import hashlib
+        for entry in manifest["files"]:
+            self.assertEqual(entry["sha256"], hashlib.sha256((folder / entry["path"]).read_bytes()).hexdigest())
+
+    def test_binary_upload_requires_matching_content(self):
+        status, _ = self.json("PUT", "/api/uploads?file=wrong.pdf", raw=b"not a PDF")
+        self.assertEqual(status, 400)
+
+    def test_trash_and_restore_keep_the_run_files(self):
+        run_id = self.run_flow()
+        path = f"/api/runs/{run_id}"
+        self.assertEqual(self.json("DELETE", path, {"trash": True}), (200, {"trashed": True}))
+        self.assertEqual(self.json("GET", "/api/runs"), (200, []))
+        self.assertEqual(self.json("GET", "/api/runs/trash")[1][0]["id"], run_id)
+        self.assertTrue(self.app.engine.run_dir(run_id).is_dir())
+        self.assertEqual(self.json("POST", path + "/restore", {}), (200, {"ok": True}))
+        self.assertEqual(self.json("GET", path)[1]["status"], "succeeded")
+
+    def test_storage_maintenance_is_opt_in_and_keeps_recent_runs(self):
+        old, recent = self.run_flow(), self.run_flow()
+        eng = self.app.engine
+        eng.store.update_run(old, finished=time.time() - 120 * 86400)
+        history.maintain_storage(eng)
+        self.assertIsNotNone(eng.store.run(old))
+        config = eng.home / "configurations" / "engine.toml"
+        config.parent.mkdir(exist_ok=True)
+        config.write_text("retain_runs_days = 90\n", encoding="utf-8")
+        history.maintain_storage(eng)
+        self.assertIsNone(eng.store.run(old))
+        self.assertIsNotNone(eng.store.run(recent))
+
+    def test_history_cursor_handles_equal_timestamps(self):
+        eng = self.app.engine
+        ids = [eng.start(TEXT_FLOW, {"topic": "test"}, launch=False) for _ in range(3)]
+        for run_id in ids:
+            eng.store.update_run(run_id, created=1)
+        ordered = sorted(ids, reverse=True)
+        status, rows = self.json("GET", "/api/runs?before=" + ordered[0])
+        self.assertEqual(status, 200)
+        self.assertEqual([row["id"] for row in rows], ordered[1:])
+
     def run_flow(self, text=TEXT_FLOW, values=None):
         run_id = self.app.engine.start(text, values or {"topic": "Ottoman music"})
         self.assertEqual(self.app.engine.wait(run_id, 30), "succeeded")
@@ -117,6 +175,31 @@ class HistoryTests(Server):
         self.assertEqual(self.app.engine.store.events(run_id), [])
         status, data = self.json("DELETE", f"/api/runs/{run_id}", {})
         self.assertEqual(status, 400)  # gone
+
+    def test_failed_file_purge_is_retried_after_restart(self):
+        run_id = self.run_flow()
+        engine = self.app.engine
+        folder = engine.run_dir(run_id)
+        with mock.patch.object(history.shutil, "rmtree", side_effect=PermissionError):
+            with self.assertRaises(PermissionError):
+                history.delete_run(engine, run_id)
+        self.assertTrue(folder.is_dir())
+        self.assertIsNone(engine.store.run(run_id))
+        restarted = self.engine()
+        self.assertEqual(restarted.store.pending_purges(), [run_id])
+        history.recover_purges(restarted)
+        self.assertFalse(folder.exists())
+        self.assertEqual(restarted.store.pending_purges(), [])
+
+    def test_failed_database_delete_keeps_run_files(self):
+        run_id = self.run_flow()
+        engine = self.app.engine
+        with mock.patch.object(engine.store, "delete_run", side_effect=OSError):
+            with self.assertRaises(OSError):
+                history.delete_run(engine, run_id)
+        self.assertTrue(engine.run_dir(run_id).is_dir())
+        self.assertIsNotNone(engine.store.run(run_id))
+        self.assertEqual(engine.store.pending_purges(), [])
 
     def test_delete_refuses_an_active_run_and_a_held_lock(self):
         run_id = self.app.engine.start(workflow(ai("slow", "TASK:slow SLEEP=3"), []))
@@ -218,6 +301,30 @@ class FolderTests(Server):
 
 
 class BatchTests(Server):
+    def test_automation_checks_again_if_a_run_finishes_between_queries(self):
+        self.app.automation.stop()
+        eng = self.app.engine
+        run_id = eng.start(TEXT_FLOW, {"topic": "test"}, launch=False)
+        eng.store.update_run(run_id, output_dir=str(self.tmp), status="running")
+        rows = eng.store._rows
+
+        def finish_after_save_query(sql, args=()):
+            result = rows(sql, args)
+            if sql.startswith("SELECT id, output_dir"):
+                eng.store.update_run(run_id, status="succeeded")
+            return result
+
+        with mock.patch.object(eng.store, "_rows", side_effect=finish_after_save_query):
+            self.assertTrue(history.Automation(eng).step())
+
+    def test_local_batch_refuses_cloud_models(self):
+        ref = self.template(FILE_FLOW)
+        upload = self.upload("doc.txt", "Example.")
+        status, _ = self.json("POST", "/api/runs", {"template": ref, "privacy": "local",
+                                                  "batch": {"input": "doc", "files": [upload]}})
+        self.assertEqual(status, 400)
+        self.assertEqual(self.app.engine.store.runs(), [])
+
     def test_one_run_per_file_two_at_a_time(self):
         ref = self.template(FILE_FLOW.replace("TASK:sum Summarize.", "TASK:sum SLEEP=0.6 Summarize."))
         out = self.tmp / "out"

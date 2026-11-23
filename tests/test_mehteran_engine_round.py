@@ -2,6 +2,7 @@
 loop headings in the run's language, error summary. Fake tools only."""
 
 import sys
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -112,6 +113,22 @@ class LoopTests(HomeCase):
 
 
 class ResumeAtStartTests(HomeCase):
+    def test_restart_preserves_a_pending_quota_deadline(self):
+        first = self.engine()
+        run_id = first.start(workflow(ai("a", "TASK:a"), []), launch=False)
+        deadline = time.time() + 60
+        first.store.update_run(run_id, status="running")
+        first.store.update_node(run_id, "a", status="waiting_quota", quota_until=deadline)
+        second = self.engine()
+        self.assertEqual(second.resume_interrupted(), [run_id])
+        try:
+            self.wait_for(lambda: second.get(run_id)["nodes"]["a"]["status"] == "waiting_quota")
+            self.assertEqual(float(second.get(run_id)["nodes"]["a"]["quota_until"]), deadline)
+            self.assertEqual(self.calls(), [])
+        finally:
+            second.cancel(run_id)
+            second.wait(run_id, 10)
+
     def test_a_run_left_running_is_resumed_and_a_cancelled_one_is_not(self):
         first = self.engine()
         done = first.start(workflow(ai("a", "TASK:a"), []))

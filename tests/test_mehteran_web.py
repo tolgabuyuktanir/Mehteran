@@ -20,6 +20,19 @@ from mehteran.web import App, make_handler  # noqa: E402
 
 
 class WebTests(HomeCase):
+    def test_rerun_uses_saved_yaml_after_template_removal(self):
+        from mehteran_support import ai, workflow
+        engine = self.app.engine
+        yaml = workflow(ai("a", "TASK:original"), [])
+        old = engine.start(yaml, template="user:test-flow")
+        self.assertEqual(engine.wait(old, 30), "succeeded")
+        self.assertEqual(self.json("POST", f"/api/runs/{old}/estimate", {})[0], 200)
+        status, data = self.json("POST", "/api/runs", {"from_run": old, "template": "user:missing"})
+        self.assertEqual(status, 200, data)
+        self.assertEqual(engine.wait(data["id"], 30), "succeeded")
+        self.assertEqual(engine.get(data["id"])["workflow_yaml"], yaml)
+        self.assertEqual(self.tags(), ["original", "original"])
+
     def setUp(self):
         super().setUp()
         self.app = App(self.engine())
