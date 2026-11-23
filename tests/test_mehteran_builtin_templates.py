@@ -104,6 +104,25 @@ class BuiltinTemplateTests(HomeCase):
                 with self.subTest(template=template_id):
                     self.run_builtin(engine, template_id)
 
+    def test_expense_workflow_with_valid_tables(self):
+        self.run_builtin(self.engine(), "receipts-to-expense-table")
+
+    def test_expense_validation_blocks_export_of_invalid_rows(self):
+        from mehteran_support import workflow
+        table = "| Date | Vendor | Category | Currency | Net | VAT | Total | Number | Note |\n" \
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n" \
+                "| ? | Vendor | Travel | USD | 10 | ? | twelve | ? | ? |"
+        text = workflow(
+            '  - {id: validate, type: expense.validate, config: {source: "{{inputs.table}}"}}\n'
+            '  - {id: export, type: document.export, config: {source: "{{nodes.validate.text}}"}}\n',
+            [("validate.text", "export")], inputs="  - {id: table, type: text}\n")
+        engine = self.engine()
+        run_id = engine.start(text, {"table": table})
+        self.assertEqual(engine.wait(run_id, 30), "failed")
+        run = engine.get(run_id)
+        self.assertIn("row 1", run["nodes"]["validate"]["error"])
+        self.assertEqual(run["nodes"]["export"]["status"], "skipped")
+
     def run_builtin(self, engine, template_id: str) -> None:
         text = templates.read("builtin", template_id, self.home)
         wf = schema.parse(text)

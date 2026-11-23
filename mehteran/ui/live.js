@@ -180,9 +180,10 @@ function usageBox(provider) {
 const SWITCHABLE = new Set(["waiting_quota", "failed", "cancelled", "interrupted"]);
 
 // Every configured model, grouped by tool, without the current one; the usage hint in each tool's label.
-function modelChoices(current, selected) {
+function modelChoices(current, selected, localOnly) {
   const providers = (INFO && INFO.providers) || [];
   return providers.map((p) => {
+    if (localOnly && !p.local) return null;
     const hint = usageHintText(p.name);
     const names = [p.name, ...(p.models || []).map((m) => `${p.name}/${m}`)].filter((n) => n !== current);
     return names.length ? h("optgroup", {label: p.name + (hint ? ` (${hint})` : "")},
@@ -205,14 +206,20 @@ function switchBox(run, runId, nodeId, refresh) {
   const parts = [h("p", {class: "small"}, S(waiting ? "switch_waiting_hint" : "switch_failed_hint", {model: current})), head];
   if (open) {
     const select = h("select", {"aria-label": S("switch_to"), onchange: (e) => { state.switchChoice = e.currentTarget.value; hint.show(e.currentTarget.value.split("/")[0]); }},
-      modelChoices(current, state.switchChoice));
+      modelChoices(current, state.switchChoice, run.local_only));
     const hint = usageHint();
     if (!state.switchChoice || state.switchChoice === current) state.switchChoice = select.value;
     hint.show(select.value.split("/")[0]);
     parts.push(h("div", {class: "row switch-pick"}, h("label", {class: "small"}, S("switch_to"), " ", select), hint,
-      h("button", {type: "button", class: "btn primary small switch-go", onclick: async (e) => {
+      h("button", {type: "button", class: "btn primary small switch-go", disabled: !select.value, onclick: async (e) => {
+        const button = e.currentTarget;
         const provider = select.value;
-        const r = await act(e.currentTarget, () => api("POST", `/api/runs/${runId}/nodes/${nodeId}/switch`, {provider}));
+        const name = provider.split("/")[0];
+        const target = INFO.providers.find((p) => p.name === name);
+        const from = INFO.providers.find((p) => p.name === current.split("/")[0]);
+        if (from?.local && target && !target.local &&
+          !await askConfirm(S("switch_model"), [S("switch_cloud_confirm", {provider: target.name})], S("switch_go"))) return;
+        const r = await act(button, () => api("POST", `/api/runs/${runId}/nodes/${nodeId}/switch`, {provider}));
         if (r) { toast(S("switched_toast", {model: provider})); state.switchOpen = null; state.switchChoice = null; refresh(); }
       }}, S("switch_go"))));
   }
@@ -505,7 +512,6 @@ async function drawFooter() {
     h("nav", {class: "foot-col", "aria-label": S("footer_links")}, h("h4", {}, S("footer_links")),
       h("button", {type: "button", class: "linkish", onclick: openDocs}, S("footer_docs")),
       h("a", {href: "#setup"}, S("tab_setup")),
-      h("a", {href: "#workflows/translation"}, S("translation_card_title")),
       lang ? h("button", {type: "button", class: "linkish", onclick: () => { scrollTo({top: 0, behavior: calm() ? "auto" : "smooth"}); lang.click(); }},
         S("footer_language")) : null),
     h("div", {class: "foot-col"}, h("h4", {}, S("footer_data")), path, h("div", {class: "row"}, copy),

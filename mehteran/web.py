@@ -39,10 +39,12 @@ from pipeline import i18n as pipeline_i18n
 from pipeline import runtime, system, tools
 from pipeline.core import ROOT, PipelineError, Project
 
-from . import __version__, i18n, languages, paths, schema, settings, templates, translation, yamlio
+from . import __version__, history_routes, i18n, languages, paths, schema, settings, templates, translation, yamlio
 from . import providers as adapters
-from .engine import FILES_SIZE_LIMIT, Engine, RunError, resume_on_start, safe_filename
+from .engine import FILES_SIZE_LIMIT, Engine, RunError, engine_options, resume_on_start, safe_filename
+from .http_errors import HTTPError
 from .i18n import UI, t
+from .uploads import upload_matches
 from .nodes import FORMATS, ID_RE, PROVIDER_RE, REGISTRY
 from .placeholders import ITEM_FIELDS
 
@@ -57,14 +59,13 @@ WELCOME_CHOICES = (
     ("data", {"category": "data"}),
     ("education", {"category": "education"}),
     ("research", {"category": "research"}),
-    ("translation", {}),
 )
 JSON_LIMIT = 2 * 1024 * 1024
 STATIC = Path(__file__).resolve().parent / "ui"
 STATIC_TYPES = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css",
                 "canvas.js": "text/javascript", "editor.js": "text/javascript", "live.js": "text/javascript",
                 "icon.svg": "image/svg+xml", "langpicker.js": "text/javascript", "markdown.js": "text/javascript",
-                "history.js": "text/javascript"}
+                "history.js": "text/javascript", "runs.js": "text/javascript", "setup.js": "text/javascript"}
 FLAG_RE = re.compile(r"/flags/([a-z]{2}(?:-[a-z]{2})?)\.svg\Z")  # the flags of the language picker (ui/flags)
 TR_LOCALE_RE = re.compile(r"/tr/locales/([a-z]{2})\.json\Z")  # the book translation's texts in other languages
 UPLOAD_RE = re.compile(r"[0-9a-f]{32}\Z")
@@ -73,12 +74,6 @@ CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' 
 TEXT_FILES = {".md", ".txt", ".yaml", ".json"}
 EDIT_LIMIT = 1024 * 1024  # bytes of an edited result (UTF-8); the JSON request around it stays under JSON_LIMIT
 EDITABLE_RE = re.compile(r"nodes/([a-z][a-z0-9_-]{0,63})/([A-Za-z0-9][A-Za-z0-9_-]{0,99})\.md")  # a step's Markdown output
-
-
-class HTTPError(Exception):
-    def __init__(self, code: int, message: str, problems: list[str] | None = None):
-        super().__init__(message)
-        self.code, self.problems = code, problems or []
 
 
 def code_stamp() -> str:
@@ -780,12 +775,13 @@ class App:
 
     def activity(self, m, body) -> dict:
         from . import usage
-        return {"runs": self.engine.activity(), "translation": usage.translation_activity(ROOT), "time": time.time()}
+        return {"runs": self.engine.activity(), "translation": usage.translation_activity(ROOT) if self.translation else [],
+                "time": time.time()}
 
     def translation_runs(self, m, body) -> list:
         """The last run of each book (the Runs tab lists them with the workflow runs)."""
         from . import usage
-        return usage.translation_runs(ROOT)
+        return usage.translation_runs(ROOT) if self.translation else []
 
     def docs(self, m, body) -> dict:
         """The user guide (docs/mehteran.md; its Turkish copy for Turkish), shown by the footer's "Guide" link."""
@@ -814,6 +810,12 @@ class App:
             return []
         return list(dict.fromkeys(templates.canonical_ref(x) for x in value if isinstance(x, str)))  # merged ids -> new
 
+    def book_translation_enabled(self) -> bool:
+        setting = engine_options(self.home).get("embed_book_translation")
+        if isinstance(setting, bool):
+            return setting
+        return TRANSLATION_FAVORITE in self._favorites() or translation.has_local_books(ROOT)
+
     def _favorite_refs(self) -> set[str]:
         """What can be a favorite: every template of the library, and the book translation ("app:translation")."""
         return {f"{item['source']}:{item['id']}" for item in templates.listing(self.home)} | {TRANSLATION_FAVORITE}
@@ -837,11 +839,20 @@ class App:
     def template_estimate(self, m, body) -> dict:
         """The model calls of a run of this template with the form's values ({"values": {input: text}}); each model
         with its tool. Nothing is read or called for it."""
+        return self._estimate_text(templates.read(m[1], m[2], self.home), body)
+
+    def run_estimate(self, m, body) -> dict:
+        run = self.engine.get(m[1])
+        if run["provider_cfg"].get("privacy") == "local":
+            body = {**body, "privacy": "local"}
+        return self._estimate_text(run["workflow_yaml"], body)
+
+    def _estimate_text(self, text, body) -> dict:
         from . import estimate
         values = body.get("values") or {}
         if not isinstance(values, dict):
             raise HTTPError(400, t("bad_request"))
-        out = estimate.estimate(schema.parse(templates.read(m[1], m[2], self.home)), values, self.engine.provider_cfg,
+        out = estimate.estimate(schema.parse(text), values, self.engine.provider_cfg,
                                 resolve=self._auto_now, privacy="local" if body.get("privacy") == "local" else "",
                                 every_step=_every_step(body))
         by_provider = {name: (tool, spec["name"]) for tool, spec in tools.TOOLS.items() if spec["provider"]
@@ -866,7 +877,7 @@ class App:
         and port. Each choice names the providers it needs; the page adds their state from GET /api/tools."""
         from . import usage
         closed = self._read_conf("library.json").get("welcome_closed") in ("dismissed", "used")
-        if not closed and (self.engine.store.runs() or usage.translation_runs(ROOT)):
+        if not closed and (self.engine.store.runs() or (self.translation and usage.translation_runs(ROOT))):
             self._update_conf("library.json", "welcome_closed", "used")  # stays closed when the runs are removed later
             closed = True
         if closed:
@@ -875,10 +886,6 @@ class App:
                    if item["source"] == "builtin" and item["valid"]}
         choices = []
         for name, target in WELCOME_CHOICES:
-            if not target:  # the book translation: the providers of its own workflow
-                choices.append({"id": name, "action": "translation", "templates": [],
-                                "providers": sorted(self._translation_used())})
-                continue
             wanted = (target["template"],) if "template" in target else target.get("templates")
             ids = [x for x in wanted if x in builtin] if wanted else [x for x, c in builtin.items() if c == target["category"]]
             if not ids:
@@ -976,6 +983,9 @@ class App:
         if received != length:
             shutil.rmtree(folder, ignore_errors=True)
             raise HTTPError(400, t("bad_request"))
+        if not upload_matches(folder / name, ext):
+            shutil.rmtree(folder, ignore_errors=True)
+            raise HTTPError(400, t("upload_type", formats=ext))
         return {"upload": upload_id, "name": name, "size": received}
 
     def _upload_file(self, upload_id) -> Path:
@@ -989,8 +999,17 @@ class App:
 
     # --- runs ---
     def run_start(self, m, body) -> dict:
-        source, template_id = templates.resolve(str(body.get("template", "")), self.home)
-        text = templates.read(source, template_id, self.home)
+        if "from_run" in body:
+            if not isinstance(body["from_run"], str):
+                raise HTTPError(400, t("bad_request"))
+            original = self.engine.get(body["from_run"])
+            text, ref = original["workflow_yaml"], original["template"]
+            if original["provider_cfg"].get("privacy") == "local":
+                body = {**body, "privacy": "local"}
+        else:
+            source, template_id = templates.resolve(str(body.get("template", "")), self.home)
+            text = templates.read(source, template_id, self.home)
+            ref = f"{source}:{template_id}"
         values = body.get("values") or {}
         uploads = body.get("files") or {}
         if not isinstance(values, dict) or not isinstance(uploads, dict):
@@ -1001,12 +1020,12 @@ class App:
             raise HTTPError(400, t("bad_request"))  # one uploaded file for two inputs: the run moves each file once
         files = {str(key): [self._upload_file(v) for v in value] if isinstance(value, list) else self._upload_file(value)
                  for key, value in uploads.items()}
-        output_dir = self._output_dir(f"{source}:{template_id}", body)  # history.py: save the results there too
+        output_dir = self._output_dir(ref, body)
         if isinstance(body.get("batch"), dict):  # "once per file": one queued run per file of one input
-            return self._batch_start(text, f"{source}:{template_id}", values, files, body["batch"], output_dir,
-                                     _every_step(body))
+            return self._batch_start(text, ref, values, files, body["batch"], output_dir,
+                                     _every_step(body), "local" if body.get("privacy") == "local" else "")
         run_id = self.engine.start(text, {str(k): v for k, v in values.items()}, files,
-                                   template=f"{source}:{template_id}", move_files=True, launch=False,
+                                   template=ref, launch=False,
                                    privacy="local" if body.get("privacy") == "local" else "",
                                    every_step=_every_step(body))
         if output_dir:
@@ -1072,29 +1091,6 @@ class App:
             raise HTTPError(400, t("background_failed", error=str(e)[:300])) from None
         return background.status(self.home)
 
-    def run_list(self, m, body) -> list:
-        from . import history
-        return history.listing(self.engine)
-
-    # --- the history: names, deleting, batches, saving to a folder (history.py) ---
-    def run_label(self, m, body) -> dict:
-        from . import history
-        return history.set_label(self.engine, m[1], body.get("label"), body.get("note"))
-
-    def run_delete(self, m, body) -> dict:
-        """{"dry_run": true}: the size and whether it can be deleted; else deletes the run and its files."""
-        from . import history
-        if body.get("dry_run") is True:
-            run = self.engine.get(m[1])
-            return {"size": history.run_size(self.engine, m[1]), "deletable": history.deletable(self.engine, run)}
-        return {"deleted": True, "size": history.delete_run(self.engine, m[1])}
-
-    def run_cleanup(self, m, body) -> dict:
-        from . import history
-        days = body.get("days")
-        if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= 3650:
-            raise HTTPError(400, t("bad_request"))
-        return history.cleanup(self.engine, days, body.get("dry_run") is True)
 
     def _output_dir(self, ref: str, body) -> str | None:
         """The checked folder of "save the results to a folder", or None. A folder used for the first time must be
@@ -1131,7 +1127,7 @@ class App:
                 "confirmed": bool(folder) and str(folder) in confirmed}
 
     def _batch_start(self, text: str, ref: str, values: dict, files: dict, batch: dict, output_dir: str | None,
-                     every_step: str = "") -> dict:
+                     every_step: str = "", privacy: str = "") -> dict:
         from . import history
         input_id, ids = str(batch.get("input", "")), batch.get("files")
         if not isinstance(ids, list) or not ids or input_id in files or len(set(map(str, ids))) != len(ids) \
@@ -1141,7 +1137,7 @@ class App:
             raise HTTPError(400, t("batch_too_many", limit=history.MAX_BATCH))
         each = [self._upload_file(v) for v in ids]
         batch_id, run_ids = history.start_batch(self.engine, text, ref, {str(k): v for k, v in values.items()}, files,
-                                                input_id, each, output_dir, every_step)
+                                                input_id, each, output_dir, every_step, privacy)
         self.automation.kick()
         for path in each + [p for v in files.values() for p in (v if isinstance(v, list) else [v])]:
             shutil.rmtree(path.parent, ignore_errors=True)
@@ -1150,9 +1146,11 @@ class App:
     def run_get(self, m, body) -> dict:
         run = self.engine.get(m[1])
         wf = schema.parse(run.pop("workflow_yaml"))
+        run["local_only"] = run["provider_cfg"].get("privacy") == "local" or wf.data.get("privacy") == "local"
         run.pop("provider_cfg", None)
         run["graph"] = wf.graph()
         run["input_specs"] = list(wf.inputs.values())
+        run["description"] = wf.data.get("description")
         run["outputs"] = [{**item, "path": run["nodes"].get(item["from"].partition(".")[0], {}).get("outputs", {})
                            .get(item["from"].partition(".")[2])} for item in wf.data.get("outputs") or []]
         run["node_info"] = {n: {"type": node["type"], "label": node.get("label"),
@@ -1324,12 +1322,9 @@ ROUTES = [
     ("GET", r"/api/background", App.background_get),
     ("PUT", r"/api/background", App.background_set),
     ("POST", r"/api/runs", App.run_start),
-    ("GET", r"/api/runs", App.run_list),
+    *history_routes.routes(RUN),
     ("GET", rf"/api/runs/{RUN}", App.run_get),
-    # the history (history.py): a run's name and note, deleting runs, saving results to a folder
-    ("PUT", rf"/api/runs/{RUN}/label", App.run_label),
-    ("DELETE", rf"/api/runs/{RUN}", App.run_delete),
-    ("POST", r"/api/runs/cleanup", App.run_cleanup),
+    ("POST", rf"/api/runs/{RUN}/estimate", App.run_estimate),
     ("GET", rf"/api/output-folders/(builtin|user)/{ID}", App.output_folder_get),
     ("POST", r"/api/output-folders/check", App.output_folder_check),
     ("POST", rf"/api/runs/{RUN}/(cancel|resume)", App.run_action),
@@ -1343,6 +1338,9 @@ TEMPLATE_DOWNLOAD_RE = re.compile(rf"/api/templates/(builtin|user)/{ID}/download
 TEMPLATE_SHARE_RE = re.compile(rf"/api/templates/(builtin|user)/{ID}/share")  # ?author=<name>: the shared file
 FILE_RE = re.compile(rf"/api/runs/{RUN}/files/(.+)")
 LOG_RE = re.compile(rf"/api/runs/{RUN}/log")  # ?node=<id>&offset=<bytes>: a node's live log from offset
+EVENTS_RE = re.compile(rf"/api/runs/{RUN}/events")
+
+
 
 
 def make_handler(app: App, port: int):
@@ -1367,8 +1365,11 @@ def make_handler(app: App, port: int):
             self.send_header("Content-Security-Policy", CSP)
             for key, value in (extra or {}).items():
                 self.send_header(key, value)
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # The browser left the page before the response arrived.
 
         def send_json(self, code: int, data):
             self.send(code, json.dumps(data, ensure_ascii=False).encode("utf-8"), "application/json")
@@ -1407,6 +1408,12 @@ def make_handler(app: App, port: int):
                     return self.send_json(200, app.upload(query.get("file", [""])[0], length, self.rfile))
                 if method == "GET" and (m := LOG_RE.fullmatch(path)):
                     return self.send_json(200, app.run_log(m, {}, query))
+                if method == "GET" and (m := EVENTS_RE.fullmatch(path)):
+                    before = query.get("before", [""])[0]
+                    if not re.fullmatch(r"[0-9]{1,18}", before):
+                        raise HTTPError(400, t("bad_request"))
+                    app.engine.get(m[1])
+                    return self.send_json(200, app.engine.store.events(m[1], before=int(before)))
                 if method == "GET" and (m := FILE_RE.fullmatch(path)):
                     return self.send_file(m[1], m[2], bool(query.get("download")))
                 if method == "GET" and (m := TEMPLATE_DOWNLOAD_RE.fullmatch(path)):
@@ -1434,6 +1441,8 @@ def make_handler(app: App, port: int):
                     if not isinstance(body, dict):
                         raise HTTPError(400, t("bad_request"))
                 fn, m = route
+                if fn is history_routes.run_list:
+                    body = {key: query.get(key, [""])[0] for key in ("before", "q")}
                 return self.send_json(200, fn(app, m, body))
             except HTTPError as e:
                 self.send_json(e.code, {"error": str(e), "problems": e.problems})
@@ -1456,6 +1465,7 @@ def make_handler(app: App, port: int):
 
         def send_file(self, run_id: str, rel: str, download: bool):
             try:
+                app.engine.get(run_id)
                 path = app.engine.artifact(run_id, rel)
             except RunError:
                 raise HTTPError(404, t("file_not_found")) from None
@@ -1561,15 +1571,22 @@ def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = N
             return
     tools.extend_path(ROOT)
     app = App(engine or Engine())
-    if resume_on_start():  # opt-in: configurations/engine.toml
+    try:
+        templates.recover_used_builtins(app.engine)
+        schedules.pin_legacy_schedules(app.engine)
+    except OSError as exc:
+        print(f"[mehteran storage] {type(exc).__name__}: {exc}", flush=True)
+    if resume_on_start(app.home):  # opt-in: configurations/engine.toml
         app.engine.resume_interrupted()
     server.RequestHandlerClass = make_handler(app, port)
     app.server = server
-    # The book translation: the translation app's API under /api/tr/ of this server, with this server's session key.
-    app.translation = translation.Translation()
-    if not app.translation.start(token=app.token):
-        print(t(app.translation.error, error=app.translation.detail), flush=True)
-    app.scheduler = schedules.Scheduler(app.engine, app.automation.kick)  # scheduled runs (schedules.py)
+    if app.book_translation_enabled():
+        app.translation = translation.Translation()
+        if not app.translation.start(root=ROOT, token=app.token):
+            print(t(app.translation.error, error=app.translation.detail), flush=True)
+    from .history import maintain_storage
+    app.scheduler = schedules.Scheduler(app.engine, app.automation.kick,
+                                        maintenance=lambda: maintain_storage(app.engine))
     app.scheduler.begin()
     if background.is_background():
         background.mark_running(app.home)
@@ -1582,6 +1599,8 @@ def serve(port: int = 8766, open_browser: bool = True, engine: Engine | None = N
         pass
     finally:
         server.server_close()
+        app.scheduler.stop()
+        app.automation.stop()
     if app.restart_wanted:  # "Restart": the same command again, with the code on disk; no new browser window
         argv = [sys.executable, *sys.orig_argv[1:]]
         if "ui" in argv and "--no-browser" not in argv:

@@ -6,8 +6,13 @@
     "mehteran": "bin/mehteran.js"
   },
   "files": [
-    "bin"
+    "bin",
+    "mehteran.tar.gz"
   ],
+  "scripts": {
+    "prepack": "git -C .. archive --format=tar.gz --output=npm/mehteran.tar.gz HEAD",
+    "postpack": "node -e \"require('fs').rmSync('mehteran.tar.gz', {force: true})\""
+  },
   "engines": {
     "node": ">=18"
   },

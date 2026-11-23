@@ -69,10 +69,30 @@ def fill_main_inputs(store) -> None:
         store.update_run(row["id"], main_input=value)
 
 
-def listing(engine) -> list[dict]:
+def listing(engine, before: str = "", query: str = "") -> list[dict]:
     """engine.list() with the history fields; output_state parsed."""
     fill_main_inputs(engine.store)
-    runs = engine.list()
+    if query:
+        import unicodedata
+        from .engine import display_name
+
+        def fold(value):
+            return "".join(c for c in unicodedata.normalize("NFKD", value.casefold()).replace("ı", "i")
+                           if not unicodedata.combining(c))
+
+        words = fold(query).split()
+        def matches(name, label, note, main_input, run_id, status):
+            haystack = fold(" ".join(value or "" for value in
+                                     (display_name(name), label, note, main_input, run_id, t("status_" + status))))
+            return all(word in haystack for word in words)
+
+        runs = engine.store.runs(before=before, matches=matches)
+        for run in runs:
+            run["workflow_name"] = display_name(run["workflow_name"])
+            if run["status"] == "running":
+                run["status"] = engine.get(run["id"])["status"]
+    else:
+        runs = engine.list(before)
     for run in runs:
         try:
             run["output_state"] = json.loads(run["output_state"]) if run.get("output_state") else None
@@ -134,13 +154,39 @@ def deletable(engine, run: dict) -> bool:
     return run["status"] in FINISHED_RUN and not engine.is_active(run["id"])
 
 
-def delete_run(engine, run_id: str) -> int:
-    """Deletes a finished run that nobody drives: its rows and its folder. Returns the bytes freed."""
+def trash_run(engine, run_id: str) -> None:
     run = engine.get(run_id)
     if not deletable(engine, run):
         raise RunError([t("run_delete_active")])
     folder = _run_folder(engine, run_id)
-    if folder is not None and folder.is_symlink():
+    if folder is None:
+        raise RunError([t("run_delete_unsafe")])
+    with (folder / ".lock").open("a+") as lock:
+        if not system.try_lock(lock):
+            raise RunError([t("run_delete_active")])
+        current = engine.store.run(run_id)
+        if not current or current["status"] not in FINISHED_RUN or engine.thread_alive(run_id):
+            raise RunError([t("run_delete_active")])
+        engine.store.update_run(run_id, trashed_at=time.time())
+
+
+def delete_run(engine, run_id: str) -> int:
+    """Deletes a finished run that nobody drives: its rows and its folder. Returns the bytes freed."""
+    with (engine.home / "databases" / ".purge.lock").open("a+b") as lock:
+        if not system.try_lock(lock):
+            raise RunError([t("run_delete_active")])
+        return _delete_locked(engine, run_id)
+
+
+def _delete_locked(engine, run_id: str) -> int:
+    engine.run_dir(run_id)  # validate before accessing the database or filesystem
+    run = engine.store.run(run_id)
+    if run is None:
+        raise RunError([t("run_not_found", id=run_id)])
+    if not deletable(engine, run):
+        raise RunError([t("run_delete_active")])
+    folder = _run_folder(engine, run_id)
+    if engine.run_dir(run_id).is_symlink():
         raise RunError([t("run_delete_unsafe")])
     handle = open(folder / ".lock", "a+") if folder else None
     try:
@@ -150,22 +196,36 @@ def delete_run(engine, run_id: str) -> int:
         if engine.store.run(run_id)["status"] not in FINISHED_RUN or engine.thread_alive(run_id):
             raise RunError([t("run_delete_active")])
         size = folder_size(folder) if folder else 0
-        engine.store.delete_run(run_id)
-        if folder:
-            for child in folder.iterdir():
-                if child.name == ".lock":
-                    continue
-                if child.is_dir() and not child.is_symlink():
-                    shutil.rmtree(child, ignore_errors=True)
-                else:
-                    child.unlink(missing_ok=True)
+        # Commit the removal and the retry record together, before touching any run files.
+        engine.store.delete_run(run_id, purge_files=True)
     finally:
         if handle:
             handle.close()
-    if folder:
-        (folder / ".lock").unlink(missing_ok=True)
-        shutil.rmtree(folder, ignore_errors=True)
+    _finish_purge(engine, run_id)
     return size
+
+
+def _finish_purge(engine, run_id: str) -> None:
+    if engine.store.run(run_id) is not None or engine.run_dir(run_id).is_symlink():
+        raise RunError([t("run_delete_unsafe")])
+    folder = _run_folder(engine, run_id)
+    if folder:
+        shutil.rmtree(folder)
+    elif engine.run_dir(run_id).exists():
+        raise RunError([t("run_delete_unsafe")])
+    engine.store.finish_purge(run_id)
+
+
+def recover_purges(engine) -> None:
+    """Retry committed deletions after a restart or an intermittent filesystem failure."""
+    with (engine.home / "databases" / ".purge.lock").open("a+b") as lock:
+        if not system.try_lock(lock):
+            return
+        for run_id in engine.store.pending_purges():
+            try:
+                _finish_purge(engine, run_id)
+            except (OSError, RunError) as exc:
+                print(f"[mehteran storage] {run_id}: {type(exc).__name__}", flush=True)
 
 
 def old_runs(engine, days: int) -> list[dict]:
@@ -189,6 +249,19 @@ def cleanup(engine, days: int, dry_run: bool) -> dict:
         except (RunError, OSError):
             kept += 1
     return {"deleted": deleted, "size": size, "kept": kept}
+
+
+def maintain_storage(engine) -> None:
+    from .engine import engine_options
+
+    recover_purges(engine)
+    options = engine_options(engine.home)
+    days = options.get("retain_runs_days")
+    if type(days) is int and 1 <= days <= 3650:
+        cleanup(engine, days, False)
+    days = options.get("retain_usage_days")
+    if type(days) is int and 1 <= days <= 3650:
+        engine.store.prune_calls(time.time() - days * 86400)
 
 
 # --- the folder to save results to ------------------------------------------------------------------------
@@ -289,8 +362,12 @@ def save_results(engine, run_id: str, folder_text: str) -> dict:
         for name, rel in results(engine, run):
             source = engine.artifact(run_id, rel)
             target = unique_target(folder, prefix + name)
-            with open(source, "rb") as src, open(target, "wb") as dst:
-                shutil.copyfileobj(src, dst)
+            try:
+                with open(source, "rb") as src, open(target, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+            except OSError:
+                target.unlink(missing_ok=True)
+                raise
             saved.append(target.name)
     except (OSError, RunError) as e:
         return {"error": str(e), "folder": str(folder), "saved": saved}
@@ -307,9 +384,19 @@ class Automation:
         self.again = False
         self.launched: set[str] = set()
         self.interval = 1.0
+        self.stopping = threading.Event()
+
+    def stop(self) -> None:
+        with self.lock:
+            self.stopping.set()
+            thread = self.thread
+        if thread:
+            thread.join(timeout=2)
 
     def kick(self) -> None:
         with self.lock:
+            if self.stopping.is_set():
+                return
             if self.thread and self.thread.is_alive():
                 self.again = True
                 return
@@ -317,18 +404,21 @@ class Automation:
             self.thread.start()
 
     def _loop(self) -> None:
-        while True:
+        failures = 0
+        while not self.stopping.is_set():
             try:
                 more = self.step()
+                failures = 0
             except Exception as e:  # noqa: BLE001 - the thread must not die; shown in the terminal
                 print(f"[mehteran automation] {type(e).__name__}: {e}", flush=True)
-                more = True
+                failures += 1
+                more = failures < 3
             with self.lock:
                 if not more and not self.again:
                     self.thread = None
                     return
                 self.again = False
-            time.sleep(self.interval)
+            self.stopping.wait(self.interval * 2 ** min(failures, 2))
 
     def step(self) -> bool:
         """One pass. True while there is something to wait for."""
@@ -337,7 +427,7 @@ class Automation:
         marks = ",".join("?" * len(finished))
         # Saves: each succeeded run with a folder, once.
         for row in store._rows("SELECT id, output_dir FROM runs WHERE output_dir IS NOT NULL AND output_state IS NULL "
-                               "AND status='succeeded'"):
+                               "AND status='succeeded' AND trashed_at IS NULL"):
             state = save_results(self.engine, row["id"], row["output_dir"])
             store.update_run(row["id"], output_state=json.dumps(state, ensure_ascii=False))
         # Batches: start the queued runs, BATCH_PARALLEL at a time.
@@ -355,12 +445,12 @@ class Automation:
                 self.engine.launch(row["id"])
         self.launched &= {r["id"] for r in rows if r["status"] == "queued"}
         pending = store._rows(f"SELECT COUNT(*) AS n FROM runs WHERE output_dir IS NOT NULL AND output_state IS NULL "
-                              f"AND status NOT IN ({marks})", finished)[0]["n"]
+                              f"AND trashed_at IS NULL AND (status='succeeded' OR status NOT IN ({marks}))", finished)[0]["n"]
         return bool(rows) or bool(pending)
 
 
 def start_batch(engine, text: str, template: str, values: dict, shared: dict, input_id: str, files: list[Path],
-                output_dir: str | None, every_step: str = "") -> tuple[str, list[str]]:
+                output_dir: str | None, every_step: str = "", privacy: str = "") -> tuple[str, list[str]]:
     """N queued runs of the workflow, one per file of input_id (a single-file input); the other file inputs (shared)
     go to every run. Returns the batch id and the run ids. The Automation starts them. every_step: Engine.start's."""
     import secrets
@@ -379,7 +469,7 @@ def start_batch(engine, text: str, template: str, values: dict, shared: dict, in
     try:
         for path in files:
             run_id = engine.start(text, values, {**shared, input_id: path}, template=template, launch=False,
-                                  every_step=every_step)
+                                  every_step=every_step, privacy=privacy)
             created.append(run_id)
             engine.store.update_run(run_id, batch=batch, output_dir=output_dir)
     except BaseException:

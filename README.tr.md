@@ -8,6 +8,10 @@
 
 ![Mehteran iş akışı kütüphanesi](docs/assets/screens/tr-library.png)
 
+**Bir iş akışı deneyin.** Toplantı notlarınızı **Toplantı tutanağı ve aksiyonlar** akışına verin. Akış özeti ve aksiyon listesini hazırlar, incelemenizi bekler ve sonucu Word, HTML ya da Markdown olarak kaydeder.
+
+[İlk iş akışınızı çalıştırın](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-calistir) · [Kendi akışınızı oluşturun](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-olustur)
+
 Mehteran, zaten kullandığınız yapay zekâ araçlarını tekrar tekrar kullanılabilen iş akışlarına dönüştürür. Bir iş akışı belgeyi okur, modele sorar, cevabı kontrol eder, bir kişinin onayını alır ve sonucu Word ya da PDF olarak kaydeder. Mehteran yapay zekâyı aboneliklerinizin komut satırı araçlarıyla (Claude Code, Codex, Antigravity CLI) ya da bu bilgisayardaki modellerle (Ollama, LM Studio, llama.cpp) çağırır. Kendi anahtarı ve hesabı yoktur; zaten ödediğinizin üstüne ek bir ücret çıkarmaz.
 
 macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
@@ -46,7 +50,7 @@ Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CL
 npx mehteran
 ```
 
-İlk çalıştırma Mehteran'ı `~/Mehteran` klasörüne kurar (bilgisayarda git varsa `git clone` ile) ve arayüzü açar. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
+İlk çalıştırma npm sürümündeki kaynak kodu `~/Mehteran` klasörüne kurar ve arayüzü açar. Kurulum için `tar` gerekir. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
 
 ## Yapay zekâ araçları
 
@@ -63,23 +67,31 @@ En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar, oturum açman�
 
 İsteğe bağlı yerel araçlar (Ollama, Tesseract OCR, PDF için Typst, Pandoc, konuşmayı yazıya çevirmek için whisper.cpp, qpdf) yalnızca siz isteyince kurulur; sabitlenmiş sürümlerdir ve SHA-256 özetleriyle doğrulanır.
 
-## İslami kitap çevirisi
+## İsteğe bağlı kitap çevirisi
 
-Mehteran bir kitap çevirisi hattından doğdu ve çeviri hâlâ içinde: İş akışları sekmesinin başına sabitlenmiş "İslami kitap çevirisi" kartı. Türkçe İslami kitapları yeni dillere çevirir. Çeviride Türkçe kaynak esas alınır. Aynı kitabın yakın dillerdeki mevcut tercümeleri referans olarak kullanılır. ChatGPT, Gemini ve Claude sırayla tercüme, tashih ve kaynak kontrolü yapar. Sonunda kitap ve insan tercüman için bir rapor üretilir.
+Güncellediğiniz kurulumda kitap projesi, çeviri geçmişi veya eski çeviri favorisi varsa İş akışları ekranındaki **Kitap çevirisine git** bağlantısı erişimi korur.
 
-Çeviri uygulaması tek başına da çalışır: `Open Interface.command` (macOS), `Open Interface.bat` (Windows) ya da `./translate ui` (Linux); adresi `http://127.0.0.1:8765/`. [Kullanım kılavuzu](docs/guide.tr.md) onu ayrıntılı olarak anlatır.
+Bağımsız çeviri uygulamasını macOS’ta `Open Interface.command`, Windows’ta `Open Interface.bat` veya Linux’ta `./translate ui` ile başlatın. `http://127.0.0.1:8765/` adresini açın. Kitapları, modelleri ve talimatları kurmak için [çeviri kılavuzunu](docs/guide.tr.md) izleyin.
 
-Hazır çeviri akışının gerektirdikleri:
+## Çalıştırma dosyalarını saklama
 
-- **Hesaplar:** Claude Pro/Max aboneliği (veya Anthropic Console), ücretli bir ChatGPT planı (veya OpenAI API anahtarı), ve Gemini modellerini çalıştıran Antigravity CLI için bir Google hesabı (Google AI Pro veya Ultra aboneliği daha yüksek kullanım sınırı verir). Google, 18 Haziran 2026'dan beri kişisel hesapları Gemini CLI'de kabul etmiyor; onun yerine Antigravity CLI kullanılır. Araçlardan birinin hesabı yoksa çeviri akışında o aracın adımlarına başka bir model atayın.
-- **PDF kitaplar:** Kurulum sekmesi PDF okuyucuyu (Poppler) kurar. `.docx` veya `.epub` kaynak daha eksiksiz okunur.
-- **Kitabı PDF olarak dışa aktarma:** Chrome veya Edge gerekir (Windows'ta Edge her zaman vardır). Bunlar yoksa yazdırmaya hazır bir sayfa açılır; yazdırma penceresinde "PDF olarak kaydet" seçin.
+Çalıştırmalar ekranındaki çöp kutusundan bir çalıştırmayı geri yükleyebilirsiniz. Eski çalıştırmaları temizleme işlemi dosyaları kalıcı olarak siler. Temizlik bölümünde Mehteran verilerinin boyutunu ve boş disk alanını görebilirsiniz.
+
+Otomatik bakım istiyorsanız veri klasöründeki `configurations/engine.toml` dosyasına şu seçenekleri ekleyebilirsiniz. Otomatik silme varsayılan olarak kapalıdır.
+
+```toml
+retain_runs_days = 90
+retain_usage_days = 365
+max_run_storage_gib = 10
+```
+
+Bakım arayüz açıldığında ve açık kaldığı sürece günde bir çalışır. `retain_runs_days` tamamlanmış eski çalıştırmaları çöp kutusundakiler dahil kalıcı olarak siler. `retain_usage_days` eski kullanım kayıtlarını temizler. Depolama sınırı yeni çalıştırmaların kabulünde denetlenir. Devam eden işlerin yazabileceği çıktı boyutunu sınırlamaz.
 
 ## Güncellemeler
 
 Uygulamayı git ile aldıysanız (`git clone` veya `gh repo clone`), arayüz her açılışta GitHub'dan kendini günceller. İnternet veya GitHub girişi yoksa olduğu gibi açılır.
 
-`npx mehteran` ile kurulan kopya, kurulumda bilgisayarda git varsa aynı şekilde kendini günceller. git yoksa zip kopyası gibidir.
+Yeni npm sürümünü kurmak için `MEHTERAN_DIR` ile yeni bir klasör seçin. Mevcut klasörler, kitaplar ve ayarlar erişilebilir kalsın diye yeniden kullanılır.
 
 Zip dosyası indirdiyseniz yeni zip'i indirin. Mehteran'ın iş akışları ve çalıştırmaları kod klasörünün dışında saklanır; oldukları yerde kalırlar. Kitap çevirisi için eski klasördeki şunları yenisine taşıyın: `books/`, `glossary/`, `config.toml` ve `prompts/` klasörünün içindeki `.md` dosyaları (ve `prompts/custom/`).
 
@@ -95,7 +107,7 @@ Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurul
 
 - Kod: `mehteran/` (Mehteran) ve `pipeline/` (kitap çevirisi), yalnızca Python standart kütüphanesi; arayüz derleme adımı olmayan düz JavaScript'tir.
 - Testler: `python3 -m unittest discover tests`. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz.
-- npm paketi (`npx mehteran`) `npm/` klasöründedir: kod klasörünü kuran ve başlatıcısını çalıştıran, bağımlılığı olmayan tek bir Node betiği. Yeni bir sürüm yayımlamak için `npm/package.json` içindeki `version` değerini artırın, sonra `cd npm && npm publish` komutunu çalıştırın.
+- npm paketi (`npx mehteran`) `npm/` klasöründedir. Yeni sürüm için `npm/package.json` içindeki sürümü artırın ve değişiklikleri commit edin. `npm pack` mevcut commit’i arşivleyip pakete koyar. Paketi kontrol ettikten sonra yayımlayın.
 - Web sitesi `docs/` içindeki statik HTML'dir (`index.html`, `docs.html`, `assets/`); başka sunuculardan hiçbir şey yüklemez.
 
 ## Lisans

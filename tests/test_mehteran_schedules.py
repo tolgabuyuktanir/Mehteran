@@ -105,10 +105,31 @@ class ScheduleTests(HomeCase):
 
     def test_a_workflow_that_no_longer_starts_is_reported(self):
         item = self.make()
+        item.pop("workflow_yaml")  # a schedule created before snapshots were stored
+        schedules._save(self.home, [item])
         (self.home / "templates" / "daily.yaml").unlink()
         self.assertEqual(self.scheduler.tick(item["next_at"] + 1), [])
         self.assertTrue(schedules.load(self.home)[0]["last_error"])
         self.assertTrue(self.sent and "could not start" in self.sent[0])
+
+    def test_new_schedule_uses_snapshot_after_template_is_removed(self):
+        item = self.make()
+        (self.home / "templates" / "daily.yaml").unlink()
+        run_id = schedules.run_now(self.eng, item["id"])
+        self.assertEqual(self.eng.wait(run_id, 30), "succeeded")
+        self.assertEqual(self.eng.get(run_id)["workflow_yaml"], item["workflow_yaml"])
+
+    def test_legacy_schedule_recovers_its_last_run_version(self):
+        item = self.make()
+        prior = schedules.run_now(self.eng, item["id"])
+        self.assertEqual(self.eng.wait(prior, 30), "succeeded")
+        [legacy] = schedules.load(self.home)
+        legacy.pop("workflow_yaml")
+        schedules._save(self.home, [legacy])
+        (self.home / "templates" / "daily.yaml").unlink()
+        schedules.pin_legacy_schedules(self.eng)
+        [pinned] = schedules.load(self.home)
+        self.assertEqual(pinned["workflow_yaml"], item["workflow_yaml"])
 
     def test_what_cannot_be_scheduled(self):
         with self.assertRaises(RunError) as caught:

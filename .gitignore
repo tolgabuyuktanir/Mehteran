@@ -36,3 +36,6 @@ Thumbs.db
 /prompts/.defaults.json
 # The publisher's Word template (uploaded in the interface)
 /export/
+/npm/mehteran.tar.gz
+# Personal glossaries (names of real people): kept on this computer only
+/glossary/

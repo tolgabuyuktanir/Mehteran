@@ -24,7 +24,7 @@ UI_DIR = paths.CODE / "ui"
 def used_keys() -> set[str]:
     """Every text key the page uses: data-i18n* attributes, and S("key") / ternaries / with_* maps in the scripts."""
     keys = set(re.findall(r'data-i18n(?:-placeholder|-label)?="([a-z_0-9]+)"', (UI_DIR / "index.html").read_text(encoding="utf-8")))
-    for name in ("app.js", "editor.js", "canvas.js", "live.js", "langpicker.js", "history.js"):
+    for name in ("app.js", "editor.js", "canvas.js", "live.js", "langpicker.js", "history.js", "runs.js", "setup.js"):
         js = (UI_DIR / name).read_text(encoding="utf-8")
         keys |= set(re.findall(r'\bS\(\s*"([a-z_0-9]+)"', js))
         keys |= {k for pair in re.findall(r'\bS\([^()]*?\?\s*"([a-z_0-9]+)"\s*:\s*"([a-z_0-9]+)"', js) for k in pair}

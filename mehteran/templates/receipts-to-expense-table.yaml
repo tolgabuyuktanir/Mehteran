@@ -11,7 +11,7 @@ description:
   en: >-
     Give receipts, invoices or statements (PDF, photos, Excel); get an expense table with totals by category and
     unusual items marked. Always check numbers read from photos.
-version: "1.0"
+version: "1.1"
 category: business
 tier: core
 
@@ -83,9 +83,16 @@ nodes:
         - One table row per receipt or invoice; for a statement or spreadsheet, one row per line item. Columns, in this order (translated): Date (YYYY-MM-DD), Vendor, Category, Currency, Net, VAT, Total, Document number, Note.
         - Use only what the material in this message says. Do not invent names, numbers, dates or quotations. Write "?" in a cell that the file does not show or that is unreadable. Never compute a missing number silently: if you derive Net or VAT from the others, say so in Note.
         - Note: a short remark such as "total does not equal net plus VAT", "photo unclear" or "possible duplicate of ...".
+        - Use a three-letter uppercase currency code. Write amounts as numbers with a decimal point and no thousands separators or currency symbols. Keep "?" for unknown values.
         - If the file is not an expense document, write one line saying so instead of a table.
 
         Format: Markdown, no headings (the file name is the heading). Output one Markdown table with a header row.
+
+  - id: validate
+    type: expense.validate
+    label: {tr: "Masraf tablolarını doğrula", en: "Validate expense tables"}
+    config:
+      source: "{{nodes.rows.text}}"
 
   - id: summary
     type: ai.cli
@@ -103,7 +110,7 @@ nodes:
 
         The extracted tables, one per file:
 
-        {{nodes.rows.text}}
+        {{nodes.validate.text}}
 
         Do:
         1. Totals by category and by currency (leave out categories that have no rows; never add different currencies together). Show the calculation briefly: the amounts that make each total.
@@ -140,7 +147,7 @@ nodes:
       template: |
         {{nodes.summary.text}}
 
-        {{nodes.rows.text}}
+        {{nodes.validate.text}}
 
   - id: export
     type: document.export
@@ -154,9 +161,10 @@ nodes:
 
 connections:
   - {from: receipts.text, to: rows}
-  - {from: rows.text, to: summary}
+  - {from: rows.text, to: validate}
+  - {from: validate.text, to: summary}
   - {from: summary.text, to: report}
-  - {from: rows.text, to: report}
+  - {from: validate.text, to: report}
   - {from: report.text, to: export}
 
 outputs:

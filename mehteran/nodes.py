@@ -741,6 +741,21 @@ def _merge(ctx: Ctx) -> dict:
 
 # --- document.export ------------------------------------------------------------
 
+def _validate_expenses(ctx: Ctx) -> dict:
+    source = render(ctx, "source")
+    _, found = tables.extract(source)
+    if not found:
+        raise NodeError(t("expense_no_table"))
+    for table_no, table in enumerate(found.values(), 1):
+        rows = table["rows"]
+        if len(rows[0]) != 9 or len(rows) < 2:
+            raise NodeError(t("expense_table_invalid", table=table_no))
+        for row_no, row in enumerate(rows[1:], 1):
+            if len(row) != 9 or not re.fullmatch(r"[A-Z]{3}|\?", row[3].strip()) or any(
+                    not re.fullmatch(r"[+-]?[0-9]+(?:\.[0-9]+)?|\?", cell.strip()) for cell in row[4:7]):
+                raise NodeError(t("expense_row_invalid", table=table_no, row=row_no))
+    return {"text": source}
+
 def _export(ctx: Ctx) -> dict:
     markdown = render(ctx, "source") if str(ctx.config.get("source") or "").strip() else joined_upstream(ctx, headings=True)
     title = render(ctx, "title") or ctx.node_id
@@ -1168,6 +1183,11 @@ register(NodeType("approval", {"show": Field("template", label=_l("Onaya sunulan
                   label=_l("İnsan onayı", "Human approval"),
                   description=_l("Bir kişi onaylayana ya da reddedene kadar bu dalı durdurur.",
                                  "Stops this branch until a person approves or rejects the text.")))
+register(NodeType("expense.validate", {"source": Field("template", required=True, label=_l("Masraf tabloları", "Expense tables"))},
+                  lambda c: {"text": "text"}, _validate_expenses,
+                  label=_l("Masraf tablolarını doğrula", "Validate expense tables"),
+                  description=_l("Sütun sayısını, para birimini ve tutar biçimini denetler.",
+                                 "Checks column counts, currency codes and amount format.")))
 register(NodeType("document.export", {"source": Field("template", label=_l("Kaynak (Markdown)", "Source (Markdown)"), widget="area",
                                                       help=_l("Boşsa bağlı metin(ler) kaydedilir.", "Empty: the connected text(s) are saved.")),
                                       "title": Field("template", label=_l("Başlık", "Title")),

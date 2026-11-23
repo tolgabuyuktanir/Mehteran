@@ -97,6 +97,10 @@ def estimate(wf: schema.Workflow, values: dict, cfg: dict, resolve=None, privacy
                 "retries": retries, "calls": once, "per_part": bool(parts), "max_parts": parts,
                 "conditional": node_id in after_condition, "max_calls": per_attempt * (retries + 1),
                 **_sent_to(model, cfg, privacy), "auto": chosen_by}
+        if fallback := node.get("fallback_provider"):
+            fallback, _ = _concrete(every_step or fallback, cfg, resolve, privacy)
+            if fallback != model:
+                step["fallback"] = fallback
         steps.append(step)
         group = models.setdefault(model, {"provider": provider, "model": model,
                                           "configured": provider in cfg["providers"], "calls": 0, "loops": 0,
@@ -111,4 +115,5 @@ def estimate(wf: schema.Workflow, values: dict, cfg: dict, resolve=None, privacy
             "max_parts": sum(s["max_parts"] for s in steps),
             "conditional": sum(1 for s in steps if s["conditional"]),
             "max_calls": sum(s["max_calls"] for s in steps),
-            "privacy": privacy, "refused": sum(1 for s in steps if s["refused"])}
+            "privacy": privacy, "refused": sum(1 for s in steps if s["refused"]),
+            **({"quota_max_hours": cfg.get("general", {}).get("quota_max_hours", 24)} if steps else {})}

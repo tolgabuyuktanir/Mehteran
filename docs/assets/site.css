@@ -101,6 +101,21 @@ html[lang="tr"] [data-l="en"], html:not([lang="tr"]) [data-l="tr"] { display: no
 .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
 .shot .bar span { margin-left: 10px; font: 12px/10px var(--mono); color: var(--muted); }
 .shot img { width: 100%; height: auto; }
+.tour-step { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: center; gap: clamp(20px, 5vw, 64px); margin-block: 36px; }
+.tour-step + .tour-step { border-top: 1px solid var(--line); padding-top: 36px; }
+.tour-shot { margin: 0; }
+@media (max-width: 720px) {
+  .tour-step { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .tour-shot { animation: tour-enter linear both; animation-timeline: view(); animation-range: entry 0% entry 80%; }
+    @keyframes tour-enter { from { transform: translateY(16px); } to { transform: translateY(0); } }
+  }
+}
 .shot.missing { aspect-ratio: 1360 / 860; display: grid; place-items: center; color: var(--muted); }
 
 .tools { padding: 18px 0 8px; }

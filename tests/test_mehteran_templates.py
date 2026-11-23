@@ -24,6 +24,24 @@ def sha(path: Path) -> str:
 
 
 class TemplateTests(HomeCase):
+    def test_used_builtin_resolves_after_removal(self):
+        ident = "academic-paper-review"
+        text = templates.read("builtin", ident, self.home)
+        templates.remember_builtin("builtin:" + ident, text, self.home)
+        with mock.patch.object(paths, "BUILTIN_TEMPLATES", self.tmp / "updated-builtins"):
+            self.assertEqual(templates.resolve("builtin:" + ident, self.home), ("builtin", ident))
+            self.assertEqual(templates.read("builtin", ident, self.home), text)
+            self.assertIn(ident, templates.ids("builtin", self.home))
+
+    def test_older_run_recovers_removed_builtin(self):
+        from mehteran_support import ai, workflow
+        engine = self.engine()
+        text = workflow(ai("check", "TASK:check"), []).replace("id: test-flow", "id: removed")
+        run_id = engine.start(text, launch=False)
+        engine.store.update_run(run_id, template="builtin:removed")
+        templates.recover_used_builtins(engine)
+        self.assertEqual(templates.read("builtin", "removed", self.home), text)
+
     def test_builtins_are_listed_valid_and_read_only(self):
         items = {item["ref"]: item for item in templates.listing(paths.home())}
         for template_id in BUILTINS:

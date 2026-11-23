@@ -149,6 +149,33 @@ class TranslationApiTests(MehteranServerCase):
 class WithoutTranslationTests(MehteranServerCase):
     with_translation = False
 
+    def test_existing_book_or_favorite_keeps_embedding_enabled(self):
+        root = self.tmp / "local-project"
+        with mock.patch.object(web, "ROOT", root):
+            self.assertFalse(self.app.book_translation_enabled())
+            (root / "books" / "my-book" / "source").mkdir(parents=True)
+            self.assertTrue(self.app.book_translation_enabled())
+        self.app._update_conf("library.json", "favorites", ["app:translation"])
+        with mock.patch.object(web, "ROOT", self.tmp / "empty-project"):
+            self.assertTrue(self.app.book_translation_enabled())
+            with mock.patch.object(web, "engine_options", return_value={"embed_book_translation": False}):
+                self.assertFalse(self.app.book_translation_enabled())
+
+    def test_a_run_record_alone_counts_as_prior_use(self):
+        root = self.tmp / "local-project"
+        work = root / "books" / "my-book" / "work"
+        work.mkdir(parents=True)
+        (work / "run.json").write_text("{}", encoding="utf-8")
+        self.assertTrue(translation.has_local_books(root))
+
+    def test_standalone_books_are_not_listed_in_main_history(self):
+        with mock.patch("mehteran.usage.translation_runs") as books, \
+                mock.patch("mehteran.usage.translation_activity") as activity:
+            self.assertEqual(self.json("GET", "/api/translation/runs"), (200, []))
+            self.assertEqual(self.json("GET", "/api/activity")[1]["translation"], [])
+        books.assert_not_called()
+        activity.assert_not_called()
+
     def test_api_says_why(self):
         status, data = self.json("GET", "/api/tr/books")
         self.assertEqual(status, 503)

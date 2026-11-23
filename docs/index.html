@@ -240,6 +240,37 @@
   </section>
 
   <!-- ======================================================================= templates -->
+  <section class="band" id="workflow-tour">
+    <div class="wrap">
+      <h2 data-l="en">From document to reviewed result</h2>
+      <h2 data-l="tr">Belgeden incelenmiş sonuca</h2>
+      <div class="tour-step">
+        <div>
+          <h3 data-l="en">Choose what goes in</h3><h3 data-l="tr">Girdiyi seçin</h3>
+          <p data-l="en">In Document summary, choose a file and the level of detail. The run form shows the options for this workflow.</p>
+          <p data-l="tr">Belge özeti akışında dosyanızı ve ayrıntı düzeyini seçin. Çalıştırma formu bu akışın seçeneklerini gösterir.</p>
+        </div>
+        <figure class="shot tour-shot">
+          <img data-l="en" src="assets/screens/en-runform.png" width="1360" height="860" loading="lazy" alt="Document summary run form">
+          <img data-l="tr" src="assets/screens/tr-runform.png" width="1360" height="860" loading="lazy" alt="Belge özeti çalıştırma formu">
+        </figure>
+      </div>
+      <div class="tour-step">
+        <div>
+          <h3 data-l="en">Review what comes out</h3><h3 data-l="tr">Sonucu inceleyin</h3>
+          <p data-l="en">Open the summary in the reader. You can edit a copy, compare results, or download the original.</p>
+          <p data-l="tr">Özeti okuyucuda açın. Bir kopyasını düzenleyebilir, sonuçları karşılaştırabilir veya özgün çıktıyı indirebilirsiniz.</p>
+          <a data-l="en" href="docs.html?lang=en#run">Run your first workflow</a>
+          <a data-l="tr" href="docs.html?lang=tr#tr-calistir">İlk iş akışınızı çalıştırın</a>
+        </div>
+        <figure class="shot tour-shot">
+          <img data-l="en" src="assets/screens/en-reader.png" width="1360" height="860" loading="lazy" alt="Document summary in the results reader">
+          <img data-l="tr" src="assets/screens/tr-reader.png" width="1360" height="860" loading="lazy" alt="Sonuç okuyucusunda belge özeti">
+        </figure>
+      </div>
+    </div>
+  </section>
+
   <section class="band alt" id="templates">
     <div class="wrap">
       <div class="section-head">
@@ -312,28 +343,6 @@
     </div>
   </section>
 
-  <!-- ======================================================================= book translation -->
-  <section class="band alt" id="translation">
-    <div class="wrap">
-      <div class="feature-book">
-        <div>
-          <span class="eyebrow"><span data-l="en">Built in</span><span data-l="tr">Yerleşik</span></span>
-          <h2 data-l="en">Islamic book translation</h2>
-          <h2 data-l="tr">İslami kitap çevirisi</h2>
-          <p data-l="en">Mehteran grew out of a book translation pipeline, and it is still inside, as one of the workflows. It translates Turkish Islamic books into new languages. The Turkish source decides. Published translations in related languages serve as references. Several models translate, review and check the text in turn, and the human translator gets the book and a report.</p>
-          <p data-l="tr">Mehteran bir kitap çevirisi hattından doğdu ve o hat hâlâ içinde, iş akışlarından biri olarak duruyor. Türkçe İslami kitapları yeni dillere çevirir. Türkçe kaynak belirleyicidir. Yakın dillerdeki yayımlanmış çeviriler referans olarak kullanılır. Birden çok model metni sırayla çevirir, inceler ve kontrol eder. İnsan çevirmen kitabı ve bir rapor alır.</p>
-        </div>
-        <ul class="ticks" style="margin:0">
-          <li data-l="en"><span>Upload the Turkish source and optional reference translations.</span></li>
-          <li data-l="tr"><span>Türkçe kaynağı ve isteğe bağlı referans çevirileri yükleyin.</span></li>
-          <li data-l="en"><span>Choose the model of each step of the translation workflow.</span></li>
-          <li data-l="tr"><span>Çeviri akışının her adımının modelini seçin.</span></li>
-          <li data-l="en"><span>Read the result and export it as Markdown, Word, PDF or HTML.</span></li>
-          <li data-l="tr"><span>Sonucu okuyun ve Markdown, Word, PDF ya da HTML olarak dışa aktarın.</span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
 
   <!-- ======================================================================= privacy and languages -->
   <section class="band" id="privacy">
@@ -393,6 +402,8 @@
   <div class="wrap">
     <span>Mehteran · <span data-l="en">local AI workflows</span><span data-l="tr">yerel yapay zekâ iş akışları</span></span>
     <nav>
+      <a href="#start"><span data-l="en">Install</span><span data-l="tr">Kurulum</span></a>
+      <a href="#workflow-tour"><span data-l="en">Workflow tour</span><span data-l="tr">Akış turu</span></a>
       <a href="docs.html"><span data-l="en">Docs</span><span data-l="tr">Belgeler</span></a>
       <a data-l="en" href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">Full reference</a>
       <a data-l="tr" href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">Ayrıntılı başvuru</a>

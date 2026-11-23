@@ -68,5 +68,10 @@ if retry and "previous answer was rejected" in prompt:
 if answer:
     print(answer.group(1).replace("_", " "))
     sys.exit(0)
+if "Task: Extract the expense data from one file." in prompt:
+    print("| Date | Vendor | Category | Currency | Net | VAT | Total | Document number | Note |")
+    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    print("| 2026-01-01 | Fixture | Travel | USD | 10 | 2 | 12 | ? | ? |")
+    sys.exit(0)
 model = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else "default"
 print(f"## Answer {tag}\n\nFake answer from model {model} for {tag}.")
