@@ -11,7 +11,7 @@ description:
   en: >-
     Paste code or a diff: you get the issues by severity, each with the line it concerns and a suggested fix. It
     does not run the code; it only reads it.
-version: "1.0"
+version: "1.1"
 category: developers
 tier: core
 
@@ -73,7 +73,7 @@ nodes:
       prompt: |
         Task: Act as a careful senior code reviewer. Review the code or diff below and list the real problems.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code or diff, pasted (it may be empty):
 
@@ -112,7 +112,7 @@ nodes:
       prompt: |
         Task: Check a code review. A colleague wrote the draft below from the material below. Check it against the material and the user's inputs, fix every problem yourself, and output only the final document. Remove or correct every statement that the material does not support. Keep what the user supplied (names, labels, wishes): it is not invented. Do not write a list of corrections or changes. If the draft cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code or diff, pasted (it may be empty):
 

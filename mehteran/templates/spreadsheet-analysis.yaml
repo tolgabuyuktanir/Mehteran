@@ -11,7 +11,7 @@ description:
   en: >-
     Give a CSV or Excel table and, if you like, a question; get a report on what the table shows, data problems,
     key patterns and the answer. Only part of a very large table is read.
-version: "1.0"
+version: "1.1"
 category: data
 tier: core
 
@@ -61,7 +61,7 @@ nodes:
         Task: Act as a careful data analyst. Below is a spreadsheet, converted to Markdown tables (one per sheet, under
         the sheet's name). A note in square brackets says when rows or columns were cut because the file was large.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole analysis, including the
+        Output language: the language with the code "{{inputs.language}}". Write the whole analysis, including the
         headings, in this language. Keep column names and values as they are in the table.
 
         The question of the person who asked (it may be empty; then make a general review): {{inputs.question}}
@@ -104,7 +104,7 @@ nodes:
         remove every statement or number that the table does not support, and add every important point the
         analysis missed.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         The question of the person who asked (given by the user; keep the analysis aimed at it; it may be empty): {{inputs.question}}

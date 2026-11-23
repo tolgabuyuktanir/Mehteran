@@ -36,6 +36,11 @@
       <button type="button" id="activity" class="activity-btn" aria-haspopup="true" aria-expanded="false" aria-controls="activity-pop" hidden></button>
       <div id="activity-pop" class="activity-pop card" hidden></div>
     </div>
+    <!-- what is left of each AI tool's usage limit (live.js): hidden while no tool reports it -->
+    <div class="activity">
+      <button type="button" id="usage-chip" class="activity-btn usage-chip" aria-haspopup="true" aria-expanded="false" aria-controls="usage-pop" hidden></button>
+      <div id="usage-pop" class="activity-pop card" hidden></div>
+    </div>
     <nav class="tabs" role="tablist" data-i18n-label="main_nav">
       <button type="button" class="tab" role="tab" aria-controls="workflows" data-tab="workflows" data-i18n="tab_workflows"></button>
       <button type="button" class="tab" role="tab" aria-controls="runs" data-tab="runs" data-i18n="tab_runs"></button>
@@ -140,20 +145,21 @@
       </div>
       <button type="button" class="btn" id="tools-refresh" data-i18n="refresh_status"></button>
     </div>
-    <details class="setup-more" id="video-settings-details">
-      <summary data-i18n="video_settings_title"></summary>
-      <section class="card box" id="video-settings"></section>
-    </details>
     <section class="card box onboarding" id="onboarding"></section>
     <div id="tools" class="tool-grid"></div>
     <p class="small muted config-note" id="config-note"></p>
     <!-- the settings that are rarely changed: folded under their titles -->
-    <details class="setup-more"><summary data-i18n="providers_title"></summary>
+    <details class="setup-more" open><summary data-i18n="providers_title"></summary>
       <section class="card box providers-panel" id="providers-panel"></section></details>
     <details class="setup-more"><summary data-i18n="background_title"></summary>
       <section class="card box background-panel" id="background-panel"></section></details>
     <details class="setup-more"><summary data-i18n="local_title"></summary>
       <section id="local-tools" class="local-tools"></section></details>
+    <!-- the keys of the video workflow's image and voice services: only that workflow needs them -->
+    <details class="setup-more" id="video-settings-details">
+      <summary data-i18n="video_settings_title"></summary>
+      <section class="card box" id="video-settings"></section>
+    </details>
   </section>
 </main>
 

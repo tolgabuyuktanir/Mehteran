@@ -11,7 +11,7 @@ description:
   en: >-
     Give the rubric and the student responses: each response is scored twice and gets feedback. The scores are
     not official AP scores; a teacher approves them. Not affiliated with College Board.
-version: "1.0"
+version: "1.1"
 category: exams
 
 inputs:
@@ -84,7 +84,7 @@ nodes:
       prompt: |
         Task: Act as an experienced AP grader. Score one student's response against the rubric, then write feedback for the student.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
         AP course (it may be empty): {{inputs.course}}
 
@@ -133,7 +133,7 @@ nodes:
       prompt: |
         Task: Act as an experienced AP grader. Score one student's response against the rubric. Another grader scores it separately; work alone.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
         AP course (it may be empty): {{inputs.course}}
 
@@ -175,7 +175,7 @@ nodes:
       prompt: |
         Task: Compare two independent scorings of the same student responses. Do not re-score yet.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         AP course (it may be empty): {{inputs.course}}
 
@@ -224,7 +224,7 @@ nodes:
       prompt: |
         Task: Two graders scored the same responses and disagreed on some rubric rows. Reassess only those rows.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the response stay in their original language.
 
         AP course (it may be empty): {{inputs.course}}
 

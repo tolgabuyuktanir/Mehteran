@@ -11,7 +11,7 @@ description:
   en: >-
     Describe what happened and what you want; you get a petition, complaint, objection or formal letter.
     Missing details stay as [placeholders]. This is not legal advice.
-version: "1.0"
+version: "1.1"
 category: writing
 tier: core
 
@@ -80,7 +80,7 @@ nodes:
       prompt: |
         You write formal letters and petitions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Kind: {{inputs.kind}}
         Recipient (it may be empty): {{inputs.recipient}}
@@ -114,7 +114,7 @@ nodes:
       prompt: |
         You review a letter before it is sent, then give the final text.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The kind of letter: {{inputs.kind}}
         The layout: {{inputs.style}}

@@ -8,7 +8,7 @@ Find the paragraphs in the WINDOW that are the translation of the SEGMENT.
 - "end" is the number of the last paragraph that translates the end of the SEGMENT.
 - The translation can be free, and the paragraph breaks can differ. Decide by content: names, numbers, quotations, and the order of ideas.
 - If the SEGMENT covers only a part of a paragraph, include that paragraph.
-- If the WINDOW does not contain the translation of the SEGMENT, use null for both values.
+- Use the printed paragraph numbers, including when the WINDOW starts above 1. If the WINDOW does not contain the translation of the SEGMENT, return {"start": null, "end": null}.
 
 Reply with one JSON object and nothing else:
 {"start": <number or null>, "end": <number or null>}

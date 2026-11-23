@@ -11,7 +11,7 @@ description:
   en: >-
     Write your research questions and hypotheses; get a report on their weak points, other possible
     explanations and suggested revised questions.
-version: "1.0"
+version: "1.1"
 category: research
 
 inputs:
@@ -47,7 +47,7 @@ nodes:
         Task: Act as an experienced research methodologist. Critique the research questions and hypotheses below so
         that the researcher can sharpen them before designing the study.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the text.
 
         The researcher's questions, hypotheses and context:
@@ -103,7 +103,7 @@ nodes:
         what else could explain the expected results and how the hypotheses could fail. Another reviewer covers
         clarity and feasibility; do not repeat that.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the text.
 
         The researcher's questions, hypotheses and context:
@@ -150,7 +150,7 @@ nodes:
         them. Propose revised versions that answer the reviewers' main points while keeping what the researcher
         wants to find out.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Write the revised questions and hypotheses in the language of the
         researcher's original text.
 

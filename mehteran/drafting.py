@@ -254,6 +254,9 @@ Rules of the workflow file (YAML):
   {{nodes.<id>.<output>}} in a prompt: the connected texts are added after the instruction automatically.
   A text input of the run form is used with {{inputs.<id>}}. A file input is never used in a prompt: a
   document.extract step reads it (config.file: "{{inputs.<id>}}") and is connected to the step that needs the text.
+- For extraction or review, say which input supports each finding and how to handle missing evidence.
+  For a creative step, specify audience and format. For an approval, tell the reviewer what to check and
+  what approving starts. Keep these instructions specific to the requested workflow.
 - Every step that calls a model has provider: "{{inputs.model}}".
 - Do not tell the model which language to answer in: the "language" input does that.
 - End with one document.export step (config.formats, e.g. [md, docx]) connected from the step with the final text,
@@ -261,7 +264,9 @@ Rules of the workflow file (YAML):
 - Use the fewest steps that do the job well (usually 3 to 6). Use ai.map only for long documents that must be
   processed part by part, a condition only when two different paths are really needed, an approval only when a
   person must check a text before the next step.
-- A model step has only its prompt: it cannot browse the web, open files or send anything.
+- ai.cli and ai.map receive text. Use document.extract to read a supplied file. If the task requires browsing
+  named sites, use ai.agent with its sites and mode settings. Use read mode for research. For an explicitly
+  requested site change, connect an approval before the agent in act mode.
 """
 
 
@@ -285,7 +290,8 @@ def change_prompt(change: str, previous: str, lang: str) -> str:
     return (
         f"{nodes.DATA_PREAMBLE}You change a workflow file for Mehteran, a program that runs AI workflows on a person's own "
         f"computer. The current file and the change the person asked for are the data blocks at the end. Write the "
-        f"complete changed workflow file. Keep everything the change does not touch.\n\n{RULES}\n"
+        f"complete changed workflow file. Change only what the request requires. Keep existing IDs and connections "
+        f"unless the change requires updating them.\n\n{RULES}\n"
         f"Node types (* marks a required setting):\n{schema_summary()}\n\n"
         f"Write name, description, every label and every prompt in {languages.english_name(lang)}. "
         f"Output only the YAML file in one ```yaml block, nothing before or after it.\n\n"

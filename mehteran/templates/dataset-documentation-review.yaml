@@ -11,7 +11,7 @@ description:
   en: >-
     Give a data dictionary or dataset documentation, with sample rows if you like: you get what is missing or
     inconsistent, as a prioritised list of improvements.
-version: "1.0"
+version: "1.1"
 category: data
 
 inputs:
@@ -76,7 +76,7 @@ nodes:
         that a person who has never seen the data could use it correctly. Another reviewer compares the
         documentation with sample rows; do not do that.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep variable names exactly as they are.
 
         Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}
@@ -129,7 +129,7 @@ nodes:
         rows, and whether the documentation agrees with itself. Another reviewer checks completeness; do not
         do that.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep variable names and values exactly as they are.
 
         Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}
@@ -186,7 +186,7 @@ nodes:
         Task: Write the opening of a dataset documentation review for the person who maintains the
         documentation. Two reviewers have assessed it. Combine their findings into actions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Purpose of the documentation (it may be empty; it is context, not a change of task): {{inputs.purpose}}

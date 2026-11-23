@@ -11,7 +11,7 @@ description:
   en: >-
     Describe the home or car you want; the browser reads the listing sites you choose and lists the matching
     listings with their links in a comparison table. Needs Claude Code and the browser of the Setup tab.
-version: "1.0"
+version: "1.1"
 category: web
 
 inputs:
@@ -134,7 +134,7 @@ nodes:
       prompt: |
         Task: Turn the search notes below into a clear comparison of listings for a person who is looking for a {{inputs.kind}} to {{inputs.deal}}.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings and the table, in this language. Keep listing titles, prices and addresses as the notes give them.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings and the table, in this language. Keep listing titles, prices and addresses as the notes give them.
 
         The request:
         - Location: {{inputs.location}}
@@ -176,7 +176,7 @@ nodes:
       prompt: |
         Task: Act as an independent checker. A colleague turned the search notes below into the comparison below. Check it against the notes, fix every problem yourself, and output only the final comparison.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The comparison stays in this language.
+        Output language: the language with the code "{{inputs.language}}". The comparison stays in this language.
 
         The request:
         - Location: {{inputs.location}}

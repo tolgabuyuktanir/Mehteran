@@ -11,7 +11,7 @@ description:
   en: >-
     Give your code; get test cases and test code for normal, boundary and error situations. The tests are not
     run: run and review them with your code.
-version: "1.0"
+version: "1.1"
 category: developers
 
 inputs:
@@ -70,7 +70,7 @@ nodes:
       prompt: |
         Task: Act as an experienced test engineer. Write test cases and test code for the code below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code, pasted (it may be empty):
 
@@ -123,7 +123,7 @@ nodes:
       prompt: |
         Task: Check a set of test cases and test code. A colleague wrote the draft below for the code below. Check it against the code, fix every problem yourself, and output only the final document. Do not write a list of corrections or changes: the reader has not seen the first version. If the draft cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code, pasted (it may be empty):
 

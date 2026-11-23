@@ -9,7 +9,7 @@ description:
     Pozisyon bilgilerinizden bir iş ilanı yazar. Ayrımcı nitelik (yaş, cinsiyet gibi) yazmaz; vermediğiniz maaş ya da yan hakları uydurmaz.
   en: >-
     Writes a job posting from your role details. It writes no discriminatory requirement (such as age or gender) and invents no salary or benefits you did not give.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -73,7 +73,7 @@ nodes:
       prompt: |
         Task: Write a job posting.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The role details:
 
@@ -128,7 +128,7 @@ nodes:
       prompt: |
         Task: Check a job posting draft against the role details and output the corrected posting.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The role details:
 

@@ -63,7 +63,7 @@ The first run installs the source bundled with the npm release into `~/Mehteran`
 | LM Studio, llama.cpp, vLLM (OpenAI-compatible local server) | Local | Stays on this computer |
 | Gemini CLI | API key (billed) | Google |
 
-You need at least one of them. The Setup tab installs the tools, signs you in and shows each tool's usage. With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key.
+You need at least one of them. The Setup tab installs the tools, signs you in and shows how much of each tool's usage limit is left (also in the header, on every tab). With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key.
 
 The optional local tools (Ollama, Tesseract OCR, Typst for PDF, Pandoc, whisper.cpp for speech to text, qpdf) are installed only when you ask, as pinned versions checked against SHA-256 sums.
 

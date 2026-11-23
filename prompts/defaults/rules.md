@@ -32,4 +32,4 @@
 
 - Dil saygılı, sade ve ağırbaşlı olur. Günlük konuşma dili, argo ve moda deyimler kullanılmaz.
 - Cümleler hedef dilde doğal olur, ama anlam, kesinlik ve vurgu kaynaktaki gibi kalır.
-- Kaynaktaki paragraf, başlık ve dipnot yapısı korunur.
+- Kaynaktaki paragraf sırası ve başlık düzeyleri korunur. Her dipnot işareti, kaynakta işaret ettiği ifadeyle birlikte kalır.

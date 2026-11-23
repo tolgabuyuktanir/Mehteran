@@ -11,7 +11,7 @@ description:
   en: >-
     Paste a log or a stack trace and get an explanation: what happened, the likely cause and possible fixes. It
     says where it cannot be sure.
-version: "1.0"
+version: "1.1"
 category: developers
 
 inputs:
@@ -65,7 +65,7 @@ nodes:
       prompt: |
         Task: Act as an experienced engineer. Explain the log or stack trace below to a developer who has not seen it.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The log or trace, pasted (it may be empty):
 
@@ -102,7 +102,7 @@ nodes:
       prompt: |
         Task: Check an explanation of a log. A colleague wrote the draft below from the material below. Check it against the material and the user's inputs, fix every problem yourself, and output only the final document. Remove or correct every statement that the material does not support. Keep what the user supplied (names, labels, wishes): it is not invented. Do not write a list of corrections or changes. If the draft cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The log or trace, pasted (it may be empty):
 

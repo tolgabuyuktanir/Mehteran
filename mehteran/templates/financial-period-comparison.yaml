@@ -11,7 +11,7 @@ description:
   en: >-
     Give the financial reports of one company for two periods and get a report of what changed, by how much and
     why. It is not investment advice.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -82,7 +82,7 @@ nodes:
         "{{inputs.first_name}}" (earlier) and "{{inputs.second_name}}" (later). Report every change in the
         financial figures that matters to a reader.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep line-item names and quotations as they appear in the reports.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -149,7 +149,7 @@ nodes:
         "{{inputs.second_name}}". Verify every figure and every calculation in the analyst's comparison against
         the reports themselves.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Report for "{{inputs.first_name}}":
@@ -209,7 +209,7 @@ nodes:
         Task: Write the opening of a two-period financial comparison for a busy reader. An analyst compared the
         periods "{{inputs.first_name}}" and "{{inputs.second_name}}", and a checker verified the figures.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the notice, in this language.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}

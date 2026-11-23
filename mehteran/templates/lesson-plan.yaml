@@ -9,7 +9,7 @@ description:
     Konu, sınıf düzeyi ve süreden zamanlı etkinlikler ve değerlendirme içeren bir ders planı yazar. Süreyi aşmaz; kazanım ya da müfredat maddesi uydurmaz.
   en: >-
     Writes a lesson plan with timed activities and assessment from a topic, grade level and duration. It keeps to your time and invents no curriculum standard.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -73,7 +73,7 @@ nodes:
       prompt: |
         Task: Write a lesson plan for a teacher.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic: {{inputs.topic}}
         Grade level: {{inputs.grade}}
@@ -124,7 +124,7 @@ nodes:
       prompt: |
         Task: Check a lesson plan draft against the topic, grade, duration and objectives, and output the corrected plan.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic: {{inputs.topic}}
         Grade level: {{inputs.grade}}

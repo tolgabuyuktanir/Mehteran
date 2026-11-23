@@ -1130,27 +1130,35 @@ function drawProviders(data, save) {
     const key = p.default_billing !== "local" ? h("label", {class: "check small"},
       h("input", {type: "checkbox", checked: p.api_key_allowed, onchange: (e) => save(e.currentTarget, {providers: {[p.name]: {api_key: e.currentTarget.checked}}})}),
       h("span", {}, S("allow_api_key"))) : null;
-    return h("tr", {},
+    const status = !p.installed ? h("span", {class: "badge"}, S("not_installed"))
+      : p.problem ? h("span", {class: "badge warn"}, S(p.problem))
+        : p.blocked_until ? h("span", {class: "badge warn"}, S("hint_limited", {time: fmtTime(p.blocked_until)}))
+          : h("span", {class: "badge good"}, S("tool_state_ready"));
+    return h("tr", {class: p.installed ? "" : "off"},
       h("th", {scope: "row"}, p.label, h("div", {class: "small muted"}, S(p.local ? "sent_to_local" : "sent_to", {vendor: p.vendor}))),
-      h("td", {}, billingBadge(p.billing), p.key_dropped ? h("div", {class: "small muted"}, S("key_dropped")) : null,
-        p.problem ? h("div", {class: "small warn-text"}, S(p.problem)) : null),
+      h("td", {}, h("div", {class: "badges"}, status, billingBadge(p.billing)), p.key_dropped ? h("div", {class: "small muted"}, S("key_dropped")) : null),
+      h("td", {class: "usage-cell", "data-provider": p.name}),  // live.js: what is left of the tool's limit
       h("td", {}, h("label", {class: "row small"}, conc, h("span", {}, S("at_once", {count: p.in_use || 0})))),
       h("td", {}, key));
   });
   fill(el,
-    h("div", {class: "panel-head"}, h("div", {}, h("h2", {}, S("providers_title")), h("p", {class: "muted"}, S("providers_intro")))),
+    h("div", {class: "panel-head"}, h("div", {}, h("h2", {}, S("providers_title")), h("p", {class: "muted"}, S("providers_intro"))),
+      h("button", {type: "button", class: "btn", onclick: (e) => refreshUsage(e.currentTarget)}, S("usage_refresh"))),
+    h("section", {class: "stack"}, h("h3", {}, S("tools_overview_title")),
+      h("div", {class: "table-wrap"}, h("table", {class: "providers-table"},
+        h("thead", {}, h("tr", {}, h("th", {scope: "col"}, S("provider")), h("th", {scope: "col"}, S("tool_state_column")),
+          h("th", {scope: "col"}, S("usage_left_title")), h("th", {scope: "col"}, S("concurrency")), h("th", {scope: "col"}, S("api_key_column")))),
+        h("tbody", {}, tools))),
+      h("p", {class: "small muted"}, S("usage_left_note"))),
     h("div", {class: "providers-grid"},
       h("section", {class: "stack"}, h("h3", {}, S("order_title")),
         h("p", {class: "small muted"}, S(data.order_is_default ? "order_default_note" : "order_note")),
         rows.length ? h("ol", {class: "plain order-list"}, rows) : h("p", {class: "small warn-text"}, S("order_empty")), add),
       h("section", {class: "stack"}, h("h3", {}, S("auto_title")), h("ul", {class: "plain auto-list small"}, autoLines),
         h("p", {class: "small muted"}, S("auto_explain")))),
-    h("div", {class: "table-wrap"}, h("table", {class: "providers-table"},
-      h("thead", {}, h("tr", {}, h("th", {scope: "col"}, S("provider")), h("th", {scope: "col"}, S("billing")),
-        h("th", {scope: "col"}, S("concurrency")), h("th", {scope: "col"}, S("api_key_column")))),
-      h("tbody", {}, tools))),
     localServerForm(data, save),
     h("p", {class: "small muted"}, S("providers_file_note")));
+  fillUsageSlots();  // live.js
 }
 
 // A local server with an OpenAI-compatible API (LM Studio, llama.cpp, vLLM): its address on this computer and model.
@@ -1835,6 +1843,7 @@ async function boot() {
   $("#drawer").addEventListener("close", () => { if (/^workflows\/(builtin|user|import)/.test(state.hash)) go("workflows"); });
   $("#drawer").addEventListener("click", (e) => { if (e.target === e.currentTarget) go("workflows"); });  // the backdrop
   setUpActivity();  // live.js: the header's indicator of what runs now
+  setUpUsageChip();  // live.js: the header's remaining usage of each AI tool
   document.querySelectorAll("[data-icon]").forEach((el) => el.replaceWith(iconTile(el.dataset.icon)));  // live.js
   setUpFooter();  // live.js: the footer (version, data folder, the guide)
   document.addEventListener("keydown", (e) => {

@@ -11,7 +11,7 @@ description:
   en: >-
     Give a contract, an official letter or a policy: it explains in plain words what it asks of you, what you pay
     and what to watch for. This is not legal, financial or medical advice.
-version: "1.0"
+version: "1.1"
 category: documents
 tier: core
 
@@ -59,7 +59,7 @@ nodes:
       prompt: |
         Explain the document below to a non-expert, in plain language.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reader: {{inputs.reader}}
 
@@ -106,7 +106,7 @@ nodes:
       prompt: |
         You check a plain-language explanation against the document and give the corrected final text.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The intended reader (it may be empty; keep the explanation written for this reader): {{inputs.reader}}
 

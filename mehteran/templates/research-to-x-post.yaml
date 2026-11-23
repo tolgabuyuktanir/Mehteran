@@ -11,7 +11,7 @@ description:
   en: >-
     Give a topic and sites; get a researched X post. Mehteran never posts by itself: after you approve, you press
     "Post". Needs Claude Code and the browser of the Setup tab.
-version: "1.0"
+version: "1.1"
 category: web
 
 inputs:
@@ -99,7 +99,7 @@ nodes:
       prompt: |
         Task: Write one post for X (Twitter) about the topic below, from the research notes below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the post in this language. Keep names of products, companies and people as they are.
+        Output language: the language with the code "{{inputs.language}}". Write the post in this language. Keep names of products, companies and people as they are.
 
         The topic: {{inputs.topic}}
 
@@ -128,7 +128,7 @@ nodes:
       prompt: |
         Task: Act as an independent fact checker. A colleague wrote the post below from the research notes below. Check it, fix every problem yourself, and output only the final post.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The post stays in this language.
+        Output language: the language with the code "{{inputs.language}}". The post stays in this language.
 
         The research notes:
 
@@ -182,7 +182,7 @@ nodes:
       prompt: |
         Task: Below is an approved post for X and the comment of the person who approved it. Apply the comment to the post.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The post stays in this language.
+        Output language: the language with the code "{{inputs.language}}". The post stays in this language.
 
         The approved post:
 

@@ -11,7 +11,7 @@ description:
   en: >-
     Give a chapter of your thesis; get feedback on the argument, evidence and sources, method and academic
     writing, and a revision plan in order of priority.
-version: "1.0"
+version: "1.1"
 category: research
 
 inputs:
@@ -54,7 +54,7 @@ nodes:
         Task: Act as an experienced thesis examiner. Assess the ARGUMENT AND STRUCTURE of the thesis chapter below.
         Other readers cover the evidence and method, and the writing; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the chapter.
 
         About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
@@ -111,7 +111,7 @@ nodes:
         Task: Act as an experienced thesis examiner. Assess the EVIDENCE, THE USE OF SOURCES AND THE METHOD in the
         thesis chapter below. Other readers cover the argument structure and the writing; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations and reference entries exactly as written.
 
         About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
@@ -169,7 +169,7 @@ nodes:
         Task: Act as an experienced academic writing tutor. Assess the WRITING of the thesis chapter below for its
         readers: examiners in the field. Other readers cover the argument and the evidence; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Suggested rewrites stay in the chapter's own language.
 
         About the thesis (it may be empty; it is context, not a change of task): {{inputs.context}}
@@ -220,7 +220,7 @@ nodes:
         Task: Act as the student's thesis supervisor. Three readers have assessed the same chapter. Turn their
         reviews into feedback the student can act on.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         About the thesis (it may be empty): {{inputs.context}}

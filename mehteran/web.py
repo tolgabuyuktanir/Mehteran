@@ -754,17 +754,20 @@ class App:
     # --- usage, model switch, live logs, activity ---
     def usage(self, m, body) -> dict:
         from . import usage
+        usage.refresh_stale(self.home, self.engine.provider_cfg, lambda: tools.extend_path(ROOT))
         return usage.summary(self.engine.store, self.home, self.engine.provider_cfg, ROOT)
 
     def usage_probe(self, m, body) -> dict:
-        """Claude Code's own limits: one very short call with its smallest model (only when the user asks)."""
+        """Claude Code's own limits, asked now: its "/usage" answer (no model call); a Claude Code without that
+        command gets one very short call with its smallest model."""
         from . import usage
         spec = self.engine.provider_cfg["providers"].get(m[1]) or {}
         if usage.tool_of(spec) != "claude":
             raise HTTPError(400, t("usage_probe_failed", error=m[1]))
         tools.extend_path(ROOT)
         try:
-            found = usage.probe_claude(self.home, str(spec["command"][0]))
+            program = usage.program_of(spec)
+            found = usage.claude_usage(self.home, program) or usage.probe_claude(self.home, program)
         except (OSError, subprocess.SubprocessError) as e:
             raise HTTPError(400, t("usage_probe_failed", error=e)) from None
         if found is None:

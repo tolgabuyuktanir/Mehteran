@@ -11,7 +11,7 @@ description:
   en: >-
     Paste a customer request or complaint; find out if it is urgent. If it is, you get a note for a manager and
     a first reply; if not, a standard reply draft.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -57,7 +57,7 @@ nodes:
 
         Answer format: the first word of your answer is exactly "yes" or "no" (in English, lower case, without
         any formatting), then a new line, then two to four sentences with the reasons, written in
-        the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Judge only from the message; do not assume facts it does
+        the language with the code "{{inputs.language}}". Judge only from the message; do not assume facts it does
         not state.
 
   - id: gate
@@ -74,7 +74,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        Task: A customer message was judged urgent. Write two texts in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
+        Task: A customer message was judged urgent. Write two texts in the language with the code "{{inputs.language}}".
 
         The message:
 
@@ -108,7 +108,7 @@ nodes:
     config:
       provider: "{{inputs.model}}"
       prompt: |
-        Task: A customer message was judged not urgent. Draft a friendly, clear reply in the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text).
+        Task: A customer message was judged not urgent. Draft a friendly, clear reply in the language with the code "{{inputs.language}}".
 
         The message:
 

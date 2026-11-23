@@ -11,7 +11,7 @@ description:
   en: >-
     Writes original AP-style questions: multiple choice from your class notes, or one free-response (FRQ)
     question with a rubric. A teacher must check them. Not affiliated with College Board.
-version: "1.0"
+version: "1.1"
 category: exams
 
 inputs:
@@ -133,7 +133,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -183,7 +183,7 @@ nodes:
       prompt: |
         Task: You are an experienced AP teacher. Write one original free-response question with a scoring guide and a sample response.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. The question, the stimulus, the scoring guide and the sample response are all in this language (use English for an AP exam taken in English).
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. The question, the stimulus, the scoring guide and the sample response are all in this language (use English for an AP exam taken in English).
 
         If the class notes are empty and both the AP course and the topic are empty, write one sentence that says what is missing and stop.
 
@@ -241,7 +241,7 @@ nodes:
       prompt: |
         Task: You are a second AP teacher who checks a new free-response question before it is used. Do the check yourself; do not trust the author.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         AP course: {{inputs.course}}
         Unit and topic: {{inputs.topic}}
@@ -320,7 +320,7 @@ nodes:
       prompt: |
         Task: You are an experienced AP teacher. Write original multiple-choice questions from one section of class notes.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. The questions, choices, key and explanations are all in this language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. The questions, choices, key and explanations are all in this language.
 
         AP course (it may be empty): {{inputs.course}}
         Questions for this section: {{inputs.per_section}} (3 if it is empty or not a number)
@@ -358,7 +358,7 @@ nodes:
       prompt: |
         Task: You are a second teacher who checks multiple-choice questions before they are used, and who then writes the final set. Answer every question below using only the notes, compare with the key, and fix what is wrong.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         AP course (it may be empty): {{inputs.course}}
         Questions per section: {{inputs.per_section}}

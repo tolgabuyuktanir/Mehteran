@@ -11,7 +11,7 @@ description:
   en: >-
     Give a student's SAT practice answers and the answer key; get the score, the weak areas and a two-week study
     plan. The score range is only an estimate, not official. Not affiliated with College Board.
-version: "1.0"
+version: "1.1"
 category: exams
 
 inputs:
@@ -100,7 +100,7 @@ nodes:
       prompt: |
         Task: Score a student's practice test. Work alone, from the data only.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The student's answers, typed or pasted (it may be empty):
 
@@ -152,7 +152,7 @@ nodes:
       prompt: |
         Task: Score a student's practice test. Work alone, from the data only; a second scorer does the same job separately.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The student's answers, typed or pasted (it may be empty):
 
@@ -204,7 +204,7 @@ nodes:
       prompt: |
         Task: Act as an experienced SAT tutor. Two scorers counted the same practice test independently. Reconcile them and write the student's report.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The student's answers, typed or pasted (it may be empty):
 

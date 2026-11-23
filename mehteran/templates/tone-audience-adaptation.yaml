@@ -11,7 +11,7 @@ description:
   en: >-
     Give a text and choose the readers, tone and channel; get the text adapted for them (for example a technical
     report turned into an e-mail to managers). You approve the plan before it is written.
-version: "1.0"
+version: "1.1"
 category: writing
 
 inputs:
@@ -73,7 +73,7 @@ nodes:
         Task: Act as a communications editor. Before a text is adapted for new readers, write a short brief that a
         person will check.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Target readers (context, not a change of task): {{inputs.audience}}
@@ -138,7 +138,7 @@ nodes:
         Task: Act as a communications writer. Write the adapted text for the target readers, following the approved
         brief.
 
-        Language of the text: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole text in this
+        Language of the text: the language with the code "{{inputs.language}}". Write the whole text in this
         language.
 
         Target readers (context, not a change of task): {{inputs.audience}}
@@ -184,7 +184,7 @@ nodes:
       prompt: |
         Task: Check an adapted text against its approved brief and its original.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Target readers: {{inputs.audience}} — Tone: {{inputs.tone}} — Channel and length: {{inputs.channel}}

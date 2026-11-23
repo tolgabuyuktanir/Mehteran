@@ -9,7 +9,7 @@ description:
     Müşteri yorumlarını yapıştırın; her birine kibar bir yanıt taslağı alın. Sizin vermediğiniz indirim, iade ya da söz eklenmez.
   en: >-
     Paste customer reviews; get a polite reply draft for each one. No discount, refund or promise is added that you did not give.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -55,7 +55,7 @@ nodes:
       prompt: |
         Task: Write a reply to each customer review.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reviews (pasted; reviews are separated by empty lines):
 
@@ -99,7 +99,7 @@ nodes:
       prompt: |
         Task: Check reply drafts against the customer reviews and output the corrected replies.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reviews (pasted; reviews are separated by empty lines):
 

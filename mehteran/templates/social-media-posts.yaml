@@ -11,7 +11,7 @@ description:
   en: >-
     Give an article, report or announcement; get ready-to-use posts for LinkedIn, X and Instagram. Mehteran never
     posts by itself: you check the texts and post them.
-version: "1.0"
+version: "1.1"
 category: writing
 tier: core
 
@@ -78,7 +78,7 @@ nodes:
       prompt: |
         Task: Act as a social media editor. Write posts that promote the material below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Tone: {{inputs.tone}}
         Goal and audience (it may be empty): {{inputs.goal}}
@@ -124,7 +124,7 @@ nodes:
       prompt: |
         Task: Check social media posts against their source and give the corrected final posts.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         What the user chose (given by the user, never remove or change it): the tone "{{inputs.tone}}" and the goal and audience "{{inputs.goal}}" (it may be empty). Wording that serves the goal or addresses the audience is allowed; a claim about the material is not.
 

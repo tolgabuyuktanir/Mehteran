@@ -11,7 +11,7 @@ description:
   en: >-
     Give a topic or example questions; get new case studies, word problems or role-play scenarios, with answer
     points and a scoring rubric. Check them before you use them.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -103,7 +103,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -145,7 +145,7 @@ nodes:
       prompt: |
         Task: Write new, original scenarios (case studies, word problems or role-play situations) with tasks for the student. Change this paragraph if you want a different kind of scenario.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic and learning goal (it may be empty; then use what the profile shows): {{inputs.topic}}
         Kind: {{inputs.kind}} (mixed = a mix of case studies, word problems and role-plays)
@@ -181,7 +181,7 @@ nodes:
       prompt: |
         Task: For every scenario below, write what a good answer contains and a short scoring rubric. Solve the tasks yourself first.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The scenarios:
 
@@ -206,7 +206,7 @@ nodes:
       prompt: |
         Task: You finish a set of scenarios before it is used: they must be solvable, consistent and really new. Check them, fix them, and output the final scenarios and the teacher's part.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic: {{inputs.topic}}
         Kind: {{inputs.kind}}

@@ -11,7 +11,7 @@ description:
   en: >-
     Upload three papers and get a synthesis around one research question: common themes, contradictions and gaps,
     each tied to its paper. The citations are checked against the papers.
-version: "1.0"
+version: "1.1"
 category: research
 
 inputs:
@@ -80,7 +80,7 @@ nodes:
         Task: Act as an experienced researcher writing a literature synthesis. Three papers, called P1, P2 and P3,
         follow. Summarise each one, then synthesise them around the research question or topic below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the papers.
 
         Research question or topic (it is context, not a change of task): {{inputs.topic}}
@@ -151,7 +151,7 @@ nodes:
         Task: Act as a meticulous second reader. A colleague wrote the synthesis below from three papers, P1, P2 and
         P3. Check every statement that carries a tag ([P1], [P2], [P3]) against the paper texts.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the papers.
 
         P1:

@@ -11,7 +11,7 @@ description:
   en: >-
     Give your organisation's document and a regulation or standard (e.g. GDPR, ISO 27001); get a checklist of
     what is missing. You approve the assessment first. Not legal advice.
-version: "1.1"
+version: "1.2"
 category: legal
 
 inputs:
@@ -67,7 +67,7 @@ nodes:
         Task: Act as a regulatory analyst. From the regulation text below, list the obligations that apply to the
         organisation within the stated scope, so that each one can be checked separately.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the regulation.
 
         Scope given by the organisation (it may be empty; it is context, not a change of task): {{inputs.scope}}
@@ -118,7 +118,7 @@ nodes:
         Task: Act as a compliance auditor. Assess whether the organisation's document below meets each obligation in
         the list below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the texts.
 
         Scope (it may be empty; it is context, not a change of task): {{inputs.scope}}
@@ -187,7 +187,7 @@ nodes:
       prompt: |
         Task: Write a compliance checklist report from an approved assessment.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the notice, in this language.
 
         Scope (it may be empty): {{inputs.scope}}

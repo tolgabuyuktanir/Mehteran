@@ -11,7 +11,7 @@ description:
   en: >-
     Give an SAT-style math question; get a step-by-step solution, the answer and common traps. It is solved
     twice, but AI can still be wrong: check the result. Not affiliated with College Board.
-version: "1.0"
+version: "1.1"
 category: exams
 
 inputs:
@@ -60,7 +60,7 @@ nodes:
       prompt: |
         You are an experienced SAT math tutor. Solve the question below on your own.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The question. It was typed or pasted by the user (it may be empty):
 
@@ -96,7 +96,7 @@ nodes:
       prompt: |
         You are an experienced SAT math tutor. Solve the question below on your own.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The question. It was typed or pasted by the user (it may be empty):
 
@@ -132,7 +132,7 @@ nodes:
       prompt: |
         You compare two independent solutions of one SAT math question. Do not solve the question yourself yet.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The question. It was typed or pasted by the user (it may be empty):
 
@@ -187,7 +187,7 @@ nodes:
       prompt: |
         Two independent solutions of one SAT math question gave different answers. Decide which one is right.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The question. It was typed or pasted by the user (it may be empty):
 
@@ -252,7 +252,7 @@ nodes:
       prompt: |
         Two independent solutions of one SAT math question gave the same final answer. Write the final solution for a student.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The question. It was typed or pasted by the user (it may be empty):
 

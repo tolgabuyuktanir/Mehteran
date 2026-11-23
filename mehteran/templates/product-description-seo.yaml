@@ -11,7 +11,7 @@ description:
   en: >-
     Give the product details (text or a spreadsheet); get product descriptions, a search title and keywords for
     your shop or a marketplace. No feature is added that your details do not give.
-version: "1.0"
+version: "1.1"
 category: writing
 
 inputs:
@@ -81,7 +81,7 @@ nodes:
       prompt: |
         Task: Write product copy for a shop or marketplace.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Channel: {{inputs.channel}}
         Audience (it may be empty): {{inputs.audience}}
@@ -119,7 +119,7 @@ nodes:
       prompt: |
         Task: Check product copy against the product information and give the corrected final copy.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         What the user chose (given by the user, never remove or change it): the channel "{{inputs.channel}}", the audience "{{inputs.audience}}" (it may be empty) and the tone "{{inputs.tone}}".
 

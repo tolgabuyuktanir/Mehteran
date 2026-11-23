@@ -11,7 +11,7 @@ description:
   en: >-
     Give a complex text (an official letter, terms of service, a privacy policy); get a plain version for the
     readers you choose. Explanations of terms are not legal advice.
-version: "1.1"
+version: "1.2"
 category: writing
 tier: core
 
@@ -142,7 +142,7 @@ nodes:
         belongs to the text; check that the references are right, and that a point is not softened or exaggerated).
         The rewrite is written in this language: {{inputs.text_language}} (same = the language of the original).
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Quotations stay in the language of their text.
 
         The original (extracted automatically):

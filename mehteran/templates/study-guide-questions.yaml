@@ -11,7 +11,7 @@ description:
   en: >-
     Give your course material; get study notes, exam questions and an answer key. Check the questions before you
     use them.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -92,7 +92,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -141,7 +141,7 @@ nodes:
         Task: You are an experienced teacher. Write structured study notes from the course material below, for
         students who will be examined on it.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep technical terms as the material uses them, with a translation in
         brackets if the material is in another language.
 
@@ -194,7 +194,7 @@ nodes:
         Task: You are an experienced examiner. Write exam questions on the course material below, using the study
         notes as a guide to what matters.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Student level (it may be empty): {{inputs.level}}
@@ -256,7 +256,7 @@ nodes:
       prompt: |
         Task: You are a second examiner who finishes an exam before it is used. Check the questions, fix them, and output the final questions with their answer key.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Student level (it may be empty): {{inputs.level}}
         Number of questions wanted (about): {{inputs.count}}

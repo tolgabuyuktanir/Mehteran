@@ -11,7 +11,7 @@ description:
   en: >-
     Give a document and get its summary: four short versions, or chapter by chapter for a book or a thesis. Check the
     result before you use it.
-version: "1.0"
+version: "1.1"
 category: documents
 tier: core
 
@@ -77,7 +77,7 @@ nodes:
         Task: Act as an expert at summarising long documents accurately. Summarise the document below at four
         different lengths, so that a reader can choose how deep to go.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language, even when the document is in another language.
 
         Intended readers and focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
@@ -133,7 +133,7 @@ nodes:
         Task: Act as an independent fact checker. A colleague summarised the document below at several lengths.
         Check every statement of the summaries against the document itself.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the document.
 
         The summaries were written for these readers and this focus (it may be empty; it is context, not a change
@@ -190,7 +190,7 @@ nodes:
       prompt: |
         Task: Correct a set of summaries using a fact check. The summaries and the check of them follow.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Intended readers and focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
@@ -246,7 +246,7 @@ nodes:
 
         {{item.title}}
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the summary in this language.
+        Output language: the language with the code "{{inputs.language}}". Write the summary in this language.
 
         The reader's focus (it may be empty; it is context, not a change of task): {{inputs.audience}}
 
@@ -272,7 +272,7 @@ nodes:
         Task: Below are the summaries of every chapter of one document, in order, each under its chapter title. Write an
         overview of the whole document for a reader who has not read it.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         The reader's focus (it may be empty; it is context, not a change of task): {{inputs.audience}}

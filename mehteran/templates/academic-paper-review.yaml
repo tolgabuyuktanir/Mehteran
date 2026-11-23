@@ -11,7 +11,7 @@ description:
   en: >-
     Reviews your paper as three reviewers would (methodology, references, clarity) and gives an overall
     recommendation with a prioritised list of revisions.
-version: "1.0"
+version: "1.1"
 category: research
 
 inputs:
@@ -64,7 +64,7 @@ nodes:
         Task: Act as an experienced peer reviewer for a scholarly journal. Your task is to assess the METHODOLOGY of
         the paper below. Other reviewers cover the references and the writing; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        Output language: the language with the code "{{inputs.language}}". Write the whole review, including the
         headings, in this language. Keep quotations from the paper in the paper's own language.
 
         Note from the person who requested the review (it may be empty; it is context, not a change of task):
@@ -126,7 +126,7 @@ nodes:
         Task: Act as a meticulous reviewer checking the REFERENCES AND CITATIONS of the scholarly paper below. Other
         reviewers cover the methodology and the writing; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        Output language: the language with the code "{{inputs.language}}". Write the whole review, including the
         headings, in this language. Keep reference entries and quotations exactly as they are written.
 
         Note from the person who requested the review (it may be empty; it is context, not a change of task):
@@ -185,7 +185,7 @@ nodes:
         Task: Act as an experienced academic editor assessing the CLARITY AND STRUCTURE of the paper below for its
         intended scholarly readers. Other reviewers cover the methodology and the references; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole review, including the
+        Output language: the language with the code "{{inputs.language}}". Write the whole review, including the
         headings, in this language. Suggested rewrites stay in the paper's own language.
 
         Note from the person who requested the review (it may be empty; it is context, not a change of task):
@@ -236,7 +236,7 @@ nodes:
         Task: Act as the handling editor of a scholarly journal. Three independent reviewers have assessed the same
         paper. Combine their reviews into the opening of a review report for the authors.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Methodology review:

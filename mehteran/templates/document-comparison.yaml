@@ -11,7 +11,7 @@ description:
   en: >-
     Compares two or more documents: it shows the differences between two versions with quotations, or puts
     several documents side by side in a table, with recommendations.
-version: "1.1"
+version: "1.2"
 category: documents
 tier: core
 
@@ -79,7 +79,7 @@ nodes:
       prompt: |
         Task: Compare two documents carefully and report every difference in content that matters to a reader.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
+        Output language: the language with the code "{{inputs.language}}". Write the whole comparison, including
         the headings, in this language. Quotations stay in the language of the documents.
 
         The documents follow, each between document tags that give its file name. Use the file names to name them.
@@ -140,7 +140,7 @@ nodes:
         Task: Write the opening of a comparison report for a busy reader who will decide what to do next. An
         analyst has compared two documents. Their comparison follows.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Purpose of the comparison (it may be empty; it is context, not a change of task): {{inputs.purpose}}
@@ -195,7 +195,7 @@ nodes:
 
         {{item.title}}
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the digest in this language;
+        Output language: the language with the code "{{inputs.language}}". Write the digest in this language;
         quotations stay in the language of the document.
 
         Purpose and criteria for the comparison (they may be empty; then cover purpose, scope, main claims or
@@ -226,7 +226,7 @@ nodes:
         Task: Compare several documents on the same criteria. Below is a digest of each document, under the
         document's file name. The digests were made from the full documents with the same instructions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the whole comparison, including
+        Output language: the language with the code "{{inputs.language}}". Write the whole comparison, including
         the headings and the table, in this language. Keep the file names as they are.
 
         Purpose and criteria (they may be empty; then use the criteria the digests cover): {{inputs.purpose}}

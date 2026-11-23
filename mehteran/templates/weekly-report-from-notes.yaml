@@ -9,7 +9,7 @@ description:
     Dağınık haftalık notlarınızı verin; yapılanlar, süren işler, engeller ve gelecek hafta başlıklarıyla düzenli bir rapor alın. Notlarda olmayan hiçbir şey eklenmez.
   en: >-
     Give your messy weekly notes; get a tidy report with done, in progress, blockers and next week. Nothing that is not in the notes is added.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -55,7 +55,7 @@ nodes:
       prompt: |
         Task: Write a weekly report from the user's notes.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The notes (pasted, in any order):
 
@@ -99,7 +99,7 @@ nodes:
       prompt: |
         Task: Check a weekly report draft against the notes and output the corrected report.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The notes (pasted, in any order):
 

@@ -11,7 +11,7 @@ description:
   en: >-
     Collects the recent economy news from the feeds you choose and writes a bulletin and an e-mail draft. Mehteran
     never sends the e-mail by itself. It is not investment advice.
-version: "1.0"
+version: "1.1"
 category: web
 
 inputs:
@@ -95,7 +95,7 @@ nodes:
       prompt: |
         Task: Act as the editor of an economy news bulletin. Below is one news feed ({{item.index}} of {{item.count}}): its title, then its items, each with a title, a publication date, a link and a short summary. Choose the items that belong in a bulletin about the economy.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the summaries in this language. Keep titles of products, models, companies and people as they are.
+        Output language: the language with the code "{{inputs.language}}". Write the summaries in this language. Keep titles of products, models, companies and people as they are.
 
         The reader's focus (it may be empty; it is context, not a change of task): {{inputs.focus}}
 
@@ -130,7 +130,7 @@ nodes:
       prompt: |
         Task: Act as the editor of an economy news bulletin. Below are the news items that were chosen from each feed, under the feed's address. Write the bulletin.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language. Keep titles of products, models, companies and people as they are.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language. Keep titles of products, models, companies and people as they are.
 
         The reader's focus (it may be empty; it is context, not a change of task): {{inputs.focus}}
 
@@ -193,7 +193,7 @@ nodes:
       prompt: |
         Task: Act as an independent fact checker. A colleague wrote the bulletin below from the news items below. Check the bulletin against the items, fix every problem yourself, and output only the final bulletin. Do not write a list of corrections or changes: the reader has not seen the first version. If the bulletin cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language.
 
         The news items, as chosen from each feed:
 
@@ -231,7 +231,7 @@ nodes:
       prompt: |
         Task: Turn the bulletin below into the text of a short e-mail newsletter that a reader can scan in one minute.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything in this language. Keep titles of products, models, companies and people as they are.
+        Output language: the language with the code "{{inputs.language}}". Write everything in this language. Keep titles of products, models, companies and people as they are.
 
         The bulletin:
 

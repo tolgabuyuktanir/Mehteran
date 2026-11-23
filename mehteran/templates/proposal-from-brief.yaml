@@ -9,7 +9,7 @@ description:
     Müşterinin brifini yapıştırın; kapsam, teslimatlar, takvim ve fiyatla bir teklif taslağı alın. Vermediğiniz fiyatlar köşeli parantezle boş kalır.
   en: >-
     Paste the client's brief; get a proposal draft with scope, deliverables, timeline and prices. Prices you did not give stay as [placeholders].
-version: "1.0"
+version: "1.1"
 category: business
 tier: core
 
@@ -66,7 +66,7 @@ nodes:
       prompt: |
         Task: Write a proposal from a client's brief for a freelancer or a small business.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The client brief (pasted):
 
@@ -122,7 +122,7 @@ nodes:
       prompt: |
         Task: Check a proposal draft against the client brief and output the corrected proposal.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The client brief (pasted):
 

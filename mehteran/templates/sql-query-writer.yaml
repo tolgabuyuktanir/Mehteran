@@ -11,7 +11,7 @@ description:
   en: >-
     Give your database schema and a question (for example "the 10 best-selling products last month"); get an SQL
     query with an explanation. The query is not run: read it before you try it on your database.
-version: "1.0"
+version: "1.1"
 category: data
 
 inputs:
@@ -77,7 +77,7 @@ nodes:
       prompt: |
         Task: Act as an experienced database developer. Write one SQL query that answers the user's question, using only the schema below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         SQL dialect: {{inputs.dialect}}
 
@@ -132,7 +132,7 @@ nodes:
       prompt: |
         Task: Check an SQL query. A colleague wrote the draft below for the question and the schema below. Check it, fix every problem yourself, and output only the final document. Do not write a list of corrections or changes: the reader has not seen the first version. If the draft cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         SQL dialect: {{inputs.dialect}}
 

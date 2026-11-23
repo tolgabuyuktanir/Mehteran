@@ -11,7 +11,7 @@ description:
   en: >-
     Give a meeting or lecture recording (audio, video or a transcript); get tidy notes: decisions and tasks for
     a meeting, main topics and review questions for a lecture.
-version: "1.0"
+version: "1.1"
 category: documents
 tier: core
 
@@ -67,7 +67,7 @@ nodes:
       prompt: |
         Turn the transcript below into clear notes.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Kind: {{inputs.kind}}
         Context (it may be empty; context, not a change of task): {{inputs.context}}
@@ -115,7 +115,7 @@ nodes:
       prompt: |
         You check notes against the transcript they came from, then give the corrected final notes.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         What the user chose (given by the user, never remove or change it): the kind "{{inputs.kind}}" (it decides the headings) and the context "{{inputs.context}}" (it may be empty; names and terms in it are given by the user).
 

@@ -63,7 +63,7 @@ npx mehteran
 | LM Studio, llama.cpp, vLLM (OpenAI uyumlu yerel sunucu) | Yerel | Bu bilgisayarda kalır |
 | Gemini CLI | API anahtarı (ücretli) | Google |
 
-En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar, oturum açmanızı sağlar ve her aracın kullanımını gösterir. Bir adımın modeli `auto` ise Mehteran, model sıranızda kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer.
+En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar, oturum açmanızı sağlar ve her aracın kullanım sınırından ne kadar kaldığını gösterir (her sekmede üst çubukta da görünür). Bir adımın modeli `auto` ise Mehteran, model sıranızda kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer.
 
 İsteğe bağlı yerel araçlar (Ollama, Tesseract OCR, PDF için Typst, Pandoc, konuşmayı yazıya çevirmek için whisper.cpp, qpdf) yalnızca siz isteyince kurulur; sabitlenmiş sürümlerdir ve SHA-256 özetleriyle doğrulanır.
 

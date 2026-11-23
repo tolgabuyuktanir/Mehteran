@@ -97,7 +97,7 @@
 
   <section id="setup">
     <h2>Connect your AI tools</h2>
-    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and its usage. <b>Install missing tools</b> installs the tools that the templates and the book translation use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
+    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and how much of its usage limit is left. <b>Install missing tools</b> installs the tools that the templates and the book translation use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
     <table>
       <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
       <tbody>
@@ -232,7 +232,7 @@ outputs:
     <ul>
       <li><code>{{inputs.&lt;id&gt;}}</code> and <code>{{nodes.&lt;id&gt;.&lt;output&gt;}}</code> insert values. A step may use another step's output only when a connection joins them, so the drawing is the real data flow.</li>
       <li>An instruction that names no data gets the connected texts after it, each between data tags. The prompt tells the model that this content is data, not instructions.</li>
-      <li>When the workflow has a <code>language</code> input that the instruction does not use, Mehteran adds "Write the answer in &lt;language&gt;."</li>
+      <li>When the workflow has a <code>language</code> input that the instruction does not use, Mehteran adds "Write the answer in &lt;language&gt;." When the instruction names the language code itself, Mehteran adds what the code means.</li>
     </ul>
     <h3>The check</h3>
     <p>A workflow is checked before it is saved or run. The check lists every problem at once with its place in the file: unknown keys, duplicate ids, missing connections, cycles, placeholders that do not resolve, and anything that looks like a credential (keys such as <code>api_key</code>, <code>token</code>, <code>password</code>). On the command line: <code>./mehter validate my-flow.yaml</code>.</p>
@@ -247,7 +247,7 @@ outputs:
       <li>Otherwise the step shows "waiting for the usage limit" and tries again when the limit resets. A wait does not count as a failed attempt.</li>
     </ul>
     <p>On the run page, a waiting or failed step offers <b>Keep waiting</b> and <b>Continue with another model</b>. A loop keeps the parts it already has. A limit seen by one run is known to the others, so they do not call that tool until it resets.</p>
-    <p>The Setup tab shows each tool's usage: Mehteran's own counts (today, last 5 hours, last 7 days), the last limit with a countdown, and the limits the tool reports itself. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
+    <p>The header shows what is left of each tool's usage limit on every tab, for example "Remaining · Claude 27% · Codex 7%". Click it to see each window (5 hours, weekly) with the time to its reset. Claude Code and Codex report these values; Mehteran asks Claude Code every few minutes without a model call. The tools report percentages, not token counts. The Setup tab shows the same bars on each tool's card and in the table of <b>AI tools of the workflows</b>, with Mehteran's own counts (today, last 5 hours, last 7 days) under <b>Details</b>. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
   </section>
 
   <section id="local">
@@ -414,7 +414,7 @@ outputs:
 
   <section id="tr-araclar">
     <h2>Yapay zekâ araçlarını bağlama</h2>
-    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, ne kadar kullanıldı. <b>Eksikleri kur</b>, şablonların ve kitap çevirisinin kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
+    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, kullanım sınırından ne kadar kaldı. <b>Eksikleri kur</b>, şablonların ve kitap çevirisinin kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
     <table>
       <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
       <tbody>
@@ -549,7 +549,7 @@ outputs:
     <ul>
       <li><code>{{inputs.&lt;id&gt;}}</code> ve <code>{{nodes.&lt;id&gt;.&lt;çıktı&gt;}}</code> değer ekler. Bir adım başka bir adımın çıktısını yalnızca aralarında bir bağlantı varsa kullanabilir. Böylece çizim, verinin gerçek yoludur.</li>
       <li>Hiçbir veri adlandırmayan bir talimatın ardına bağlı metinler eklenir, her biri veri etiketleri arasında. İstem, modele bu içeriğin talimat değil veri olduğunu söyler.</li>
-      <li>İş akışında talimatın kullanmadığı bir <code>language</code> girdisi varsa Mehteran "Cevabı &lt;dil&gt; dilinde yaz." cümlesini ekler.</li>
+      <li>İş akışında talimatın kullanmadığı bir <code>language</code> girdisi varsa Mehteran "Cevabı &lt;dil&gt; dilinde yaz." cümlesini ekler. Talimat dil kodunu kendisi adlandırıyorsa Mehteran kodun hangi dil olduğunu ekler.</li>
     </ul>
     <h3>Denetim</h3>
     <p>Bir iş akışı kaydedilmeden ya da çalıştırılmadan önce denetlenir. Denetim bütün sorunları dosyadaki yerleriyle birlikte bir kerede listeler: bilinmeyen anahtarlar, yinelenen kimlikler, eksik bağlantılar, döngüler, çözülemeyen yer tutucular ve kimlik bilgisine benzeyen her şey (<code>api_key</code>, <code>token</code>, <code>password</code> gibi anahtarlar). Komut satırında: <code>./mehter validate my-flow.yaml</code>.</p>
@@ -564,7 +564,7 @@ outputs:
       <li>Aksi hâlde adım "kullanım sınırını bekliyor" gösterir ve sınır sıfırlanınca yeniden dener. Bekleme başarısız deneme sayılmaz.</li>
     </ul>
     <p>Çalıştırma sayfasında bekleyen ya da başarısız bir adım <b>Bekle</b> ve <b>Başka modelle devam et</b> seçeneklerini sunar. Döngü elindeki parçaları korur. Bir çalıştırmanın gördüğü sınırı diğerleri de bilir; o araç sıfırlanana kadar onu çağırmazlar.</p>
-    <p>Kurulum sekmesi her aracın kullanımını gösterir: Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün), geri sayımlı son sınır ve aracın kendi bildirdiği sınırlar. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
+    <p>Üst çubuk her sekmede araçların kullanım sınırından ne kadar kaldığını gösterir; örneğin "Kalan · Claude %27 · Codex %7". Tıklayınca her pencereyi (5 saat, haftalık) ve sıfırlanmasına kalan süreyi görürsünüz. Bu değerleri Claude Code ve Codex bildirir; Mehteran Claude Code'a birkaç dakikada bir, model çağrısı yapmadan sorar. Araçlar belirteç (token) sayısı değil, yüzde bildirir. Kurulum sekmesi aynı çubukları her aracın kartında ve <b>İş akışlarının yapay zekâ araçları</b> tablosunda gösterir; Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün) <b>Ayrıntılar</b> altındadır. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
   </section>
 
   <section id="tr-yerel">

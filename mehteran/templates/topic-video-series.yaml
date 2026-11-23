@@ -1,6 +1,6 @@
 schema_version: 1
 id: topic-video-series
-version: "2.0"
+version: "2.1"
 category: education
 name: {tr: "Sosyal medya video serisi", en: "Social video series"}
 description:
@@ -49,8 +49,12 @@ nodes:
       provider: "{{inputs.model}}"
       prompt: |
         Write a short educational video script in {{inputs.language}} for each topic below, in order.
-        Target platform: {{inputs.platform}}. Format: {{inputs.mode}}. For short videos use 3 scenes and 25–35 words total for 20 seconds; for standard videos use 5 scenes and 50–65 words total for 40 seconds. Keep scenes similar in spoken length. Use each topic as a heading. Give each scene one spoken sentence
-        and a concrete suggestion for a cinematic editorial image. Keep the narration factual.
+        Platform: {{inputs.platform}}. Format: {{inputs.mode}}. Apply the timing budget separately to each topic:
+        short = 3 scenes, 25–35 spoken words in about 20 seconds; standard = 5 scenes, 50–65 spoken words in about 40 seconds.
+        Use the topic as a heading. For each numbered scene give one spoken sentence and a separate visual brief.
+        Open with a concrete observation or question. Use the next scenes to explain it and finish with a specific takeaway.
+        Read each line aloud in your head. Keep lines similar in length and use words that sound natural when spoken.
+        Show the subject doing something visible. Avoid invented statistics, quotations and claims of certainty.
         Topics:
         {{nodes.check.text}}
   - id: review
@@ -75,7 +79,8 @@ nodes:
         Return only the array. A single topic is [[{"narration":"A tree grows.","visual":"Close-up of a young olive tree in morning sunlight with a softly blurred orchard."}]].
         Use the script’s narration in {{inputs.language}}. Each scene has one short spoken sentence, up to 180 characters, without markup.
         Each visual is a detailed standalone English image brief. Specify subject, setting, composition and lighting.
-        Vary shot size and angle across scenes. Keep style consistent and reserve the lower quarter for subtitles.
+        Carry recurring subjects, setting and palette across the topic. Vary shot size and angle to show the next idea.
+        Reserve the lower quarter for subtitles. Before returning, check that each approved scene has exactly one entry.
         Compose for {{inputs.platform}}, format {{inputs.mode}}. Avoid text in images.
         Approved script: {{nodes.review.text}}
         Reviewer notes: {{nodes.review.comment}}

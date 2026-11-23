@@ -11,7 +11,7 @@ description:
   en: >-
     Give a source text and its translation; get a report on meaning errors, fluency and term problems, an overall
     verdict and the fixes to make first.
-version: "1.0"
+version: "1.1"
 category: writing
 
 inputs:
@@ -65,7 +65,7 @@ nodes:
         Task: Act as a senior translation reviewer. Compare the translation with its source, passage by passage, and
         find every error of MEANING. Another reviewer covers fluency and style; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and your
+        Output language: the language with the code "{{inputs.language}}". Write the headings and your
         explanations in this language. Quotations stay in the language of the source or the translation.
 
         Translation brief (it may be empty; it is context, not a change of task): {{inputs.brief}}
@@ -130,7 +130,7 @@ nodes:
         collocations, register and consistency. Another reviewer compares it with the source for meaning; use
         the source only to understand an unclear passage.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and your
+        Output language: the language with the code "{{inputs.language}}". Write the headings and your
         explanations in this language. Quotations and corrections stay in the language of the translation.
 
         Translation brief (it may be empty; it is context, not a change of task): {{inputs.brief}}
@@ -185,7 +185,7 @@ nodes:
         Task: Act as the reviewing editor. Two reviewers assessed the same translation: one for accuracy, one for
         fluency. Combine their findings into the opening of a quality report for the translator and the client.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Accuracy review:

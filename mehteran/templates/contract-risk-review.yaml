@@ -11,7 +11,7 @@ description:
   en: >-
     Give a contract and say whose side to take: you get the risky clauses with quotations and points to
     negotiate. This is not legal advice.
-version: "1.0"
+version: "1.1"
 category: legal
 tier: core
 
@@ -67,7 +67,7 @@ nodes:
         Task: Act as a careful contracts analyst. Map the key terms of the contract below so that a reader can see
         who must do what, when, and for how much. Do not judge the terms; another reviewer assesses risk.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the contract.
 
         The contract follows. It was extracted automatically from a file, so page numbers or broken lines may
@@ -121,7 +121,7 @@ nodes:
         clauses of the contract below that create risk or disadvantage for this party, and the protections
         this party would normally expect but which are missing.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the contract.
 
         Concerns of the party (it may be empty; it is context, not a change of task): {{inputs.concerns}}
@@ -177,7 +177,7 @@ nodes:
         Task: Act as a second, independent contracts reviewer. A colleague reviewed the contract below for the party
         "{{inputs.party}}". Check the colleague's work against the contract text itself.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the contract.
 
         The contract (extracted automatically):
@@ -230,7 +230,7 @@ nodes:
         Task: Write the opening of a contract review report for "{{inputs.party}}", who must decide whether to
         sign or what to negotiate. Base it on the risk review and the second review below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the notice, in this language.
 
         Concerns of the party (it may be empty): {{inputs.concerns}}

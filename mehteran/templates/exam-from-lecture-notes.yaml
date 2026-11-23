@@ -11,7 +11,7 @@ description:
   en: >-
     Makes two exam forms (A and B) on the same topics from your lecture notes, with answer keys. A teacher should
     check them before they go to students.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -93,7 +93,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -141,7 +141,7 @@ nodes:
       prompt: |
         Task: You are an experienced examiner. Write Form A of an exam on the notes below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Student level (it may be empty): {{inputs.level}}
         Questions in the form: {{inputs.count}} (12 if it is empty or not a number)
@@ -191,7 +191,7 @@ nodes:
       prompt: |
         Task: You are an experienced examiner. Write Form B, the parallel form of an exam. Form A exists already.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Student level (it may be empty): {{inputs.level}}
         Questions in the form: {{inputs.count}} (12 if it is empty or not a number)
@@ -246,7 +246,7 @@ nodes:
       prompt: |
         Task: You are a second examiner who finishes two exam forms before use. Check them, fix them, and output the final forms with their keys.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Level of the students (it may be empty): {{inputs.level}}
         Number of questions wanted: {{inputs.count}}

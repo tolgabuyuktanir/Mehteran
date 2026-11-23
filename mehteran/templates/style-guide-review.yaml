@@ -11,7 +11,7 @@ description:
   en: >-
     Give a text and your style guide; get a report with every place that breaks the guide and a suggested fix,
     notes on structure and clarity, and the fixes to make first.
-version: "1.0"
+version: "1.1"
 category: writing
 
 inputs:
@@ -65,7 +65,7 @@ nodes:
       prompt: |
         Task: Turn a style guide into a numbered list of rules that an editor can check in a text, one by one.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep examples from the guide in the guide's own language.
 
         The style guide follows (extracted automatically from a file; layout artefacts may appear):
@@ -111,7 +111,7 @@ nodes:
         Task: Act as a copy editor. Check the text below against the numbered style rules below and list every
         breach.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Quotations and suggested fixes stay in the language of the text.
 
         The rules:
@@ -163,7 +163,7 @@ nodes:
         readers. Another editor checks the detailed style rules; do not review spelling, punctuation or
         formatting conventions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Quotations and suggested rewrites stay in the language of the text.
 
         Intended readers (it may be empty; it is context, not a change of task): {{inputs.audience}}
@@ -221,7 +221,7 @@ nodes:
         Task: Write the opening of an editorial review report for the author of a text. Two editors have
         reviewed it: one against the style guide, one for overall quality. Their reviews follow.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Style guide check:

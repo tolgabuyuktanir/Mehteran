@@ -11,7 +11,7 @@ description:
   en: >-
     Writes original practice questions with an answer key for SAT, LGS or YKS; you approve the set. It copies no
     real questions, is not affiliated with the exam bodies, and a teacher should check it.
-version: "1.0"
+version: "1.1"
 category: exams
 
 inputs:
@@ -114,7 +114,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -156,7 +156,7 @@ nodes:
       prompt: |
         Task: You write original practice questions for the exam named below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The headings are in this language. For the exams sat_math and sat_rw the questions themselves are written in English, as the real test is. For lgs, tyt and ayt the questions are written in this language too.
+        Output language: the language with the code "{{inputs.language}}". The headings are in this language. For the exams sat_math and sat_rw the questions themselves are written in English, as the real test is. For lgs, tyt and ayt the questions are written in this language too.
 
         Exam: {{inputs.exam}}
         Subject or domain (it may be empty; then spread the questions over the exam's subjects or domains): {{inputs.subject}}
@@ -207,7 +207,7 @@ nodes:
       prompt: |
         Task: You are an expert tutor for the exam {{inputs.exam}}. Below are practice questions. Write the answer key with solutions and reasons.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Subject or domain (it may be empty): {{inputs.subject}}
         Topic (it may be empty): {{inputs.topic}}
@@ -238,7 +238,7 @@ nodes:
       prompt: |
         Task: You are a strong, strict student who takes a practice question of the exam {{inputs.exam}}. Solve it on your own, then test whether the question is sound.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write your remarks in this language; keep the question's own words as they are.
+        Output language: the language with the code "{{inputs.language}}". Write your remarks in this language; keep the question's own words as they are.
 
         The question ({{item.index}} of {{item.count}}):
 
@@ -265,7 +265,7 @@ nodes:
       prompt: |
         Task: You check a practice set for the exam {{inputs.exam}}. Compare the answer key with the blind solutions, question by question.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The questions:
 
@@ -315,7 +315,7 @@ nodes:
       prompt: |
         Task: Produce the final practice set. Every question that the verification flagged must be fixed, replaced or dropped; none may be left as it is.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language. For the exams sat_math and sat_rw the question texts stay in English; for lgs, tyt and ayt they are in this language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language. For the exams sat_math and sat_rw the question texts stay in English; for lgs, tyt and ayt they are in this language.
 
         Exam: {{inputs.exam}}
         Subject or domain (it may be empty): {{inputs.subject}}

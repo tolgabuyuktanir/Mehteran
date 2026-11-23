@@ -169,6 +169,45 @@ class UsageTests(HomeCase):
         self.assertIsNone(usage.parse_claude_events('{"type":"result"}'))
         self.assertEqual(usage.tool_of({"command": ["/x/codex", "exec"]}), "codex")
         self.assertEqual(usage.tool_of({"api": "ollama"}), "ollama")
+        # Mehteran's own adapters have no command: the adapter names the tool and its program
+        self.assertEqual((usage.tool_of({"adapter": "claude"}), usage.program_of({"adapter": "claude"})), ("claude", "claude"))
+        self.assertEqual(usage.tool_of({"adapter": "codex"}), "codex")
+        self.assertIsNone(usage.tool_of({"adapter": "openai-local", "api": "openai"}))
+
+    def test_claude_usage_command_report(self):
+        """Claude Code's "/usage" answer (no model call) becomes the windows of the remaining-usage display."""
+        now = time.mktime((2026, 11, 23, 16, 0, 0, 0, 0, -1))
+        text = ("You are currently using your subscription to power your Claude Code usage\n\n"
+                "Current session: 2% used · resets Nov 23 at 8:59pm (Europe/Istanbul)\n"
+                "Current week (all models): 72% used · resets Nov 24 at 9am (Europe/Istanbul)\n"
+                "Current week (Fable): 59.5% used\n\nLast 24h · 763 requests\n  87%  Start fresh when you switch tasks\n")
+        found = usage.parse_claude_usage(text, now)
+        self.assertEqual(found["source"], "claude-usage-command")
+        self.assertEqual([(w["name"], w["utilization"]) for w in found["windows"]],
+                         [("five_hour", 0.02), ("seven_day", 0.72), ("seven_day_model", 0.595)])
+        self.assertEqual(found["windows"][0]["resets_at"], time.mktime((2026, 11, 23, 20, 59, 0, 0, 0, -1)))
+        self.assertEqual(found["windows"][1]["resets_at"], time.mktime((2026, 11, 24, 9, 0, 0, 0, 0, -1)))
+        self.assertEqual((found["windows"][2]["model"], found["windows"][2]["resets_at"]), ("Fable", None))
+        self.assertIsNone(usage.parse_claude_usage("Unknown command: /usage", now))
+        # a time without a date is the next such time; a date that passed long ago is next year's
+        self.assertEqual(usage._reset_time("3pm (UTC)", now), time.mktime((2026, 11, 24, 15, 0, 0, 0, 0, -1)))
+        self.assertEqual(usage._reset_time("Jan 2 at 1:05am", now), time.mktime((2027, 1, 2, 1, 5, 0, 0, 0, -1)))
+
+    def test_stale_report_is_asked_again_once(self):
+        """An old report starts one background "/usage"; a fresh one, or a recent attempt, starts none."""
+        cfg = {"providers": {"claude": {"command": ["claude", "-p"]}, "fake": {"command": ["python3", "x.py"]}}}
+        asked = threading.Event()
+        usage._refresh.update(running=False, tried=0.0)
+        with mock.patch("mehteran.usage.claude_usage", side_effect=lambda *a, **k: asked.set()) as call:
+            self.assertTrue(usage.refresh_stale(self.home, cfg))
+            self.assertTrue(asked.wait(5))
+            self.assertFalse(usage.refresh_stale(self.home, cfg), "one attempt per STALE_SECONDS")
+            usage._refresh.update(running=False, tried=0.0)
+            usage.remember(self.home, "claude", {"observed_at": time.time(), "windows": []})
+            self.assertFalse(usage.refresh_stale(self.home, cfg), "a fresh report is kept")
+            usage._refresh.update(running=False, tried=0.0)
+            self.assertFalse(usage.refresh_stale(self.home, {"providers": {"fake": cfg["providers"]["fake"]}}))
+            self.assertEqual(call.call_count, 1)
 
 
 class TranslationRunTests(HomeCase):

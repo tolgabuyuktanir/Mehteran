@@ -9,7 +9,7 @@ description:
     Mektubun amacını ve bilgileri yazın; velilere gönderilecek bir mektup hazırlanır. Eksik bilgiler köşeli parantezle boş kalır; göndermeden önce okuyun.
   en: >-
     Give the purpose and the facts; you get a letter to parents. Missing details stay as [placeholders]. Read it before you send it.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -72,7 +72,7 @@ nodes:
       prompt: |
         Task: Write a letter from a teacher or a school to parents.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The purpose:
 
@@ -113,7 +113,7 @@ nodes:
       prompt: |
         Task: Check a letter to parents against the purpose and facts and output the corrected letter.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The purpose:
 

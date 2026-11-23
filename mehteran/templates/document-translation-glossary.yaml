@@ -11,7 +11,7 @@ description:
   en: >-
     Translates a document (contract, report, manual) into another language, keeps your terms the same everywhere
     and checks the translation. Not for books; it does not replace an official or sworn translation.
-version: "1.0"
+version: "1.1"
 category: writing
 
 inputs:
@@ -84,7 +84,7 @@ nodes:
       prompt: |
         Translate one part of a document.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Translate the whole text into exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Translate the whole text into exactly this language, except where the instructions below say to keep another language.
 
         Style note (it may be empty): {{inputs.style}}
 
@@ -116,7 +116,7 @@ nodes:
       prompt: |
         You check a translation against its source.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quote the source and the translation in their own languages.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quote the source and the translation in their own languages.
 
         Style note of the user (it may be empty; it is a wish, so a choice that follows it is not an error): {{inputs.style}}
 

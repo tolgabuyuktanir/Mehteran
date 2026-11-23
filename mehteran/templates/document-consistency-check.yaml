@@ -11,7 +11,7 @@ description:
   en: >-
     Give a document: you get the places where its numbers, dates, names and statements contradict each other, by
     severity. It does not check the facts against the outside world.
-version: "1.0"
+version: "1.1"
 category: documents
 
 inputs:
@@ -54,7 +54,7 @@ nodes:
         Task: Act as a meticulous fact checker. Check whether the FIGURES AND FACTS of the document below agree with
         each other inside the document. Another checker covers statements, terms and cross-references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the document.
 
         Points the person wants checked (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -111,7 +111,7 @@ nodes:
         Task: Act as a careful editor. Check whether the STATEMENTS, TERMS AND CROSS-REFERENCES of the document below
         agree with each other inside the document. Another checker covers numbers and dates.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the document.
 
         Points the person wants checked (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -168,7 +168,7 @@ nodes:
         Task: Act as the editor responsible for the document. Two checkers have looked for internal inconsistencies.
         Combine their findings into one list for the author.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the note, in this language.
 
         Figures and facts check:

@@ -11,7 +11,7 @@ description:
   en: >-
     Give example questions; get new, original questions in the same style, with an answer key and explanations.
     The examples are not copied; you approve the set before it is saved.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -85,7 +85,7 @@ nodes:
       prompt: |
         Task: Read the reference questions and describe what makes them work, so that new, original questions can be written in the same style. Do not write new questions and do not solve the references.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The reference questions from files (it may be empty; extracted automatically, so scans and photos may contain mistakes, and page numbers or broken lines are artefacts):
 
@@ -127,7 +127,7 @@ nodes:
       prompt: |
         Task: Write new, original questions in the style of the reference questions, without answers. Change this paragraph if you want something else, for example another format or topic.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Subject or exam (it may be empty; then use what the profile shows): {{inputs.subject}}
         Number of new questions: {{inputs.count}} (write exactly this many; 5 if it is empty or not a number)
@@ -160,7 +160,7 @@ nodes:
       prompt: |
         Task: Write the answer key with a clear explanation for every question below. Solve each question yourself first.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The questions:
 
@@ -185,7 +185,7 @@ nodes:
       prompt: |
         Task: Check that the new questions are really new. Compare every new question with the reference questions and flag copies and near-copies.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The new questions:
 
@@ -230,7 +230,7 @@ nodes:
       prompt: |
         Task: Solve this question on your own, as a careful student would. You do not have the key.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep the question's own words as they are.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep the question's own words as they are.
 
         The question ({{item.index}} of {{item.count}}):
 
@@ -251,7 +251,7 @@ nodes:
       prompt: |
         Task: Compare the answer key with the blind solutions and say which questions have a problem.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The questions:
 
@@ -312,7 +312,7 @@ nodes:
       prompt: |
         Task: Produce the final question set. Every question that the verification flagged must be fixed, replaced or dropped; none may be left as it is.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Subject or exam (it may be empty): {{inputs.subject}}
         Number of questions wanted: {{inputs.count}}

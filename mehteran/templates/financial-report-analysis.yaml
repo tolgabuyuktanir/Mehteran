@@ -11,7 +11,7 @@ description:
   en: >-
     Give an annual or quarterly financial report and get an analysis of performance, financial position and the
     management's story, with red flags. It is not investment advice.
-version: "1.0"
+version: "1.1"
 category: business
 
 inputs:
@@ -57,7 +57,7 @@ nodes:
         growth, margins, profit and segments. Other analysts cover the balance sheet and cash flow, and the
         management narrative; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations and line-item names as they appear in the report.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -115,7 +115,7 @@ nodes:
         balance sheet, cash flow, liquidity, debt and working capital. Other analysts cover the operating
         performance and the management narrative; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations and line-item names as they appear in the report.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -174,7 +174,7 @@ nodes:
         claims, the risks it states, its outlook and the accounting notes that matter. Other analysts cover the
         detailed figures; refer to figures only to test a claim.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the report.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}
@@ -231,7 +231,7 @@ nodes:
         Task: Write the opening of a financial report analysis for a reader who must understand the company's
         situation quickly. Three analysts have reviewed the same report. Combine their work.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the notice, in this language.
 
         Focus of the reader (it may be empty; it is context, not a change of task): {{inputs.focus}}

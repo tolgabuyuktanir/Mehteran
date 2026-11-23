@@ -10,7 +10,7 @@ description:
     alırsınız.
   en: >-
     Give a topic or a text: you get a worksheet at basic, medium and advanced level and a checked answer key.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -65,7 +65,7 @@ nodes:
       prompt: |
         Task: Prepare a worksheet at three levels with an answer key for a teacher.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic or source text:
 
@@ -109,7 +109,7 @@ nodes:
       prompt: |
         Task: Check a worksheet and its answer key by solving every question yourself, and output the corrected worksheet.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Topic or source text:
 

@@ -11,7 +11,7 @@ description:
   en: >-
     Scores an essay against your rubric and writes feedback for the student; you approve the scores. The scores
     are estimates, not official ones; not affiliated with any exam body.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -100,7 +100,7 @@ nodes:
       prompt: |
         You are an experienced writing examiner. Score the essay against the rubric.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
 
         Exam type (context only): {{inputs.exam}}
         Target level (it may be empty): {{inputs.level}}
@@ -150,7 +150,7 @@ nodes:
       prompt: |
         You are an experienced writing examiner. Score the essay against the rubric. Another examiner scores it separately; work alone.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
 
         Exam type (context only): {{inputs.exam}}
         Target level (it may be empty): {{inputs.level}}
@@ -199,7 +199,7 @@ nodes:
       prompt: |
         Two examiners scored the same essay independently. Reconcile them and write the report for the student's teacher.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Quotations from the essay stay in their original language.
 
         Exam type (context only): {{inputs.exam}}
         Target level (it may be empty): {{inputs.level}}

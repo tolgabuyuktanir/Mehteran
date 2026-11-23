@@ -9,7 +9,7 @@ description:
     Öğrencilerle ilgili notlarınızı yapıştırın; her öğrenci için güçlü yönleri ve bir sonraki adımı anlatan bir karne yorumu alın.
   en: >-
     Paste your notes about the students; get a report card comment for each one, with strengths and a next step.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -62,7 +62,7 @@ nodes:
       prompt: |
         Task: Write one report card comment per student from the teacher's notes.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The student notes (each student starts with the name; students are separated by empty lines):
 
@@ -103,7 +103,7 @@ nodes:
       prompt: |
         Task: Check report card comments against each student's notes and output the corrected comments.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The student notes (each student starts with the name; students are separated by empty lines):
 

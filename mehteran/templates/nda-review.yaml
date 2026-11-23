@@ -11,7 +11,7 @@ description:
   en: >-
     Reviews a non-disclosure agreement (NDA) from your side and gives a report of unusual clauses and points to
     negotiate. It is not legal advice.
-version: "1.0"
+version: "1.1"
 category: legal
 
 inputs:
@@ -66,7 +66,7 @@ nodes:
         Task: Act as a contracts analyst. Go through the non-disclosure agreement below topic by topic and record
         exactly what it says on each topic. Another reviewer judges unusual clauses; keep your judgement short.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the agreement.
 
         The person's role in the agreement: {{inputs.role}} (receiving = receives confidential information;
@@ -119,7 +119,7 @@ nodes:
         Task: Act as an experienced negotiator reviewing a non-disclosure agreement for one side. Find the clauses
         that are one-sided, unusually broad or unusual for this side, and obligations that are easy to miss.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the agreement.
 
         The person's role: {{inputs.role}} (receiving = receives confidential information; disclosing = gives it;
@@ -172,7 +172,7 @@ nodes:
         Task: Write the opening of an NDA review report for a person who must decide whether to sign it. Base it on
         the checklist and the review of unusual clauses below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings and the notice, in this language.
 
         The person's role: {{inputs.role}}. Concerns (it may be empty): {{inputs.concerns}}

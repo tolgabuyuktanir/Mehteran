@@ -121,6 +121,7 @@ function toolCard(tool, terminal) {
       h("div", {class: "badges"}, h("span", {class: "badge good"}, S(tool.provider ? "signed_in" : "installed") + (tool.sign_in_info ? " · " + tool.sign_in_info : "")),
         tool.billing ? billingBadge(tool.billing) : null),
       quota && q.until > Date.now() / 1000 ? quota : null,
+      tool.provider ? usageMini(tool.provider) : null,  // live.js: what is left of its limit, without opening Details
       h("details", {class: "tool-more"}, h("summary", {class: "small"}, S("details")),
         h("div", {class: "stack"}, h("div", {class: "uses"}, uses), h("div", {class: "small muted"}, tool.requirements),
           tool.provider ? usageSlot(tool.provider) : null, keyForm, h("div", {class: "actions"}, actions.filter((b) => b !== test)))),

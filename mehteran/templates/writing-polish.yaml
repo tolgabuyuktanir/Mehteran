@@ -11,7 +11,7 @@ description:
   en: >-
     Give a text or a paper; get a list of spelling, punctuation and grammar fixes, or a new abstract and title
     options for your paper.
-version: "1.0"
+version: "1.1"
 category: writing
 tier: core
 
@@ -88,7 +88,7 @@ nodes:
         Task: Act as a professional proofreader. Find the errors in the text below and list them as a change list.
         Do not rewrite the text and do not edit its style.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and the reasons in
+        Output language: the language with the code "{{inputs.language}}". Write the headings and the reasons in
         this language. Quotations and corrections stay in the language of the text.
 
         Conventions to follow (it may be empty; then follow the standard rules of the text's language and the
@@ -139,7 +139,7 @@ nodes:
         Task: Act as a second proofreader. A colleague made the change list below for the text below. Check every
         item against the text and against the conventions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and the reasons in
+        Output language: the language with the code "{{inputs.language}}". Write the headings and the reasons in
         this language. Quotations and corrections stay in the language of the text.
 
         Conventions (it may be empty; it is context, not a change of task): {{inputs.conventions}}
@@ -193,7 +193,7 @@ nodes:
       prompt: |
         Task: Produce the final change list for the author from the colleague's list and the reviewer's decisions.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the headings and the reasons in
+        Output language: the language with the code "{{inputs.language}}". Write the headings and the reasons in
         this language. Quotations and corrections stay in the language of the text.
 
         Change list:
@@ -240,7 +240,7 @@ nodes:
         Task: Act as an experienced journal editor. Compare the title and the abstract of the paper below with the
         body of the paper, and find what makes them weak or inaccurate.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the paper.
 
         Target venue (it may be empty; it is context, not a change of task): {{inputs.venue}}
@@ -299,7 +299,7 @@ nodes:
         Task: Act as a skilled scientific writer. Write a better title and abstract for the paper below, using the
         editor's diagnosis.
 
-        Output language for headings and explanations: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write
+        Output language for headings and explanations: the language with the code "{{inputs.language}}". Write
         the title options and the abstract in the language of the paper itself.
 
         Word limit for the abstract: {{inputs.word_limit}} words.
@@ -355,7 +355,7 @@ nodes:
         the paper below. Check each claim and each number in them against the body of the paper, and then fix every
         problem you find.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in their own language. Write the title options and the abstract in the language of the paper
         itself.
 

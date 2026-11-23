@@ -11,7 +11,7 @@ description:
   en: >-
     Give your code; get a README draft that explains what the project does, how to install it and how to use it.
     No command or version is added that the code does not show.
-version: "1.0"
+version: "1.1"
 category: developers
 
 inputs:
@@ -66,7 +66,7 @@ nodes:
       prompt: |
         Task: Act as a technical writer. Write a README for the project whose code is below.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code, pasted (it may be empty):
 
@@ -102,7 +102,7 @@ nodes:
       prompt: |
         Task: Check a README. A colleague wrote the draft below from the material below. Check it against the material and the user's inputs, fix every problem yourself, and output only the final document. Remove or correct every statement that the material does not support. Keep what the user supplied (names, labels, wishes): it is not invented. Do not write a list of corrections or changes. If the draft cannot be fixed, say so in one sentence and stop.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in this language, except where the instructions below say to keep another language.
 
         The code, pasted (it may be empty):
 

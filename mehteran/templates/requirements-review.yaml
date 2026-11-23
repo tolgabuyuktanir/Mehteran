@@ -11,7 +11,7 @@ description:
   en: >-
     Give a requirements document (software, product or service); get a report of unclear items, gaps,
     conflicts, questions for stakeholders and suggested fixes.
-version: "1.0"
+version: "1.1"
 category: documents
 
 inputs:
@@ -54,7 +54,7 @@ nodes:
         Task: Act as a senior requirements engineer. Assess the QUALITY OF EACH INDIVIDUAL REQUIREMENT in the document
         below. Another reviewer covers missing requirements and conflicts; do not review those.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations and suggested rewrites in the language of the document.
 
         Product and users (it may be empty; it is context, not a change of task): {{inputs.context}}
@@ -110,7 +110,7 @@ nodes:
         Task: Act as a systems analyst. Look at the requirements document below AS A WHOLE and find what is missing
         or in conflict. Another reviewer covers the wording of individual requirements; do not review that.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language. Keep quotations in the language of the document.
 
         Product and users (it may be empty; it is context, not a change of task): {{inputs.context}}
@@ -170,7 +170,7 @@ nodes:
         Task: Lead the requirements review. Two reviewers have assessed the same document. Write the opening of
         the review report: what to fix first and what to ask the stakeholders.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the
         headings, in this language.
 
         Requirement quality review:

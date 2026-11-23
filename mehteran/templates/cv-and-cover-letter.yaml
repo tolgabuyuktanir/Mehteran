@@ -11,7 +11,7 @@ description:
   en: >-
     Give your CV and a job posting: you get a CV tailored to the posting and a cover letter. Nothing is added
     that is not in your CV.
-version: "1.0"
+version: "1.1"
 category: writing
 tier: core
 
@@ -79,7 +79,7 @@ nodes:
       prompt: |
         Task: Act as an experienced career coach and recruiter. Prepare a tailored CV and a cover letter.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The CV (extracted automatically):
 
@@ -126,7 +126,7 @@ nodes:
       prompt: |
         Task: Check a tailored CV and cover letter against the original CV.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The original CV:
 

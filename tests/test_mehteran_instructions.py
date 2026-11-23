@@ -93,6 +93,16 @@ class InstructionTests(HomeCase):
         self.assertEqual(prompt.count('<data source="nodes.'), 1)
         self.assertNotIn("Write the answer in", prompt)
 
+    def test_an_instruction_that_names_the_language_code_gets_its_meaning(self):
+        """The built-in workflows say 'the language with the code "sq"': the prompt ends with what the code means."""
+        step = ("  - {id: c, type: ai.cli, config: {provider: fake, prompt: \"TASK:c Write in the language with the code "
+                "'{{inputs.language}}'. {{nodes.a.text}}\"}}\n")
+        text = flow(TWO + step, [("a.text", "c")], inputs="  - {id: language, type: language, default: tr}\n")
+        self.run_flow(text, values={"language": "sq"})
+        prompt = self.prompt_of("c")
+        self.assertTrue(prompt.rstrip().endswith('The language code "sq" means Albanian.'), prompt[-200:])
+        self.assertNotIn("Write the answer in", prompt)
+
     def test_merge_and_export_without_text_join_the_branch_taken(self):
         text = flow(
             "  - {id: ask, type: ai.cli, config: {provider: fake, prompt: \"TASK:ask\"}}\n"

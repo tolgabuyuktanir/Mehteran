@@ -58,7 +58,7 @@ class TemplateTests(HomeCase):
         self.assertEqual(sha(paths.BUILTIN_TEMPLATES / "academic-paper-review.yaml"), before)
 
     def test_customize_keeps_a_version_with_special_characters_as_text(self):
-        text = templates.read("builtin", "document-comparison", self.home).replace('version: "1.1"', "version: 'a\\g<0>\\9'")
+        text = templates.read("builtin", "document-comparison", self.home).replace('version: "1.2"', "version: 'a\\g<0>\\9'")
         templates.import_text(templates.with_id(text, "odd"), self.home)
         templates.customize("user", "odd", "odd2", self.home)
         self.assertIn("based_on: user:odd@a\\g<0>\\9\n", templates.read("user", "odd2", self.home))
@@ -85,23 +85,23 @@ class TemplateTests(HomeCase):
         copy = self.home / "templates" / "my-review.yaml"
         wf = schema.parse(copy.read_text(encoding="utf-8"))
         self.assertEqual(wf.id, "my-review")
-        self.assertEqual(wf.data["based_on"], "builtin:academic-paper-review@1.0")
+        self.assertEqual(wf.data["based_on"], "builtin:academic-paper-review@1.1")
         self.assertIn("# Built-in template", copy.read_text(encoding="utf-8"))  # comments and layout are kept
 
         # A later update of the built-in template does not touch the copy.
         fake_builtins = self.tmp / "builtins"
         shutil.copytree(paths.BUILTIN_TEMPLATES, fake_builtins)
         updated = fake_builtins / "academic-paper-review.yaml"
-        updated.write_text(updated.read_text(encoding="utf-8").replace('version: "1.0"', 'version: "2.0"'), encoding="utf-8")
+        updated.write_text(updated.read_text(encoding="utf-8").replace('version: "1.1"', 'version: "2.0"'), encoding="utf-8")
         mine_before = sha(copy)
         with mock.patch.object(paths, "BUILTIN_TEMPLATES", fake_builtins):
             items = {i["ref"]: i for i in templates.listing(self.home)}
             self.assertEqual(items["builtin:academic-paper-review"]["version"], "2.0")
-            self.assertEqual(items["user:my-review"]["version"], "1.0")
+            self.assertEqual(items["user:my-review"]["version"], "1.1")
         self.assertEqual(sha(copy), mine_before)
 
         # Editing the copy keeps its id; an invalid edit is refused with all problems.
-        text = copy.read_text(encoding="utf-8").replace('version: "1.0"', 'version: "1.1"')
+        text = copy.read_text(encoding="utf-8").replace('version: "1.1"', 'version: "1.2"')
         templates.save("my-review", text, self.home)
         with self.assertRaises(TemplateError) as e:
             templates.save("my-review", text.replace("id: my-review", "id: other") + "junk: 1\n", self.home)

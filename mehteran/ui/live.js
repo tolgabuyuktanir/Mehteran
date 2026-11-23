@@ -1,6 +1,7 @@
 // Mehteran web interface: what runs now and what the AI tools have used. Loaded before app.js and called by it; it
 // uses app.js's helpers (S, h, fill, api, act, toast, fmtTime, duration, go, state, INFO) when its functions run.
-//   - usage of each tool (GET /api/usage, POST /api/usage/probe/<provider>): Setup cards, hints next to model pickers
+//   - usage of each tool (GET /api/usage, POST /api/usage/probe/<provider>): the header's remaining-usage chip,
+//     Setup cards and the tool table, hints next to model pickers
 //   - switching the model of a step (POST /api/runs/<run>/nodes/<node>/switch)
 //   - a step's live log (GET /api/runs/<run>/log?node=&offset=), elapsed timers
 //   - the header's activity indicator (GET /api/activity)
@@ -86,16 +87,33 @@ const usageOf = (provider) => ((usageState.data && usageState.data.providers) ||
 function reportedWindows(entry) {
   const rep = entry && entry.tool_reported;
   if (!rep || !Array.isArray(rep.windows)) return [];
-  const name = {primary: "window_5h", secondary: "window_week", five_hour: "window_5h", seven_day: "window_week"};
-  return rep.windows.map((w) => ({label: S(name[w.name] || "window_other", {name: w.name}),
+  const name = {primary: "window_5h", secondary: "window_week", five_hour: "window_5h", seven_day: "window_week", seven_day_model: "window_week_model"};
+  return rep.windows.map((w) => ({label: S(name[w.name] || "window_other", {name: w.model || w.name}),
     percent: w.used_percent != null ? Number(w.used_percent) : w.utilization != null ? Math.round(Number(w.utilization) * 100) : null,
     resets: typeof w.resets_at === "number" ? w.resets_at : w.resets_at ? Date.parse(w.resets_at) / 1000 : null,
     expired: Boolean(w.expired)})).filter((w) => Number.isFinite(w.percent) && w.percent >= 0 && w.percent <= 100)
     .map((w) => ({...w, expired: w.expired || Boolean(w.resets && w.resets <= Date.now() / 1000)}));
 }
 
-function usagePercent(reported) {
-  return S("usage_percent_used", {percent: (reported.percent / 100).toLocaleString(LANG, {style: "percent"})});
+// What is left of a window: "%28 kaldı". The tools report the used share; people ask how much is left.
+const percentText = (value) => (value / 100).toLocaleString(LANG, {style: "percent"});
+function usageLeft(reported) {
+  return S("usage_percent_left", {percent: percentText(100 - reported.percent)});
+}
+
+// The remaining usage of one tool as bars (full = everything left): its own report, newest first known.
+// compact: no "seen at" line. Returns [] when the tool reports nothing.
+function usageBars(entry, compact) {
+  const windows = reportedWindows(entry);
+  if (!windows.length) return [];
+  const rep = entry.tool_reported;
+  const seen = rep.observed_at ? (typeof rep.observed_at === "number" ? rep.observed_at : Date.parse(rep.observed_at) / 1000) : null;
+  const bars = windows.map((w) => h("div", {class: "usage-bar " + (w.expired ? "" : w.percent >= 95 ? "bad" : w.percent >= 80 ? "warn" : "")},
+    h("span", {class: "small usage-bar-text"}, h("span", {}, w.label + ": ", h("b", {}, w.expired ? S("usage_window_reset") : usageLeft(w))),
+      w.resets && !w.expired ? h("span", {class: "muted", "data-until": w.resets}, S("resets_in", {time: duration(Date.now() / 1000, w.resets)})) : null),
+    w.expired ? null : h("span", {class: "track", role: "img", "aria-label": `${w.label}: ${usageLeft(w)}`}, h("span", {class: "fill", "data-w": 100 - w.percent}))));
+  bars.forEach((bar) => bar.querySelectorAll("[data-w]").forEach((el) => (el.style.width = el.dataset.w + "%")));
+  return compact || !seen ? bars : [...bars, h("p", {class: "small muted"}, S("usage_observed", {time: fmtTime(seen)}))];
 }
 
 // Near a limit: "bad" while a limit is active or a window is at 95 %, "warn" from 80 %.
@@ -106,13 +124,13 @@ function usageLevel(entry) {
   return top >= 95 ? "bad" : top >= 80 ? "warn" : "";
 }
 
-// A short text for a model picker: "5 saat: %54", or the limit, or Mehteran's own count of the last 5 hours.
+// A short text for a model picker: "5 saat: %46 kaldı", or the limit, or Mehteran's own count of the last 5 hours.
 function usageHintText(provider) {
   const entry = usageOf(provider);
   if (!entry) return "";
   if (entry.resets_at > Date.now() / 1000) return S("hint_limited", {time: fmtTime(entry.resets_at)});
   const windows = reportedWindows(entry).filter((w) => !w.expired);
-  if (windows.length) return windows.map((w) => `${w.label}: ${usagePercent(w)}`).join(" · ");
+  if (windows.length) return windows.map((w) => `${w.label}: ${usageLeft(w)}`).join(" · ");
   const five = entry.windows && entry.windows["5h"];
   return five && five.calls ? S("hint_calls_5h", {count: five.calls}) : "";
 }
@@ -134,11 +152,40 @@ function usageSlot(provider) {
   return h("div", {class: "usage-slot", "data-provider": provider});
 }
 
+// The remaining usage on a ready tool's card, outside "Details": filled with the same answer.
+function usageMini(provider) {
+  return h("div", {class: "usage-mini", "data-provider": provider});
+}
+
 async function fillUsageSlots(force) {
-  const slots = document.querySelectorAll(".usage-slot");
+  const slots = document.querySelectorAll(".usage-slot, .usage-mini, .usage-cell");
   if (!slots.length) return;
   await loadUsage(force);
   document.querySelectorAll(".usage-slot").forEach((slot) => fill(slot, usageBox(slot.dataset.provider)));
+  document.querySelectorAll(".usage-mini").forEach((slot) => fill(slot, usageBars(usageOf(slot.dataset.provider), true)));
+  document.querySelectorAll(".usage-cell").forEach((slot) => fill(slot, usageCell(slot.dataset.provider)));
+  drawUsageChip();
+}
+
+// A cell of the Setup panel's tool table: the bars, or why there are none.
+function usageCell(provider) {
+  const entry = usageOf(provider);
+  const bars = usageBars(entry, false);
+  if (bars.length) return bars;
+  if (entry && entry.resets_at > Date.now() / 1000) return h("span", {class: "small bad-text"}, S("hint_limited", {time: fmtTime(entry.resets_at)}));
+  const five = entry && entry.windows && entry.windows["5h"];
+  return h("span", {class: "small muted"}, (providerInfo(provider) || {}).local ? S("usage_left_local")
+    : [S("usage_left_none"), five && five.calls ? " " + S("hint_calls_5h", {count: five.calls}) : ""]);
+}
+
+// Asks the tools again now (Claude Code: its own "/usage" report, no model call).
+async function refreshUsage(button) {
+  const claude = ((usageState.data && usageState.data.providers) || []).filter((p) => p.tool === "claude" && p.configured);
+  await act(button, async () => {
+    for (const p of claude) await api("POST", `/api/usage/probe/${encodeURIComponent(p.provider)}`);
+    return true;
+  });
+  await fillUsageSlots(true);
 }
 
 function usageBox(provider) {
@@ -158,28 +205,17 @@ function usageBox(provider) {
       limited ? [" · ", h("b", {"data-until": entry.resets_at}, S("resets_in", {time: duration(Date.now() / 1000, entry.resets_at)}))] : null,
       quota.message ? h("div", {class: "muted"}, quota.message) : null));
   }
-  // What the tool reports itself: Codex from its session logs, Claude Code when asked; "unknown" otherwise.
+  // What the tool reports itself: Codex from its session logs, Claude Code from its "/usage"; "unknown" otherwise.
   const tool = entry ? entry.tool : null;
-  const windows = reportedWindows(entry);
-  const rep = entry && entry.tool_reported;
-  const reported = h("div", {class: "usage-reported"}, h("span", {class: "small fld-label"}, S("usage_tool_reported")),
-    windows.length ? windows.map((w) => h("div", {class: "usage-bar " + (w.expired ? "" : w.percent >= 95 ? "bad" : w.percent >= 80 ? "warn" : "")},
-      h("span", {class: "small"}, w.label + ": " + (w.expired ? S("usage_window_reset") : usagePercent(w)),
-        w.resets && !w.expired ? [" · ", h("span", {"data-until": w.resets}, S("resets_in", {time: duration(Date.now() / 1000, w.resets)}))] : null),
-      w.expired ? null : h("span", {class: "track"}, h("span", {class: "fill", "data-w": w.percent}))))
-      : h("p", {class: "small muted"}, S("usage_unknown")),
-    rep && rep.observed_at ? h("p", {class: "small muted"}, S("usage_observed", {time: fmtTime(typeof rep.observed_at === "number" ? rep.observed_at : Date.parse(rep.observed_at) / 1000)})) : null,
-    tool === "codex" && !windows.length ? h("p", {class: "small muted"}, S("usage_codex_note")) : null);
-  parts.push(reported);
+  const bars = usageBars(entry, false);
+  parts.push(h("div", {class: "usage-reported"}, h("span", {class: "small fld-label"}, S("usage_left_title")),
+    bars.length ? bars : h("p", {class: "small muted"}, S("usage_unknown")),
+    tool === "codex" && !bars.length ? h("p", {class: "small muted"}, S("usage_codex_note")) : null));
   if (tool === "claude") {
-    parts.push(h("div", {class: "row"}, h("button", {type: "button", class: "btn small", onclick: async (e) => {
-      const r = await act(e.currentTarget, () => api("POST", `/api/usage/probe/${encodeURIComponent(provider)}`));
-      if (r) fillUsageSlots(true);
-    }}, S("usage_check")), h("span", {class: "small muted"}, S("usage_check_note"))));
+    parts.push(h("div", {class: "row"}, h("button", {type: "button", class: "btn small", onclick: (e) => refreshUsage(e.currentTarget)}, S("usage_check")),
+      h("span", {class: "small muted"}, S("usage_check_note"))));
   }
-  const box = h("section", {class: "usage-box"}, parts);
-  box.querySelectorAll("[data-w]").forEach((el) => (el.style.width = el.dataset.w + "%"));
-  return box;
+  return h("section", {class: "usage-box"}, parts);
 }
 
 // --- switching the model of a step ----------------------------------------------------------------------------
@@ -386,6 +422,61 @@ function setUpActivity() {
   });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) pollActivity(); });
   pollActivity();
+}
+
+// --- the header's remaining-usage chip ------------------------------------------------------------------------------
+// "Kalan: Claude Code %28 · Codex %7": the smallest remaining share of each tool that reports one. Its list shows
+// every window with its reset time. Hidden while no tool reports anything.
+const usageChip = {timer: null};
+
+async function pollUsage() {
+  clearTimeout(usageChip.timer);
+  const data = await loadUsage(true);
+  drawUsageChip();
+  document.querySelectorAll(".usage-mini").forEach((slot) => fill(slot, usageBars(usageOf(slot.dataset.provider), true)));
+  document.querySelectorAll(".usage-cell").forEach((slot) => fill(slot, usageCell(slot.dataset.provider)));
+  // The server asks Claude Code in the background when its last report is old: the answer is there a moment later.
+  usageChip.timer = setTimeout(pollUsage, data && data.refreshing ? 5000 : 60000 * (document.hidden ? 4 : 1));
+}
+
+function drawUsageChip() {
+  const button = document.getElementById("usage-chip");
+  const pop = document.getElementById("usage-pop");
+  if (!button || !usageState.data) return;
+  const label = (name) => { const p = providerInfo(name) || ((INFO && INFO.providers) || []).find((x) => x.name === name); return (p && p.label) || name; };
+  const tools = usageState.data.providers.filter((p) => p.configured).map((p) => ({entry: p, name: label(p.provider),
+    live: reportedWindows(p).filter((w) => !w.expired), limited: p.resets_at > Date.now() / 1000}))
+    .filter((t) => t.live.length || t.limited || reportedWindows(t.entry).length);
+  button.hidden = !tools.length;
+  if (!tools.length) { pop.hidden = true; return; }
+  const levels = tools.map((t) => usageLevel(t.entry));
+  button.className = "activity-btn usage-chip " + (levels.includes("bad") ? "bad" : levels.includes("warn") ? "warn" : "");
+  const short = tools.filter((t) => t.live.length || t.limited).map((t) => h("span", {class: "usage-chip-tool " + usageLevel(t.entry)}, t.name.replace(/ \(.*\)$/, "").replace(/ (Code|CLI)$/, "") + " ",
+    h("b", {}, t.limited ? "0%" : percentText(100 - Math.max(...t.live.map((w) => w.percent))))));
+  fill(button, h("span", {class: "usage-chip-title"}, S("usage_left_short")), short.length ? short : h("span", {}, "–"));
+  button.setAttribute("aria-label", S("usage_left_title") + ": " + button.textContent);
+  fill(pop, h("div", {class: "activity-head"}, h("h3", {}, S("usage_left_title")),
+    h("button", {type: "button", class: "btn small", onclick: (e) => refreshUsage(e.currentTarget)}, S("usage_refresh"))),
+    h("ul", {class: "plain usage-pop-list"}, tools.map((t) => h("li", {}, h("b", {}, t.name),
+      t.limited ? h("div", {class: "small bad-text"}, S("hint_limited", {time: fmtTime(t.entry.resets_at)})) : null, usageBars(t.entry, false)))),
+    h("p", {class: "small muted"}, S("usage_left_note")),
+    h("button", {type: "button", class: "linkish small", onclick: () => { pop.hidden = true; button.setAttribute("aria-expanded", "false"); go("setup"); }}, S("usage_open_setup")));
+}
+
+function setUpUsageChip() {
+  const button = document.getElementById("usage-chip");
+  const pop = document.getElementById("usage-pop");
+  if (!button) return;
+  const close = () => { pop.hidden = true; button.setAttribute("aria-expanded", "false"); };
+  button.addEventListener("click", () => {
+    pop.hidden = !pop.hidden;
+    button.setAttribute("aria-expanded", String(!pop.hidden));
+    if (!pop.hidden) pollUsage();
+  });
+  document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && !button.contains(e.target)) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { close(); button.focus(); } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) pollUsage(); });
+  loadProviderStates().catch(() => null).then(pollUsage);  // app.js: the tools' names
 }
 
 // --- favorites -------------------------------------------------------------------------------------------------

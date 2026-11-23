@@ -11,7 +11,7 @@ description:
   en: >-
     Give the place, the dates, the guests and your wishes; the browser reads the hotel sites you choose and compares
     the matching stays with prices and links. It books nothing. Needs Claude Code and the browser of the Setup tab.
-version: "1.0"
+version: "1.1"
 category: web
 
 inputs:
@@ -143,7 +143,7 @@ nodes:
       prompt: |
         Task: Turn the search notes below into a clear comparison of places to stay for the person's trip.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings and the table, in this language. Keep hotel names, prices and addresses as the notes give them.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings and the table, in this language. Keep hotel names, prices and addresses as the notes give them.
 
         The trip:
         - Where: {{inputs.destination}}
@@ -187,7 +187,7 @@ nodes:
       prompt: |
         Task: Act as an independent checker. A colleague turned the search notes below into the comparison below. Check it against the notes, fix every problem yourself, and output only the final comparison.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). The comparison stays in this language.
+        Output language: the language with the code "{{inputs.language}}". The comparison stays in this language.
 
         The trip:
         - Where: {{inputs.destination}}

@@ -11,7 +11,7 @@ description:
   en: >-
     Give a long document (a report, a thesis, a book chapter); get a slide-by-slide outline for your time and
     audience: titles, bullets and speaker notes.
-version: "1.0"
+version: "1.1"
 category: documents
 tier: core
 
@@ -62,7 +62,7 @@ nodes:
       prompt: |
         Task: Prepare material for a presentation. Read one section of a long document.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The audience (it may be empty): {{inputs.audience}}
 
@@ -81,7 +81,7 @@ nodes:
       prompt: |
         Task: Act as a presentation coach. Write a slide-by-slide outline from the points of each section of a document.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Audience: {{inputs.audience}}
         Time: {{inputs.minutes}} minutes (15 if it is empty or not a number). Plan about one slide per 1.5 to 2 minutes, plus a title slide and a closing slide.

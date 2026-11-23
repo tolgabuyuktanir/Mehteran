@@ -11,7 +11,7 @@ description:
   en: >-
     Give an exam and its answer key: the AI solves the questions without the key and lists possible errors in the
     key. The result is saved when a teacher approves it; the teacher decides.
-version: "1.0"
+version: "1.1"
 category: education
 
 inputs:
@@ -96,7 +96,7 @@ nodes:
         Task: Take an exam question as a careful student. Solve it on your own.
 
         Subject and level (it may be empty): {{inputs.subject}}
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write the reasoning in this language; keep the question's own words as they are.
+        Output language: the language with the code "{{inputs.language}}". Write the reasoning in this language; keep the question's own words as they are.
 
         The question ({{item.index}} of {{item.count}}):
 
@@ -118,7 +118,7 @@ nodes:
       prompt: |
         Task: Check an answer key. Compare the key with blind solutions, question by question.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The questions:
 
@@ -165,7 +165,7 @@ nodes:
       prompt: |
         Task: Some questions have a mismatch between the answer key and an independent solution. Decide each one.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         The questions:
 

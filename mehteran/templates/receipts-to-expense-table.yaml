@@ -11,7 +11,7 @@ description:
   en: >-
     Give receipts, invoices or statements (PDF, photos, Excel); get an expense table with totals by category and
     unusual items marked. Always check numbers read from photos.
-version: "1.1"
+version: "1.2"
 category: business
 tier: core
 
@@ -71,7 +71,7 @@ nodes:
       prompt: |
         Task: Extract the expense data from one file.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep vendor names and item names as written in the file.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language. Keep vendor names and item names as written in the file.
 
         Categories to use: {{inputs.categories}}
 
@@ -103,7 +103,7 @@ nodes:
       prompt: |
         Task: Check expense data and summarise it.
 
-        Output language: the language with the code "{{inputs.language}}" (tr is Turkish, en is English; any other code names its own language; if you are unsure, use the language of the user's own text). Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
+        Output language: the language with the code "{{inputs.language}}". Write everything, including the headings, in exactly this language, except where the instructions below say to keep another language.
 
         Categories: {{inputs.categories}}
         Expense rules (it may be empty): {{inputs.rules}}
