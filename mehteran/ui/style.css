@@ -371,9 +371,6 @@ dialog.drawer {
 .job-details .job-log { max-height: 220px; overflow: auto; }
 
 /* runs */
-.runs-layout { grid-template-columns: 290px minmax(0, 1fr); }
-.runs-layout .book-list { max-height: calc(100vh - var(--top-h, 73px) - 32px); }
-.runs-layout .book-list ul { overflow-y: auto; min-height: 0; }
 .run-side-head { justify-content: space-between; }
 .run-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .run-head .book-title { margin: 0; }
@@ -457,7 +454,6 @@ dialog.drawer {
   #board-status { order: 10; flex-basis: 100%; max-width: none; text-align: left; }
   .ed-titles { max-width: 240px; }
   .ed-new { display: none; }  /* "New workflow" stays in the library */
-  .runs-layout { grid-template-columns: 240px minmax(0, 1fr); }
   .run-head .book-title h2 { font-size: 25px; }
   .panel-head > .row { flex-wrap: nowrap; }
 }
@@ -466,8 +462,6 @@ dialog.drawer {
   body.fill.editing main { display: block; }
   .ed-board, .ed-board.pal-folded { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 62vh auto; }
   .ed-side { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
-  .runs-layout { grid-template-columns: minmax(0, 1fr); }
-  .runs-layout .book-list { max-height: none; }
   .lib-tools { position: static; }
   .subnav { padding: 8px 16px; }
   #translation > .subnav, #workflow-page > .subnav { top: 0; margin-top: -16px; padding-inline: calc(50vw - 50%); }  /* the header scrolls away here */
@@ -1101,3 +1095,31 @@ pre.json-view { font: 13px/1.55 ui-monospace, Menlo, monospace; white-space: pre
 
 /* the workflows run last: the same space around it as around a group of cards */
 .lib-recent { margin: 24px 0 28px; }
+
+/* Run history and detail share the same reading column. */
+.runs-layout { max-width: 1120px; margin-inline: auto; }
+.runs-layout > .book-list { position: static; gap: 16px; }
+.run-side-head { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.run-side-head h2 { font-size: clamp(26px, 4vw, 36px); }
+.run-tools { display: grid; grid-template-columns: minmax(12em, 1fr) auto auto; align-items: start; gap: 12px; }
+.run-tools details { max-width: 32em; min-width: 0; }
+.run-tools summary { padding-block: 8px; cursor: pointer; }
+.runs-layout .book-list li.rl-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.runs-layout .rl-item > button:first-child { padding: 12px 14px; text-align: start; }
+.runs-layout .rl-name { font-weight: 600; }
+.runs-layout .rl-main { gap: 2px; }
+.runs-layout .rl-group { margin-block-start: 16px; }
+.runs-layout .rl-item > .stop-btn { margin-inline-end: 6px; }
+.run-back { display: inline-flex; align-items: center; gap: 6px; padding-block: 6px; margin-bottom: 12px; }
+.run-head { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.run-head > .stack { min-width: 0; overflow-wrap: anywhere; }
+.quota-notice { border-inline-start: 4px solid var(--warn); border-radius: var(--radius); background: var(--warn-soft); color: var(--ink); padding: 14px 18px; }
+.quota-notice h3 { color: var(--warn); }
+.quota-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .run-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
+  .run-tools .run-search, .run-tools details[open] { grid-column: 1 / -1; }
+  .run-actions { justify-content: flex-start; }
+  .run-cols .tl-row { grid-template-columns: minmax(0,1fr); }
+  .run-cols .tl-count { justify-content: flex-start; }
+}

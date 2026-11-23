@@ -1284,3 +1284,39 @@ register(NodeType("video.series", {
     "mode": Field("template", required=True, label=_l("Video türü", "Video format"))},
     lambda c: {"zip": "file"}, _video_series, label=_l("Video serisi oluştur", "Render video series"),
     description=_l("Her konu için sesli ve altyazılı bir MP4 oluşturur.", "Creates a narrated, subtitled MP4 for each topic.")))
+
+
+def _voice_preview(ctx: Ctx) -> dict:
+    from .video import preview_voice
+    try:
+        return {"audio": preview_voice(parse_json_answer(render(ctx, "source")), render(ctx, "lang"), ctx.node_dir, ctx.abort)}
+    except InterruptedError:
+        raise Aborted() from None
+    except ValueError as err:
+        raise NodeError(str(err)) from err
+
+
+register(NodeType("video.preview", {
+    "source": Field("template", required=True, label=_l("Sahne planı", "Storyboard")),
+    "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language"))},
+    lambda c: {"audio": "file"}, _voice_preview, label=_l("Ses önizlemesi", "Voice preview"),
+    description=_l("İlk sahnenin seslendirmesini dinleyin.", "Listen to the narration of the first scene.")))
+
+
+def _video_check(ctx: Ctx) -> dict:
+    from .video import validate_topics, video_tools
+    try:
+        topics = validate_topics(render(ctx, "topics"))
+        video_tools(render(ctx, "lang"))
+    except (ValueError, OSError, subprocess.SubprocessError) as err:
+        raise NodeError(str(err)) from err
+    return {"text": "\n".join(topics)}
+
+
+register(NodeType("video.check", {
+    "topics": Field("template", required=True, label=_l("Konular", "Topics")),
+    "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language"))},
+    lambda c: {"text": "text"}, _video_check,
+    label=_l("Video araçlarını kontrol et", "Check video tools"),
+    description=_l("Konuları ve yerel video araçlarını model çağrısından önce kontrol eder.",
+                   "Checks topics and local video tools before model calls.")))

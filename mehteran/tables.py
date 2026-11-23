@@ -235,11 +235,18 @@ def extract(markdown: str) -> tuple[str, dict[str, dict]]:
     left alone."""
     lines = markdown.replace("\r\n", "\n").split("\n")
     nonce = secrets.token_hex(4)
-    out, tables, fence, i = [], {}, False, 0
+    out, tables, fence, i = [], {}, "", 0
     while i < len(lines):
         line = lines[i]
-        if line.lstrip().startswith("```"):
-            fence = not fence
+        marker_line = re.match(r"^(`{3,}|~{3,})", line.lstrip())
+        if fence:
+            if line.strip().startswith(fence) and not line.strip().strip(fence[0]):
+                fence = ""
+            out.append(line)
+            i += 1
+            continue
+        if marker_line:
+            fence = marker_line[1]
         if not fence and "|" in line and i + 1 < len(lines) and "|" in lines[i + 1] and _SEPARATOR.match(lines[i + 1]):
             header = _split_row(line)
             align = ["center" if c.strip().startswith(":") and c.strip().endswith(":") else

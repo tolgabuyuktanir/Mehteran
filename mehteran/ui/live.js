@@ -90,13 +90,18 @@ function reportedWindows(entry) {
   return rep.windows.map((w) => ({label: S(name[w.name] || "window_other", {name: w.name}),
     percent: w.used_percent != null ? Number(w.used_percent) : w.utilization != null ? Math.round(Number(w.utilization) * 100) : null,
     resets: typeof w.resets_at === "number" ? w.resets_at : w.resets_at ? Date.parse(w.resets_at) / 1000 : null,
-    expired: Boolean(w.expired)})).filter((w) => w.percent != null);
+    expired: Boolean(w.expired)})).filter((w) => Number.isFinite(w.percent) && w.percent >= 0 && w.percent <= 100)
+    .map((w) => ({...w, expired: w.expired || Boolean(w.resets && w.resets <= Date.now() / 1000)}));
+}
+
+function usagePercent(reported) {
+  return S("usage_percent_used", {percent: (reported.percent / 100).toLocaleString(LANG, {style: "percent"})});
 }
 
 // Near a limit: "bad" while a limit is active or a window is at 95 %, "warn" from 80 %.
 function usageLevel(entry) {
   if (!entry) return "";
-  if (entry.resets_at) return "bad";
+  if (entry.resets_at > Date.now() / 1000) return "bad";
   const top = Math.max(-1, ...reportedWindows(entry).filter((w) => !w.expired).map((w) => w.percent));
   return top >= 95 ? "bad" : top >= 80 ? "warn" : "";
 }
@@ -105,9 +110,9 @@ function usageLevel(entry) {
 function usageHintText(provider) {
   const entry = usageOf(provider);
   if (!entry) return "";
-  if (entry.resets_at) return S("hint_limited", {time: fmtTime(entry.resets_at)});
+  if (entry.resets_at > Date.now() / 1000) return S("hint_limited", {time: fmtTime(entry.resets_at)});
   const windows = reportedWindows(entry).filter((w) => !w.expired);
-  if (windows.length) return windows.map((w) => `${w.label}: %${Math.round(w.percent)}`).join(" · ");
+  if (windows.length) return windows.map((w) => `${w.label}: ${usagePercent(w)}`).join(" · ");
   const five = entry.windows && entry.windows["5h"];
   return five && five.calls ? S("hint_calls_5h", {count: five.calls}) : "";
 }
@@ -138,18 +143,19 @@ async function fillUsageSlots(force) {
 
 function usageBox(provider) {
   const entry = usageOf(provider);
-  if (!usageState.data) return null;
+  if (!usageState.data) return h("p", {class: "small muted"}, S("usage_unknown"));
   const counts = (w) => (w ? [S("usage_calls", {count: w.calls}), w.failed ? S("usage_failed", {count: w.failed}) : null,
     w.quota ? S("usage_quota_hits", {count: w.quota}) : null, w.seconds ? duration(1, 1 + w.seconds) : null].filter(Boolean).join(" · ") : "–");
-  const rows = entry ? ["today", "5h", "7d"].map((key) => h("tr", {},
-    h("th", {scope: "row"}, S("usage_window_" + key)), h("td", {}, counts(entry.windows[key])))) : [];
+  const rows = entry?.calls ? ["today", "5h", "7d"].map((key) => h("tr", {},
+    h("th", {scope: "row"}, S("usage_window_" + key)), h("td", {}, counts(entry.windows?.[key])))) : [];
   const parts = [h("h4", {}, S("usage_title")),
     entry && entry.calls ? h("table", {class: "usage-table"}, h("tbody", {}, rows)) : h("p", {class: "small muted"}, S("usage_none"))];
   const quota = entry && (entry.last_quota || null);
   if (quota) {
-    parts.push(h("div", {class: "small " + (entry.resets_at ? "notice warn" : "muted")},
+    const limited = entry.resets_at > Date.now() / 1000;
+    parts.push(h("div", {class: "small " + (limited ? "notice warn" : "muted")},
       S("usage_last_limit", {time: fmtTime(quota.at)}),
-      entry.resets_at ? [" · ", h("b", {"data-until": entry.resets_at}, S("resets_in", {time: duration(Date.now() / 1000, entry.resets_at)}))] : null,
+      limited ? [" · ", h("b", {"data-until": entry.resets_at}, S("resets_in", {time: duration(Date.now() / 1000, entry.resets_at)}))] : null,
       quota.message ? h("div", {class: "muted"}, quota.message) : null));
   }
   // What the tool reports itself: Codex from its session logs, Claude Code when asked; "unknown" otherwise.
@@ -158,9 +164,9 @@ function usageBox(provider) {
   const rep = entry && entry.tool_reported;
   const reported = h("div", {class: "usage-reported"}, h("span", {class: "small fld-label"}, S("usage_tool_reported")),
     windows.length ? windows.map((w) => h("div", {class: "usage-bar " + (w.expired ? "" : w.percent >= 95 ? "bad" : w.percent >= 80 ? "warn" : "")},
-      h("span", {class: "small"}, `${w.label}: %${Math.round(w.percent)}`, w.expired ? " · " + S("usage_window_reset") : "",
+      h("span", {class: "small"}, w.label + ": " + (w.expired ? S("usage_window_reset") : usagePercent(w)),
         w.resets && !w.expired ? [" · ", h("span", {"data-until": w.resets}, S("resets_in", {time: duration(Date.now() / 1000, w.resets)}))] : null),
-      h("span", {class: "track"}, h("span", {class: "fill", "data-w": Math.min(100, Math.max(0, w.percent))}))))
+      w.expired ? null : h("span", {class: "track"}, h("span", {class: "fill", "data-w": w.percent}))))
       : h("p", {class: "small muted"}, S("usage_unknown")),
     rep && rep.observed_at ? h("p", {class: "small muted"}, S("usage_observed", {time: fmtTime(typeof rep.observed_at === "number" ? rep.observed_at : Date.parse(rep.observed_at) / 1000)})) : null,
     tool === "codex" && !windows.length ? h("p", {class: "small muted"}, S("usage_codex_note")) : null);

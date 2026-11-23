@@ -811,10 +811,7 @@ class App:
         return list(dict.fromkeys(templates.canonical_ref(x) for x in value if isinstance(x, str)))  # merged ids -> new
 
     def book_translation_enabled(self) -> bool:
-        setting = engine_options(self.home).get("embed_book_translation")
-        if isinstance(setting, bool):
-            return setting
-        return TRANSLATION_FAVORITE in self._favorites() or translation.has_local_books(ROOT)
+        return engine_options(self.home).get("embed_book_translation") is True
 
     def _favorite_refs(self) -> set[str]:
         """What can be a favorite: every template of the library, and the book translation ("app:translation")."""
@@ -1234,26 +1231,45 @@ class App:
         return {"path": rel, "exists": True, "size": len(data), "modified": path.stat().st_mtime}
 
     def edit_export(self, m, body) -> dict:
-        """The edited text as one file of FORMATS, with document.export's code (nodes.export_document), next to it."""
+        """Export the selected result version with the workflow document exporter."""
         from .nodes import NodeError, export_document
         source, rel = self._editable(m[1], m[2])
         fmt = body.get("format")
         if fmt not in FORMATS:
             raise HTTPError(400, t("edit_bad_format", value=str(fmt)[:20], formats=", ".join(FORMATS)))
+        version = body.get("version", "edited")
+        if version not in ("original", "edited"):
+            raise HTTPError(400, t("bad_request"))
+        target = source
+        if version == "original":
+            source = self.engine.artifact(m[1], m[2])
+            target = target.with_name(f"{target.stem}.original.md")
         if not source.is_file():
             raise HTTPError(404, t("edit_not_saved"))
         if fmt == "md":
-            return {"path": rel, "size": source.stat().st_size}
+            return {"path": m[2] if version == "original" else rel, "size": source.stat().st_size}
+        with source.open("rb") as stream:
+            data = stream.read(EDIT_LIMIT + 1)
+        if len(data) > EDIT_LIMIT:
+            raise HTTPError(413, t("edit_too_large", limit=EDIT_LIMIT // 1024))
         run = self.engine.get(m[1])
         wf = schema.parse(run["workflow_yaml"])
         lang = next((run["inputs"][key] for key, spec in wf.inputs.items()
                      if spec["type"] == "language" and isinstance(run["inputs"].get(key), str)), "en")
+        from tempfile import TemporaryDirectory
+
+        target.parent.mkdir(parents=True, exist_ok=True)
         try:
-            out = export_document(source.read_text(encoding="utf-8"), [fmt], run["workflow_name"], lang, source.parent,
-                                  source.stem)
+            with TemporaryDirectory(dir=target.parent) as folder:
+                out = export_document(data.decode("utf-8"), [fmt], run["workflow_name"], lang, Path(folder),
+                                      target.stem)[fmt]
+                size = out.stat().st_size
+                destination = target.parent / out.name
+                paths.replace(out, destination)
         except NodeError as e:
             raise HTTPError(400, str(e)) from None
-        return {"path": f"edited/{out[fmt].name}", "size": out[fmt].stat().st_size}
+        return {"path": f"edited/{destination.name}", "size": size}
+
 
 
 ID = r"([a-z][a-z0-9_-]{0,63})"
@@ -1471,6 +1487,8 @@ def make_handler(app: App, port: int):
                 raise HTTPError(404, t("file_not_found")) from None
             name = quote(path.name)
             # Text is shown as plain text; everything else (Word, HTML) is only downloaded, never rendered here.
+            if path.name == "preview.wav" and not download:
+                return self.send(200, path.read_bytes(), "audio/wav")
             if path.suffix.lower() in TEXT_FILES and not download:
                 return self.send(200, path.read_bytes(), "text/plain")
             return self.send(200, path.read_bytes(), "application/octet-stream",

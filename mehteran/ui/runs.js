@@ -6,19 +6,26 @@ function historyUrl(before = "") {
 }
 
 async function showRuns(parts) {
+  const selected = parts[0];
+  const back = $(".run-back");
+  const returning = !selected && !back.hidden;
+  back.hidden = !selected;
+  $(".runs-layout > .book-list").hidden = Boolean(selected);
+  if (selected) {
+    back.focus({preventScroll: true});
+    return parts[1] === "again" ? showSavedRunForm(selected) : showRun(selected);
+  }
+  fill($("#run"));
   const query = runHistory.query;
   const [runs, books, plans] = await Promise.all([api("GET", historyUrl()), api("GET", "/api/translation/runs").catch(() => []),
     api("GET", "/api/schedules").catch(() => [])]);
-  if (state.tab !== "runs" || query !== runHistory.query) return;
+  if (state.hash !== "runs" || query !== runHistory.query) return;
   state.trRuns = books;
   state.schedules = plans;
-  runHistory.older = [];
   runHistory.end = runs.length < 200;
-  const selected = parts[0];
-  renderRunList(runs, selected);
-  if (selected) return parts[1] === "again" ? showSavedRunForm(selected) : showRun(selected);
-  fill($("#run"), runs.length || books.length ? h("div", {class: "empty"}, S("pick_run"))
-    : h("div", {class: "welcome"}, h("h2", {}, S("first_run_title")), h("p", {}, S("first_run_text")),
+  renderRunList(runs, null);
+  if (returning) $(".run-search").focus();
+  if (!runs.length && !books.length && !plans.length && !query.trim()) fill($("#run"), h("div", {class: "welcome"}, h("h2", {}, S("first_run_title")), h("p", {}, S("first_run_text")),
       h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows"))));
 }
 
@@ -49,13 +56,8 @@ async function showRun(runId, keep) {
   if (!keep) { state.selectedNode = null; state.runCanvas = null; fill($("#run"), skeleton("run")); }
   let run;
   try { run = await api("GET", `/api/runs/${runId}`); }
-  catch (err) { fill($("#run"), problemsBox(err)); return; }
+  catch (err) { if (state.hash === "runs/" + runId) fill($("#run"), problemsBox(err)); return; }
   if (state.tab !== "runs" || state.hash !== "runs/" + runId) return;
-  if (keep && run.status !== state.runStatus) api("GET", historyUrl()).then((runs) => {
-    const recent = new Set(runs.map((r) => r.id));
-    renderRunList([...runs, ...runHistory.older.filter((r) => !recent.has(r.id))], runId);
-  }).catch(() => {});
-  state.runStatus = run.status;
   const statuses = Object.fromEntries(Object.entries(run.nodes).map(([k, v]) => [k, v.status]));
   const live = run.active || (!FINAL.has(run.status) && run.status !== "waiting_approval");
   const refresh = () => showRun(runId, true);
@@ -107,8 +109,7 @@ async function showRun(runId, keep) {
         : n.status === "waiting_quota" ? "wait" : n.status === "running" ? "active" : ""), "data-w": width})),
       h("span", {class: "tl-count"}, p && n.status !== "skipped" ? h("span", {class: "small muted parts", "data-done": p.done}, S("parts_done", p)) : null,
         n.attempts > 1 ? h("span", {class: "small muted"}, S("attempt_n", {n: n.attempts})) : null,
-        badge(n.status), " ", n.started ? (n.finished ? duration(n.started, n.finished) : h("span", {"data-since": n.started}, duration(n.started, Date.now() / 1000))) : ""),
-      n.status === "waiting_quota" && n.error ? h("div", {class: "small warn-text tl-reason"}, n.error) : null);
+        badge(n.status), " ", n.started ? (n.finished ? duration(n.started, n.finished) : h("span", {"data-since": n.started}, duration(n.started, Date.now() / 1000))) : ""));
   });
   const finished = run.graph.nodes.filter((g) => ["succeeded", "skipped"].includes(run.nodes[g.id].status)).length;
   const overall = h("div", {class: "run-progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(run.graph.nodes.length),
@@ -117,10 +118,6 @@ async function showRun(runId, keep) {
     h("div", {class: "run-head"},
       h("div", {class: "stack"},
         h("div", {class: "book-title"}, h("h2", {}, run.label || run.workflow_name), badge(run.status), live ? h("span", {class: "dot", title: S("live")}) : null),
-        Object.entries(run.nodes).filter(([, n]) => n.status === "waiting_quota")
-          .map(([id, n]) => h("p", {class: "small warn-text"}, run.providers[id], " · ", n.error,
-            n.quota_until ? [" · ", h("span", {"data-until": n.quota_until},
-              duration(Date.now() / 1000, Math.max(Date.now() / 1000, Number(n.quota_until))))] : null)),
         h("p", {class: "row small muted"}, h("span", {}, S("started"), ": ", fmtTime(run.started || run.created)),
           h("span", {}, S("col_duration"), ": ", duration(run.started, run.finished)),
           h("span", {}, S("nodes_done", {done, total: run.graph.nodes.length})), h("code", {}, run.id),
@@ -129,10 +126,21 @@ async function showRun(runId, keep) {
       actions.length ? h("div", {class: "row run-actions"}, actions) : null),
     run.error ? h("div", {class: "notice bad"}, h("b", {}, S("error")), " ", run.error) : null,
     live ? overall : null,
-    waiting.length ? h("div", {class: "notice warn", role: "status"}, h("b", {}, S("status_waiting_quota")), " ",
-      waiting.map((g) => `${L(run.node_info[g.id].label) || g.id}: ${run.nodes[g.id].error || ""}`).join(" · "), " ",
-      h("button", {type: "button", class: "btn small switch-open", onclick: () => { state.selectedNode = waiting[0].id; state.switchOpen = `${runId}:${waiting[0].id}`; refresh(); }},
-        S("switch_model"))) : null,
+    waiting.length ? h("section", {class: "quota-notice"}, h("h3", {}, S("status_waiting_quota")),
+      waiting.map(({id}) => {
+        const node = run.nodes[id], provider = run.providers[id];
+        return h("div", {class: "quota-row"}, h("div", {}, h("b", {}, L(run.node_info[id].label) || id),
+          provider ? h("span", {class: "small"}, " · ", provider) : null,
+          h("p", {}, node.quota_until ? S("quota_waiting", {time: fmtTime(node.quota_until)}) : node.error)),
+          provider && INFO.providers?.length ? h("button", {type: "button", class: "btn small", onclick: async () => {
+            state.selectedNode = id;
+            state.switchOpen = `${runId}:${id}`;
+            await loadUsage();
+            if (state.hash !== "runs/" + runId) return;
+            await refresh();
+            $("#node-panel .switch-pick select")?.focus();
+          }}, S("switch_model")) : null);
+      })) : null,
     (run.shares || []).map((s) => h("section", {class: "card box share-box"}, h("h3", {}, L(s.label) || S("share_on_x")),
       h("p", {class: "share-text"}, s.text),
       h("div", {class: "row"}, h("a", {class: "btn primary", href: s.url, target: "_blank", rel: "noopener noreferrer"}, "↗ " + S("share_on_x")),
@@ -197,7 +205,10 @@ function nodePanel(run, runId, post) {
   if (n.status === "waiting_approval") {
     const comment = h("textarea", {rows: 3, placeholder: S("comment_placeholder"), "aria-label": S("comment")});
     parts.push(h("div", {class: "approval"}, h("h3", {}, S("approval_needed")),
-      h("p", {}, info.instructions ? L(info.instructions) : S("approval_default_text")), comment,
+      h("p", {}, info.instructions ? L(info.instructions) : S("approval_default_text")),
+      run.graph.edges.filter((edge) => edge.to === id && run.node_info[edge.from]?.type === "video.preview")
+        .map((edge) => h("audio", {controls: true, preload: "none", style: "max-width:100%",
+          src: fileUrl(runId, run.nodes[edge.from].outputs[edge.port])})), comment,
       h("div", {class: "row"},
         h("button", {type: "button", class: "btn primary", onclick: (e) => post(e.currentTarget, `/api/runs/${runId}/nodes/${id}/approve`, {comment: comment.value}, S("approved"))}, "✓ " + S("approve")),
         h("button", {type: "button", class: "btn danger", onclick: (e) => post(e.currentTarget, `/api/runs/${runId}/nodes/${id}/reject`, {comment: comment.value}, S("rejected"))}, "✕ " + S("reject")))));

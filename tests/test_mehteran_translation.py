@@ -149,24 +149,18 @@ class TranslationApiTests(MehteranServerCase):
 class WithoutTranslationTests(MehteranServerCase):
     with_translation = False
 
-    def test_existing_book_or_favorite_keeps_embedding_enabled(self):
+    def test_existing_book_and_favorite_require_explicit_embedding(self):
         root = self.tmp / "local-project"
+        source = root / "books" / "my-book" / "source" / "chapter.txt"
+        source.parent.mkdir(parents=True)
+        source.write_text("chapter", encoding="utf-8")
+        self.app._update_conf("library.json", "favorites", ["app:translation"])
         with mock.patch.object(web, "ROOT", root):
             self.assertFalse(self.app.book_translation_enabled())
-            (root / "books" / "my-book" / "source").mkdir(parents=True)
-            self.assertTrue(self.app.book_translation_enabled())
-        self.app._update_conf("library.json", "favorites", ["app:translation"])
-        with mock.patch.object(web, "ROOT", self.tmp / "empty-project"):
-            self.assertTrue(self.app.book_translation_enabled())
-            with mock.patch.object(web, "engine_options", return_value={"embed_book_translation": False}):
-                self.assertFalse(self.app.book_translation_enabled())
-
-    def test_a_run_record_alone_counts_as_prior_use(self):
-        root = self.tmp / "local-project"
-        work = root / "books" / "my-book" / "work"
-        work.mkdir(parents=True)
-        (work / "run.json").write_text("{}", encoding="utf-8")
-        self.assertTrue(translation.has_local_books(root))
+            with mock.patch.object(web, "engine_options", return_value={"embed_book_translation": True}):
+                self.assertTrue(self.app.book_translation_enabled())
+        self.assertEqual(source.read_text(encoding="utf-8"), "chapter")
+        self.assertIn("app:translation", self.app._favorites())
 
     def test_standalone_books_are_not_listed_in_main_history(self):
         with mock.patch("mehteran.usage.translation_runs") as books, \

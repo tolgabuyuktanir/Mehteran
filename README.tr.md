@@ -69,7 +69,7 @@ En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar, oturum açman�
 
 ## İsteğe bağlı kitap çevirisi
 
-Güncellediğiniz kurulumda kitap projesi, çeviri geçmişi veya eski çeviri favorisi varsa İş akışları ekranındaki **Kitap çevirisine git** bağlantısı erişimi korur.
+Mehteran kitap çevirisini varsayılan olarak ayrı bir bölümde göstermez. Mevcut kitaplarınız, ayarlarınız ve çeviri geçmişiniz bağımsız uygulamada kullanılabilir.
 
 Bağımsız çeviri uygulamasını macOS’ta `Open Interface.command`, Windows’ta `Open Interface.bat` veya Linux’ta `./translate ui` ile başlatın. `http://127.0.0.1:8765/` adresini açın. Kitapları, modelleri ve talimatları kurmak için [çeviri kılavuzunu](docs/guide.tr.md) izleyin.
 

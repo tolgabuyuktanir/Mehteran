@@ -86,11 +86,7 @@ def listing(engine, before: str = "", query: str = "") -> list[dict]:
                                      (display_name(name), label, note, main_input, run_id, t("status_" + status))))
             return all(word in haystack for word in words)
 
-        runs = engine.store.runs(before=before, matches=matches)
-        for run in runs:
-            run["workflow_name"] = display_name(run["workflow_name"])
-            if run["status"] == "running":
-                run["status"] = engine.get(run["id"])["status"]
+        runs = engine.list(before, matches=matches)
     else:
         runs = engine.list(before)
     for run in runs:

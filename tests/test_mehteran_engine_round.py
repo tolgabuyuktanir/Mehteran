@@ -124,6 +124,7 @@ class ResumeAtStartTests(HomeCase):
         try:
             self.wait_for(lambda: second.get(run_id)["nodes"]["a"]["status"] == "waiting_quota")
             self.assertEqual(float(second.get(run_id)["nodes"]["a"]["quota_until"]), deadline)
+            self.assertTrue(second.list()[0]["waiting_quota"])
             self.assertEqual(self.calls(), [])
         finally:
             second.cancel(run_id)

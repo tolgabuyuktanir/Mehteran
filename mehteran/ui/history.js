@@ -6,7 +6,7 @@
 // - The workflow drawer's "Share", and the preview before an import (also by dropping a file on the library).
 // Loaded before app.js; it uses app.js's helpers (h, S, api, ...) only when called.
 
-const runHistory = {query: "", folded: null, openBatches: new Set(), flowOpen: {}, older: [], end: false};
+const runHistory = {query: "", folded: null, openBatches: new Set(), flowOpen: {}, end: false};
 
 function foldedGroups() {
   if (!runHistory.folded) {
@@ -42,7 +42,7 @@ function historyTools(refresh) {
       runHistory.query = e.target.value;
       clearTimeout(runHistory.searchTimer);
       runHistory.searchTimer = setTimeout(() => {
-        if (state.tab === "runs") showRuns(state.hash.split("/").slice(1));
+        if (state.hash === "runs") showRuns([]);
       }, 200);
     }});
   const days = h("select", {"aria-label": S("runs_cleanup_age")}, [30, 90, 365].map((d) => h("option", {value: d}, S("runs_older_days", {days: d}))));
@@ -90,7 +90,7 @@ async function cleanupRuns(button, days, refresh, pruneUsage) {
 
 // One run of the list: its name (or the workflow's), its main input and its time; a stop button while it works.
 function historyRow(r, selected, refresh) {
-  const mark = r.status === "running" || r.status === "queued" ? h("span", {class: "dot", title: S("status_" + r.status)}) : badge(r.status);
+  const mark = badge(r.waiting_quota ? "waiting_quota" : r.status);
   const sub = [r.main_input, fmtTime(r.created)].filter(Boolean).join(" · ");
   return h("li", {class: "rl-item"}, h("button", {type: "button", class: r.id === selected ? "active" : "", title: r.note || null,
     "aria-current": r.id === selected ? "true" : null, onclick: () => go("runs/" + r.id)},
@@ -159,17 +159,16 @@ function historyList(runs, selected) {
   const bookItems = bookList.map((b) => h("li", {class: "rl-item"}, h("button", {type: "button", onclick: () => go("workflows/translation/books")},
     h("span", {class: "rl-main"}, h("span", {class: "rl-name"}, b.book),
       h("span", {class: "small muted"}, b.started ? fmtTime(b.started) : "", b.stage && b.active ? " · " + b.stage : "")),
-    b.active || b.status === "queued" ? h("span", {class: "dot"}) : badge(b.waiting_quota ? "waiting_quota" : b.status)),
+    badge(b.waiting_quota ? "waiting_quota" : b.status)),
     b.active ? stopButton(S("stop_named", {name: b.book}), (btn) => stopBook(btn, b.book, () => draw(true))) : null));
   if (bookItems.length) items.push(...historyGroup("translation", S("translation_card_title"), bookItems, bookItems.length, draw, iconTile("translation")));
-  if (!items.length) items.push(h("li", {class: "muted small pl-empty"}, S(runs.length || books.length ? "runs_no_match" : "no_runs")));
+  if (!items.length && q) items.push(h("li", {class: "muted pl-empty", role: "status"}, S("runs_no_match")));
   if (runs.length && !runHistory.end) items.push(h("li", {},
     h("button", {type: "button", class: "btn small", onclick: async (e) => {
       const query = runHistory.query;
       const older = await act(e.currentTarget, () => api("GET", historyUrl(runs.at(-1).id)));
-      if (!older || state.tab !== "runs" || query !== runHistory.query) return;
+      if (!older || state.hash !== "runs" || query !== runHistory.query) return;
       runHistory.end = older.length < 200;
-      runHistory.older.push(...older);
       historyList([...runs, ...older], selected);
     }}, S("runs_load_older"))));
   fill($("#run-list"), items);

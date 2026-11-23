@@ -161,7 +161,7 @@ def localized(value, lang: str | None = None) -> str:
 load_locales()
 
 # Messages that the page shows too (one text, in both catalogs).
-SHARED = ("translation_failed", "translation_not_started")
+SHARED = ("translation_failed", "translation_not_started", "quota_waiting")
 UI.update({key: value for key, value in MESSAGES.items() if key.startswith("status_") or key in SHARED})
 
 # Texts may still be added below as MESSAGES.update({...}) / UI.update({key: {"tr": ..., "en": ...}}); they are merged
