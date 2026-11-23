@@ -697,6 +697,7 @@
   "runs_search": "Search the runs",
   "runs_load_older": "Show older runs",
   "saved_run_version": "This run uses the workflow saved in the selected history entry. Choose input files again.",
+  "node_simple_video_series": "Render narrated MP4 videos with burned-in captions from the approved scenes.",
   "node_simple_expense_validate": "Check expense tables before producing the report.",
   "events_load_older": "Show older events",
   "runs_trash": "Trash",

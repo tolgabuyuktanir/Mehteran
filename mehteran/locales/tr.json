@@ -697,6 +697,7 @@
   "runs_search": "Çalıştırmalarda ara",
   "runs_load_older": "Eski çalıştırmaları göster",
   "saved_run_version": "Bu çalıştırma, seçilen geçmiş kaydındaki iş akışını kullanır. Girdi dosyalarını yeniden seçin.",
+  "node_simple_video_series": "Onaylı sahnelerden sesli ve altyazılı MP4 videoları oluşturur.",
   "node_simple_expense_validate": "Raporu oluşturmadan önce masraf tablolarını denetler.",
   "events_load_older": "Eski olayları göster",
   "runs_trash": "Çöp kutusu",

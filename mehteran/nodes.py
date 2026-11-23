@@ -1262,3 +1262,25 @@ register(NodeType("ai.map", {
                    "çağırır ve cevapları sırayla birleştirir. Biten parçalar saklanır; devam ettirince yeniden sorulmaz.",
                    "Splits a text by headings, paragraphs, length or files; asks the model once per part and joins "
                    "the answers in order. Finished parts are kept; a resumed run does not ask for them again.")))
+
+
+def _video_series(ctx: Ctx) -> dict:
+    from .video import render_series
+    try:
+        result = render_series(parse_json_answer(render(ctx, "source")), render(ctx, "topics"), render(ctx, "lang"),
+                               render(ctx, "platform"), render(ctx, "mode"), ctx.node_dir, ctx.abort)
+    except InterruptedError:
+        raise Aborted() from None
+    except ValueError as err:
+        raise NodeError(str(err)) from err
+    return {"zip": result}
+
+
+register(NodeType("video.series", {
+    "source": Field("template", required=True, label=_l("Sahne planı (JSON)", "Storyboard (JSON)")),
+    "topics": Field("template", required=True, label=_l("Konular", "Topics")),
+    "lang": Field("template", required=True, label=_l("Seslendirme dili", "Narration language")),
+    "platform": Field("template", required=True, label=_l("Platform", "Platform")),
+    "mode": Field("template", required=True, label=_l("Video türü", "Video format"))},
+    lambda c: {"zip": "file"}, _video_series, label=_l("Video serisi oluştur", "Render video series"),
+    description=_l("Her konu için sesli ve altyazılı bir MP4 oluşturur.", "Creates a narrated, subtitled MP4 for each topic.")))

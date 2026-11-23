@@ -69,7 +69,10 @@ class BuiltinTemplateTests(HomeCase):
                 self.assertEqual(language["type"], "language")  # every language of the registry; no options
                 self.assertTrue(any(s["type"] == "provider" for s in wf.inputs.values()))
                 exports = [set(n["config"]["formats"]) for n in wf.nodes.values() if n["type"] == "document.export"]
-                self.assertIn(EXPORT_FORMATS, exports)
+                if template_id == "topic-video-series":
+                    self.assertEqual(wf.data["outputs"][0]["from"], "render.zip")
+                else:
+                    self.assertIn(EXPORT_FORMATS, exports)
                 for formats in exports:
                     self.assertTrue(formats == EXPORT_FORMATS or formats <= EXTRA_FORMATS, formats)
 
@@ -101,6 +104,8 @@ class BuiltinTemplateTests(HomeCase):
         # No network and no browser: feeds give a sample feed; a browser agent step runs on the fake tool.
         with mock.patch.object(urlfetch, "fetch", fake_fetch), mock.patch.object(nodes, "agent_supported", lambda spec: True):
             for template_id in builtin_ids():
+                if template_id == "topic-video-series":
+                    continue  # The media integration test exercises this optional toolchain.
                 with self.subTest(template=template_id):
                     self.run_builtin(engine, template_id)
 
