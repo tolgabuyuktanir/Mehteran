@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Giriş: terminal brauzerdə səhifə açır; hesabınızla daxil olun. Terminal girişin uğurlu olduğunu bildirəndə pəncərəni bağlaya bilərsiniz.",
   "sign_in_help_codex": "Giriş: brauzerdə ChatGPT hesabınızla daxil olun. Terminal girişin uğurlu olduğunu bildirəndə pəncərəni bağlaya bilərsiniz.",
   "sign_in_help_gemini": "Giriş: Gemini terminalda açılır və brauzerdə Google girişini başladır. Bitəndə terminalda /quit yazıb Enter basın. Alternativ: https://aistudio.google.com/apikey ünvanından API açarı.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Giriş vəziyyəti oxuna bilmir.",
   "stored_sign_in": "Giriş saxlanılıb",
   "terminal_note_antigravity": "Brauzerinizdə Google girişi açılır: Google hesabınızla daxil olun. Giriş bitəndə bu pəncərəni bağlaya bilərsiniz.",

@@ -10,7 +10,7 @@ Yardımınız için teşekkürler. Hata bildirimleri, çeviri düzeltmeleri, yen
 - Daha büyük bir değişiklik için (yeni bir özellik, yeni bir adım türü, çalıştırmaların işleyişinde bir değişiklik) önce bir issue açın. Sorunu ve planınızı anlatın; böylece kimse aynı işi iki kez yapmaz.
 - Güvenlik sorunları için issue açmayın. [SECURITY.md](SECURITY.md) dosyasına bakın.
 
-Yapacak bir iş mi arıyorsunuz? [ROADMAP.md](ROADMAP.md) maddeleri seviyesiyle (🟢 ilk katkı için iyi, 🟡 orta, 🔴 büyük) ve gereken becerilerle listeler. Birçoğu programlama gerektirmez.
+Yapacak bir iş mi arıyorsunuz? [ROADMAP.md](ROADMAP.md) maddeleri seviyeleriyle (🟢 ilk katkı için iyi, 🟡 orta, 🔴 büyük) ve gereken becerileriyle listeler. Birçoğu programlama gerektirmez.
 
 ## Mehteran'ı kaynak koddan çalıştırma
 
@@ -60,6 +60,7 @@ Yerleşik iş akışları `mehteran/templates/*.yaml` içindedir. İş akışı 
 - `tier: core` bir şablonu "Buradan başlayın" grubuna koyar. Bu grubu küçük tutun (yaklaşık 20 şablon).
 - Bir şablon ücretli API anahtarları istiyorsa, değişen web sitelerinde bir tarayıcı kullanıyorsa ya da dış bir hizmette paylaşım yapıyorsa `tier: experimental` kullanın. Arayüz o zaman "Deneysel" rozetini ve bir uyarı gösterir.
 - Bir şablonun adı, açıklaması ve talimatları İngilizce ve Türkçe metin ister.
+- `python3 -m unittest tests.test_mehteran_builtin_templates` yerleşik bir şablonun diğer kurallarını denetler: dosya adı, kategori, 3 ile 10 arası adım, bir dil girdisi, Word/HTML/Markdown dışa aktarımı. Bir denetim başarısız olursa çıktı şablonun adını verir.
 
 ## Değerlendirme seti
 

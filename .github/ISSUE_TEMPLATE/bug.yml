@@ -17,4 +17,4 @@ body:
     id: system
     attributes:
       label: Computer and Mehteran version / Bilgisayar ve Mehteran sürümü
-      description: For example "Windows 11, 0.2.0". The version is at the bottom of every page. / Örneğin "Windows 11, 0.2.0". Sürüm her sayfanın en altında.
+      description: For example "Windows 11, 0.2.0". The version is at the bottom of the page, under "Version". / Örneğin "Windows 11, 0.2.0". Sürüm sayfanın en altında, "Sürüm" başlığı altında.

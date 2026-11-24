@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Accesso: il terminale apre una pagina nel browser; accedi con il tuo account. Quando il terminale indica che l’accesso è riuscito, puoi chiudere la finestra.",
   "sign_in_help_codex": "Accesso: accedi con il tuo account ChatGPT nel browser. Quando il terminale indica che l’accesso è riuscito, puoi chiudere la finestra.",
   "sign_in_help_gemini": "Accesso: Gemini si apre nel terminale e avvia l’accesso Google nel browser. Al termine, digita /quit nel terminale e premi Invio. Alternativa: una chiave API da https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Impossibile leggere lo stato dell’accesso.",
   "stored_sign_in": "Accesso salvato",
   "terminal_note_antigravity": "Si apre un accesso Google nel browser: accedi con il tuo account Google. Quando l'accesso è completato, puoi chiudere questa finestra.",

@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Anmeldung: Das Terminal öffnet eine Seite in Ihrem Browser; melden Sie sich mit Ihrem Konto an. Wenn das Terminal meldet, dass die Anmeldung erfolgreich war, können Sie das Fenster schließen.",
   "sign_in_help_codex": "Anmeldung: Melden Sie sich im Browser mit Ihrem ChatGPT-Konto an. Wenn das Terminal meldet, dass die Anmeldung erfolgreich war, können Sie das Fenster schließen.",
   "sign_in_help_gemini": "Anmeldung: Gemini öffnet sich im Terminal und startet die Google-Anmeldung in Ihrem Browser. Geben Sie danach im Terminal /quit ein und drücken Sie die Eingabetaste. Alternative: ein API-Schlüssel von https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Der Anmeldestatus kann nicht gelesen werden.",
   "stored_sign_in": "Anmeldung gespeichert",
   "terminal_note_antigravity": "Eine Google-Anmeldung öffnet sich in Ihrem Browser: Melden Sie sich mit Ihrem Google-Konto an. Wenn die Anmeldung abgeschlossen ist, können Sie dieses Fenster schließen.",

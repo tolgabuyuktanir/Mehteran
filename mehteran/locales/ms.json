@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Log masuk: terminal membuka halaman dalam pelayar anda; log masuk dengan akaun anda. Apabila terminal menyatakan log masuk berjaya, anda boleh menutup tetingkap itu.",
   "sign_in_help_codex": "Log masuk: log masuk dengan akaun ChatGPT anda dalam pelayar. Apabila terminal menyatakan log masuk berjaya, anda boleh menutup tetingkap itu.",
   "sign_in_help_gemini": "Log masuk: Gemini dibuka dalam terminal dan memulakan log masuk Google dalam pelayar anda. Apabila selesai, taip /quit dalam terminal dan tekan Enter. Alternatif: kunci API daripada https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Tidak dapat membaca status log masuk.",
   "stored_sign_in": "Log masuk disimpan",
   "terminal_note_antigravity": "Log masuk Google dibuka dalam pelayar anda: log masuk dengan akaun Google anda. Apabila selesai, anda boleh menutup tetingkap ini.",

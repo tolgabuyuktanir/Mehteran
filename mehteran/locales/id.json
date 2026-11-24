@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Masuk: terminal membuka halaman di browser Anda; masuklah dengan akun Anda. Setelah terminal menyatakan proses masuk berhasil, Anda dapat menutup jendelanya.",
   "sign_in_help_codex": "Masuk: masuklah dengan akun ChatGPT Anda di browser. Setelah terminal menyatakan proses masuk berhasil, Anda dapat menutup jendelanya.",
   "sign_in_help_gemini": "Masuk: Gemini terbuka di terminal dan memulai proses masuk Google di browser Anda. Setelah selesai, ketik /quit di terminal lalu tekan Enter. Alternatif: kunci API dari https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Tidak dapat membaca status masuk.",
   "stored_sign_in": "Sesi masuk tersimpan",
   "terminal_note_antigravity": "Proses masuk Google terbuka di browser Anda: masuk dengan akun Google Anda. Setelah selesai, Anda bisa menutup jendela ini.",

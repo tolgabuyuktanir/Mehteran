@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Connexion : le terminal ouvre une page dans votre navigateur ; connectez-vous avec votre compte. Quand le terminal indique que la connexion a réussi, vous pouvez fermer la fenêtre.",
   "sign_in_help_codex": "Connexion : connectez-vous avec votre compte ChatGPT dans le navigateur. Quand le terminal indique que la connexion a réussi, vous pouvez fermer la fenêtre.",
   "sign_in_help_gemini": "Connexion : Gemini s’ouvre dans le terminal et lance la connexion Google dans votre navigateur. Une fois terminé, saisissez /quit dans le terminal et appuyez sur Entrée. Alternative : une clé API depuis https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Impossible de lire l’état de la connexion.",
   "stored_sign_in": "Connexion enregistrée",
   "terminal_note_antigravity": "Une connexion Google s'ouvre dans votre navigateur : connectez-vous avec votre compte Google. Quand la connexion est terminée, vous pouvez fermer cette fenêtre.",

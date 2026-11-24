@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Início de sessão: o terminal abre uma página no seu navegador; inicie sessão com a sua conta. Quando o terminal indicar que o início de sessão foi concluído, pode fechar a janela.",
   "sign_in_help_codex": "Início de sessão: inicie sessão com a sua conta ChatGPT no navegador. Quando o terminal indicar que o início de sessão foi concluído, pode fechar a janela.",
   "sign_in_help_gemini": "Início de sessão: o Gemini abre no terminal e inicia a sessão Google no seu navegador. Quando terminar, escreva /quit no terminal e prima Enter. Alternativa: uma chave de API de https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Não é possível ler o estado do início de sessão.",
   "stored_sign_in": "Sessão guardada",
   "terminal_note_antigravity": "Um login do Google abre no seu navegador: entre com a sua conta Google. Quando terminar, você pode fechar esta janela.",

@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Hyrja: terminali hap një faqe në shfletuesin tuaj; hyni me llogarinë tuaj. Kur terminali thotë se hyrja u krye, mund ta mbyllni dritaren.",
   "sign_in_help_codex": "Hyrja: hyni me llogarinë tuaj ChatGPT në shfletues. Kur terminali thotë se hyrja u krye, mund ta mbyllni dritaren.",
   "sign_in_help_gemini": "Hyrja: Gemini hapet në terminal dhe nis hyrjen me Google në shfletuesin tuaj. Kur të përfundojë, shkruani /quit në terminal dhe shtypni Enter. Alternativë: një çelës API nga https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Gjendja e hyrjes nuk lexohet.",
   "stored_sign_in": "Hyrja është ruajtur",
   "terminal_note_antigravity": "Në shfletuesin tuaj hapet një hyrje me Google: hyni me llogarinë tuaj Google. Kur hyrja të përfundojë, mund ta mbyllni këtë dritare.",

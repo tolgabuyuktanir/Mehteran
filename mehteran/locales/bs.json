@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "Prijava: terminal otvara stranicu u pregledniku; prijavite se svojim računom. Kada terminal javi da je prijava uspjela, možete zatvoriti prozor.",
   "sign_in_help_codex": "Prijava: prijavite se svojim ChatGPT računom u pregledniku. Kada terminal javi da je prijava uspjela, možete zatvoriti prozor.",
   "sign_in_help_gemini": "Prijava: Gemini se otvara u terminalu i pokreće Google prijavu u pregledniku. Kada završite, upišite /quit u terminal i pritisnite Enter. Alternativa: API ključ s https://aistudio.google.com/apikey.",
+  "sign_in_help_pdf": "",
   "status_unreadable": "Nije moguće pročitati stanje prijave.",
   "stored_sign_in": "Prijava je sačuvana",
   "terminal_note_antigravity": "U vašem pregledniku se otvara Google prijava: prijavite se svojim Google računom. Kad se prijava završi, možete zatvoriti ovaj prozor.",

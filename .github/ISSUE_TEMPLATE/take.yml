@@ -1,16 +1,16 @@
 name: I want to help / Yardım etmek istiyorum
-description: Take an item from ROADMAP.md, or propose an improvement. / ROADMAP.md'den bir madde üstlenin ya da bir iyileştirme önerin.
+description: Propose an improvement of your own. To take an item from ROADMAP.md, write a comment in its issue instead. / Kendi iyileştirmenizi önerin. ROADMAP.md'deki bir maddeyi üstlenmek için o maddenin issue'suna yorum yazın.
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you. Items that anyone can take are in [ROADMAP.md](https://github.com/tolgabuyuktanir/Mehteran/blob/main/ROADMAP.md). Questions are always welcome.
-        Teşekkürler. Herkesin üstlenebileceği maddeler [ROADMAP.md](https://github.com/tolgabuyuktanir/Mehteran/blob/main/ROADMAP.md) dosyasında. Sorularınızı her zaman sorabilirsiniz.
+        Thank you. To take a ready item, write a comment in its issue; the items are in [ROADMAP.md](https://github.com/tolgabuyuktanir/Mehteran/blob/main/ROADMAP.md). Questions are always welcome.
+        Teşekkürler. Hazır bir maddeyi üstlenmek için onun issue'suna yorum yazın; maddeler [ROADMAP.md](https://github.com/tolgabuyuktanir/Mehteran/blob/main/ROADMAP.md) dosyasında. Sorularınızı her zaman sorabilirsiniz.
   - type: input
     id: item
     attributes:
-      label: Item name, or your idea in one sentence / Madde adı ya da fikriniz tek cümlede
+      label: Your idea in one sentence / Fikriniz tek cümlede
     validations:
       required: true
   - type: textarea

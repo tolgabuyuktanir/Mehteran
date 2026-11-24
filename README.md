@@ -8,7 +8,7 @@
 
 Mehteran does repeatable jobs with AI on your own computer. For example, it reads a document, asks an AI for a summary, waits for your approval and saves the result as a Word file. It uses the AI account that you already have (Claude, ChatGPT or Google) or a free model on this computer. Mehteran itself is free.
 
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en"><img src="docs/assets/video/intro-en.jpg" width="640" alt="Mehteran intro video"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en">▶ Watch Mehteran in 37 seconds (no sound)</a></p>
+<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en"><img src="docs/assets/video/intro-en.jpg" width="640" alt="Mehteran intro video"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en">▶ Watch Mehteran in 39 seconds</a></p>
 
 ## Quick start
 
@@ -181,7 +181,7 @@ The book translation app is no longer part of Mehteran. A computer that used it 
 
 ## Contributing
 
-Mehteran is for people who do not write code, and you can help them without writing code too. **[ROADMAP.md](ROADMAP.md) lists things to do, each with a level and the skills it needs.** Many take a few hours:
+Mehteran is for people who do not write code, and you can help them without writing code too. **[ROADMAP.md](ROADMAP.md) lists things to do, each with a level and the skills it needs.** Many are small:
 
 - **Speak a language other than English?** Read the interface in your language and fix what sounds wrong. One fixed word is a good first pull request.
 - **Have a task you repeat?** Build it as a workflow and share it with everyone.

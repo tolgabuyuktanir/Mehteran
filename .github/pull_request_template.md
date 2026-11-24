@@ -10,3 +10,4 @@
 - [ ] `ruff check mehteran tests`
 - [ ] `python3 -m unittest discover tests`
 - [ ] `python3 -m mehteran.i18n_tools validate`
+- [ ] `node --test tests/mehteran_markdown_test.mjs` (only for changes in `mehteran/ui/markdown.js` / yalnızca `mehteran/ui/markdown.js` değişikliklerinde)

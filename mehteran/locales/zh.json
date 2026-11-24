@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "登录:终端会在浏览器中打开一个页面;请用你的账号登录。终端提示登录成功后,即可关闭该窗口。",
   "sign_in_help_codex": "登录:请在浏览器中用你的 ChatGPT 账号登录。终端提示登录成功后,即可关闭该窗口。",
   "sign_in_help_gemini": "登录:Gemini 会在终端中打开,并在浏览器中开始 Google 登录。完成后,在终端中输入 /quit 并按 Enter。另一种方式:使用来自 https://aistudio.google.com/apikey 的 API 密钥。",
+  "sign_in_help_pdf": "",
   "status_unreadable": "无法读取登录状态。",
   "stored_sign_in": "已保存登录",
   "terminal_note_antigravity": "浏览器中会打开 Google 登录：请用你的 Google 账号登录。登录完成后，可以关闭此窗口。",

@@ -1324,6 +1324,7 @@
   "sign_in_help_claude": "サインイン: ターミナルがブラウザーでページを開きます。自分のアカウントでサインインしてください。ターミナルにログイン成功と表示されたら、ウィンドウを閉じて構いません。",
   "sign_in_help_codex": "サインイン: ブラウザーで ChatGPT アカウントにサインインしてください。ターミナルにログイン成功と表示されたら、ウィンドウを閉じて構いません。",
   "sign_in_help_gemini": "サインイン: Gemini がターミナルで開き、ブラウザーで Google のサインインが始まります。完了したら、ターミナルで /quit と入力して Enter を押してください。別の方法: https://aistudio.google.com/apikey で取得した API キー。",
+  "sign_in_help_pdf": "",
   "status_unreadable": "サインインの状態を読み取れません。",
   "stored_sign_in": "サインイン情報を保存済み",
   "terminal_note_antigravity": "ブラウザーでGoogleのサインインが開きます。Googleアカウントでサインインしてください。サインインが終わったら、このウィンドウは閉じて構いません。",

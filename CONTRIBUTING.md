@@ -60,6 +60,7 @@ The built-in workflows are in `mehteran/templates/*.yaml`. The workflow file is 
 - `tier: core` puts a template in the "Start here" group. Keep this group small (about 20 templates).
 - Use `tier: experimental` when a template needs paid API keys, drives a browser on websites that change, or publishes to an outside service. The interface then shows an "Experimental" badge and a notice.
 - A template's name, description and instructions need English and Turkish text.
+- `python3 -m unittest tests.test_mehteran_builtin_templates` checks the other rules of a built-in template: the file name, the category, 3 to 10 steps, a language input, a Word/HTML/Markdown export. When a check fails, the output names the template.
 
 ## Evaluation set
 

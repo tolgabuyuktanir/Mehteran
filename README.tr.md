@@ -8,7 +8,7 @@
 
 Mehteran, yapay zekâyla tekrarlanan işleri kendi bilgisayarınızda yapar. Örneğin bir belgeyi okur, yapay zekâdan bir özet ister, onayınızı bekler ve sonucu Word dosyası olarak kaydeder. Zaten sahip olduğunuz yapay zekâ hesabını (Claude, ChatGPT ya da Google) ya da bu bilgisayarda çalışan ücretsiz bir modeli kullanır. Mehteran'ın kendisi ücretsizdir.
 
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr"><img src="docs/assets/video/intro-tr.jpg" width="640" alt="Mehteran tanıtım videosu"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">▶ 37 saniyede Mehteran'ı izleyin (sessiz)</a></p>
+<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr"><img src="docs/assets/video/intro-tr.jpg" width="640" alt="Mehteran tanıtım videosu"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">▶ 39 saniyede Mehteran'ı izleyin</a></p>
 
 ## Hızlı başlangıç
 
@@ -181,7 +181,7 @@ Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kul
 
 ## Katkı
 
-Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebilirsiniz. **[ROADMAP.md](ROADMAP.md) yapılacakları, her birinin seviyesi ve gereken becerilerle listeler.** Birçoğu birkaç saat sürer:
+Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebilirsiniz. **[ROADMAP.md](ROADMAP.md) yapılacakları, seviyeleri ve gereken becerileriyle listeler.** Birçoğu küçük işlerdir:
 
 - **İngilizce dışında bir dil mi konuşuyorsunuz?** Arayüzü kendi dilinizde okuyun, kulağa yanlış geleni düzeltin. Düzeltilmiş tek bir kelime de iyi bir ilk pull request'tir.
 - **Tekrar ettiğiniz bir iş mi var?** Onu bir iş akışı olarak kurun ve herkesle paylaşın.
