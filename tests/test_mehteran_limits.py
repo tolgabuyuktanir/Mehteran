@@ -253,7 +253,7 @@ class ConditionTests(HomeCase):
                                  expected)
 
     def test_a_failure_still_skips_everything_after_it_and_the_run_fails(self):
-        text = triage(match="answer").replace("TASK:urgent", f"TASK:urgent FAIL=9:{self.tmp / 'n'}")
+        text = triage(match="answer").replace("TASK:urgent", f"TASK:urgent FAIL=9:{(self.tmp / 'n').as_posix()}")
         text = text.replace("{id: urgent, type: ai.cli", "{id: urgent, type: ai.cli, retries: 0")
         run = self.run_flow(text)
         self.assertEqual(run["status_seen"], "failed")
@@ -356,7 +356,7 @@ class LoopTests(HomeCase):
 class QuotaTests(HomeCase):
     def test_a_usage_limit_waits_and_tries_again(self):
         engine = self.engine(quota_delay=0.5)
-        text = workflow(ai("ask", f"TASK:ask QUOTA=2:{self.tmp / 'q'}", retries=0), [])
+        text = workflow(ai("ask", f"TASK:ask QUOTA=2:{(self.tmp / 'q').as_posix()}", retries=0), [])
         run_id = engine.start(text)
         self.wait_for(lambda: engine.get(run_id)["nodes"]["ask"]["status"] == "waiting_quota")
         self.assertEqual(engine.get(run_id)["status"], "running")
@@ -369,7 +369,7 @@ class QuotaTests(HomeCase):
 
     def test_cancel_while_waiting_for_the_limit(self):
         engine = self.engine(quota_delay=60)
-        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}"), []))
+        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}"), []))
         self.wait_for(lambda: engine.get(run_id)["nodes"]["ask"]["status"] == "waiting_quota")
         started = time.time()
         engine.cancel(run_id)
@@ -381,13 +381,13 @@ class QuotaTests(HomeCase):
 
     def test_gives_up_after_quota_max_hours(self):
         engine = self.engine(quota_delay=3600 * 2)  # longer than quota_max_hours (1) of the fake settings
-        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}"), []))
+        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}"), []))
         self.assertEqual(engine.wait(run_id, 30), "failed")
         self.assertIn("longer than 1 hours", engine.get(run_id)["nodes"]["ask"]["error"])
 
     def test_loop_parts_wait_for_the_limit_too(self):
         engine = self.engine(quota_delay=0.3, parallel=1)  # the fake's counter file is not safe for parallel calls
-        run_id = engine.start(LOOP.replace("MARK", f"QUOTA=1:{self.tmp / 'q'}"), files={"book": self.doc("book.md", BOOK)})
+        run_id = engine.start(LOOP.replace("MARK", f"QUOTA=1:{(self.tmp / 'q').as_posix()}"), files={"book": self.doc("book.md", BOOK)})
         self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])
         self.assertEqual(len(set(self.tags())), 4)
 

@@ -26,3 +26,5 @@ jobs:
       - run: ruff check mehteran tests
       - run: node --test tests/mehteran_markdown_test.mjs
       - run: python -m unittest discover tests
+        env:
+          PYTHONUTF8: "1"  # as Mehteran runs its own Python processes; a Windows runner otherwise uses cp1252

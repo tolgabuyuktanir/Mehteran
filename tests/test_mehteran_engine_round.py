@@ -95,7 +95,7 @@ class LoopTests(HomeCase):
 
     def test_a_usage_limit_in_one_part_starts_no_other_part(self):
         engine = self.engine(quota_delay=1.5, parallel=1)
-        run_id = engine.start(self.LOOP.replace("MARK", f"QUOTA=1:{self.tmp / 'q'}"), {"text": BOOK, "language": "en"})
+        run_id = engine.start(self.LOOP.replace("MARK", f"QUOTA=1:{(self.tmp / 'q').as_posix()}"), {"text": BOOK, "language": "en"})
         self.wait_for(lambda: engine.get(run_id)["nodes"]["each"]["status"] == "waiting_quota")
         self.assertEqual(self.tags(), [])  # before the fix the other three parts were answered meanwhile
         self.assertEqual(engine.wait(run_id, 60), "succeeded", engine.get(run_id)["error"])

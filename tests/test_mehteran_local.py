@@ -4,6 +4,7 @@ MEHTERAN_HOME and MEHTERAN_RUNTIME_ROOT: no network, no real model, the real .ru
 import io
 import json
 import os
+import subprocess
 import sys
 import tarfile
 import threading
@@ -143,7 +144,11 @@ class OllamaServeTests(LocalCase):
             ollama.ensure_running()
         except ollama.OllamaError as err:
             log = self.home / "jobs" / "ollama-serve.log"
-            self.fail(f"{err}\n{log.read_text(errors='replace') if log.exists() else '(no log)'}")
+            server = ollama._server
+            probe = subprocess.run([str(fakebin / "ollama"), "--version"], capture_output=True, text=True, timeout=30)
+            self.fail(f"{err}\nexit code: {server.poll() if server else None}, port {port}\n"
+                      f"log: {log.read_text(errors='replace') if log.exists() else '(no log)'}\n"
+                      f"--version: {probe.returncode} {probe.stdout!r} {probe.stderr!r}")
         self.assertTrue(ollama.running())
         self.assertTrue(ollama.started_here())
         status = ollama.status()
@@ -180,6 +185,7 @@ class InstallTests(LocalCase):
             localtools.download_verified("https://example.invalid/f", target, hashlib.sha256(b"payload").hexdigest())
             self.assertEqual(target.read_bytes(), b"payload")
 
+    @unittest.skipUnless(POSIX, "fakes the macOS release, whose program is a shell script")
     def test_install_unpacks_the_pinned_release_into_runtime(self):
         seen = {}
 

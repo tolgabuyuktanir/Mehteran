@@ -45,8 +45,9 @@ class UpdateTests(HomeCase):
 
     def repositories(self) -> tuple[Path, Path]:
         """A developer's copy and a user's copy of one repository; the first commit has the translation app."""
-        tmp = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, tmp)
+        holder = tempfile.TemporaryDirectory()  # its cleanup also removes git's read-only object files on Windows
+        self.addCleanup(holder.cleanup)
+        tmp = Path(holder.name)
         self.git(tmp, "init", "--bare", "-q", str(tmp / "origin.git"))
         dev, app = tmp / "dev", tmp / "app"
         self.git(tmp, "clone", "-q", str(tmp / "origin.git"), str(dev))

@@ -123,6 +123,8 @@ class DocumentTests(unittest.TestCase):
         self.assertEqual(" ".join(w.text for w in reversed(words)), "آية (٢٥)")
 
     @unittest.skipUnless(shutil.which("pdftotext"), "pdftotext is not installed")
+    @unittest.skipIf(sys.platform == "win32", "the Windows runner's pdftotext writes Arabic in visual order; "
+                                              "Mehteran installs and uses its own poppler there")
     def test_pdf_arabic_is_read_in_reading_order(self):
         make_arabic_pdf(self.tmp / "ar.pdf")
         blocks = [__import__("unicodedata").normalize("NFC", b) for b in documents.read_blocks(self.tmp / "ar.pdf")]

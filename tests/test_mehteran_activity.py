@@ -65,7 +65,7 @@ class SwitchTests(HomeCase):
 
     def test_switch_a_waiting_step_to_another_model(self):
         engine = self.engine(quota_delay=120)
-        run_id = self.waiting(engine, workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}"), []))
+        run_id = self.waiting(engine, workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}"), []))
         activity = engine.activity()
         self.assertEqual(activity[0]["id"], run_id)
         self.assertTrue(activity[0]["waiting_quota"])
@@ -87,7 +87,7 @@ class SwitchTests(HomeCase):
 
     def test_switch_a_failed_step_retries_it(self):
         engine = self.engine()
-        run_id = engine.start(workflow(ai("ask", f"TASK:ask FAIL=1:{self.tmp / 'f'}", retries=0), []))
+        run_id = engine.start(workflow(ai("ask", f"TASK:ask FAIL=1:{(self.tmp / 'f').as_posix()}", retries=0), []))
         self.assertEqual(engine.wait(run_id, 30), "failed")
         engine.switch(run_id, "ask", "chatgpt")
         self.assertEqual(engine.wait(run_id, 30), "succeeded")
@@ -98,7 +98,7 @@ class SwitchTests(HomeCase):
         # One part (the last section) meets the limit. A limit stops the parts not yet started; which parts finished
         # before it depends on the order the parts got their turn. Each part must succeed exactly once: a finished
         # part is kept, not asked again, and the part that met the limit runs again on the new model.
-        book = BOOK.replace("Gamma.", f"Gamma. QUOTA=1:{self.tmp / 'q'}")
+        book = BOOK.replace("Gamma.", f"Gamma. QUOTA=1:{(self.tmp / 'q').as_posix()}")
         run_id = engine.start(LOOP.replace("MARK", ""), files={"book": self.doc("book.md", book)})
         self.wait_for(lambda: engine.get(run_id)["nodes"]["each"]["status"] == "waiting_quota")
         engine.switch(run_id, "each", "claude")
@@ -111,7 +111,7 @@ class SwitchTests(HomeCase):
 
     def test_fallback_provider(self):
         engine = self.engine(quota_delay=120)
-        text = workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}") .replace("type: ai.cli", "type: ai.cli, fallback_provider: chatgpt"), [])
+        text = workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}") .replace("type: ai.cli", "type: ai.cli, fallback_provider: chatgpt"), [])
         run_id = engine.start(text)
         self.assertEqual(engine.wait(run_id, 30), "succeeded")
         self.assertEqual(engine.get(run_id)["providers"]["ask"], "chatgpt")
@@ -132,7 +132,7 @@ class SwitchTests(HomeCase):
 class UsageTests(HomeCase):
     def test_counts_per_provider_model_and_window(self):
         engine = self.engine(quota_delay=0.2)
-        for prompt in ("TASK:one", f"TASK:two QUOTA=1:{self.tmp / 'q'}"):
+        for prompt in ("TASK:one", f"TASK:two QUOTA=1:{(self.tmp / 'q').as_posix()}"):
             run_id = engine.start(workflow(ai("ask", prompt, provider="fake/small"), []))
             self.assertEqual(engine.wait(run_id, 30), "succeeded")
         cfg = engine.provider_cfg
@@ -233,7 +233,7 @@ class ApiTests(HomeCase):
                 with e:
                     return e.code, json.loads(e.read())
 
-        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}"), []))
+        run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}"), []))
         self.wait_for(lambda: engine.get(run_id)["nodes"]["ask"]["status"] == "waiting_quota")
         status, data = call("GET", "/api/activity")
         self.assertEqual((status, data["runs"][0]["nodes"][0]["status"]), (200, "waiting_quota"))

@@ -69,10 +69,10 @@ class OnOutputTests(HomeCase):
 
     def test_a_usage_limit_is_detected(self):
         with self.assertRaises(base.UsageLimit) as plain:
-            self.call("codex", f"TASK:q QUOTA=1:{self.tmp / 'q'}")
+            self.call("codex", f"TASK:q QUOTA=1:{(self.tmp / 'q').as_posix()}")
         self.assertGreater(plain.exception.until, time.time())
         with self.assertRaises(base.UsageLimit) as event:  # Claude Code: the rejected rate_limit_event
-            self.call("claude", f"TASK:q QUOTA=1:{self.tmp / 'q2'}")
+            self.call("claude", f"TASK:q QUOTA=1:{(self.tmp / 'q2').as_posix()}")
         self.assertAlmostEqual(event.exception.until, time.time() + 90, delta=5)
 
 

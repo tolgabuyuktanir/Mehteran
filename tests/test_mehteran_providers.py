@@ -178,7 +178,7 @@ class AutoTests(HomeCase):
 
     def test_a_usage_limit_moves_an_auto_step_to_the_next_model(self):
         engine = self.engine(order=["claude", "codex"])
-        run_id = engine.start(workflow(ai("a", f"TASK:a QUOTA=1:{self.tmp / 'q'}", provider="auto"), []))
+        run_id = engine.start(workflow(ai("a", f"TASK:a QUOTA=1:{(self.tmp / 'q').as_posix()}", provider="auto"), []))
         self.assertEqual(engine.wait(run_id, 30), "succeeded")
         self.assertEqual(engine.store.run(run_id)["providers"]["a"], "codex")
         self.assertEqual([(c["provider"], c["outcome"]) for c in engine.store.calls(0)], [("claude", "quota"), ("codex", "ok")])

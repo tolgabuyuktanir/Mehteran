@@ -307,6 +307,7 @@ class InstallTests(LocalCase):
             self.assertRegex(sha, r"\A[0-9a-f]{64}\Z")
         self.assertIn("/5359861c739e955e79d9a303bcbc70fb988958b1/", speech.MODEL_URL)
 
+    @unittest.skipUnless(POSIX, "fakes the macOS release layout and runs shell scripts")
     def test_typst_install_unpacks_the_release_and_the_font(self):
         seen = []
 
@@ -328,6 +329,7 @@ class InstallTests(LocalCase):
         status = typst.status()
         self.assertEqual((status["installed"], status["source"], status["arabic_font"]), (True, "mehteran", True))
 
+    @unittest.skipUnless(POSIX, "fakes the macOS release layout and runs shell scripts")
     def test_pandoc_install(self):
         def fake_verified(url, dest, sha256):
             zip_of(Path(dest), {"pandoc-3.14-arm64/bin/pandoc": b"#!/bin/sh\necho pandoc 3.14\n"})
@@ -342,6 +344,7 @@ class InstallTests(LocalCase):
             with self.assertRaises(localtools.ToolError):
                 typst.asset()
 
+    @unittest.skipUnless(POSIX, "fakes the macOS release layout and runs shell scripts")
     def test_speech_install_skips_ffmpeg_when_the_computer_has_one(self):
         specs = []
 
@@ -368,6 +371,7 @@ class InstallTests(LocalCase):
                 speech.install_models(["tiny", "large-v9"])
             download.assert_not_called()
 
+    @unittest.skipUnless(POSIX, "fakes the macOS release layout and runs shell scripts")
     def test_qpdf_install(self):
         def fake_conda(prefix, wanted):
             self.assertEqual(wanted, [qpdf.SPEC])
@@ -383,7 +387,7 @@ class InstallTests(LocalCase):
         micromamba.write_text("")
         calls = []
 
-        def fake_run(argv, env, stdin):
+        def fake_run(argv, env, stdin, **_):  # Windows adds creationflags
             calls.append((argv, env))
             return mock.Mock(returncode=0)
         with mock.patch("subprocess.run", fake_run), mock.patch("sys.stdout", io.StringIO()):

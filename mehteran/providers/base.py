@@ -153,18 +153,23 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
                threading.Thread(target=read_error, daemon=True)]
     for thread in [threading.Thread(target=write_input, daemon=True), *readers]:
         thread.start()
+    def kill() -> None:
+        from ..common import system
+        if system.IS_WINDOWS:  # a .cmd wrapper: killing it alone leaves the tool running
+            system.stop_tree(proc.pid)
+        proc.kill()
+        proc.wait()
+
     deadline = time.monotonic() + timeout
     for thread in readers:
         thread.join(max(0.0, deadline - time.monotonic()))
     if any(thread.is_alive() for thread in readers):
-        proc.kill()
-        proc.wait()
+        kill()
         raise subprocess.TimeoutExpired(argv, timeout)
     try:
         proc.wait(max(1.0, deadline - time.monotonic()))
     except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait()
+        kill()
         raise
     if stopped:
         raise Stopped(stopped[0])
@@ -182,7 +187,8 @@ def run(adapter: Adapter, spec: dict, model: str, effort: str, prompt: str, time
     from ..common.calls import ACCOUNT_REFUSED, is_quota_message, quota_wait_seconds
     from ..i18n import t
     from ..common.system import resolve
-    with tempfile.TemporaryDirectory(prefix="mehteran-call-") as tmp:
+    # ignore_cleanup_errors: on Windows a folder still in use cannot be removed; that must not hide the call's result
+    with tempfile.TemporaryDirectory(prefix="mehteran-call-", ignore_cleanup_errors=True) as tmp:
         out_file = Path(tmp) / "output.txt"
         cwd = Path(tmp) / "empty"
         cwd.mkdir()
