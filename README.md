@@ -187,7 +187,7 @@ Mehteran is for people who do not write code, and you can help them without writ
 - **Have a task you repeat?** Build it as a workflow and share it with everyone.
 - **Write Python or JavaScript?** Updates for zip copies and describing a workflow by voice are waiting.
 
-To start, open an issue with "I want to help" and name the item. Questions are always welcome. [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run Mehteran from the source and the checks. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+To start, write a comment in the item's issue ([all open items](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). For an idea of your own, open an issue with "I want to help". Questions are always welcome. [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run Mehteran from the source and the checks. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

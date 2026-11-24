@@ -187,7 +187,7 @@ Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebili
 - **Tekrar ettiğiniz bir iş mi var?** Onu bir iş akışı olarak kurun ve herkesle paylaşın.
 - **Python ya da JavaScript mi yazıyorsunuz?** ZIP kopyaları için güncelleme ve iş akışını sesle anlatmak sizi bekliyor.
 
-Başlamak için "Yardım etmek istiyorum" ile bir issue açın ve maddenin adını yazın. Sorularınızı her zaman sorabilirsiniz. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
+Başlamak için maddenin issue'suna bir yorum yazın ([açık maddelerin hepsi](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). Kendi fikriniz için "Yardım etmek istiyorum" ile bir issue açın. Sorularınızı her zaman sorabilirsiniz. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
 
 ## Lisans
 
