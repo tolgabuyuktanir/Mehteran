@@ -95,9 +95,13 @@ function usageLeft(reported) {
 
 // The remaining usage of one tool as bars (full = everything left): its own report, newest first known.
 // compact: no "seen at" line. Returns [] when the tool reports nothing.
+// The window closest to its limit: the one that decides how much can still be done now.
+const tightest = (windows) => windows.filter((w) => !w.expired).reduce((a, w) => (!a || w.percent > a.percent ? w : a), null);
+
 function usageBars(entry, compact) {
-  const windows = reportedWindows(entry);
+  let windows = reportedWindows(entry);
   if (!windows.length) return [];
+  if (compact) windows = [tightest(windows) || windows[0]];  // a tool card: one bar; all of them under "Details"
   const rep = entry.tool_reported;
   const seen = rep.observed_at ? (typeof rep.observed_at === "number" ? rep.observed_at : Date.parse(rep.observed_at) / 1000) : null;
   const bars = windows.map((w) => h("div", {class: "usage-bar " + (w.expired ? "" : w.percent >= 95 ? "bad" : w.percent >= 80 ? "warn" : "")},
@@ -439,8 +443,13 @@ function drawUsageChip() {
   if (!tools.length) { pop.hidden = true; return; }
   const levels = tools.map((t) => usageLevel(t.entry));
   button.className = "activity-btn usage-chip " + (levels.includes("bad") ? "bad" : levels.includes("warn") ? "warn" : "");
-  const short = tools.filter((t) => t.live.length || t.limited).map((t) => h("span", {class: "usage-chip-tool " + usageLevel(t.entry)}, t.name.replace(/ \(.*\)$/, "").replace(/ (Code|CLI)$/, "") + " ",
-    h("b", {}, t.limited ? "0%" : percentText(100 - Math.max(...t.live.map((w) => w.percent))))));
+  // "Claude %31 · 5 saat": each share with its window, so that a 5-hour and a weekly share are not read as one scale.
+  const short = tools.filter((t) => t.live.length || t.limited).map((t) => {
+    const top = tightest(t.live);
+    return h("span", {class: "usage-chip-tool " + usageLevel(t.entry)}, t.name.replace(/ \(.*\)$/, "").replace(/ (Code|CLI)$/, "") + " ",
+      h("b", {}, t.limited || !top ? "0%" : percentText(100 - top.percent)),
+      top && !t.limited ? h("span", {class: "usage-chip-window"}, " · " + top.label) : null);
+  });
   fill(button, h("span", {class: "usage-chip-title"}, S("usage_left_short")), short.length ? short : h("span", {}, "–"));
   button.setAttribute("aria-label", S("usage_left_title") + ": " + button.textContent);
   fill(pop, h("div", {class: "activity-head"}, h("h3", {}, S("usage_left_title")),

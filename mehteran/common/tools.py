@@ -115,6 +115,16 @@ def codex_has_credentials() -> bool:
         return False
 
 
+def _codex_mode(line: str) -> str:
+    """`codex login status` says "Logged in using ChatGPT" or "... using an API key": the account, in the UI's language."""
+    low = line.lower()
+    if "chatgpt" in low:
+        return t("chatgpt_account")
+    if "api key" in low:
+        return t("api_key_account")
+    return line
+
+
 def login_status(tool: str) -> tuple[bool, str]:
     """Returns (signed in, description)."""
     exe = TOOLS[tool]["command"]
@@ -134,7 +144,7 @@ def login_status(tool: str) -> tuple[bool, str]:
             text = (proc.stdout + proc.stderr).strip().splitlines()
             if proc.returncode != 0 and codex_has_credentials():
                 return True, t("stored_sign_in")  # the status command failed (seen on Windows), but a sign-in is stored
-            return proc.returncode == 0, (text[-1] if text else "")
+            return proc.returncode == 0, _codex_mode(text[-1] if text else "")
     except (OSError, subprocess.TimeoutExpired):
         return False, t("status_unreadable")
     if tool == "antigravity":

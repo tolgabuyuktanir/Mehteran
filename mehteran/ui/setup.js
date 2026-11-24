@@ -5,26 +5,53 @@ async function loadTools() {
   clearTimeout(state.toolPoll);
   if (!$("#tools").children.length) fill($("#tools"), skeleton("tools"));  // live.js
   let data;
-  try { data = await api("GET", "/api/tools"); } catch (e) {
+  try {
+    data = await api("GET", "/api/tools");
+    if (data.primary === "ollama") data.local = await localState();
+  } catch (e) {
     if (state.toolsBusy && state.tab === "setup") state.toolPoll = setTimeout(loadTools, 5000);
     else toast(e.message, true);
     return;
   }
   if (state.tab !== "setup") return;
-  fill($("#onboarding"), ...onboarding(data));
-  setReady(toolsReady(data));
-  fill($("#tools"), ...data.tools.map((tool) => toolCard(tool, data.terminal)));
+  const ready = toolsReady(data);
+  fill($("#onboarding"), ...onboarding(data, ready));
+  setReady(ready);
+  // The general intro only for a copy set up before the account question; the steps or the done line say the rest.
+  $("#setup-intro").hidden = ready || Boolean(data.primary) || !data.tools.some((tool) => tool.provider && tool.signed_in);
+  // The AI tools two by two; the PDF reader (no account, no limits) with the other tools of this computer below.
+  fill($("#tools"), ...data.tools.filter((tool) => tool.provider).map((tool) => toolCard(tool, data.terminal)));
+  state.pdfTool = data.tools.find((tool) => !tool.provider);
+  drawPdfTool();
   fillUsageSlots();  // live.js: the usage of each AI tool
   $("#config-note").replaceChildren(S("config_note_workflows", {path: (INFO && INFO.config_source) || "config.toml"}));
-  state.toolsBusy = data.tools.some((tool) => tool.job && tool.job.running) || Boolean(data.all_job && data.all_job.running);
+  const local = data.local || {};
+  state.toolsBusy = data.tools.some((tool) => tool.job && tool.job.running) || Boolean(data.all_job && data.all_job.running)
+    || Boolean(local.job && local.job.running) || Boolean(local.pulling);
   const watchingSignIn = state.signInUntil > Date.now() && data.tools.some((tool) => tool.installed && !tool.signed_in);
   if (state.toolsBusy) state.toolPoll = setTimeout(loadTools, 2500);
   else if (watchingSignIn) state.toolPoll = setTimeout(loadTools, 4000);
 }
 
-// A sign-in is needed for the tools that a template uses.
-const neededTools = (data) => data.tools.filter((tool) => tool.templates.length);
-const toolsReady = (data) => data.tools.every((tool) => !tool.required || tool.installed) && neededTools(data).every((tool) => tool.signed_in);
+// "No subscription": Ollama, and a model downloaded for it. suggested: the largest recommended chat model that the
+// memory holds comfortably, in the interface language when there is one.
+async function localState() {
+  const tools = await api("GET", "/api/local-tools");
+  const tool = tools.tools.find((x) => x.id === "ollama");
+  const models = tool.installed || tool.running ? await api("GET", "/api/ollama/models").catch(() => null) : null;
+  const chat = (models && models.installed || []).filter((m) => !/embed|bge/i.test(m.name));
+  const memory = (models && models.memory) || tool.memory || 0;
+  const fits = ((models && models.recommended) || []).filter((m) => m.kind !== "embedding" && (!memory || m.ram <= memory * 0.6));
+  const suggested = fits.filter((m) => m.languages.includes(LANG)).pop() || fits.pop();
+  const pull = tools.pull || {};
+  return {installed: tool.installed, job: tool.job, models: chat.length, suggested: suggested && suggested.name,
+    pull, pulling: Boolean(pull.name && !pull.done)};
+}
+
+// A sign-in is needed for the tool of the chosen account (none chosen: the tools that a template uses).
+const neededTools = (data) => data.tools.filter((tool) => tool.provider && (data.primary ? tool.required : tool.templates.length));
+const toolsReady = (data) => data.tools.every((tool) => !tool.required || tool.installed) && neededTools(data).every((tool) => tool.signed_in)
+  && (data.primary !== "ollama" || Boolean(data.local && data.local.installed && data.local.models));
 
 function setReady(ready) {
   state.ready = ready;
@@ -32,36 +59,106 @@ function setReady(ready) {
   $("#setup-banner").hidden = ready || !(state.tab === "runs" || (state.tab === "workflows" && !isEditorHash(state.hash)));
 }
 
-function onboarding(data) {
+// Setup's first question: the account decides which tool is installed and signed in. Names people know, not tools.
+const PRIMARY_CHOICES = [["claude", "primary_claude", "primary_claude_hint"], ["codex", "primary_chatgpt", "primary_chatgpt_hint"],
+  ["antigravity", "primary_google", "primary_google_hint"], ["ollama", "primary_none", "primary_none_hint"]];
+const primaryName = (id) => S((PRIMARY_CHOICES.find((c) => c[0] === id) || [, "primary_none"])[1]);
+
+async function setPrimary(button, primary) {
+  if (!await act(button, () => api("PUT", "/api/setup/primary", {primary}))) return;
+  state.askPrimary = !primary;  // "Change": the question again, also when a tool is already signed in
+  loadTools();
+}
+
+function choosePrimary() {
+  return [h("h3", {}, S("primary_title")), h("p", {class: "muted"}, S("primary_intro")),
+    h("div", {class: "primary-choices"}, PRIMARY_CHOICES.map(([id, name, hint]) =>
+      h("button", {type: "button", class: "primary-choice", onclick: (e) => setPrimary(e.currentTarget, id)},
+        h("b", {}, S(name)), h("span", {class: "small muted"}, S(hint))))),
+    h("p", {class: "small muted"}, S("primary_later"))];
+}
+
+const changeLink = () => h("button", {type: "button", class: "linkish small", onclick: (e) => setPrimary(e.currentTarget, "")}, S("primary_change"));
+
+// The sign-in of one tool: a window (or, for Gemini, the browser) opens; this page watches for the result.
+async function signIn(button, tool) {
+  const method = tool.id === "gemini" ? "google" : "terminal";
+  const r = await act(button, () => api("POST", `/api/tools/${encodeURIComponent(tool.id)}/login`, {method}));
+  if (r) state.signInUntil = Date.now() + 10 * 60 * 1000;
+  loadTools();
+}
+
+function onboarding(data, ready) {
+  const anySignedIn = data.tools.some((tool) => tool.provider && tool.signed_in);
+  if (!data.primary && (state.askPrimary || (!anySignedIn && !ready))) return choosePrimary();
   const required = data.tools.filter((tool) => tool.required);
-  const installed = required.filter((tool) => tool.installed).length;
+  const local = data.local || {};
+  const installedCount = required.filter((tool) => tool.installed).length + (data.primary === "ollama" && local.installed ? 1 : 0);
+  const totalCount = required.length + (data.primary === "ollama" ? 1 : 0);
   const needed = neededTools(data);
   const signedIn = needed.filter((tool) => tool.signed_in).length;
-  const job = data.all_job, installing = Boolean(job && job.running);
+  const job = data.all_job, installing = Boolean(job && job.running) || Boolean(local.job && local.job.running);
+  const mine = data.tools.find((tool) => tool.id === data.primary);
   const steps = [
-    {done: installed === required.length && !installing, title: S("step_install"), detail: S("step_install_done", {done: installed, total: required.length}),
-      body: [h("p", {class: "small muted"}, S("step_install_hint")),
-        h("div", {class: "row"}, h("button", {type: "button", class: "btn primary", disabled: installing, onclick: async (e) => {
-          await act(e.currentTarget, () => api("POST", "/api/tools/install-missing"));
+    {done: installedCount === totalCount && !installing, title: S("step_install"), detail: S("step_install_done", {done: installedCount, total: totalCount}),
+      body: [h("p", {class: "small muted"}, S(installing ? "installing_needed" : "step_install_hint")),
+        installing ? null : h("div", {class: "row"}, h("button", {type: "button", class: "btn primary", onclick: async (e) => {
+          await act(e.currentTarget, () => (data.primary ? api("PUT", "/api/setup/primary", {primary: data.primary}) : api("POST", "/api/tools/install-missing")));
           loadTools();
-        }}, S(installing ? "installing_all" : "install_missing"))),
-        job ? h("pre", {class: "log"}, job.log.slice(-4000)) : null]},
-    {done: signedIn === needed.length, title: S("step_signin"), detail: S("step_signin_done", {done: signedIn, total: needed.length}),
-      body: [h("p", {class: "small muted"}, S(state.signInUntil > Date.now() ? "watching_signin" : "step_signin_hint"))]},
-    {done: data.runs > 0, title: S("step_run"), detail: S("step_run_done", {count: data.runs}),
-      body: [h("div", {class: "row"}, h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows")))]},
+        }}, S("install_missing"))),
+        job ? h("pre", {class: "log"}, job.log.slice(-4000)) : null,
+        local.job ? h("pre", {class: "log"}, local.job.log.slice(-4000)) : null]},
   ];
+  if (data.primary === "ollama") {
+    steps.push({done: Boolean(local.models), title: S("step_model"), detail: S(local.models ? "step_model_done" : "step_model_none"),
+      body: [h("p", {class: "small muted"}, local.pulling ? pullText(local.pull) : S("step_model_hint")),
+        local.pulling || !local.suggested ? null : h("div", {class: "row"}, h("button", {type: "button", class: "btn primary", onclick: async (e) => {
+          await act(e.currentTarget, () => api("POST", "/api/ollama/pull", {name: local.suggested}));
+          loadTools();
+        }}, S("pull_recommended", {name: local.suggested})))]});
+  } else {
+    steps.push({done: signedIn === needed.length, title: S("step_signin"), detail: S("step_signin_done", {done: signedIn, total: needed.length}),
+      body: [h("p", {class: "small muted"}, S(state.signInUntil > Date.now() ? "watching_signin" : mine ? "step_signin_one" : "step_signin_hint")),
+        mine && mine.installed && !mine.signed_in ? h("div", {class: "row"}, data.terminal || mine.id === "gemini"
+          ? h("button", {type: "button", class: "btn primary", onclick: (e) => signIn(e.currentTarget, mine)}, S("sign_in_with_" + mine.id))
+          : h("p", {class: "small"}, S("run_command", {command: mine.login_command}))) : null,
+        mine && mine.sign_in_help ? h("p", {class: "small muted"}, mine.sign_in_help) : null]});
+  }
+  steps.push({done: data.runs > 0, title: S("step_run"), detail: S("step_run_done", {count: data.runs}),
+    body: [h("div", {class: "row"}, h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows")))]});
   const now = steps.findIndex((st) => !st.done);
-  const doneLine = h("div", {class: "ready-line"}, h("span", {class: "jnode done", "aria-hidden": "true"}, "✓"),
-    h("div", {}, h("b", {}, S("all_done"))),
-    h("div", {class: "row"},
-      h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows"))));
-  if (now === -1) return [doneLine];
-  return [h("h3", {}, S("start_title")), h("p", {class: "muted"}, S("start_intro")),
+  const chosen = data.primary ? h("p", {class: "small muted primary-line"}, S("primary_chosen", {name: primaryName(data.primary)}), " · ", changeLink()) : null;
+  if (ready || now === -1) {
+    return [h("div", {class: "ready-line"}, h("span", {class: "jnode done", "aria-hidden": "true"}, "✓"),
+      h("div", {class: "stack"}, h("b", {}, S("all_done")), chosen),
+      h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows")))];
+  }
+  return [h("h3", {}, S("start_title")), h("p", {class: "muted"}, S("start_intro")), chosen,
     h("ol", {class: "onboard"}, steps.map((st, i) => h("li", {class: `onboard-step ${st.done ? "done" : ""} ${i === now ? "current" : ""} ${i > now ? "later" : ""}`},
       h("span", {class: "check", "aria-hidden": "true"}, st.done ? "✓" : String(i + 1)),
       h("div", {class: "stack"}, h("div", {}, h("b", {}, st.title), " ", h("span", {class: "muted small"}, st.detail)),
         i === now ? st.body : null))))];
+}
+
+// The PDF reader: needed by every document workflow, but it has no account or limits, so it sits with the other
+// tools of this computer ("Local tools"). Drawn from GET /api/tools into its place in that grid (loadLocal).
+function drawPdfTool() {
+  const slot = document.getElementById("pdf-tool");
+  if (slot && state.pdfTool) slot.replaceWith(pdfToolCard(state.pdfTool));
+}
+
+function pdfToolCard(tool) {
+  const job = tool.job, running = Boolean(job && job.running);
+  return h("article", {class: "card tool local-tool", id: "pdf-tool", "data-id": tool.id},
+    h("div", {class: "tool-head"}, h("h3", {}, tool.name), h("span", {class: "muted small mono"}, tool.version || "")),
+    h("div", {class: "badges"}, need(true),
+      h("span", {class: "badge " + (tool.installed ? "good" : "bad")}, S(tool.installed ? "installed" : "not_installed"))),
+    h("p", {class: "small muted"}, S("pdf_uses"), " ", tool.requirements),
+    job && (running || job.code !== 0) ? h("pre", {class: "log"}, job.log.slice(-4000)) : null,
+    !tool.installed || (job && !running && job.code !== 0) ? h("div", {class: "actions"}, h("button", {type: "button", class: "btn primary", disabled: running, onclick: async (e) => {
+      await act(e.currentTarget, () => api("POST", `/api/tools/${encodeURIComponent(tool.id)}/install`));
+      loadTools();
+    }}, S(running ? "installing" : "install"))) : null);
 }
 
 function toolCard(tool, terminal) {
@@ -86,7 +183,7 @@ function toolCard(tool, terminal) {
     const main = tool.signed_in ? "" : " primary";
     const login = async (e, method) => {
       const r = await act(e.currentTarget, () => api("POST", `/api/tools/${id}/login`, {method}));
-      if (r) state.signInUntil = Date.now() + 2 * 60 * 1000;
+      if (r) state.signInUntil = Date.now() + 10 * 60 * 1000;
       loadTools();
     };
     if (tool.id === "gemini") actions.push(h("button", {type: "button", class: "btn" + main, onclick: (e) => login(e, "google")}, S("with_google")));
@@ -118,8 +215,9 @@ function toolCard(tool, terminal) {
     const test = actions.find((b) => b.textContent === S("test"));
     return h("article", {class: "card tool compact", "data-id": tool.id},
       h("div", {class: "tool-head"}, h("h3", {}, tool.name), h("span", {class: "muted small"}, tool.version)),
-      h("div", {class: "badges"}, h("span", {class: "badge good"}, S(tool.provider ? "signed_in" : "installed") + (tool.sign_in_info ? " · " + tool.sign_in_info : "")),
-        tool.billing ? billingBadge(tool.billing) : null),
+      h("div", {class: "badges"}, h("span", {class: "badge good"}, S(tool.provider ? "signed_in" : "installed")),
+        tool.billing === "api_key" ? billingBadge(tool.billing) : null),
+      tool.sign_in_info ? h("div", {class: "small muted"}, tool.sign_in_info) : null,
       quota && q.until > Date.now() / 1000 ? quota : null,
       tool.provider ? usageMini(canonicalProvider(tool.provider)) : null,  // live.js: what is left of its limit, without opening Details
       h("details", {class: "tool-more"}, h("summary", {class: "small"}, S("details")),
@@ -133,8 +231,9 @@ function toolCard(tool, terminal) {
       need(tool.required),
       h("span", {class: "badge " + (tool.installed ? "good" : "bad")}, S(tool.installed ? "installed" : "not_installed")),
       tool.installed && tool.provider ? h("span", {class: "badge " + (tool.signed_in ? "good" : "warn")},
-        S(tool.signed_in ? "signed_in" : "not_signed_in") + (tool.signed_in && tool.sign_in_info ? " · " + tool.sign_in_info : "")) : null,
-      tool.installed && tool.billing ? billingBadge(tool.billing) : null),  // stream P: what a call would use
+        S(tool.signed_in ? "signed_in" : "not_signed_in")) : null,
+      tool.installed && tool.billing === "api_key" ? billingBadge(tool.billing) : null),  // stream P: a paid call
+    tool.signed_in && tool.sign_in_info ? h("div", {class: "small muted"}, tool.sign_in_info) : null,
     h("div", {class: "uses"}, uses),
     h("div", {class: "small muted"}, tool.requirements),
     tool.installed && !tool.signed_in && tool.sign_in_help ? h("div", {class: "small"}, tool.sign_in_help) : null,
@@ -193,7 +292,8 @@ async function loadLocal() {
   const [ollama, ocr] = [data.tools.find((x) => x.id === "ollama"), data.tools.find((x) => x.id === "ocr")];
   fill($("#local-tools"),
     h("div", {class: "panel-head local-head"}, h("div", {}, h("h2", {}, S("local_title")), h("p", {class: "muted"}, S("local_intro")))),
-    h("div", {class: "local-grid"}, ollamaCard(ollama, models, pull), ocrCard(ocr),
+    h("div", {class: "local-grid"}, state.pdfTool ? pdfToolCard(state.pdfTool) : h("div", {id: "pdf-tool", hidden: true}),
+      ollamaCard(ollama, models, pull), ocrCard(ocr),
       ...["typst", "pandoc", "speech", "qpdf", "browser"].map((id) => localToolCard(data.tools.find((x) => x.id === id)))));
   // An install job: the whole section again (its log grows). A download: only its progress line, so that the
   // buttons stay in place (a click on Cancel is not lost to a redraw); the section again when it ends.

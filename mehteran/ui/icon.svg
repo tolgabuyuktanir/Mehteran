@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mehteran">
-  <!-- An Ottoman mehter band drawn with a blue pen: the standard bearer, the drummer (davul) and the zurna player. -->
-  <g fill="none" stroke="#1f4fbf" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+  <!-- An Ottoman mehter band drawn with a navy pen: the standard bearer, the drummer (davul) and the zurna player. -->
+  <g fill="none" stroke="#2151af" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
     <!-- the ground line, one loose stroke -->
     <path d="M4.5 57.6c9.5-1.3 19.4-.2 28.6-.9 9-.6 17.6.5 26.6-.5" stroke-width="1.6"/>
 
@@ -23,7 +23,7 @@
     <path d="M31.4 41.2c2.3-2 5.6-2.1 8-.2M31.3 47.3c2.4 2.1 5.7 2.1 8.2.1" stroke-width="1.4"/>
     <path d="M32.9 40.3l1.8 8.4 1.7-8.5 1.6 8.3" stroke-width="1.2"/>
     <path d="M28.4 34.2c-2.6 1.5-4.5 3.5-5.3 6.2M23.1 40.4c1.5 1 2.9 2.1 4.3 3.2"/>
-    <circle cx="28.3" cy="44.3" r="1.2" fill="#1f4fbf" stroke="none"/>
+    <circle cx="28.3" cy="44.3" r="1.2" fill="#2151af" stroke="none"/>
 
     <!-- zurna player: cap, kaftan and the horn raised to the right -->
     <path d="M46.3 24.3c.2-4.2 1.3-8.1 3.3-8.2 2 0 3.1 3.9 3.4 8.1"/>

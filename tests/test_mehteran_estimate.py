@@ -178,13 +178,14 @@ class WelcomeTests(WebCase):
         self.assertEqual(stored, {"welcome_closed": "dismissed", "favorites": ["builtin:document-explainer"]})
         self.assertEqual(App(self.engine()).welcome(None, {}), {"show": False})  # a restart
 
-    def test_not_shown_after_a_run(self):
+    def test_still_shown_after_a_run(self):
+        """The easy start stays where people found it: only "Do not show again" closes the panel."""
         workflow = ("schema_version: 1\nid: tiny\nname: Tiny\ninputs:\n  - {id: a, type: text}\n"
                     "nodes:\n  - {id: join, type: text.merge, config: {template: \"{{inputs.a}}\"}}\n")
-        self.app.engine.start(workflow, {"a": "x"})
-        self.assertEqual(self.json("GET", "/api/welcome"), (200, {"show": False}))
-        stored = json.loads((self.home / "configurations" / "library.json").read_text(encoding="utf-8"))
-        self.assertEqual(stored["welcome_closed"], "used")
+        run_id = self.app.engine.start(workflow, {"a": "x"})
+        self.app.engine.wait(run_id, 30)
+        code, data = self.json("GET", "/api/welcome")
+        self.assertEqual((code, data["show"]), (200, True))
 
 
 if __name__ == "__main__":

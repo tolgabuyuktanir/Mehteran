@@ -509,7 +509,7 @@ function welcomeTool(tool, terminal) {
     const method = tool.id === "gemini" ? "google" : terminal ? "terminal" : "";  // an API key: on the Setup tab
     action = method ? h("button", {type: "button", class: "btn small primary", onclick: async (e) => {
       const r = await act(e.currentTarget, () => api("POST", `/api/tools/${id}/login`, {method}));
-      if (r) state.signInUntil = Date.now() + 2 * 60 * 1000;
+      if (r) state.signInUntil = Date.now() + 10 * 60 * 1000;
       loadWelcomeTools();
     }}, S("welcome_sign_in")) : null;
   } else mark = h("span", {class: "badge good"}, S("welcome_tool_ready"));
@@ -564,7 +564,13 @@ function drawWelcome() {
         h("p", {class: "tpl-desc"}, about)),
       welcomeTools(choice.providers),
       h("div", {class: "tpl-foot"}, h("span", {class: "small muted"}, choice.templates.length > 1 ? S("count_templates", {count: choice.templates.length}) : ""),
-        h("button", {type: "button", class: "btn small primary", onclick: () => welcomeGo(choice, title)}, label)));
+        h("div", {class: "row"},
+          // A first try without looking for a file: the run form opens with a short sample document in it.
+          choice.id === "document" && choice.action === "run" ? h("button", {type: "button", class: "btn small", onclick: () => {
+            state.sampleRun = true;
+            welcomeGo(choice, title);
+          }}, S("welcome_sample")) : null,
+          h("button", {type: "button", class: "btn small primary", onclick: () => welcomeGo(choice, title)}, label))));
   };
   fill(panel,
     h("div", {class: "welcome-head"},
@@ -860,7 +866,8 @@ async function loadProviderStates(force) {
 const providerInfo = (name) => ((providerStates.data && providerStates.data.providers) || []).find((p) => p.name === name) || null;
 const autoChoice = (kind) => (providerStates.data && providerStates.data.auto && providerStates.data.auto[kind]) || null;
 const canonicalProvider = (name) => (name === "chatgpt" ? "codex" : name);  // an older name for Codex
-const BILLING_LEVEL = {subscription: "good", free: "good", local: "good", api_key: "warn"};
+// Green means only "signed in" or "installed"; how a tool is paid is plain text, a paid API key the one caution.
+const BILLING_LEVEL = {api_key: "warn"};
 const billingBadge = (billing) => (billing ? h("span", {class: "badge billing " + (BILLING_LEVEL[billing] || "")}, S("billing_" + billing)) : null);
 
 function providerField(spec) {
@@ -1144,6 +1151,22 @@ function filePicker(input, multiple) {
   return h("span", {class: "file-pick"}, input, button, multiple ? null : chosen);
 }
 
+// The sample document (ui/sample-<lang>.md, Turkish or English) put into a file field as if the user had chosen it.
+async function putSample(input) {
+  const name = LANG === "tr" ? "sample-tr.md" : "sample-en.md";
+  try {
+    const res = await fetch(name);
+    if (!res.ok) throw new Error(res.statusText);
+    const file = new File([await res.blob()], S("sample_file_name"), {type: "text/markdown"});
+    const list = new DataTransfer();
+    list.items.add(file);
+    input.files = list.files;
+    input.dispatchEvent(new Event("change"));
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
 const fileSize = (bytes) => (bytes < 1024 * 1024 ? `${bytes ? Math.max(1, Math.round(bytes / 1024)) : 0} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
 
 // A file input with "multiple: true": files are added (several at a time, or one after the other) and removed one
@@ -1247,6 +1270,10 @@ function runForm(tpl, source, id, priorRun) {
         const input = h("input", {type: "file", accept, required: spec.required !== false});
         control = filePicker(input, false);
         control.read = () => input.files[0];
+        if (state.sampleRun) {  // "Try with a sample document": the first file field gets the sample
+          state.sampleRun = false;
+          putSample(input);
+        }
       }
     } else if (spec.type === "language" || isLanguageChoice(spec)) {
       // The output language: the flag picker. It starts at the interface language when the workflow offers it

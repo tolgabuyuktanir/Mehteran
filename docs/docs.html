@@ -9,7 +9,7 @@
 <meta name="description" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
 <meta name="description-en" content="How to install Mehteran, connect your AI tools, run and build workflows, use local models, and read the workflow file format.">
 <meta name="description-tr" content="Mehteran'ı kurma, yapay zekâ araçlarınızı bağlama, iş akışlarını çalıştırma ve oluşturma, yerel modelleri kullanma ve iş akışı dosya biçimi.">
-<meta name="theme-color" content="#1f4fbf">
+<meta name="theme-color" content="#2151af">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/site.js" defer></script>
@@ -65,19 +65,40 @@
 
   <section id="install">
     <h2>Install and start</h2>
-    <p>You do not need to install anything first. Mehteran runs on macOS, Windows and Linux. It uses Python 3.11 or later; when the computer has none, it installs a private Python (uv) for itself on the first start.</p>
+    <h3 id="quick-start">Quick start</h3>
+    <p>You need a computer with Windows or macOS and an internet connection. You do not need to install anything else first. For Linux, see <a href="#install-other">Other ways to install</a>.</p>
     <ol>
-      <li>On the GitHub page, click <b>Code</b>, then <b>Download ZIP</b>. Unpack the zip file into a folder, for example <code>Documents/Mehteran</code>.</li>
-      <li>Start the interface:
+      <li><b>Download Mehteran.</b> Click this link: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Download Mehteran (zip file)</a>. Your browser saves the file <code>Mehteran-main.zip</code>, usually in the <b>Downloads</b> folder.</li>
+      <li><b>Unpack the zip file.</b>
         <ul>
-          <li><b>macOS:</b> right-click <code>Open Mehteran.command</code>, choose <b>Open</b>, then click <b>Open</b> again in the warning. macOS asks this only the first time.</li>
-          <li><b>Windows:</b> double-click <code>Open Mehteran.bat</code>. If "Windows protected your PC" appears, click <b>More info</b>, then <b>Run anyway</b>.</li>
-          <li><b>Linux:</b> in a terminal, run <code>./mehter ui</code>.</li>
+          <li><b>Windows:</b> right-click <code>Mehteran-main.zip</code>, choose <b>Extract All…</b>, then click <b>Extract</b>. Do not start Mehteran from inside the zip file: that does not work.</li>
+          <li><b>Mac:</b> double-click <code>Mehteran-main.zip</code>. If the <code>Mehteran-main</code> folder is already there, skip this step.</li>
         </ul>
       </li>
-      <li>The interface opens in your browser at <code>http://127.0.0.1:8766/</code>. It runs while its terminal window stays open. To stop it, close that window or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in it.</li>
-      <li>On the <b>Setup</b> tab, install the AI tools you want and sign in to them (see <a href="#setup">Connect your AI tools</a>).</li>
+      <li><b>Start Mehteran.</b> Open the <code>Mehteran-main</code> folder. On Windows, it can contain a second <code>Mehteran-main</code> folder: then open that one.
+        <ul>
+          <li><b>Windows:</b> double-click <code>Open Mehteran.bat</code>. If "Windows protected your PC" appears, click <b>More info</b>, then <b>Run anyway</b>.</li>
+          <li><b>Mac:</b> double-click <code>Open Mehteran.command</code>. If the Mac says that it cannot open the file, open <b>System Settings</b> → <b>Privacy &amp; Security</b>, scroll down, click <b>Open Anyway</b> for <code>Open Mehteran.command</code>, and confirm. On older macOS versions: right-click the file, choose <b>Open</b>, then click <b>Open</b> again.</li>
+        </ul>
+        A window with text opens. This is Mehteran's window. The first start can take a minute or two, because Mehteran prepares itself. Then Mehteran opens in your browser. Keep Mehteran's window open while you use Mehteran.
+      </li>
+      <li><b>Choose your AI account.</b> Mehteran opens on the <b>Setup</b> tab and asks <b>Which AI account do you have?</b> Click your choice:
+        <ul>
+          <li><b>Claude</b>: a Claude Pro or Max subscription.</li>
+          <li><b>ChatGPT</b>: ChatGPT Plus or Pro.</li>
+          <li><b>Google</b>: a Google account.</li>
+          <li><b>No subscription</b>: a free model that runs on this computer. It is slower and needs enough memory.</li>
+        </ul>
+        Mehteran then installs what it needs by itself. This takes a few minutes.
+      </li>
+      <li><b>Sign in.</b> Click <b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>. A window and a sign-in page in your browser open. Sign in there with your account; the Setup page updates by itself. If you chose <b>No subscription</b>, click <b>Download the recommended model</b> instead (the button also shows the model's name). When you see <b>Setup is complete</b>, click <b>Go to workflows →</b>.</li>
+      <li><b>Start your first workflow.</b> On the <b>Workflows</b> tab, find the card <b>Work with a document</b>. To try it with a short sample, click <b>Try with a sample document</b>. To use your own file, click <b>Choose a document</b>, then <b>Choose a file</b>, and pick a document (for example a letter or a contract, as PDF or Word). Then click <b>Start the run</b>.</li>
+      <li><b>Get the result.</b> Mehteran shows each step while it works. When the run is finished, the explanation appears under <b>Results</b>. To save it as a Word file, click <b>↓ Explanation (Word)</b>.</li>
     </ol>
+    <p>Next time, double-click the same file again (<code>Open Mehteran.bat</code> or <code>Open Mehteran.command</code>). Closing Mehteran's window stops Mehteran. You can change the AI account later on the <b>Setup</b> tab with <b>Change</b>.</p>
+    <p>The rest of this page describes everything else: <a href="#setup">the AI tools</a>, <a href="#run">running</a> and <a href="#build">building</a> workflows, <a href="#local">local models</a> and <a href="#cli">the command line</a>. Schedules and every setting are in the <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">full reference</a>.</p>
+    <h3>Details</h3>
+    <p>Mehteran runs on macOS, Windows and Linux. It uses Python 3.11 or later; when the computer has none, it installs a private Python (uv) for itself on the first start. The interface opens in your browser at <code>http://127.0.0.1:8766/</code>; if the browser does not open by itself, open that address. It runs while its terminal window stays open. To stop it, close that window or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in it. If macOS still does not start the file, see <a href="#troubleshooting">Troubleshooting</a>.</p>
     <table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
       <tbody>
@@ -87,9 +108,15 @@
         <tr><td>With npm (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;command&gt;]</code></td></tr>
       </tbody>
     </table>
+    <h3 id="install-other">Other ways to install</h3>
+    <ul>
+      <li><b>From the GitHub page:</b> click <b>Code</b>, then <b>Download ZIP</b>. This is the same zip file as in the quick start.</li>
+      <li><b>Linux:</b> unpack the zip file (or use <code>git clone https://github.com/tolgabuyuktanir/Mehteran.git</code>), then run <code>./mehter ui</code> in a terminal in that folder.</li>
+      <li><b>With git:</b> a copy made with <code>git clone</code> stays up to date (see <a href="#install-updates">Updates</a>).</li>
+    </ul>
     <h3>With npm</h3>
     <p>If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), run <code>npx mehteran</code>. The first run installs the source bundled with the npm release into <code>~/Mehteran</code> and opens the interface. Next time, run <code>npx mehteran</code> again. Every command works the same way: <code>npx mehteran templates</code> is <code>./mehter templates</code>. Commands run in the Mehteran folder, so give file paths as full paths. To use another folder, set <code>MEHTERAN_DIR</code>.</p>
-    <h3>Updates</h3>
+    <h3 id="install-updates">Updates</h3>
     <p>If you got Mehteran with <code>git clone</code>, <code>mehter update</code> brings it up to date. The launcher runs it before the interface starts. It fetches from GitHub and applies only a fast-forward merge. Without internet or a GitHub sign-in, or when the code was changed on this computer, it skips the update with a message, and Mehteran starts as it is. A copy installed with <code>npx mehteran</code> is not updated: to try a new npm release, install it in a new folder with <code>MEHTERAN_DIR</code>. If you downloaded a zip file, download the new zip. Your workflows and runs are not in the code folder, so they stay where they are (see <a href="#data">Where your data is</a>). When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
     <h3>Where the tools go</h3>
     <p>The tools that Mehteran installs go into the code folder (<code>.runtime/</code>) or into your user folder (Claude Code, Antigravity CLI and the private Python: <code>~/.local/bin</code>; on Windows under <code>%LOCALAPPDATA%</code>). No administrator rights are needed.</p>
@@ -97,7 +124,8 @@
 
   <section id="setup">
     <h2>Connect your AI tools</h2>
-    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and how much of its usage limit is left. <b>Install missing tools</b> installs the tools that the templates use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
+    <p>On the first start, the <b>Setup</b> tab asks <b>Which AI account do you have?</b>: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> or <b>No subscription</b> (a free model on this computer). Mehteran puts that tool first in the model order and installs what it needs: the tool and the PDF reader (for <b>No subscription</b>, Ollama). Then one button signs you in (<b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>): a window and a sign-in page in your browser open, and the page updates by itself. Without a subscription, <b>Download the recommended model (…)</b> downloads a model that fits the computer's memory. At the end the page shows <b>Setup is complete</b> and "Account: … · <b>Change</b>"; <b>Change</b> asks the question again.</p>
+    <p>Below, the tab shows one card per AI tool, two per row: installed or not, signed in or not, the account it uses, and how much of its usage limit is left. Only "API key (billed)" is marked as a caution. <b>Install missing tools</b> installs the tool of your account and the PDF reader (without a chosen account: the tools that the templates use). Each card has its own install button, its sign-in methods and a <b>Test</b> button. The PDF reader is the first card under <b>Local tools</b>.</p>
     <table>
       <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
       <tbody>
@@ -263,7 +291,7 @@ outputs:
       <li>Otherwise the step shows "waiting for the usage limit" and tries again when the limit resets. A wait does not count as a failed attempt.</li>
     </ul>
     <p>On the run page, a waiting or failed step offers <b>Keep waiting</b> and <b>Continue with another model</b>. A loop keeps the parts it already has. A limit seen by one run is known to the others, so they do not call that tool until it resets.</p>
-    <p>The header shows what is left of each tool's usage limit on every tab, for example "Remaining · Claude 27% · Codex 7%". Click it to see each window (5 hours, weekly) with the time to its reset. Claude Code and Codex report these values; Mehteran asks Claude Code every few minutes without a model call. The tools report percentages, not token counts. The Setup tab shows the same bars on each tool's card and in the table of <b>AI tools of the workflows</b>, with Mehteran's own counts (today, last 5 hours, last 7 days) under <b>Details</b>. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
+    <p>The header shows what is left of each tool's usage limit on every tab, for example "Remaining · Claude 31% · 5 hours · Codex 7% · Weekly": for each tool, the window closest to its limit, with its name. Click it to see each window (5 hours, weekly) with the time to its reset. Claude Code and Codex report these values; Mehteran asks Claude Code every few minutes without a model call. The tools report percentages, not token counts. The Setup tab shows one bar on each tool's card (the window closest to its limit; every window under <b>Details</b>) and the same values in the table of <b>AI tools of the workflows</b>, with Mehteran's own counts (today, last 5 hours, last 7 days) under <b>Details</b>. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
   </section>
 
   <section id="local">
@@ -379,9 +407,11 @@ outputs:
   <section id="troubleshooting">
     <h2>Troubleshooting</h2>
     <h3>macOS says it cannot open the file</h3>
-    <p>Right-click <code>Open Mehteran.command</code> and choose <b>Open</b>. If you see "you do not have appropriate access privileges", open Terminal, type <code>sh </code> (with a space), drag the file into the window and press Enter.</p>
+    <p>Open <b>System Settings</b> → <b>Privacy &amp; Security</b>, scroll down, click <b>Open Anyway</b> for <code>Open Mehteran.command</code>, and confirm. On older macOS versions, right-click <code>Open Mehteran.command</code> and choose <b>Open</b>. If you see "you do not have appropriate access privileges", open Terminal, type <code>sh </code> (with a space), drag the file into the window and press Enter.</p>
+    <h3>Windows: Mehteran does not start</h3>
+    <p>If Mehteran's window says that it cannot start from inside the zip file, unpack the zip file first (right-click, <b>Extract All…</b>). Start <code>Open Mehteran.bat</code> from the unpacked folder, not from inside the zip file.</p>
     <h3>A tool is "not signed in"</h3>
-    <p>On the Setup tab, click the sign-in button of its card. A terminal window opens; sign in in the browser, then click <b>Test</b>.</p>
+    <p>On the Setup tab, click the sign-in button of its card. A window and a sign-in page in your browser open. Sign in there; the page updates by itself. Then you can close the window.</p>
     <h3>A step waits for a usage limit</h3>
     <p>That is normal: the run continues when the limit resets. To go on now, click <b>Continue with another model</b> on the step.</p>
     <h3>PDF export says it needs Typst</h3>
@@ -430,19 +460,40 @@ outputs:
 
   <section id="tr-kurulum">
     <h2>Kurulum ve başlatma</h2>
-    <p>Önceden hiçbir şey kurmanız gerekmez. Mehteran macOS, Windows ve Linux'ta çalışır. Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa ilk açılışta kendine özel bir Python (uv) kurar.</p>
+    <h3 id="tr-hizli-baslangic">Hızlı başlangıç</h3>
+    <p>Windows ya da macOS yüklü bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez. Linux için <a href="#tr-diger-kurulum">Diğer kurulum yolları</a> bölümüne bakın.</p>
     <ol>
-      <li>GitHub sayfasında <b>Code</b>, sonra <b>Download ZIP</b> düğmesine tıklayın. Zip dosyasını bir klasöre açın, örneğin <code>Belgeler/Mehteran</code>.</li>
-      <li>Arayüzü başlatın:
+      <li><b>Mehteran'ı indirin.</b> Şu bağlantıya tıklayın: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Mehteran'ı indir (zip dosyası)</a>. Tarayıcınız <code>Mehteran-main.zip</code> dosyasını kaydeder; genellikle <b>İndirilenler</b> klasörüne.</li>
+      <li><b>Zip dosyasını açın.</b>
         <ul>
-          <li><b>macOS:</b> <code>Open Mehteran.command</code> dosyasına sağ tıklayın, <b>Aç</b>'ı seçin, uyarıda yine <b>Aç</b>'a tıklayın. macOS bunu yalnızca ilk seferde sorar.</li>
-          <li><b>Windows:</b> <code>Open Mehteran.bat</code> dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa <b>Ek bilgi</b>, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
-          <li><b>Linux:</b> bir terminalde <code>./mehter ui</code> komutunu çalıştırın.</li>
+          <li><b>Windows:</b> <code>Mehteran-main.zip</code> dosyasına sağ tıklayın, <b>Tümünü Ayıkla…</b> seçeneğini seçin, sonra <b>Ayıkla</b>'ya tıklayın. Mehteran'ı zip dosyasının içinden başlatmayın; öyle çalışmaz.</li>
+          <li><b>Mac:</b> <code>Mehteran-main.zip</code> dosyasına çift tıklayın. <code>Mehteran-main</code> klasörü zaten oradaysa bu adımı atlayın.</li>
         </ul>
       </li>
-      <li>Arayüz tarayıcınızda <code>http://127.0.0.1:8766/</code> adresinde açılır. Terminal penceresi açık kaldıkça çalışır. Durdurmak için o pencereyi kapatın ya da içinde <kbd>Ctrl</kbd>+<kbd>C</kbd> tuşlarına basın.</li>
-      <li><b>Kurulum</b> sekmesinde istediğiniz yapay zekâ araçlarını kurun ve oturum açın (bkz. <a href="#tr-araclar">Yapay zekâ araçlarını bağlama</a>).</li>
+      <li><b>Mehteran'ı başlatın.</b> <code>Mehteran-main</code> klasörünü açın. Windows'ta bu klasörün içinde ikinci bir <code>Mehteran-main</code> klasörü olabilir; o zaman onu açın.
+        <ul>
+          <li><b>Windows:</b> <code>Open Mehteran.bat</code> dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa <b>Ek bilgi</b>'ye, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
+          <li><b>Mac:</b> <code>Open Mehteran.command</code> dosyasına çift tıklayın. Mac dosyayı açamadığını söylerse <b>Sistem Ayarları</b> → <b>Gizlilik ve Güvenlik</b>'i açın, aşağı kaydırın, <code>Open Mehteran.command</code> için <b>Yine de Aç</b>'a tıklayın ve onaylayın. Eski macOS sürümlerinde: dosyaya sağ tıklayın, <b>Aç</b>'ı seçin, sonra yine <b>Aç</b>'a tıklayın.</li>
+        </ul>
+        İçinde yazılar olan bir pencere açılır. Bu, Mehteran'ın penceresidir. İlk açılış bir-iki dakika sürebilir; Mehteran bu sırada kendini hazırlar. Sonra Mehteran tarayıcınızda açılır. Mehteran'ı kullandığınız sürece bu pencereyi açık bırakın.
+      </li>
+      <li><b>Yapay zekâ hesabınızı seçin.</b> Mehteran <b>Kurulum</b> sekmesinde açılır ve <b>Hangi yapay zekâ hesabınız var?</b> diye sorar. Sizinkine tıklayın:
+        <ul>
+          <li><b>Claude</b>: Claude Pro veya Max aboneliği.</li>
+          <li><b>ChatGPT</b>: ChatGPT Plus veya Pro.</li>
+          <li><b>Google</b>: Google hesabı.</li>
+          <li><b>Aboneliğim yok</b>: bu bilgisayarda çalışan ücretsiz bir model. Daha yavaştır ve yeterli bellek ister.</li>
+        </ul>
+        Mehteran gerekenleri kendisi kurar. Bu birkaç dakika sürer.
+      </li>
+      <li><b>Giriş yapın.</b> <b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b> düğmesine tıklayın. Bir pencere ve tarayıcınızda bir giriş sayfası açılır. Orada hesabınızla giriş yapın; Kurulum sayfası kendiliğinden güncellenir. <b>Aboneliğim yok</b> seçtiyseniz bunun yerine <b>Önerilen modeli indir</b>'e tıklayın (düğme modelin adını da gösterir). <b>Kurulum tamamlandı</b> yazısını görünce <b>İş akışlarına git →</b> düğmesine tıklayın.</li>
+      <li><b>İlk iş akışınızı başlatın.</b> <b>İş akışları</b> sekmesinde <b>Bir belgeyle çalış</b> kartını bulun. Kısa bir örnekle denemek için <b>Örnek belgeyle deneyin</b>'e tıklayın. Kendi dosyanızı kullanmak için <b>Belge seç ve başla</b>'ya, sonra <b>Dosya seç</b>'e tıklayın ve bir belge seçin (örneğin PDF ya da Word olarak bir sözleşme veya resmî yazı). Ardından <b>Çalıştırmayı başlat</b>'a tıklayın.</li>
+      <li><b>Sonucu alın.</b> Mehteran çalışırken her adımı gösterir. Çalıştırma bitince açıklama <b>Sonuçlar</b> altında görünür. Word dosyası olarak kaydetmek için <b>↓ Anlatım (Word)</b> düğmesine tıklayın.</li>
     </ol>
+    <p>Sonraki seferlerde aynı dosyaya yine çift tıklayın (<code>Open Mehteran.bat</code> ya da <code>Open Mehteran.command</code>). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Yapay zekâ hesabını daha sonra <b>Kurulum</b> sekmesinde <b>Değiştir</b> ile değiştirebilirsiniz.</p>
+    <p>Bu sayfanın devamı diğer her şeyi anlatır: <a href="#tr-araclar">yapay zekâ araçları</a>, iş akışlarını <a href="#tr-calistir">çalıştırma</a> ve <a href="#tr-olustur">oluşturma</a>, <a href="#tr-yerel">yerel modeller</a> ve <a href="#tr-komut">komut satırı</a>. Zamanlamalar ve bütün ayarlar <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">ayrıntılı başvuru belgesinde</a>.</p>
+    <h3>Ayrıntılar</h3>
+    <p>Mehteran macOS, Windows ve Linux'ta çalışır. Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa ilk açılışta kendine özel bir Python (uv) kurar. Arayüz tarayıcınızda <code>http://127.0.0.1:8766/</code> adresinde açılır; tarayıcı kendiliğinden açılmazsa bu adresi açın. Terminal penceresi açık kaldıkça çalışır. Durdurmak için o pencereyi kapatın ya da içinde <kbd>Ctrl</kbd>+<kbd>C</kbd> tuşlarına basın. macOS dosyayı yine de başlatmazsa <a href="#tr-sorunlar">Sorun giderme</a> bölümüne bakın.</p>
     <table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
       <tbody>
@@ -452,9 +503,15 @@ outputs:
         <tr><td>npm ile (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;komut&gt;]</code></td></tr>
       </tbody>
     </table>
+    <h3 id="tr-diger-kurulum">Diğer kurulum yolları</h3>
+    <ul>
+      <li><b>GitHub sayfasından:</b> <b>Code</b>, sonra <b>Download ZIP</b> düğmesine tıklayın. Bu, hızlı başlangıçtaki zip dosyasının aynısıdır.</li>
+      <li><b>Linux:</b> zip dosyasını açın (ya da <code>git clone https://github.com/tolgabuyuktanir/Mehteran.git</code> kullanın), sonra o klasörde bir terminalde <code>./mehter ui</code> komutunu çalıştırın.</li>
+      <li><b>git ile:</b> <code>git clone</code> ile alınan bir kopya güncel kalır (bkz. <a href="#tr-guncellemeler">Güncellemeler</a>).</li>
+    </ul>
     <h3>npm ile</h3>
     <p>Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) <code>npx mehteran</code> komutunu çalıştırın. İlk çalıştırma npm sürümündeki kaynak kodu <code>~/Mehteran</code> klasörüne kurar ve arayüzü açar. Sonraki seferlerde yine <code>npx mehteran</code> yazın. Her komut aynı şekilde çalışır: <code>npx mehteran templates</code>, <code>./mehter templates</code> ile aynıdır. Komutlar Mehteran klasöründe çalışır; dosya yollarını tam yol olarak verin. Başka bir klasör için <code>MEHTERAN_DIR</code> değişkenini ayarlayın.</p>
-    <h3>Güncellemeler</h3>
+    <h3 id="tr-guncellemeler">Güncellemeler</h3>
     <p>Mehteran'ı <code>git clone</code> ile aldıysanız, <code>mehter update</code> onu günceller. Başlatıcı bunu arayüz başlamadan önce çalıştırır. GitHub'dan çeker ve yalnızca ileri sarma (fast-forward) birleştirmesi uygular. İnternet ya da GitHub girişi yoksa, ya da kod bu bilgisayarda değiştirildiyse güncellemeyi bir mesajla atlar ve Mehteran olduğu gibi açılır. <code>npx mehteran</code> ile kurulan kopya güncellenmez: yeni bir npm sürümünü denemek için onu <code>MEHTERAN_DIR</code> ile yeni bir klasöre kurun. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, oldukları yerde kalırlar (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
     <h3>Araçlar nereye kurulur</h3>
     <p>Mehteran'ın kurduğu araçlar kod klasörüne (<code>.runtime/</code>) ya da kullanıcı klasörünüze gider (Claude Code, Antigravity CLI ve özel Python: <code>~/.local/bin</code>; Windows'ta <code>%LOCALAPPDATA%</code> altı). Yönetici yetkisi gerekmez.</p>
@@ -462,7 +519,8 @@ outputs:
 
   <section id="tr-araclar">
     <h2>Yapay zekâ araçlarını bağlama</h2>
-    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, kullanım sınırından ne kadar kaldı. <b>Eksikleri kur</b>, şablonların kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
+    <p>İlk açılışta <b>Kurulum</b> sekmesi <b>Hangi yapay zekâ hesabınız var?</b> diye sorar: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> ya da <b>Aboneliğim yok</b> (bu bilgisayarda ücretsiz bir model). Mehteran o aracı model sırasının başına koyar ve gerekenleri kurar: aracı ve PDF okuyucuyu (<b>Aboneliğim yok</b> için Ollama'yı). Sonra tek bir düğme oturum açtırır (<b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b>): bir pencere ve tarayıcıda bir giriş sayfası açılır, sayfa kendiliğinden güncellenir. Abonelik yoksa <b>Önerilen modeli indir (…)</b> bilgisayarın belleğine uyan bir model indirir. Sonunda sayfa <b>Kurulum tamamlandı</b> ve "Hesap: … · <b>Değiştir</b>" gösterir; <b>Değiştir</b> soruyu yeniden sorar.</p>
+    <p>Altında sekme her yapay zekâ aracı için, satırda iki tane, bir kart gösterir: kurulu mu, oturum açık mı, hangi hesabı kullanıyor, kullanım sınırından ne kadar kaldı. Yalnızca "API anahtarı (ücretli)" uyarı olarak işaretlenir. <b>Eksikleri kur</b>, hesabınızın aracını ve PDF okuyucuyu kurar (hesap seçilmediyse şablonların kullandığı araçları). Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır. PDF okuyucu, <b>Yerel araçlar</b> altındaki ilk karttır.</p>
     <table>
       <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
       <tbody>
@@ -628,7 +686,7 @@ outputs:
       <li>Aksi hâlde adım "kullanım sınırını bekliyor" gösterir ve sınır sıfırlanınca yeniden dener. Bekleme başarısız deneme sayılmaz.</li>
     </ul>
     <p>Çalıştırma sayfasında bekleyen ya da başarısız bir adım <b>Bekle</b> ve <b>Başka modelle devam et</b> seçeneklerini sunar. Döngü elindeki parçaları korur. Bir çalıştırmanın gördüğü sınırı diğerleri de bilir; o araç sıfırlanana kadar onu çağırmazlar.</p>
-    <p>Üst çubuk her sekmede araçların kullanım sınırından ne kadar kaldığını gösterir; örneğin "Kalan · Claude %27 · Codex %7". Tıklayınca her pencereyi (5 saat, haftalık) ve sıfırlanmasına kalan süreyi görürsünüz. Bu değerleri Claude Code ve Codex bildirir; Mehteran Claude Code'a birkaç dakikada bir, model çağrısı yapmadan sorar. Araçlar belirteç (token) sayısı değil, yüzde bildirir. Kurulum sekmesi aynı çubukları her aracın kartında ve <b>İş akışlarının yapay zekâ araçları</b> tablosunda gösterir; Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün) <b>Ayrıntılar</b> altındadır. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
+    <p>Üst çubuk her sekmede araçların kullanım sınırından ne kadar kaldığını gösterir; örneğin "Kalan · Claude %31 · 5 saat · Codex %7 · Haftalık": her araç için sınırına en yakın pencere, adıyla. Tıklayınca her pencereyi (5 saat, haftalık) ve sıfırlanmasına kalan süreyi görürsünüz. Bu değerleri Claude Code ve Codex bildirir; Mehteran Claude Code'a birkaç dakikada bir, model çağrısı yapmadan sorar. Araçlar belirteç (token) sayısı değil, yüzde bildirir. Kurulum sekmesi her aracın kartında tek çubuk (sınırına en yakın pencere; bütün pencereler <b>Ayrıntılar</b> altında), <b>İş akışlarının yapay zekâ araçları</b> tablosunda da aynı değerleri gösterir; Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün) <b>Ayrıntılar</b> altındadır. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
   </section>
 
   <section id="tr-yerel">
@@ -744,9 +802,11 @@ outputs:
   <section id="tr-sorunlar">
     <h2>Sorun giderme</h2>
     <h3>macOS dosyayı açamadığını söylüyor</h3>
-    <p><code>Open Mehteran.command</code> dosyasına sağ tıklayıp <b>Aç</b>'ı seçin. "Uygun erişim izinleriniz yok" mesajını görürseniz Terminal'i açın, <code>sh </code> yazın (bir boşlukla), dosyayı pencereye sürükleyin ve Enter'a basın.</p>
+    <p><b>Sistem Ayarları</b> → <b>Gizlilik ve Güvenlik</b>'i açın, aşağı kaydırın, <code>Open Mehteran.command</code> için <b>Yine de Aç</b>'a tıklayın ve onaylayın. Eski macOS sürümlerinde <code>Open Mehteran.command</code> dosyasına sağ tıklayıp <b>Aç</b>'ı seçin. "Uygun erişim izinleriniz yok" mesajını görürseniz Terminal'i açın, <code>sh </code> yazın (bir boşlukla), dosyayı pencereye sürükleyin ve Enter'a basın.</p>
+    <h3>Windows: Mehteran başlamıyor</h3>
+    <p>Mehteran'ın penceresi zip dosyasının içinden başlatılamayacağını söylerse zip dosyasını önce açın (sağ tıklayın, <b>Tümünü Ayıkla…</b>). <code>Open Mehteran.bat</code> dosyasını zip dosyasının içinden değil, açılmış klasörden başlatın.</p>
     <h3>Bir araç "oturum açılmamış" görünüyor</h3>
-    <p>Kurulum sekmesinde kartındaki oturum açma düğmesine tıklayın. Bir terminal penceresi açılır; tarayıcıda oturum açın, sonra <b>Dene</b>'ye tıklayın.</p>
+    <p>Kurulum sekmesinde kartındaki oturum açma düğmesine tıklayın. Bir pencere ve tarayıcıda bir giriş sayfası açılır. Orada giriş yapın; sayfa kendiliğinden güncellenir. Sonra pencereyi kapatabilirsiniz.</p>
     <h3>Bir adım kullanım sınırını bekliyor</h3>
     <p>Bu normaldir: çalıştırma sınır sıfırlanınca devam eder. Hemen sürdürmek için adımda <b>Başka modelle devam et</b>'e tıklayın.</p>
     <h3>PDF dışa aktarma Typst gerektiğini söylüyor</h3>

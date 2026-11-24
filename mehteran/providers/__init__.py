@@ -38,6 +38,10 @@ NEEDS_MODEL = ("ollama", "openai-local")  # a local server: the order entry, the
 ALIASES = {"chatgpt": "codex"}
 AUTO = ("auto", "auto:strong", "auto:fast", "auto:local")
 OPTION_KEYS = {"num_ctx": int, "temperature": float, "top_p": float, "seed": int}
+# The account chosen in Setup's first question ("Which AI account do you have?"): the tool installed and signed in
+# for it is the one Setup asks for; the others stay optional. "" = not chosen (Setup then asks for the tools the
+# templates use).
+PRIMARY = ("claude", "codex", "antigravity", "ollama")
 ENTRY_RE = re.compile(r"^[a-z][a-z0-9_-]{0,39}(/[A-Za-z0-9._:][A-Za-z0-9._:-]{0,80})?(@[a-z]{1,10})?\Z")
 MAX_CONCURRENCY = 8
 
@@ -65,7 +69,7 @@ def split(name: str) -> tuple[str, str, str]:
 # --- the user's settings ------------------------------------------------------------------
 
 def read_settings(home: Path) -> dict:
-    """{"order": [entry], "unattended_subscriptions": bool, "providers": {id: {api_key, concurrency, model, options}}}:
+    """{"order": [entry], "unattended_subscriptions": bool, "primary": str, "providers": {id: {...}}}:
     only known keys and values. unattended_subscriptions: scheduled and batch runs may use a tool signed in with a
     consumer subscription or a free account (off: only local models and API keys; see Engine.unattended_check)."""
     try:
@@ -76,7 +80,8 @@ def read_settings(home: Path) -> dict:
     order = [canonical(e) for e in data.get("order") or [] if isinstance(e, str) and ENTRY_RE.match(e)] \
         if isinstance(data.get("order"), list) else []
     out = {"order": list(dict.fromkeys(e for e in order if split(e)[0] in ADAPTERS)),
-           "unattended_subscriptions": data.get("unattended_subscriptions") is True, "providers": {}}
+           "unattended_subscriptions": data.get("unattended_subscriptions") is True,
+           "primary": data.get("primary") if data.get("primary") in PRIMARY else "", "providers": {}}
     raw = data.get("providers") if isinstance(data.get("providers"), dict) else {}
     for name, spec in raw.items():
         name = canonical(name)
@@ -119,6 +124,8 @@ def write_settings(home: Path, data: dict) -> dict:
     text += f"order = {_toml([e for e in data.get('order') or [] if isinstance(e, str) and ENTRY_RE.match(e)])}\n"
     if data.get("unattended_subscriptions") is True:
         text += "unattended_subscriptions = true\n"
+    if data.get("primary") in PRIMARY:
+        text += f"primary = {_toml(data['primary'])}\n"
     for name, spec in (data.get("providers") or {}).items():
         if name in ADAPTERS and isinstance(spec, dict) and spec:
             text += f"\n[providers.{name}]\n" + "".join(f"{k} = {_toml(v)}\n" for k, v in spec.items())

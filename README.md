@@ -16,6 +16,34 @@ Mehteran turns the AI tools you already use into repeatable workflows. A workflo
 
 It runs on macOS, Windows and Linux, in 18 interface languages.
 
+## Quick start
+
+You need a computer with Windows or macOS and an internet connection. You do not need to install anything else first. For Linux, see [Other ways to install](#other-ways-to-install).
+
+1. **Download Mehteran.** Click this link: [Download Mehteran (zip file)](https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip). Your browser saves the file `Mehteran-main.zip`, usually in the **Downloads** folder.
+2. **Unpack the zip file.**
+   - **Windows:** right-click `Mehteran-main.zip`, choose **Extract All…**, then click **Extract**. Do not start Mehteran from inside the zip file: that does not work.
+   - **Mac:** double-click `Mehteran-main.zip`. If the `Mehteran-main` folder is already there, skip this step.
+3. **Start Mehteran.** Open the `Mehteran-main` folder. On Windows, it can contain a second `Mehteran-main` folder: then open that one.
+   - **Windows:** double-click `Open Mehteran.bat`. If "Windows protected your PC" appears, click **More info**, then **Run anyway**.
+   - **Mac:** double-click `Open Mehteran.command`. If the Mac says that it cannot open the file, open **System Settings** → **Privacy & Security**, scroll down, click **Open Anyway** for `Open Mehteran.command`, and confirm. On older macOS versions: right-click the file, choose **Open**, then click **Open** again.
+
+   A window with text opens. This is Mehteran's window. The first start can take a minute or two, because Mehteran prepares itself. Then Mehteran opens in your browser. Keep Mehteran's window open while you use Mehteran.
+4. **Choose your AI account.** Mehteran opens on the **Setup** tab and asks **Which AI account do you have?** Click your choice:
+   - **Claude**: a Claude Pro or Max subscription.
+   - **ChatGPT**: ChatGPT Plus or Pro.
+   - **Google**: a Google account.
+   - **No subscription**: a free model that runs on this computer. It is slower and needs enough memory.
+
+   Mehteran then installs what it needs by itself. This takes a few minutes.
+5. **Sign in.** Click **Sign in with Claude**, **Sign in with ChatGPT** or **Sign in with Google**. A window and a sign-in page in your browser open. Sign in there with your account; the Setup page updates by itself. If you chose **No subscription**, click **Download the recommended model** instead (the button also shows the model's name). When you see **Setup is complete**, click **Go to workflows →**.
+6. **Start your first workflow.** On the **Workflows** tab, find the card **Work with a document**. To try it with a short sample, click **Try with a sample document**. To use your own file, click **Choose a document**, then **Choose a file**, and pick a document (for example a letter or a contract, as PDF or Word). Then click **Start the run**.
+7. **Get the result.** Mehteran shows each step while it works. When the run is finished, the explanation appears under **Results**. To save it as a Word file, click **↓ Explanation (Word)**.
+
+Next time, double-click the same file again (`Open Mehteran.bat` or `Open Mehteran.command`). Closing Mehteran's window stops Mehteran. You can change the AI account later on the **Setup** tab with **Change**.
+
+Everything else (settings, local models, schedules, the command line) is in the [documentation](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en).
+
 ## Why Mehteran
 
 - **No extra bill.** Mehteran removes API keys from every model call, so a tool cannot bill an API account by accident. A billed API key is used only when you allow it for that tool.
@@ -26,31 +54,6 @@ It runs on macOS, Windows and Linux, in 18 interface languages.
 - **Real documents in and out.** Reads PDF, Word, EPUB, Excel, web pages, scans (OCR) and recordings (speech to text). Saves Markdown, Word, HTML, PDF, EPUB, e-mail drafts, JSON and CSV.
 - **Usage limits do not break a run.** A step waits for the limit to reset, or continues with the next model of your order.
 - **Every run is kept**: watch it live, stop and resume it, compare two runs, edit a result and export it.
-
-## Getting started
-
-You do not need to install anything first. An internet connection is enough.
-
-1. On this GitHub page, click **Code**, then **Download ZIP**. Unpack the zip file into a folder (for example `Documents/Mehteran`).
-2. Start the interface:
-   - **macOS:** right-click `Open Mehteran.command`, choose **Open**, and click **Open** again in the warning. macOS asks this only the first time, for files downloaded from the internet.
-     If you see "you do not have appropriate access privileges": open Terminal, type `sh ` (with a space), drag `Open Mehteran.command` into the Terminal window and press Enter.
-   - **Windows:** double-click `Open Mehteran.bat`. If "Windows protected your PC" appears, click **More info**, then **Run anyway**.
-   - **Linux:** run `./mehter ui` in a terminal.
-3. On the first start, if the computer has no suitable Python (3.11 or later), Mehteran installs a private Python for itself (a minute or two). Then the interface opens in the browser at `http://127.0.0.1:8766/`. It runs while its terminal window stays open.
-4. On the **Setup** tab, install the AI tools you want and sign in. Then open a workflow on the **Workflows** tab and run it.
-
-Next time, start it the same way (double-click is enough after the first time).
-
-### With npm
-
-If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), one command is enough:
-
-```
-npx mehteran
-```
-
-The first run installs the source bundled with the npm release into `~/Mehteran` and opens the interface. The installer needs `tar`. Next time, run `npx mehteran` again. Every command works the same way: `npx mehteran templates` is `./mehter templates`. To use another folder, set `MEHTERAN_DIR`.
 
 ## AI tools
 
@@ -99,6 +102,32 @@ max_run_storage_gib = 10
 ```
 
 Maintenance runs when the interface starts and once a day while it stays open. `retain_runs_days` permanently deletes old finished runs, including those in Trash. `retain_usage_days` clears old usage records. The storage limit is checked before admitting new runs. Active runs can still write output beyond it.
+
+## Other ways to install
+
+The [Quick start](#quick-start) uses the zip file of the GitHub page (also on the page: **Code**, then **Download ZIP**). On every system, the launcher uses Python 3.11 or later; when the computer has none, Mehteran installs a private Python (uv) for itself on the first start (a minute or two). The interface opens in the browser at `http://127.0.0.1:8766/` and runs while its terminal window stays open. If the browser does not open by itself, open that address.
+
+### Linux
+
+Unpack the zip file (or `git clone https://github.com/tolgabuyuktanir/Mehteran.git`), then run `./mehter ui` in a terminal in that folder.
+
+### With git
+
+A copy made with `git clone` (macOS, Windows or Linux) stays up to date: the launcher runs `mehter update` before the interface starts (see [Updates](#updates)).
+
+### With npm
+
+If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), one command is enough:
+
+```
+npx mehteran
+```
+
+The first run installs the source bundled with the npm release into `~/Mehteran` and opens the interface. The installer needs `tar`. Next time, run `npx mehteran` again. Every command works the same way: `npx mehteran templates` is `./mehter templates`. To use another folder, set `MEHTERAN_DIR`.
+
+### If macOS does not start the file
+
+If you see "you do not have appropriate access privileges": open Terminal, type `sh ` (with a space), drag `Open Mehteran.command` into the Terminal window and press Enter.
 
 ## Command line
 

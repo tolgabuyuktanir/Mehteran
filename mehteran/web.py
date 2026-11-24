@@ -59,7 +59,9 @@ STATIC = Path(__file__).resolve().parent / "ui"
 STATIC_TYPES = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css", "base.css": "text/css",
                 "canvas.js": "text/javascript", "editor.js": "text/javascript", "live.js": "text/javascript",
                 "icon.svg": "image/svg+xml", "langpicker.js": "text/javascript", "markdown.js": "text/javascript",
-                "history.js": "text/javascript", "runs.js": "text/javascript", "setup.js": "text/javascript"}
+                "history.js": "text/javascript", "runs.js": "text/javascript", "setup.js": "text/javascript",
+                # the sample document of "Try with a sample document" (the library's first panel)
+                "sample-tr.md": "text/markdown; charset=utf-8", "sample-en.md": "text/markdown; charset=utf-8"}
 FLAG_RE = re.compile(r"/flags/([a-z]{2}(?:-[a-z]{2})?)\.svg\Z")  # the flags of the language picker (ui/flags)
 UPLOAD_RE = re.compile(r"[0-9a-f]{32}\Z")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
@@ -306,7 +308,9 @@ class App:
             item["configured"] = item["provider"] is None or mine in configured
             if mine in adapters.ADAPTERS:
                 item.update(_provider_facts(mine, configured.get(mine) or {}), **_provider_state(mine, states[mine], user))
-            item["required"] = bool(item["templates"]) or item["provider"] is None
+            # With an account chosen in Setup, its tool is the one needed; else the tools the templates use.
+            item["required"] = item["provider"] is None or (item["id"] == user["primary"] if user["primary"]
+                                                            else bool(item["templates"]))
             if item["provider"] is None:
                 item["name"] = t(f"tool_name_{item['id']}")
             item["job"] = jobs[item["id"]]
@@ -314,7 +318,7 @@ class App:
             item["sign_in_help"] = t(f"sign_in_help_{item['id']}")
             item["quota"] = quota.get(item["provider"])
         return {"tools": items, "terminal": system.can_open_terminal(), "all_job": all_job,
-                "runs": len(self.engine.list())}
+                "runs": len(self.engine.list()), "primary": user["primary"]}
 
     def _tool(self, tool: str, model: bool = False) -> dict:
         if tool not in tools.TOOLS or (model and tools.TOOLS[tool]["provider"] is None):
@@ -334,14 +338,37 @@ class App:
         return self._install([m[1]], m[1])
 
     def install_missing(self, m, body) -> dict:
-        """Installs the tools that the templates use, and the PDF reader; the others have their own button."""
+        """Installs the PDF reader and the tool of the account chosen in Setup (none chosen: the tools that the
+        templates use); the others have their own button."""
         tools.extend_path(ROOT)
-        used = self._used()
+        primary = adapters.read_settings(self.home)["primary"]
+        used = () if primary else self._used()
         missing = [tool for tool, spec in tools.TOOLS.items()
-                   if (spec["provider"] is None or spec["provider"] in used) and not shutil.which(spec["command"])]
+                   if (spec["provider"] is None or tool == primary or spec["provider"] in used) and not shutil.which(spec["command"])]
         if not missing:
             return {"message": t("nothing_to_install")}
         return self._install(missing, "all")
+
+    def setup_primary(self, m, body) -> dict:
+        """Setup's first question: the account the user has (claude, codex, antigravity, ollama; "" asks again).
+        Saves it, puts that tool first for `auto`, and starts installing what is missing for it."""
+        primary = body.get("primary")
+        if primary not in ("", *adapters.PRIMARY):
+            raise HTTPError(400, t("bad_request"))
+        user = adapters.read_settings(self.home)
+        user["primary"] = primary
+        if primary and primary != "ollama":  # Ollama needs a model in the entry; the user picks it when it is there
+            user["order"] = [primary] + [e for e in user["order"] if adapters.split(e)[0] != primary]
+        adapters.write_settings(self.home, user)
+        self.engine.reload_providers()
+        if not primary:
+            return {"primary": ""}
+        out = self.install_missing(m, body)
+        if primary == "ollama" and not (self.jobs.info("local:ollama") or {}).get("running"):
+            from . import ollama
+            if ollama.binary()[0] is None:
+                self._local_job("ollama", ["ollama"])
+        return {"primary": primary, **out}
 
     def models(self, m, body) -> dict:
         """The model list of a tool, read from the tool itself and kept in <data>/configurations/models.json."""
@@ -855,13 +882,11 @@ class App:
         return list(dict.fromkeys(item["provider"] for item in found if item["provider"] and item["configured"]))
 
     def welcome(self, m, body) -> dict:
-        """The first-start panel of the library: shown until the user runs something or closes it. That is kept in
-        <data>/configurations/library.json ("welcome_closed": "dismissed" or "used"), so it holds for every browser
-        and port. Each choice names the providers it needs; the page adds their state from GET /api/tools."""
-        closed = self._read_conf("library.json").get("welcome_closed") in ("dismissed", "used")
-        if not closed and self.engine.store.runs():
-            self._update_conf("library.json", "welcome_closed", "used")  # stays closed when the runs are removed later
-            closed = True
+        """The panel "What would you like to do?" at the top of the library: shown until the user closes it ("Do not
+        show again"), also after the first runs, so the easy start stays where people found it. Kept in
+        <data>/configurations/library.json ("welcome_closed": "dismissed"), so it holds for every browser and port.
+        Each choice names the providers it needs; the page adds their state from GET /api/tools."""
+        closed = self._read_conf("library.json").get("welcome_closed") == "dismissed"
         if closed:
             return {"show": False}
         builtin = {item["id"]: item.get("category") for item in templates.listing(self.home)
@@ -1309,6 +1334,7 @@ ROUTES = [
     ("GET", r"/api/providers", App.providers_get),
     ("PUT", r"/api/providers", App.providers_put),
     ("POST", r"/api/tools/install-missing", App.install_missing),
+    ("PUT", r"/api/setup/primary", App.setup_primary),
     ("POST", r"/api/tools/([a-z]{1,20})/install", App.install_one),
     ("POST", r"/api/tools/([a-z]{1,20})/login", App.login),
     ("POST", r"/api/tools/([a-z]{1,20})/test", App.test_tool),

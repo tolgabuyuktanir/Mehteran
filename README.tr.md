@@ -16,6 +16,34 @@ Mehteran, zaten kullandığınız yapay zekâ araçlarını tekrar tekrar kullan
 
 macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
 
+## Hızlı başlangıç
+
+Windows ya da macOS yüklü bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez. Linux için [Diğer kurulum yolları](#diğer-kurulum-yolları) bölümüne bakın.
+
+1. **Mehteran'ı indirin.** Şu bağlantıya tıklayın: [Mehteran'ı indir (zip dosyası)](https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip). Tarayıcınız `Mehteran-main.zip` dosyasını kaydeder; genellikle **İndirilenler** klasörüne.
+2. **Zip dosyasını açın.**
+   - **Windows:** `Mehteran-main.zip` dosyasına sağ tıklayın, **Tümünü Ayıkla…** seçeneğini seçin, sonra **Ayıkla**'ya tıklayın. Mehteran'ı zip dosyasının içinden başlatmayın; öyle çalışmaz.
+   - **Mac:** `Mehteran-main.zip` dosyasına çift tıklayın. `Mehteran-main` klasörü zaten oradaysa bu adımı atlayın.
+3. **Mehteran'ı başlatın.** `Mehteran-main` klasörünü açın. Windows'ta bu klasörün içinde ikinci bir `Mehteran-main` klasörü olabilir; o zaman onu açın.
+   - **Windows:** `Open Mehteran.bat` dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa **Ek bilgi**'ye, sonra **Yine de çalıştır**'a tıklayın.
+   - **Mac:** `Open Mehteran.command` dosyasına çift tıklayın. Mac dosyayı açamadığını söylerse **Sistem Ayarları** → **Gizlilik ve Güvenlik**'i açın, aşağı kaydırın, `Open Mehteran.command` için **Yine de Aç**'a tıklayın ve onaylayın. Eski macOS sürümlerinde: dosyaya sağ tıklayın, **Aç**'ı seçin, sonra yine **Aç**'a tıklayın.
+
+   İçinde yazılar olan bir pencere açılır. Bu, Mehteran'ın penceresidir. İlk açılış bir-iki dakika sürebilir; Mehteran bu sırada kendini hazırlar. Sonra Mehteran tarayıcınızda açılır. Mehteran'ı kullandığınız sürece bu pencereyi açık bırakın.
+4. **Yapay zekâ hesabınızı seçin.** Mehteran **Kurulum** sekmesinde açılır ve **Hangi yapay zekâ hesabınız var?** diye sorar. Sizinkine tıklayın:
+   - **Claude**: Claude Pro veya Max aboneliği.
+   - **ChatGPT**: ChatGPT Plus veya Pro.
+   - **Google**: Google hesabı.
+   - **Aboneliğim yok**: bu bilgisayarda çalışan ücretsiz bir model. Daha yavaştır ve yeterli bellek ister.
+
+   Mehteran gerekenleri kendisi kurar. Bu birkaç dakika sürer.
+5. **Giriş yapın.** **Claude ile giriş yap**, **ChatGPT ile giriş yap** ya da **Google ile giriş yap** düğmesine tıklayın. Bir pencere ve tarayıcınızda bir giriş sayfası açılır. Orada hesabınızla giriş yapın; Kurulum sayfası kendiliğinden güncellenir. **Aboneliğim yok** seçtiyseniz bunun yerine **Önerilen modeli indir**'e tıklayın (düğme modelin adını da gösterir). **Kurulum tamamlandı** yazısını görünce **İş akışlarına git →** düğmesine tıklayın.
+6. **İlk iş akışınızı başlatın.** **İş akışları** sekmesinde **Bir belgeyle çalış** kartını bulun. Kısa bir örnekle denemek için **Örnek belgeyle deneyin**'e tıklayın. Kendi dosyanızı kullanmak için **Belge seç ve başla**'ya, sonra **Dosya seç**'e tıklayın ve bir belge seçin (örneğin PDF ya da Word olarak bir sözleşme veya resmî yazı). Ardından **Çalıştırmayı başlat**'a tıklayın.
+7. **Sonucu alın.** Mehteran çalışırken her adımı gösterir. Çalıştırma bitince açıklama **Sonuçlar** altında görünür. Word dosyası olarak kaydetmek için **↓ Anlatım (Word)** düğmesine tıklayın.
+
+Sonraki seferlerde aynı dosyaya yine çift tıklayın (`Open Mehteran.bat` ya da `Open Mehteran.command`). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Yapay zekâ hesabını daha sonra **Kurulum** sekmesinde **Değiştir** ile değiştirebilirsiniz.
+
+Ayarlar, yerel modeller, zamanlamalar ve komut satırı gibi diğer her şey [belgelerde](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr).
+
 ## Neden Mehteran
 
 - **Ek fatura yok.** Mehteran her model çağrısından API anahtarlarını çıkarır; böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Ücretli bir API anahtarı yalnızca o araç için izin verirseniz kullanılır.
@@ -26,31 +54,6 @@ macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
 - **Gerçek belgeler girer, çıkar.** PDF, Word, EPUB, Excel, web sayfaları, taranmış belgeler (OCR) ve ses kayıtlarını (konuşmayı yazıya çevirme) okur. Markdown, Word, HTML, PDF, EPUB, e-posta taslağı, JSON ve CSV olarak kaydeder.
 - **Kullanım sınırları çalıştırmayı bozmaz.** Adım sınırın sıfırlanmasını bekler ya da model sıranızdaki bir sonraki modelle devam eder.
 - **Her çalıştırma saklanır:** canlı izleyin, durdurup devam ettirin, iki çalıştırmayı karşılaştırın, bir sonucu düzenleyip dışa aktarın.
-
-## Başlarken
-
-Önceden hiçbir şey kurmanız gerekmez. İnternet bağlantısı yeterlidir.
-
-1. Bu GitHub sayfasında **Code** düğmesine, sonra **Download ZIP**'e tıklayın. Zip dosyasını bir klasöre açın (örnek: `Belgeler/Mehteran`).
-2. Arayüzü başlatın:
-   - **macOS:** `Open Mehteran.command` dosyasına sağ tıklayın, **Aç**'ı seçin, açılan uyarıda yine **Aç**'a basın. macOS bunu internetten indirilen dosyalar için yalnızca ilk seferde sorar.
-     "Gerekli erişim izinleriniz yok" uyarısı çıkarsa: Terminal'i açın, `sh ` yazıp (sonunda boşluk) `Open Mehteran.command` dosyasını Terminal penceresine sürükleyin ve Enter'a basın.
-   - **Windows:** `Open Mehteran.bat` dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa **Ek bilgi**'ye, sonra **Yine de çalıştır**'a basın.
-   - **Linux:** terminalde `./mehter ui` komutunu çalıştırın.
-3. İlk açılışta, bilgisayarda uygun bir Python (3.11 ya da üstü) yoksa Mehteran kendine ayrı bir Python kurar (bir-iki dakika). Sonra arayüz tarayıcıda `http://127.0.0.1:8766/` adresinde açılır. Terminal penceresi açık kaldıkça çalışır.
-4. **Kurulum** sekmesinde istediğiniz yapay zekâ araçlarını kurun ve oturum açın. Sonra **İş akışları** sekmesinde bir iş akışını açıp çalıştırın.
-
-Sonraki seferlerde aynı şekilde başlatın (ilk seferden sonra çift tıklamak yeterlidir).
-
-### npm ile
-
-Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) tek komut yeterlidir:
-
-```
-npx mehteran
-```
-
-İlk çalıştırma npm sürümündeki kaynak kodu `~/Mehteran` klasörüne kurar ve arayüzü açar. Kurulum için `tar` gerekir. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
 
 ## Yapay zekâ araçları
 
@@ -99,6 +102,32 @@ max_run_storage_gib = 10
 ```
 
 Bakım arayüz açıldığında ve açık kaldığı sürece günde bir çalışır. `retain_runs_days` tamamlanmış eski çalıştırmaları çöp kutusundakiler dahil kalıcı olarak siler. `retain_usage_days` eski kullanım kayıtlarını temizler. Depolama sınırı yeni çalıştırmaların kabulünde denetlenir. Devam eden işlerin yazabileceği çıktı boyutunu sınırlamaz.
+
+## Diğer kurulum yolları
+
+[Hızlı başlangıç](#hızlı-başlangıç), GitHub sayfasının zip dosyasını kullanır (sayfada da var: **Code**, sonra **Download ZIP**). Her sistemde başlatıcı Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa Mehteran ilk açılışta kendine ayrı bir Python (uv) kurar (bir-iki dakika). Arayüz tarayıcıda `http://127.0.0.1:8766/` adresinde açılır ve terminal penceresi açık kaldıkça çalışır. Tarayıcı kendiliğinden açılmazsa bu adresi açın.
+
+### Linux
+
+Zip dosyasını açın (ya da `git clone https://github.com/tolgabuyuktanir/Mehteran.git`), sonra o klasörde bir terminalde `./mehter ui` komutunu çalıştırın.
+
+### git ile
+
+`git clone` ile alınan bir kopya (macOS, Windows ya da Linux) güncel kalır: başlatıcı, arayüz açılmadan önce `mehter update` komutunu çalıştırır (bkz. [Güncellemeler](#güncellemeler)).
+
+### npm ile
+
+Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) tek komut yeterlidir:
+
+```
+npx mehteran
+```
+
+İlk çalıştırma npm sürümündeki kaynak kodu `~/Mehteran` klasörüne kurar ve arayüzü açar. Kurulum için `tar` gerekir. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
+
+### macOS dosyayı başlatmazsa
+
+"Gerekli erişim izinleriniz yok" uyarısı çıkarsa: Terminal'i açın, `sh ` yazıp (sonunda boşluk) `Open Mehteran.command` dosyasını Terminal penceresine sürükleyin ve Enter'a basın.
 
 ## Komut satırı
 

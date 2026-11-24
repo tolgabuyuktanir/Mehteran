@@ -124,19 +124,20 @@
     <div class="panel-head">
       <div>
         <h2 data-i18n="setup_title"></h2>
-        <p class="muted" data-i18n="setup_intro"></p>
+        <p class="muted" id="setup-intro" data-i18n="setup_intro"></p>
       </div>
       <button type="button" class="btn" id="tools-refresh" data-i18n="refresh_status"></button>
     </div>
     <section class="card box onboarding" id="onboarding"></section>
-    <div id="tools" class="tool-grid"></div>
-    <p class="small muted config-note" id="config-note"></p>
+    <div id="tools" class="tool-grid ai-tools"></div>
+    <details class="config-details"><summary class="small" data-i18n="config_details"></summary>
+      <p class="small muted config-note" id="config-note"></p></details>
     <!-- the settings that are rarely changed: folded under their titles -->
     <details class="setup-more" open><summary data-i18n="providers_title"></summary>
       <section class="card box providers-panel" id="providers-panel"></section></details>
     <details class="setup-more"><summary data-i18n="background_title"></summary>
       <section class="card box background-panel" id="background-panel"></section></details>
-    <details class="setup-more"><summary data-i18n="local_title"></summary>
+    <details class="setup-more" id="local-details"><summary data-i18n="local_title"></summary>
       <section id="local-tools" class="local-tools"></section></details>
     <!-- the keys of the video workflow's image and voice services: only that workflow needs them -->
     <details class="setup-more" id="video-settings-details">
