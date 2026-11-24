@@ -1,6 +1,6 @@
 {
   "name": "mehteran",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local AI workflows on the AI tools you already use (Claude Code, Codex, Antigravity CLI, local models). This package installs and starts Mehteran.",
   "bin": {
     "mehteran": "bin/mehteran.js"
