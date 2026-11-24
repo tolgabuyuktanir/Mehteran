@@ -186,9 +186,9 @@ function toolCard(tool, terminal) {
       if (r) state.signInUntil = Date.now() + 10 * 60 * 1000;
       loadTools();
     };
-    if (tool.id === "gemini") actions.push(h("button", {type: "button", class: "btn" + main, onclick: (e) => login(e, "google")}, S("with_google")));
+    if (tool.id === "gemini") actions.push(h("button", {type: "button", class: "btn" + main, onclick: (e) => login(e, "google")}, S("sign_in_with_gemini")));
     else actions.push(h("button", {type: "button", class: "btn" + main, disabled: !terminal, onclick: (e) => login(e, "terminal")},
-      S({codex: "with_chatgpt", antigravity: "with_google"}[tool.id] || "with_claude")));
+      S("sign_in_with_" + (tool.id in {codex: 1, antigravity: 1} ? tool.id : "claude"))));  // the same words as Setup's steps
     if (["codex", "gemini"].includes(tool.id)) actions.push(h("button", {type: "button", class: "btn", onclick: () => {
       keyForm.hidden = !keyForm.hidden;
       if (!keyForm.hidden) $("input", keyForm).focus();
@@ -291,10 +291,11 @@ async function loadLocal() {
   state.pulling = pulling;
   const [ollama, ocr] = [data.tools.find((x) => x.id === "ollama"), data.tools.find((x) => x.id === "ocr")];
   fill($("#local-tools"),
-    h("div", {class: "panel-head local-head"}, h("div", {}, h("h2", {}, S("local_title")), h("p", {class: "muted"}, S("local_intro")))),
+    h("p", {class: "muted local-head"}, S("local_intro")),  // the fold's summary is the title
+    // The small tools side by side; Ollama, with its model list, across the whole width below them.
     h("div", {class: "local-grid"}, state.pdfTool ? pdfToolCard(state.pdfTool) : h("div", {id: "pdf-tool", hidden: true}),
-      ollamaCard(ollama, models, pull), ocrCard(ocr),
-      ...["typst", "pandoc", "speech", "qpdf", "browser"].map((id) => localToolCard(data.tools.find((x) => x.id === id)))));
+      ocrCard(ocr), ...["typst", "pandoc", "speech", "qpdf", "browser"].map((id) => localToolCard(data.tools.find((x) => x.id === id)))),
+    ollamaCard(ollama, models, pull));
   // An install job: the whole section again (its log grows). A download: only its progress line, so that the
   // buttons stay in place (a click on Cancel is not lost to a redraw); the section again when it ends.
   const jobs = data.tools.flatMap((x) => [x.job, x.languages_job, x.models_job]);
@@ -379,34 +380,47 @@ function modelManager(models, pull) {
       pulling ? h("button", {type: "button", class: "btn small danger", onclick: async (e) => { await act(e.currentTarget, () => api("POST", "/api/ollama/pull/cancel")); loadLocal(); }}, S("cancel")) : null),
     h("div", {class: "track", "aria-hidden": "true"}, h("div", {class: "fill" + (pull.error ? " failed" : pull.cancelled ? " stopped" : ""), "data-w": pull.done && !pull.error ? 100 : pull.percent || 0})),
     h("progress", {max: 100, value: pull.percent || 0, class: "visually-hidden", "aria-label": S("pull_progress", {name: pull.name})})) : null;
+  // An accordion: the installed models and the recommended ones, each folded. A part stays as the user left it when
+  // the card is drawn again (a download redraws it every second); with no model yet the recommended ones are open.
+  const fold = (key, title, openFirst, ...body) => {
+    const open = state.modelFolds && key in state.modelFolds ? state.modelFolds[key] : openFirst;
+    return h("details", {class: "model-fold", open, ontoggle: (e) => { (state.modelFolds = state.modelFolds || {})[key] = e.currentTarget.open; }},
+      h("summary", {}, title), h("div", {class: "stack"}, ...body));
+  };
+  const rest = models.recommended.filter((m) => tooBig(m) || m.kind === "embedding");
   const el = h("section", {class: "models-box stack"},
-    h("h4", {}, S("models_installed")),
-    models.installed.length ? h("ul", {class: "plain model-list"}, models.installed.map((m) => h("li", {class: "row"},
-      h("code", {}, m.name), h("span", {class: "small muted grow"}, `${gb(m.size)}${m.modified ? " · " + fmtTime(Date.parse(m.modified) / 1000) : ""}`),
-      h("button", {type: "button", class: "btn small danger", onclick: async (e) => {
-        if (!confirm(S("model_delete_confirm", {name: m.name}))) return;
-        if (await act(e.currentTarget, () => api("POST", "/api/ollama/delete", {name: m.name}))) { toast(S("deleted")); loadLocal(); }
-      }}, S("delete")))))
-      : h("p", {class: "small muted"}, S(models.running ? "no_local_models" : "ollama_not_running")),
     progress,
-    h("h4", {}, S("models_recommended")),
-    h("div", {class: "rec-grid"}, models.recommended.map((m) => {
-      const warn = tooBig(m);
-      return h("div", {class: "rec-card" + (warn ? " too-big" : "")},
-        h("div", {class: "row"}, h("code", {class: "grow"}, m.name),
-          m.kind === "vision" || m.kind === "embedding" ? h("span", {class: "badge"}, S(m.kind === "vision" ? "model_kind_vision" : "model_kind_embedding")) : null,
-          m.installed ? h("span", {class: "badge good"}, S("installed")) : null),
-        h("div", {class: "small muted"}, S("model_facts", {size: gb(m.size), ram: gb(m.ram), languages: m.languages.join(", ")})),
-        h("div", {class: "small"}, L(m.notes)),
-        warn ? h("div", {class: "small warn-text"}, "⚠ " + warn) : null,
-        m.installed ? null : h("button", {type: "button", class: "btn small" + (warn ? "" : " primary"), disabled: pulling,
-          onclick: (e) => start(e.currentTarget, m.name)}, S("download")));
-    })),
-    h("form", {class: "row custom-model", onsubmit: (e) => { e.preventDefault(); start($("button", e.currentTarget), custom.value.trim()); }},
-      h("label", {}, S("custom_model")), custom, h("button", {type: "submit", class: "btn", disabled: pulling}, S("download"))),
-    h("p", {class: "small muted"}, S("one_pull_note")));
+    fold("installed", S("models_installed_count", {count: models.installed.length}), false,
+      models.installed.length ? h("ul", {class: "plain model-list"}, models.installed.map((m) => h("li", {class: "row"},
+        h("code", {}, m.name), h("span", {class: "small muted grow"}, `${gb(m.size)}${m.modified ? " · " + fmtTime(Date.parse(m.modified) / 1000) : ""}`),
+        h("button", {type: "button", class: "btn small danger", onclick: async (e) => {
+          if (!confirm(S("model_delete_confirm", {name: m.name}))) return;
+          if (await act(e.currentTarget, () => api("POST", "/api/ollama/delete", {name: m.name}))) { toast(S("deleted")); loadLocal(); }
+        }}, S("delete")))))
+        : h("p", {class: "small muted"}, S(models.running ? "no_local_models" : "ollama_not_running"))),
+    fold("recommended", S("models_recommended"), !models.installed.length,
+      // One line per model: those that this computer runs well; the others (too big, or not for chatting) folded.
+      recTable(models.recommended.filter((m) => !tooBig(m) && m.kind !== "embedding"), tooBig, start, pulling),
+      rest.length ? h("details", {class: "small rec-more"}, h("summary", {}, S("models_more", {count: rest.length})),
+        recTable(rest, tooBig, start, pulling)) : null,
+      h("form", {class: "row custom-model", onsubmit: (e) => { e.preventDefault(); start($("button", e.currentTarget), custom.value.trim()); }},
+        h("label", {}, S("custom_model")), custom, h("button", {type: "submit", class: "btn", disabled: pulling}, S("download"))),
+      h("p", {class: "small muted"}, S("one_pull_note"))));
   el.querySelectorAll(".fill[data-w]").forEach((x) => (x.style.width = x.dataset.w + "%"));
   return el;
+}
+
+function recTable(list, tooBig, start, pulling) {
+  return h("div", {class: "table-wrap"}, h("table", {class: "rec-table"}, h("tbody", {}, list.map((m) => {
+    const warn = tooBig(m);
+    return h("tr", {class: warn ? "too-big" : ""},
+      h("th", {scope: "row"}, h("code", {}, m.name),
+        m.kind === "vision" || m.kind === "embedding" ? [" ", h("span", {class: "badge"}, S(m.kind === "vision" ? "model_kind_vision" : "model_kind_embedding"))] : null),
+      h("td", {class: "small muted nowrap"}, S("model_facts", {size: gb(m.size), ram: gb(m.ram), languages: m.languages.join(", ")})),
+      h("td", {class: "small"}, L(m.notes), warn ? h("div", {class: "warn-text"}, "⚠ " + warn) : null),
+      h("td", {class: "rec-action"}, m.installed ? h("span", {class: "badge good"}, S("installed"))
+        : h("button", {type: "button", class: "btn small" + (warn ? "" : " primary"), disabled: pulling, onclick: (e) => start(e.currentTarget, m.name)}, S("download"))));
+  }))));
 }
 
 function ocrCard(tool) {
@@ -436,10 +450,14 @@ function ocrCard(tool) {
     jobBox(tool.job, "ocr"),
     !tool.installed || (tool.job && !running && tool.job.code !== 0)
       ? h("div", {class: "actions"}, h("button", {type: "button", class: "btn primary", disabled: running, onclick: install}, S(running ? "installing" : "install"))) : null,
-    tool.installed ? h("fieldset", {class: "plain stack"}, h("legend", {}, S("ocr_languages_title")), boxes,
-      h("p", {class: "small muted"}, S("ocr_ottoman_note")),
-      h("div", {class: "row"}, h("button", {type: "button", class: "btn", disabled: langRunning, onclick: languages}, S("ocr_install_languages"))),
-      jobBox(tool.languages_job, "ocr-languages")) : null);
+    // The installed languages in one line; the list to add more folded, so the card stays as short as its neighbours.
+    tool.installed ? h("p", {class: "small"}, h("b", {}, S("ocr_languages_title")), ": ",
+      tool.available_languages.filter((l) => l.installed).map((l) => S("ocr_lang_" + l.code)).join(", ") || "–") : null,
+    tool.installed ? h("details", {class: "small ocr-more", open: Boolean(langRunning)}, h("summary", {}, S("ocr_add_languages")),
+      h("fieldset", {class: "plain stack"}, h("legend", {class: "visually-hidden"}, S("ocr_languages_title")), boxes,
+        h("p", {class: "small muted"}, S("ocr_ottoman_note")),
+        h("div", {class: "row"}, h("button", {type: "button", class: "btn", disabled: langRunning, onclick: languages}, S("ocr_install_languages"))))) : null,
+    tool.installed ? jobBox(tool.languages_job, "ocr-languages") : null);
 }
 
 // Typst, Pandoc, speech to text (whisper.cpp + ffmpeg) and qpdf: one card each, as the OCR card (install with a

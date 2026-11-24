@@ -61,8 +61,11 @@
       </div>
       <figure class="shot" style="margin:0">
         <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8766</span></div>
-        <img data-l="en" src="assets/screens/en-library.png" alt="The Mehteran workflow library with its ready-made templates" width="1360" height="860" loading="lazy">
-        <img data-l="tr" src="assets/screens/tr-library.png" alt="Mehteran iş akışı kütüphanesi ve hazır şablonlar" width="1360" height="860" loading="lazy">
+        <!-- the intro video (37 s, no sound): setup, the library, a run with the sample document, the result -->
+        <video data-l="en" src="assets/video/intro-en.mp4" poster="assets/video/intro-en.jpg" controls muted playsinline preload="none" width="1920" height="1080"
+          aria-label="Mehteran in 37 seconds: choose your AI account, pick a workflow, run it on a sample document, get the result"></video>
+        <video data-l="tr" src="assets/video/intro-tr.mp4" poster="assets/video/intro-tr.jpg" controls muted playsinline preload="none" width="1920" height="1080"
+          aria-label="37 saniyede Mehteran: yapay zekâ hesabınızı seçin, bir iş akışı seçin, örnek belgeyle çalıştırın, sonucu alın"></video>
       </figure>
     </div>
   </section>
@@ -79,6 +82,38 @@
       <span class="chip"><span class="dot gold"></span>Gemini CLI <small data-l="en">API key</small><small data-l="tr">API anahtarı</small></span>
     </div>
   </div>
+
+  <!-- ======================================================================= get started -->
+  <section class="band" id="start">
+    <div class="wrap">
+      <div class="start">
+        <h2 data-l="en">Quick start</h2>
+        <h2 data-l="tr">Hızlı başlangıç</h2>
+        <p data-l="en">You need a Windows or Mac computer and an internet connection. You do not need to install anything else first.</p>
+        <p data-l="tr">Windows ya da Mac bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez.</p>
+        <ol>
+          <li data-l="en"><b>Download</b> <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip" style="color:inherit">Mehteran (zip file)</a>. Your browser saves the file <code>Mehteran-main.zip</code>, usually in the Downloads folder.</li>
+          <li data-l="tr"><a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip" style="color:inherit">Mehteran'ı (zip dosyası)</a> <b>indirin</b>. Tarayıcınız <code>Mehteran-main.zip</code> dosyasını kaydeder; genellikle İndirilenler klasörüne.</li>
+          <li data-l="en"><b>Unpack the zip file.</b> Windows: right-click it, choose <b>Extract All…</b>, then click <b>Extract</b>. Mac: double-click it.</li>
+          <li data-l="tr"><b>Zip dosyasını açın.</b> Windows: dosyaya sağ tıklayın, <b>Tümünü Ayıkla…</b> seçin, sonra <b>Ayıkla</b>'ya tıklayın. Mac: dosyaya çift tıklayın.</li>
+          <li data-l="en"><b>Start Mehteran.</b> In the <code>Mehteran-main</code> folder, double-click <code>Open Mehteran.bat</code> (Windows) or <code>Open Mehteran.command</code> (Mac). A window opens: keep it open while you use Mehteran.</li>
+          <li data-l="tr"><b>Mehteran'ı başlatın.</b> <code>Mehteran-main</code> klasöründe <code>Open Mehteran.bat</code> (Windows) ya da <code>Open Mehteran.command</code> (Mac) dosyasına çift tıklayın. Bir pencere açılır: Mehteran'ı kullandığınız sürece açık bırakın.</li>
+          <li data-l="en"><b>Choose your AI account.</b> On the <b>Setup</b> tab, click <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> or <b>No subscription</b>. Mehteran then installs what it needs. This takes a few minutes.</li>
+          <li data-l="tr"><b>Yapay zekâ hesabınızı seçin.</b> <b>Kurulum</b> sekmesinde <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> ya da <b>Aboneliğim yok</b> seçeneğine tıklayın. Mehteran sonra gerekenleri kurar. Bu birkaç dakika sürer.</li>
+          <li data-l="en"><b>Sign in.</b> When the installation is finished, click <b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>, then sign in on the page that opens. If you chose <b>No subscription</b>, click <b>Download the recommended model</b> instead.</li>
+          <li data-l="tr"><b>Giriş yapın.</b> Kurulum bitince <b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b>'a tıklayın, sonra açılan sayfada giriş yapın. <b>Aboneliğim yok</b> seçtiyseniz bunun yerine <b>Önerilen modeli indir</b>'e tıklayın.</li>
+          <li data-l="en"><b>Start your first run.</b> When <b>Setup is complete</b> appears, click <b>Go to workflows →</b>. On the card <b>Work with a document</b>, click <b>Try with a sample document</b>, then <b>Start the run</b>.</li>
+          <li data-l="tr"><b>İlk çalıştırmayı başlatın.</b> <b>Kurulum tamamlandı</b> yazısı çıkınca <b>İş akışlarına git →</b>'e tıklayın. <b>Bir belgeyle çalış</b> kartında <b>Örnek belgeyle deneyin</b>'e, sonra <b>Çalıştırmayı başlat</b>'a tıklayın.</li>
+          <li data-l="en"><b>Get the result.</b> When the run is finished, the result appears under <b>Results</b>. To save it as a Word file, click <b>↓ Explanation (Word)</b>.</li>
+          <li data-l="tr"><b>Sonucu alın.</b> Çalıştırma bitince sonuç <b>Sonuçlar</b> altında görünür. Word dosyası olarak kaydetmek için <b>↓ Anlatım (Word)</b>'a tıklayın.</li>
+        </ol>
+        <p data-l="en">If Windows or the Mac blocks the file, the install guide shows what to click. It also describes Linux and the other ways to install.</p>
+        <p data-l="tr">Windows ya da Mac dosyayı engellerse kurulum rehberi neye tıklayacağınızı gösterir. Linux'u ve diğer kurulum yollarını da anlatır.</p>
+        <a class="btn" href="docs.html?lang=en#quick-start" data-l="en">Read the install guide</a>
+        <a class="btn" href="docs.html?lang=tr#tr-hizli-baslangic" data-l="tr">Kurulum rehberini okuyun</a>
+      </div>
+    </div>
+  </section>
 
   <!-- ======================================================================= features -->
   <section class="band" id="features">
@@ -375,37 +410,6 @@
     </div>
   </section>
 
-  <!-- ======================================================================= get started -->
-  <section class="band" id="start" style="padding-top:0">
-    <div class="wrap">
-      <div class="start">
-        <h2 data-l="en">Quick start</h2>
-        <h2 data-l="tr">Hızlı başlangıç</h2>
-        <p data-l="en">You need a computer with Windows or macOS and an internet connection. You do not need to install anything else first.</p>
-        <p data-l="tr">Windows ya da macOS yüklü bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez.</p>
-        <ol>
-          <li data-l="en"><b>Download</b> <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip" style="color:inherit">Mehteran (zip file)</a>. Your browser saves <code>Mehteran-main.zip</code>.</li>
-          <li data-l="tr"><a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip" style="color:inherit">Mehteran'ı (zip dosyası)</a> <b>indirin</b>. Tarayıcınız <code>Mehteran-main.zip</code> dosyasını kaydeder.</li>
-          <li data-l="en"><b>Unpack it.</b> Windows: right-click the zip file, choose <b>Extract All…</b>. Mac: double-click the zip file.</li>
-          <li data-l="tr"><b>Zip dosyasını açın.</b> Windows: dosyaya sağ tıklayın, <b>Tümünü Ayıkla…</b> seçin. Mac: dosyaya çift tıklayın.</li>
-          <li data-l="en"><b>Start Mehteran.</b> In the <code>Mehteran-main</code> folder, double-click <code>Open Mehteran.bat</code> (Windows) or <code>Open Mehteran.command</code> (Mac). Keep the window that opens; closing it stops Mehteran.</li>
-          <li data-l="tr"><b>Mehteran'ı başlatın.</b> <code>Mehteran-main</code> klasöründe <code>Open Mehteran.bat</code> (Windows) ya da <code>Open Mehteran.command</code> (Mac) dosyasına çift tıklayın. Açılan pencereyi açık bırakın; kapatmak Mehteran'ı durdurur.</li>
-          <li data-l="en"><b>Choose your AI account</b> on the <b>Setup</b> tab: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> or <b>No subscription</b>. Mehteran installs what it needs by itself.</li>
-          <li data-l="tr"><b>Kurulum</b> sekmesinde <b>yapay zekâ hesabınızı seçin</b>: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> ya da <b>Aboneliğim yok</b>. Mehteran gerekenleri kendisi kurar.</li>
-          <li data-l="en"><b>Sign in</b> with <b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>. A window and a sign-in page in your browser open. Without a subscription: <b>Download the recommended model</b> (with the model's name).</li>
-          <li data-l="tr"><b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b> ile <b>giriş yapın</b>. Bir pencere ve tarayıcıda bir giriş sayfası açılır. Aboneliğiniz yoksa: <b>Önerilen modeli indir</b> (modelin adıyla).</li>
-          <li data-l="en"><b>Run a workflow.</b> On the card <b>Work with a document</b>, click <b>Try with a sample document</b> or <b>Choose a document</b>, then <b>Start the run</b>.</li>
-          <li data-l="tr"><b>Bir iş akışı çalıştırın.</b> <b>Bir belgeyle çalış</b> kartında <b>Örnek belgeyle deneyin</b> ya da <b>Belge seç ve başla</b>'ya, sonra <b>Çalıştırmayı başlat</b>'a tıklayın.</li>
-          <li data-l="en"><b>Get the result</b> under <b>Results</b>, and download it as Word.</li>
-          <li data-l="tr"><b>Sonucu</b> <b>Sonuçlar</b> altında <b>alın</b> ve Word olarak indirin.</li>
-        </ol>
-        <p data-l="en">If Windows or macOS blocks the file, or for Linux and <code>npx mehteran</code>, read the install guide.</p>
-        <p data-l="tr">Windows ya da macOS dosyayı engellerse, ya da Linux ve <code>npx mehteran</code> için kurulum rehberini okuyun.</p>
-        <a class="btn" href="docs.html#install" data-l="en">Read the install guide</a>
-        <a class="btn" href="docs.html#tr-kurulum" data-l="tr">Kurulum rehberini okuyun</a>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer class="foot">

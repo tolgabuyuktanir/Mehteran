@@ -968,7 +968,15 @@
   "pull_recommended": "下载推荐的模型（{name}）",
   "config_details": "配置详情",
   "welcome_sample": "用示例文档试试",
-  "sample_file_name": "zufang-hetong-shili.md"
+  "sample_file_name": "zufang-hetong-shili.md",
+  "tool_settings_title": "各工具设置",
+  "tool_settings_intro": "工具一次可以发起多少个调用，以及是否可以使用 API 密钥（按使用计费）。",
+  "auto_more": "快速、强力和仅本地的选择",
+  "models_more": "其他模型（{count}）：对这台电脑来说太大，或不用于聊天",
+  "ocr_add_languages": "添加语言",
+  "models_installed_count": "已安装的模型（{count}）",
+  "describe_transcript": "AI 工具的记录",
+  "describe_transcript_wait": "正在等待 AI 工具的第一句话…"
  },
  "messages": {
   "video_settings_invalid": "请检查密钥或声音 ID。只粘贴值本身，不要带空格。",

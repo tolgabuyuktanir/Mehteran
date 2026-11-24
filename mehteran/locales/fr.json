@@ -968,7 +968,15 @@
   "pull_recommended": "Télécharger le modèle recommandé ({name})",
   "config_details": "Détails de la configuration",
   "welcome_sample": "Essayer avec un document d'exemple",
-  "sample_file_name": "exemple-bail.md"
+  "sample_file_name": "exemple-bail.md",
+  "tool_settings_title": "Réglages par outil",
+  "tool_settings_intro": "Combien d'appels un outil peut faire à la fois, et s'il peut utiliser une clé API (payée à l'usage).",
+  "auto_more": "Choix rapide, puissant et local uniquement",
+  "models_more": "Autres modèles ({count}) : trop gros pour cet ordinateur ou pas faits pour discuter",
+  "ocr_add_languages": "Ajouter des langues",
+  "models_installed_count": "Modèles installés ({count})",
+  "describe_transcript": "Transcription de l'outil d'IA",
+  "describe_transcript_wait": "En attente des premiers mots de l'outil d'IA…"
  },
  "messages": {
   "video_settings_invalid": "Vérifiez la clé ou l’ID de voix. Collez uniquement la valeur, sans espaces.",

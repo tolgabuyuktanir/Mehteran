@@ -271,3 +271,4 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .prose .card h3 { margin: 0 0 6px; font-size: 18px; }
 .hit { background: var(--gold-soft); border-radius: 3px; }
 .empty-search { color: var(--muted); padding: 20px 0; }
+.shot video { display: block; width: 100%; height: auto; background: var(--tide); }

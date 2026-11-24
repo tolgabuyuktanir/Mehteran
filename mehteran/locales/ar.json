@@ -968,7 +968,15 @@
   "pull_recommended": "تنزيل النموذج الموصى به ({name})",
   "config_details": "تفاصيل الإعداد",
   "welcome_sample": "جرّب مستندًا نموذجيًا",
-  "sample_file_name": "aqd-igar-namudhaj.md"
+  "sample_file_name": "aqd-igar-namudhaj.md",
+  "tool_settings_title": "إعدادات كل أداة",
+  "tool_settings_intro": "عدد الطلبات التي يمكن للأداة إجراؤها في وقت واحد، وهل يمكنها استخدام مفتاح API (مدفوع حسب الاستخدام).",
+  "auto_more": "الاختيارات السريعة والقوية والمحلية فقط",
+  "models_more": "نماذج أخرى ({count}): كبيرة جدًا على هذا الحاسوب أو ليست للمحادثة",
+  "ocr_add_languages": "إضافة لغات",
+  "models_installed_count": "النماذج المثبتة ({count})",
+  "describe_transcript": "نص ما تكتبه أداة الذكاء الاصطناعي",
+  "describe_transcript_wait": "في انتظار أولى كلمات أداة الذكاء الاصطناعي…"
  },
  "messages": {
   "video_settings_invalid": "تحقق من المفتاح أو معرّف الصوت. الصق القيمة فقط، دون مسافات.",

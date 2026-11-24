@@ -10,6 +10,8 @@ Thank you for helping. Bug reports, translation fixes, new templates and code ch
 - For a larger change (a new feature, a new step type, a change in how runs work), open an issue first. Describe the problem and your plan, so that nobody does the same work twice.
 - For a security problem, do not open an issue. See [SECURITY.md](SECURITY.md).
 
+Planned improvements that are free to take are listed in [ROADMAP.md](ROADMAP.md).
+
 ## Run Mehteran from the source
 
 Mehteran needs Python 3.11 or later and nothing else. There are no packages to install and no build step.
@@ -22,7 +24,7 @@ cd Mehteran
 
 ## Checks before a pull request
 
-CI runs these on Ubuntu, macOS and Windows. Run them on your computer first:
+CI runs the first four commands on Ubuntu, macOS and Windows. The unit tests also check the locale files, as the last command does. Run all of them on your computer first:
 
 ```
 python3 -m pip install ruff==0.4.10

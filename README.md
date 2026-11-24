@@ -6,50 +6,59 @@
 
 <p align="center"><a href="README.tr.md">Türkçe</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/">Website</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html">Docs</a> · <a href="docs/mehteran.md">Full reference</a></p>
 
-![The Mehteran workflow library](docs/assets/screens/en-library.png)
+Mehteran does repeatable jobs with AI on your own computer. For example, it reads a document, asks an AI for a summary, waits for your approval and saves the result as a Word file. It uses the AI account that you already have (Claude, ChatGPT or Google) or a free model on this computer. Mehteran itself is free.
 
-**Try a workflow:** Give **Meeting minutes and actions** your meeting notes. The workflow drafts a summary and action list, waits for your review, and exports the result as Word, HTML or Markdown.
-
-[Run your first workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#run) · [Make it your own](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#build)
-
-Mehteran turns the AI tools you already use into repeatable workflows. A workflow reads a document, asks a model, checks the answer, lets a person approve and saves a Word or PDF file. Mehteran calls the AI through the command-line tools of your subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own, and it charges nothing itself. You use your own plans, within their terms (see [Subscriptions and the providers' terms](#subscriptions-and-the-providers-terms)).
-
-It runs on macOS, Windows and Linux, in 18 interface languages.
+<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en"><img src="docs/assets/video/intro-en.jpg" width="640" alt="Mehteran intro video"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en">▶ Watch Mehteran in 37 seconds (no sound)</a></p>
 
 ## Quick start
 
-You need a computer with Windows or macOS and an internet connection. You do not need to install anything else first. For Linux, see [Other ways to install](#other-ways-to-install).
+You need a Windows or Mac computer and an internet connection. You do not need to install anything else first. For Linux, see [Other ways to install](#other-ways-to-install).
 
 1. **Download Mehteran.** Click this link: [Download Mehteran (zip file)](https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip). Your browser saves the file `Mehteran-main.zip`, usually in the **Downloads** folder.
 2. **Unpack the zip file.**
-   - **Windows:** right-click `Mehteran-main.zip`, choose **Extract All…**, then click **Extract**. Do not start Mehteran from inside the zip file: that does not work.
+   - **Windows:** right-click `Mehteran-main.zip`, choose **Extract All…**, then click **Extract**.
    - **Mac:** double-click `Mehteran-main.zip`. If the `Mehteran-main` folder is already there, skip this step.
-3. **Start Mehteran.** Open the `Mehteran-main` folder. On Windows, it can contain a second `Mehteran-main` folder: then open that one.
+3. **Start Mehteran.** Open the unpacked `Mehteran-main` folder. If it contains a second `Mehteran-main` folder, open that one.
    - **Windows:** double-click `Open Mehteran.bat`. If "Windows protected your PC" appears, click **More info**, then **Run anyway**.
    - **Mac:** double-click `Open Mehteran.command`. If the Mac says that it cannot open the file, open **System Settings** → **Privacy & Security**, scroll down, click **Open Anyway** for `Open Mehteran.command`, and confirm. On older macOS versions: right-click the file, choose **Open**, then click **Open** again.
 
-   A window with text opens. This is Mehteran's window. The first start can take a minute or two, because Mehteran prepares itself. Then Mehteran opens in your browser. Keep Mehteran's window open while you use Mehteran.
-4. **Choose your AI account.** Mehteran opens on the **Setup** tab and asks **Which AI account do you have?** Click your choice:
+   A window with text opens. This is Mehteran's window: keep it open while you use Mehteran. The first start can take a minute or two. Then Mehteran opens in your browser.
+4. **Choose your AI account.** Mehteran opens on the **Setup** tab and asks **Which AI account do you have?** Click one choice:
    - **Claude**: a Claude Pro or Max subscription.
    - **ChatGPT**: ChatGPT Plus or Pro.
    - **Google**: a Google account.
    - **No subscription**: a free model that runs on this computer. It is slower and needs enough memory.
 
-   Mehteran then installs what it needs by itself. This takes a few minutes.
-5. **Sign in.** Click **Sign in with Claude**, **Sign in with ChatGPT** or **Sign in with Google**. A window and a sign-in page in your browser open. Sign in there with your account; the Setup page updates by itself. If you chose **No subscription**, click **Download the recommended model** instead (the button also shows the model's name). When you see **Setup is complete**, click **Go to workflows →**.
-6. **Start your first workflow.** On the **Workflows** tab, find the card **Work with a document**. To try it with a short sample, click **Try with a sample document**. To use your own file, click **Choose a document**, then **Choose a file**, and pick a document (for example a letter or a contract, as PDF or Word). Then click **Start the run**.
+   If you are not sure, choose the account that you already pay for. Mehteran then installs what it needs. This takes a few minutes.
+5. **Sign in.** When the installation is finished, a sign-in button appears. Click it: **Sign in with Claude**, **Sign in with ChatGPT** or **Sign in with Google**. A window and a sign-in page in your browser open. Sign in there with your account. The Setup page updates by itself.
+   - If you chose **No subscription**, click **Download the recommended model** instead. The button also shows the name of the model.
+6. **Start your first run.** When you see **Setup is complete**, click **Go to workflows →**. Find the card **Work with a document**.
+   - To try a short sample, click **Try with a sample document**.
+   - To use your own file, click **Choose a document**, then **Choose a file**, and pick a PDF or Word file (for example a letter or a contract).
+
+   Then click **Start the run**.
 7. **Get the result.** Mehteran shows each step while it works. When the run is finished, the explanation appears under **Results**. To save it as a Word file, click **↓ Explanation (Word)**.
 
-Next time, double-click the same file again (`Open Mehteran.bat` or `Open Mehteran.command`). Closing Mehteran's window stops Mehteran. You can change the AI account later on the **Setup** tab with **Change**.
+To start Mehteran again later, double-click the same file (`Open Mehteran.bat` or `Open Mehteran.command`). Closing Mehteran's window stops Mehteran. To use another AI account, click **Change** on the **Setup** tab.
 
-Everything else (settings, local models, schedules, the command line) is in the [documentation](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en).
+The [documentation](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en) explains everything else: settings, local models, schedules and the command line.
+
+## Try more
+
+![The Mehteran workflow library](docs/assets/screens/en-library.png)
+
+Give the workflow **Meeting minutes and action items** your meeting notes. It drafts a summary and an action list, waits for your review, and saves the result as a Word, HTML or Markdown file.
+
+[Run your first workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#run) · [Build your own workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#build)
 
 ## Why Mehteran
+
+Mehteran turns the AI tools that you already use into repeatable workflows. A workflow reads a document, asks a model, checks the answer, lets a person approve and saves a Word or PDF file. Mehteran calls the AI through the command-line tools of your subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own, and it charges nothing. You use your own plans, within their terms (see [Subscriptions and the providers' terms](#subscriptions-and-the-providers-terms)). It runs on macOS, Windows and Linux, in 18 interface languages.
 
 - **No extra bill.** Mehteran removes API keys from every model call, so a tool cannot bill an API account by accident. A billed API key is used only when you allow it for that tool.
 - **Your files stay with you.** The interface runs only on `127.0.0.1`. Runs, results and settings are folders on your disk. A workflow marked "local only" sends no text off the computer.
 - **78 ready-made templates** in 10 categories: web research, documents, writing, business, legal, education, exams, research, data and software. Four of them are marked "Experimental": they depend on websites or paid services that change often.
-- **Describe it, it is built**: write in a sentence what you need; your installed tools build the workflow, save it and show the instruction of every step, which you can edit. Or draw the steps on a canvas (AI steps, conditions, loops, human approvals). "Test this step" runs one step on its own.
+- **"Describe it, I will build it"**: write in a sentence what you need. Your installed AI tool builds the workflow and saves it, and you watch its transcript while it works. You then see the instruction of every step and can edit it. Or draw the steps on a canvas (AI steps, conditions, loops, human approvals). "Test this step" runs one step on its own.
 - **Searches sites for you**: find home or car listings, or a hotel for your dates, compared in one table with links. A read-only browser does it without a window; it never books or contacts anyone.
 - **Real documents in and out.** Reads PDF, Word, EPUB, Excel, web pages, scans (OCR) and recordings (speech to text). Saves Markdown, Word, HTML, PDF, EPUB, e-mail drafts, JSON and CSV.
 - **Usage limits do not break a run.** A step waits for the limit to reset, or continues with the next model of your order.
@@ -66,7 +75,7 @@ Everything else (settings, local models, schedules, the command line) is in the 
 | LM Studio, llama.cpp, vLLM (OpenAI-compatible local server) | Local | Stays on this computer |
 | Gemini CLI | API key (billed) | Google |
 
-You need at least one of them. The Setup tab installs the tools, signs you in and shows how much of each tool's usage limit is left (also in the header, on every tab). With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key.
+You need at least one of them. The Setup tab installs the tools and signs you in. Each tool's card on the Setup tab shows how much of its usage limit is left; the header shows the same on every tab. With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key.
 
 The optional local tools (Ollama, Tesseract OCR, Typst for PDF, Pandoc, whisper.cpp for speech to text, qpdf) are installed only when you ask, as pinned versions checked against SHA-256 sums.
 
@@ -79,29 +88,11 @@ Mehteran starts the providers' own, unmodified command-line tools on your comput
 - OpenAI documents `codex exec` for "repeatable workflows and pipelines" ([Codex CLI](https://developers.openai.com/codex/cli)). Its article on [Codex with a ChatGPT plan](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan) does not address automation.
 - Google's [Gemini CLI terms page](https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html) says which terms apply to each sign-in type. It does not address automation.
 
-So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on "Allow an API key (billed)" for that tool on the Setup tab. A local model (Ollama, LM Studio) has no such terms.
+So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on "Allow an API key (billed)" for that tool under Setup → AI tools of the workflows → Settings per tool. A local model (Ollama, LM Studio) has no such terms.
 
-**What Mehteran does by default:** scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model `auto`, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → AI tools of the workflows. A run that you start yourself is not affected.
+**What Mehteran does by default:** scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model `auto`, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → AI tools of the workflows → Scheduled and batch runs. A run that you start yourself is not affected.
 
 This is not legal advice. Checked on 24 November 2026; terms change.
-
-## The book translation
-
-The book translation app is no longer part of Mehteran. A computer that used it (a book in `books/`, or a `config.toml` in the code folder) keeps it: when its code is missing, Mehteran puts it back once from the git history, in the same place. `./translate ui` (Windows: `translate ui`), the books, the settings and the instructions keep working. The translation app gets no more updates. A copy installed from npm or a zip file is not changed. New installations do not get the translation app.
-
-## Run storage
-
-Restore individual runs from Trash in the Runs tab. Cleaning up old runs permanently deletes their files. The cleanup section shows Mehteran’s data size and free disk space.
-
-Add these optional settings to `configurations/engine.toml` in the data folder to enable automatic maintenance. Automatic deletion is off by default.
-
-```toml
-retain_runs_days = 90
-retain_usage_days = 365
-max_run_storage_gib = 10
-```
-
-Maintenance runs when the interface starts and once a day while it stays open. `retain_runs_days` permanently deletes old finished runs, including those in Trash. `retain_usage_days` clears old usage records. The storage limit is checked before admitting new runs. Active runs can still write output beyond it.
 
 ## Other ways to install
 
@@ -157,6 +148,24 @@ If you downloaded a zip file, download the new zip. Mehteran's workflows and run
 
 Codex, Node.js and the PDF reader go into the application's own folder (`.runtime/`). Claude Code, Antigravity CLI and the private Python (uv) go into your user folder (`~/.local/bin`; Windows: under `%LOCALAPPDATA%`). To remove the application, delete its folder and Mehteran's data folder (see the docs).
 
+## Run storage
+
+A deleted run goes to **Trash** on the **Runs** tab. Click **Restore** there to get it back. **Delete old runs…** deletes old runs and their files permanently. It also shows the size of Mehteran's data and the free disk space.
+
+Add these optional settings to `configurations/engine.toml` in the data folder to enable automatic maintenance. Automatic deletion is off by default.
+
+```toml
+retain_runs_days = 90
+retain_usage_days = 365
+max_run_storage_gib = 10
+```
+
+Maintenance runs when the interface starts and once a day while it stays open. `retain_runs_days` permanently deletes old finished runs, including those in Trash. `retain_usage_days` clears old usage records. The storage limit is checked before admitting new runs. Active runs can still write output beyond it.
+
+## The book translation
+
+The book translation app is no longer part of Mehteran. A computer that used it (a book in `books/`, or a `config.toml` in the code folder) keeps it: when its code is missing, Mehteran puts it back once from the git history, in the same place. `./translate ui` (Windows: `translate ui`), the books, the settings and the instructions keep working. The translation app gets no more updates. A copy installed from npm or a zip file is not changed. New installations do not get the translation app.
+
 ## Documentation
 
 - [Website](https://tolgabuyuktanir.github.io/Mehteran/) and [docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html): install, connect your AI tools, run and build workflows, local models, the workflow file, troubleshooting.
@@ -164,7 +173,7 @@ Codex, Node.js and the PDF reader go into the application's own folder (`.runtim
 
 ## Development
 
-- Code: `mehteran/`, Python standard library only (shared code such as the tool installer, document reading and the Word export is in `mehteran/common/`); the interface is plain JavaScript with no build step.
+- Code: `mehteran/`, Python standard library only, with PyYAML vendored in `mehteran/_vendor/` (shared code such as the tool installer, document reading and the Word export is in `mehteran/common/`); the interface is plain JavaScript with no build step.
 - Tests: `python3 -m unittest discover tests`. They use a fake AI tool and make no network calls. CI runs them on Ubuntu (Python 3.11 and 3.14), macOS and Windows (Python 3.12).
 - The evaluation set (`evals/`, `mehter eval`) makes real model calls. CI does not run it.
 - The npm package (`npx mehteran`) is in `npm/`: one Node script with no dependencies, which installs the code folder and starts its launcher. For a new version, raise `version` in `npm/package.json` and commit the change. `npm pack` puts an archive of the current commit into the package. Check the package, then publish it.
@@ -172,7 +181,7 @@ Codex, Node.js and the PDF reader go into the application's own folder (`.runtim
 
 ## Contributing
 
-Bug reports, translation fixes and new templates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+Bug reports, translation fixes and new templates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately, as described in [SECURITY.md](SECURITY.md). Planned improvements that anyone can take are in [ROADMAP.md](ROADMAP.md).
 
 ## License
 

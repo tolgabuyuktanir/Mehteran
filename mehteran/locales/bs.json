@@ -968,7 +968,15 @@
   "pull_recommended": "Preuzmi preporučeni model ({name})",
   "config_details": "Detalji konfiguracije",
   "welcome_sample": "Isprobaj s primjerom dokumenta",
-  "sample_file_name": "primjer-ugovora-o-najmu.md"
+  "sample_file_name": "primjer-ugovora-o-najmu.md",
+  "tool_settings_title": "Postavke po alatu",
+  "tool_settings_intro": "Koliko poziva alat smije uputiti istovremeno i smije li koristiti API ključ (plaća se po upotrebi).",
+  "auto_more": "Brzi, jaki i samo lokalni izbori",
+  "models_more": "Ostali modeli ({count}): preveliki za ovaj računar ili nisu za razgovor",
+  "ocr_add_languages": "Dodaj jezike",
+  "models_installed_count": "Instalirani modeli ({count})",
+  "describe_transcript": "Zapis AI alata",
+  "describe_transcript_wait": "Čeka se prva riječ AI alata…"
  },
  "messages": {
   "video_settings_invalid": "Provjerite ključ ili ID glasa. Zalijepite samo vrijednost, bez razmaka.",

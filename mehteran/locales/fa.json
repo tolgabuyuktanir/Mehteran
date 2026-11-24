@@ -968,7 +968,15 @@
   "pull_recommended": "دانلود مدل پیشنهادی ({name})",
   "config_details": "جزئیات پیکربندی",
   "welcome_sample": "امتحان با یک سند نمونه",
-  "sample_file_name": "nemoone-ejarenameh.md"
+  "sample_file_name": "nemoone-ejarenameh.md",
+  "tool_settings_title": "تنظیمات هر ابزار",
+  "tool_settings_intro": "هر ابزار هم‌زمان چند درخواست می‌تواند بفرستد و آیا می‌تواند از کلید API (پرداخت به ازای استفاده) استفاده کند.",
+  "auto_more": "گزینه‌های سریع، قوی و فقط محلی",
+  "models_more": "مدل‌های دیگر ({count}): برای این رایانه بزرگ‌اند یا برای گفتگو نیستند",
+  "ocr_add_languages": "افزودن زبان",
+  "models_installed_count": "مدل‌های نصب‌شده ({count})",
+  "describe_transcript": "متن نوشته‌های ابزار هوش مصنوعی",
+  "describe_transcript_wait": "در انتظار نخستین کلمات ابزار هوش مصنوعی…"
  },
  "messages": {
   "video_settings_invalid": "کلید یا شناسهٔ صدا را بررسی کنید. فقط مقدار را بدون فاصله جای‌گذاری کنید.",

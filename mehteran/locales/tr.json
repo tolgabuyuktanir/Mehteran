@@ -968,7 +968,15 @@
   "pull_recommended": "Önerilen modeli indir ({name})",
   "config_details": "Yapılandırma ayrıntıları",
   "welcome_sample": "Örnek belgeyle deneyin",
-  "sample_file_name": "ornek-kira-sozlesmesi.md"
+  "sample_file_name": "ornek-kira-sozlesmesi.md",
+  "tool_settings_title": "Araç başına ayarlar",
+  "tool_settings_intro": "Bir aracın aynı anda kaç çağrı yapabileceği ve API anahtarı (kullanım başına ücretli) kullanıp kullanamayacağı.",
+  "auto_more": "Hızlı, güçlü ve yalnızca yerel seçimler",
+  "models_more": "Diğer modeller ({count}): bu bilgisayar için büyük ya da sohbet için değil",
+  "ocr_add_languages": "Dil ekle",
+  "models_installed_count": "Kurulu modeller ({count})",
+  "describe_transcript": "Yapay zekâ aracının dökümü",
+  "describe_transcript_wait": "Yapay zekâ aracının ilk sözleri bekleniyor…"
  },
  "messages": {
   "video_settings_invalid": "Anahtarı veya ses kimliğini kontrol edin. Yalnızca değeri boşluksuz yapıştırın.",

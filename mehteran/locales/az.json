@@ -968,7 +968,15 @@
   "pull_recommended": "Tövsiyə olunan modeli yüklə ({name})",
   "config_details": "Konfiqurasiya təfərrüatları",
   "welcome_sample": "Nümunə sənədlə sınayın",
-  "sample_file_name": "numune-icare-muqavilesi.md"
+  "sample_file_name": "numune-icare-muqavilesi.md",
+  "tool_settings_title": "Alət üzrə ayarlar",
+  "tool_settings_intro": "Alətin eyni anda neçə sorğu edə biləcəyi və API açarından (istifadəyə görə ödənişli) istifadə edə bilib-bilməyəcəyi.",
+  "auto_more": "Sürətli, güclü və yalnız yerli seçimlər",
+  "models_more": "Digər modellər ({count}): bu kompüter üçün böyükdür və ya söhbət üçün deyil",
+  "ocr_add_languages": "Dil əlavə et",
+  "models_installed_count": "Quraşdırılmış modellər ({count})",
+  "describe_transcript": "Süni intellekt alətinin yazdıqları",
+  "describe_transcript_wait": "Süni intellekt alətinin ilk sözləri gözlənilir…"
  },
  "messages": {
   "video_settings_invalid": "Açarı və ya səs ID-sini yoxlayın. Yalnız dəyəri, boşluqsuz yapışdırın.",

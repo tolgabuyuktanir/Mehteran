@@ -968,7 +968,15 @@
   "pull_recommended": "Shkarko modelin e rekomanduar ({name})",
   "config_details": "Detajet e konfigurimit",
   "welcome_sample": "Provo me një dokument shembull",
-  "sample_file_name": "shembull-kontrate-qiraje.md"
+  "sample_file_name": "shembull-kontrate-qiraje.md",
+  "tool_settings_title": "Cilësimet për çdo mjet",
+  "tool_settings_intro": "Sa thirrje mund të bëjë një mjet njëkohësisht dhe nëse mund të përdorë një çelës API (me pagesë për përdorim).",
+  "auto_more": "Zgjedhje e shpejtë, e fortë dhe vetëm lokale",
+  "models_more": "Modele të tjera ({count}): shumë të mëdha për këtë kompjuter ose jo për bisedë",
+  "ocr_add_languages": "Shto gjuhë",
+  "models_installed_count": "Modelet e instaluara ({count})",
+  "describe_transcript": "Transkripti i mjetit të IA-së",
+  "describe_transcript_wait": "Në pritje të fjalëve të para të mjetit të IA-së…"
  },
  "messages": {
   "video_settings_invalid": "Kontrolloni çelësin ose ID-në e zërit. Ngjitni vetëm vlerën, pa hapësira.",

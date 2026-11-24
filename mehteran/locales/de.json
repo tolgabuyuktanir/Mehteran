@@ -968,7 +968,15 @@
   "pull_recommended": "Empfohlenes Modell herunterladen ({name})",
   "config_details": "Konfigurationsdetails",
   "welcome_sample": "Mit einem Beispieldokument ausprobieren",
-  "sample_file_name": "beispiel-mietvertrag.md"
+  "sample_file_name": "beispiel-mietvertrag.md",
+  "tool_settings_title": "Einstellungen je Werkzeug",
+  "tool_settings_intro": "Wie viele Aufrufe ein Werkzeug gleichzeitig machen darf und ob es einen API-Schlüssel (pro Nutzung bezahlt) verwenden darf.",
+  "auto_more": "Schnelle, starke und nur lokale Auswahl",
+  "models_more": "Weitere Modelle ({count}): zu groß für diesen Computer oder nicht zum Chatten",
+  "ocr_add_languages": "Sprachen hinzufügen",
+  "models_installed_count": "Installierte Modelle ({count})",
+  "describe_transcript": "Protokoll des KI-Werkzeugs",
+  "describe_transcript_wait": "Warten auf die ersten Worte des KI-Werkzeugs …"
  },
  "messages": {
   "video_settings_invalid": "Prüfen Sie den Schlüssel oder die Stimmen-ID. Fügen Sie nur den Wert ein, ohne Leerzeichen.",

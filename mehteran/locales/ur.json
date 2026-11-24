@@ -968,7 +968,15 @@
   "pull_recommended": "تجویز کردہ ماڈل ڈاؤن لوڈ کریں ({name})",
   "config_details": "کنفیگریشن کی تفصیلات",
   "welcome_sample": "نمونے کی دستاویز سے آزمائیں",
-  "sample_file_name": "namoona-kiraya-nama.md"
+  "sample_file_name": "namoona-kiraya-nama.md",
+  "tool_settings_title": "ہر ٹول کی ترتیبات",
+  "tool_settings_intro": "ایک ٹول ایک ساتھ کتنی کالیں کر سکتا ہے، اور کیا وہ API کلید (فی استعمال ادائیگی) استعمال کر سکتا ہے۔",
+  "auto_more": "تیز، طاقتور اور صرف مقامی انتخاب",
+  "models_more": "دوسرے ماڈل ({count}): اس کمپیوٹر کے لیے بہت بڑے یا گفتگو کے لیے نہیں",
+  "ocr_add_languages": "زبانیں شامل کریں",
+  "models_installed_count": "انسٹال شدہ ماڈل ({count})",
+  "describe_transcript": "اے آئی ٹول کی تحریر",
+  "describe_transcript_wait": "اے آئی ٹول کے پہلے الفاظ کا انتظار ہے…"
  },
  "messages": {
   "video_settings_invalid": "کلید یا آواز کی شناخت جانچیں۔ صرف قدر پیسٹ کریں، خالی جگہوں کے بغیر۔",

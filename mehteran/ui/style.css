@@ -524,7 +524,8 @@ dialog.drawer {
 .need.optional { color: var(--muted); }
 .local-tools { margin-top: 32px; }
 .local-head { margin-bottom: 14px; }
-.local-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.local-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; align-items: start;
+  margin-bottom: 16px; }
 .local-tool[data-id="ollama"] { border-top-color: var(--ink); }
 .local-tool[data-id="ocr"] { border-top-color: var(--gold); }
 .local-tool .notice { margin: 0; }
@@ -1198,3 +1199,24 @@ pre.json-view { font: 13px/1.55 var(--mono); white-space: pre-wrap; overflow-wra
 .ready-line .stack { gap: 2px; }
 .usage-chip-window { color: var(--muted); font-weight: 400; }
 .mono { font-family: var(--mono); }
+
+/* Local tools: Ollama across the width; its recommended models as one table, the rest folded. */
+.local-tools > .local-tool[data-id="ollama"] { margin-top: 0; }
+.rec-table { width: 100%; border-collapse: collapse; }
+.rec-table th, .rec-table td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--line); font-weight: 400; }
+.rec-table tr:first-child th, .rec-table tr:first-child td { border-top: 0; }
+.rec-table tr.too-big { color: var(--muted); }
+.rec-table .rec-action { text-align: right; white-space: nowrap; }
+.rec-table .nowrap { white-space: nowrap; }
+.rec-more { margin-top: 6px; }
+.rec-more summary { cursor: pointer; color: var(--muted); }
+.providers-block { margin-top: 20px; display: grid; gap: 8px; }
+.providers-block h3 { margin: 0; }
+.providers-lead { margin: 0; }
+.providers-more summary { cursor: pointer; font: 600 18px var(--serif); }
+.ocr-more summary { cursor: pointer; color: var(--link); }
+.model-fold { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.model-fold > summary { cursor: pointer; padding: 10px 14px; font: 600 16px var(--serif); }
+.model-fold[open] > summary { border-bottom: 1px solid var(--line); }
+.model-fold > .stack { padding: 10px 14px 14px; }
+.job-log.transcript { max-height: 320px; white-space: pre-wrap; word-break: break-word; font: 12.5px/1.55 var(--mono); }

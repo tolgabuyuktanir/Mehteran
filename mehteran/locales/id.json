@@ -968,7 +968,15 @@
   "pull_recommended": "Unduh model yang disarankan ({name})",
   "config_details": "Detail konfigurasi",
   "welcome_sample": "Coba dengan dokumen contoh",
-  "sample_file_name": "contoh-surat-sewa.md"
+  "sample_file_name": "contoh-surat-sewa.md",
+  "tool_settings_title": "Pengaturan per alat",
+  "tool_settings_intro": "Berapa banyak panggilan yang boleh dilakukan alat sekaligus, dan apakah alat boleh memakai kunci API (dibayar per penggunaan).",
+  "auto_more": "Pilihan cepat, kuat, dan hanya lokal",
+  "models_more": "Model lain ({count}): terlalu besar untuk komputer ini atau bukan untuk mengobrol",
+  "ocr_add_languages": "Tambah bahasa",
+  "models_installed_count": "Model terpasang ({count})",
+  "describe_transcript": "Transkrip alat AI",
+  "describe_transcript_wait": "Menunggu kata-kata pertama alat AI…"
  },
  "messages": {
   "video_settings_invalid": "Periksa kunci atau ID suara. Tempel hanya nilainya, tanpa spasi.",

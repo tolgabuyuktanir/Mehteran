@@ -968,7 +968,15 @@
   "pull_recommended": "Scarica il modello consigliato ({name})",
   "config_details": "Dettagli della configurazione",
   "welcome_sample": "Prova con un documento di esempio",
-  "sample_file_name": "esempio-contratto-affitto.md"
+  "sample_file_name": "esempio-contratto-affitto.md",
+  "tool_settings_title": "Impostazioni per strumento",
+  "tool_settings_intro": "Quante chiamate uno strumento può fare insieme e se può usare una chiave API (a pagamento per uso).",
+  "auto_more": "Scelte veloce, potente e solo locale",
+  "models_more": "Altri modelli ({count}): troppo grandi per questo computer o non adatti alla chat",
+  "ocr_add_languages": "Aggiungi lingue",
+  "models_installed_count": "Modelli installati ({count})",
+  "describe_transcript": "Trascrizione dello strumento di IA",
+  "describe_transcript_wait": "In attesa delle prime parole dello strumento di IA…"
  },
  "messages": {
   "video_settings_invalid": "Controlla la chiave o l’ID voce. Incolla solo il valore, senza spazi.",

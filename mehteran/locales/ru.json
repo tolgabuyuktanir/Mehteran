@@ -968,7 +968,15 @@
   "pull_recommended": "Скачать рекомендуемую модель ({name})",
   "config_details": "Подробности настройки",
   "welcome_sample": "Попробовать на примере документа",
-  "sample_file_name": "primer-dogovora-arendy.md"
+  "sample_file_name": "primer-dogovora-arendy.md",
+  "tool_settings_title": "Настройки инструментов",
+  "tool_settings_intro": "Сколько запросов инструмент может выполнять одновременно и может ли он использовать ключ API (оплата за использование).",
+  "auto_more": "Быстрый, сильный и только локальный выбор",
+  "models_more": "Другие модели ({count}): слишком большие для этого компьютера или не для чата",
+  "ocr_add_languages": "Добавить языки",
+  "models_installed_count": "Установленные модели ({count})",
+  "describe_transcript": "Расшифровка работы ИИ-инструмента",
+  "describe_transcript_wait": "Ожидание первых слов ИИ-инструмента…"
  },
  "messages": {
   "video_settings_invalid": "Проверьте ключ или ID голоса. Вставляйте только значение, без пробелов.",

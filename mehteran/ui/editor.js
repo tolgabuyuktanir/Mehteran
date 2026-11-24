@@ -1615,16 +1615,24 @@ const Drafter = (() => {
     toast(S(result.valid ? "describe_done" : "describe_done_invalid"));
   }
 
-  // A draft job shown in place (the library's box, the "Here is what I built" card): one line, "Stop", the log under
-  // "Details". onEnd gets the job's last state.
+  // A draft job shown in place (the library's box, the "Here is what I built" card): one line, "Stop", and the tool's
+  // transcript as it works (its text and tool uses, from the live log: toolstream.py), open so that the wait shows
+  // what is happening; it can be folded. onEnd gets the job's last state.
   async function inline(body, el, onEnd) {
     let job;
     try { job = (await api("POST", "/api/editor/draft", body)).id; } catch (err) { return onEnd({status: "failed", error: err.message}); }
-    const log = h("pre", {class: "job-log", "aria-label": S("live_log")});
+    const log = h("pre", {class: "job-log transcript", "aria-label": S("describe_transcript"), "aria-live": "off"}, S("describe_transcript_wait"));
+    let first = true;
     fill(el, h("div", {class: "job-line"}, h("span", {class: "spinner", "aria-hidden": "true"}), h("span", {role: "status"}, S("describe_working_short")),
       h("button", {type: "button", class: "btn small", onclick: () => api("POST", `/api/editor/jobs/${job}/cancel`).catch(() => {})}, S("describe_stop"))),
-    h("details", {class: "job-details"}, h("summary", {class: "small muted"}, S("details")), log));
-    await Editor.followJob(job, (state) => { log.textContent += state.log; log.scrollTop = log.scrollHeight; }, onEnd);
+    h("details", {class: "job-details", open: true}, h("summary", {class: "small muted"}, S("describe_transcript")), log));
+    await Editor.followJob(job, (state) => {
+      if (!state.log) return;
+      if (first) { log.textContent = ""; first = false; }
+      const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 40;  // follow the end unless the user scrolled up
+      log.textContent += state.log;
+      if (stick) log.scrollTop = log.scrollHeight;
+    }, onEnd);
   }
 
   const failure = (state) => (state.status === "cancelled" ? S("describe_cancelled") : state.error || S("describe_failed"));

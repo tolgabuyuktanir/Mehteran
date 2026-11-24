@@ -968,7 +968,15 @@
   "pull_recommended": "おすすめのモデルをダウンロード（{name}）",
   "config_details": "設定の詳細",
   "welcome_sample": "サンプル文書で試す",
-  "sample_file_name": "sample-chintai-keiyaku.md"
+  "sample_file_name": "sample-chintai-keiyaku.md",
+  "tool_settings_title": "ツールごとの設定",
+  "tool_settings_intro": "ツールが同時に行える呼び出しの数と、API キー（使用ごとに課金）を使ってよいかどうか。",
+  "auto_more": "高速・高性能・ローカルのみの選択",
+  "models_more": "その他のモデル（{count}）：このコンピューターには大きすぎる、またはチャット用ではないもの",
+  "ocr_add_languages": "言語を追加",
+  "models_installed_count": "インストール済みのモデル（{count}）",
+  "describe_transcript": "AI ツールの記録",
+  "describe_transcript_wait": "AI ツールの最初の出力を待っています…"
  },
  "messages": {
   "video_settings_invalid": "キーまたは音声 ID を確認してください。空白を含めず、値だけを貼り付けてください。",

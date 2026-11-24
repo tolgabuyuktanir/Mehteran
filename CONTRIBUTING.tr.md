@@ -10,6 +10,8 @@ Yardımınız için teşekkürler. Hata bildirimleri, çeviri düzeltmeleri, yen
 - Daha büyük bir değişiklik için (yeni bir özellik, yeni bir adım türü, çalıştırmaların işleyişinde bir değişiklik) önce bir issue açın. Sorunu ve planınızı anlatın; böylece kimse aynı işi iki kez yapmaz.
 - Güvenlik sorunları için issue açmayın. [SECURITY.md](SECURITY.md) dosyasına bakın.
 
+Üstlenilebilecek planlı iyileştirmeler [ROADMAP.md](ROADMAP.md) dosyasında.
+
 ## Mehteran'ı kaynak koddan çalıştırma
 
 Mehteran yalnızca Python 3.11 ya da daha yenisini ister. Kurulacak paket ve derleme adımı yoktur.
@@ -22,7 +24,7 @@ cd Mehteran
 
 ## Pull request'ten önceki kontroller
 
-CI bunları Ubuntu, macOS ve Windows üzerinde çalıştırır. Önce kendi bilgisayarınızda çalıştırın:
+CI ilk dört komutu Ubuntu, macOS ve Windows üzerinde çalıştırır. Birim testleri, son komut gibi dil dosyalarını da denetler. Hepsini önce kendi bilgisayarınızda çalıştırın:
 
 ```
 python3 -m pip install ruff==0.4.10

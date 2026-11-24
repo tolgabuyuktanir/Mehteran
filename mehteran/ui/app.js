@@ -1058,56 +1058,61 @@ function drawProviders(data, save) {
     const entry = addTool.value + (addModel.value ? "/" + addModel.value : "");
     save($("button", e.currentTarget), {order: [...order.filter((x) => x !== entry), entry]});
   }}, addTool, addModel, h("button", {type: "submit", class: "btn"}, "+ " + S("order_add")));
-  const autoLines = AUTO_KINDS.map((k) => {
+  const autoLine = (k) => {
     const chosen = data.auto && data.auto[k];
     return h("li", {}, h("b", {}, S("auto_kind_" + k.replace(":", "_"))), ": ",
       chosen ? [h("code", {}, chosen.name), " · ", S(chosen.local ? "sent_to_local" : "sent_to", {vendor: chosen.vendor})]
         : h("span", {class: "warn-text"}, S("auto_none_short")));
-  });
+  };
+  // One row per tool: its state and the two settings (calls at once, API key). How much is left is on the cards above.
   const tools = data.providers.map((p) => {
     const sizes = Array.from({length: 8}, (_, i) => i + 1);
     const conc = h("select", {"aria-label": `${S("concurrency")}: ${p.label}`, onchange: (e) => save(e.currentTarget, {providers: {[p.name]: {concurrency: Number(e.currentTarget.value)}}})},
       sizes.map((n) => h("option", {value: String(n), selected: n === p.concurrency}, String(n))));
     const key = p.default_billing !== "local" ? h("label", {class: "check small"},
       h("input", {type: "checkbox", checked: p.api_key_allowed, onchange: (e) => save(e.currentTarget, {providers: {[p.name]: {api_key: e.currentTarget.checked}}})}),
-      h("span", {}, S("allow_api_key"))) : null;
+      h("span", {}, S("allow_api_key"))) : h("span", {class: "small muted"}, "–");
     const status = !p.installed ? h("span", {class: "badge"}, S("not_installed"))
       : p.problem ? h("span", {class: "badge warn"}, S(p.problem))
         : p.blocked_until ? h("span", {class: "badge warn"}, S("hint_limited", {time: fmtTime(p.blocked_until)}))
           : h("span", {class: "badge good"}, S("tool_state_ready"));
     return h("tr", {class: p.installed ? "" : "off"},
       h("th", {scope: "row"}, p.label, h("div", {class: "small muted"}, S(p.local ? "sent_to_local" : "sent_to", {vendor: p.vendor}))),
-      h("td", {}, h("div", {class: "badges"}, status, billingBadge(p.billing)), p.key_dropped ? h("div", {class: "small muted"}, S("key_dropped")) : null),
-      h("td", {class: "usage-cell", "data-provider": p.name}),  // live.js: what is left of the tool's limit
-      h("td", {}, h("label", {class: "row small"}, conc, h("span", {}, S("at_once", {count: p.in_use || 0})))),
+      h("td", {}, h("div", {class: "badges"}, status, p.billing === "api_key" && !p.problem ? billingBadge(p.billing) : null),
+        p.installed && p.billing && p.billing !== "api_key" ? h("div", {class: "small muted"}, S("billing_" + p.billing)) : null,
+        p.key_dropped ? h("div", {class: "small muted"}, S("key_dropped")) : null),
+      h("td", {}, conc, p.in_use ? h("div", {class: "small muted"}, S("at_once", {count: p.in_use})) : null),
       h("td", {}, key));
   });
   fill(el,
-    h("div", {class: "panel-head"}, h("div", {}, h("h2", {}, S("providers_title")), h("p", {class: "muted"}, S("providers_intro"))),
-      h("button", {type: "button", class: "btn", onclick: (e) => refreshUsage(e.currentTarget)}, S("usage_refresh"))),
-    h("section", {class: "stack"}, h("h3", {}, S("tools_overview_title")),
+    h("p", {class: "muted providers-lead"}, S("providers_intro")),
+    // 1. Which model a workflow uses when it says "automatic": the order, and what it picks now.
+    h("section", {class: "providers-block"},
+      h("h3", {}, S("order_title")),
+      h("p", {class: "small muted"}, S(data.order_is_default ? "order_default_note" : "order_note")),
+      rows.length ? h("ol", {class: "plain order-list"}, rows) : h("p", {class: "small warn-text"}, S("order_empty")), add,
+      h("ul", {class: "plain auto-list small"}, autoLine(AUTO_KINDS[0])),
+      h("details", {class: "small"}, h("summary", {}, S("auto_more")),
+        h("ul", {class: "plain auto-list"}, AUTO_KINDS.slice(1).map(autoLine)), h("p", {class: "muted"}, S("auto_explain")))),
+    // 2. Per tool: calls at once and "API key (billed)".
+    h("section", {class: "providers-block"},
+      h("h3", {}, S("tool_settings_title")), h("p", {class: "small muted"}, S("tool_settings_intro")),
       h("div", {class: "table-wrap"}, h("table", {class: "providers-table"},
         h("thead", {}, h("tr", {}, h("th", {scope: "col"}, S("provider")), h("th", {scope: "col"}, S("tool_state_column")),
-          h("th", {scope: "col"}, S("usage_left_title")), h("th", {scope: "col"}, S("concurrency")), h("th", {scope: "col"}, S("api_key_column")))),
-        h("tbody", {}, tools))),
-      h("p", {class: "small muted"}, S("usage_left_note"))),
-    h("div", {class: "providers-grid"},
-      h("section", {class: "stack"}, h("h3", {}, S("order_title")),
-        h("p", {class: "small muted"}, S(data.order_is_default ? "order_default_note" : "order_note")),
-        rows.length ? h("ol", {class: "plain order-list"}, rows) : h("p", {class: "small warn-text"}, S("order_empty")), add),
-      h("section", {class: "stack"}, h("h3", {}, S("auto_title")), h("ul", {class: "plain auto-list small"}, autoLines),
-        h("p", {class: "small muted"}, S("auto_explain")))),
-    unattendedForm(data, save),
-    localServerForm(data, save),
+          h("th", {scope: "col"}, S("concurrency")), h("th", {scope: "col"}, S("api_key_column")))),
+        h("tbody", {}, tools)))),
+    // 3. Scheduled and batch runs.
+    h("section", {class: "providers-block"}, unattendedForm(data, save)),
+    // 4. A local OpenAI-compatible server: few people have one, so it is folded.
+    h("details", {class: "providers-block providers-more"}, h("summary", {}, S("local_server_title")), localServerForm(data, save)),
     h("p", {class: "small muted"}, S("providers_file_note")));
-  fillUsageSlots();  // live.js
 }
 
 // Scheduled and batch runs: only local models and API keys, unless the user allows subscriptions (Engine.unattended_problem).
 const TERMS_URL = (lang) => `https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=${lang === "tr" ? "tr#tr-kosullar" : "en#terms"}`;
 
 function unattendedForm(data, save) {
-  return h("section", {class: "stack"}, h("h3", {}, S("unattended_title")),
+  return h("div", {class: "stack"}, h("h3", {}, S("unattended_title")),
     h("label", {class: "check"}, h("input", {type: "checkbox", checked: Boolean(data.unattended_subscriptions),
       onchange: (e) => save(e.currentTarget, {unattended_subscriptions: e.currentTarget.checked})}), h("span", {}, S("unattended_label"))),
     h("p", {class: "small muted"}, S("unattended_note"), " ",
@@ -1125,7 +1130,7 @@ function localServerForm(data, save) {
     e.preventDefault();
     save($("button[type=submit]", e.currentTarget), {providers: {"openai-local": {url: url.value.trim(), model: model.value.trim()}}});
   }},
-  h("h3", {}, S("local_server_title")), h("p", {class: "small muted"}, S("local_server_intro")),
+  h("p", {class: "small muted"}, S("local_server_intro")),
   h("div", {class: "row order-add"}, url, model, h("datalist", {id: "local-server-models"}, (p.models || []).map((m) => h("option", {value: m}))),
     h("button", {type: "submit", class: "btn"}, S("save")),
     h("button", {type: "button", class: "btn", disabled: !p.installed, onclick: async (e) => {

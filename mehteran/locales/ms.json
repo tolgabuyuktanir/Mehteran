@@ -968,7 +968,15 @@
   "pull_recommended": "Muat turun model yang disyorkan ({name})",
   "config_details": "Butiran konfigurasi",
   "welcome_sample": "Cuba dengan dokumen contoh",
-  "sample_file_name": "contoh-perjanjian-sewa.md"
+  "sample_file_name": "contoh-perjanjian-sewa.md",
+  "tool_settings_title": "Tetapan setiap alat",
+  "tool_settings_intro": "Berapa banyak panggilan yang boleh dibuat oleh alat serentak, dan sama ada ia boleh menggunakan kunci API (dibayar setiap penggunaan).",
+  "auto_more": "Pilihan pantas, kuat dan tempatan sahaja",
+  "models_more": "Model lain ({count}): terlalu besar untuk komputer ini atau bukan untuk berbual",
+  "ocr_add_languages": "Tambah bahasa",
+  "models_installed_count": "Model dipasang ({count})",
+  "describe_transcript": "Transkrip alat AI",
+  "describe_transcript_wait": "Menunggu perkataan pertama alat AI…"
  },
  "messages": {
   "video_settings_invalid": "Semak kunci atau ID suara. Tampal nilai sahaja, tanpa ruang.",

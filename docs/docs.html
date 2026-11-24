@@ -50,6 +50,51 @@
   </header>
   <p class="empty-search" hidden>No section contains these words.</p>
 
+  <section id="quick-start">
+    <h2>Quick start</h2>
+    <p>You need a Windows or Mac computer and an internet connection. You do not need to install anything else first. For Linux, see <a href="#install-other">Other ways to install</a>.</p>
+    <ol>
+      <li><b>Download Mehteran.</b> Click this link: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Download Mehteran (zip file)</a>. Your browser saves the file <code>Mehteran-main.zip</code>, usually in the <b>Downloads</b> folder.</li>
+      <li><b>Unpack the zip file.</b>
+        <ul>
+          <li><b>Windows:</b> right-click <code>Mehteran-main.zip</code>, choose <b>Extract All…</b>, then click <b>Extract</b>.</li>
+          <li><b>Mac:</b> double-click <code>Mehteran-main.zip</code>. If the <code>Mehteran-main</code> folder is already there, skip this step.</li>
+        </ul>
+      </li>
+      <li><b>Start Mehteran.</b> Open the unpacked <code>Mehteran-main</code> folder. If it contains a second <code>Mehteran-main</code> folder, open that one.
+        <ul>
+          <li><b>Windows:</b> double-click <code>Open Mehteran.bat</code>. If "Windows protected your PC" appears, click <b>More info</b>, then <b>Run anyway</b>.</li>
+          <li><b>Mac:</b> double-click <code>Open Mehteran.command</code>. If the Mac says that it cannot open the file, open <b>System Settings</b> → <b>Privacy &amp; Security</b>, scroll down, click <b>Open Anyway</b> for <code>Open Mehteran.command</code>, and confirm. On older macOS versions: right-click the file, choose <b>Open</b>, then click <b>Open</b> again.</li>
+        </ul>
+        A window with text opens. This is Mehteran's window: keep it open while you use Mehteran. The first start can take a minute or two. Then Mehteran opens in your browser.
+      </li>
+      <li><b>Choose your AI account.</b> Mehteran opens on the <b>Setup</b> tab and asks <b>Which AI account do you have?</b> Click one choice:
+        <ul>
+          <li><b>Claude</b>: a Claude Pro or Max subscription.</li>
+          <li><b>ChatGPT</b>: ChatGPT Plus or Pro.</li>
+          <li><b>Google</b>: a Google account.</li>
+          <li><b>No subscription</b>: a free model that runs on this computer. It is slower and needs enough memory.</li>
+        </ul>
+        If you are not sure, choose the account that you already pay for. Mehteran then installs what it needs. This takes a few minutes.
+      </li>
+      <li><b>Sign in.</b> When the installation is finished, a sign-in button appears. Click it: <b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>. A window and a sign-in page in your browser open. Sign in there with your account. The Setup page updates by itself.
+        <ul>
+          <li>If you chose <b>No subscription</b>, click <b>Download the recommended model</b> instead. The button also shows the name of the model.</li>
+        </ul>
+      </li>
+      <li><b>Start your first run.</b> When you see <b>Setup is complete</b>, click <b>Go to workflows →</b>. Find the card <b>Work with a document</b>.
+        <ul>
+          <li>To try a short sample, click <b>Try with a sample document</b>.</li>
+          <li>To use your own file, click <b>Choose a document</b>, then <b>Choose a file</b>, and pick a PDF or Word file (for example a letter or a contract).</li>
+        </ul>
+        Then click <b>Start the run</b>.
+      </li>
+      <li><b>Get the result.</b> Mehteran shows each step while it works. When the run is finished, the explanation appears under <b>Results</b>. To save it as a Word file, click <b>↓ Explanation (Word)</b>.</li>
+    </ol>
+    <p>To start Mehteran again later, double-click the same file (<code>Open Mehteran.bat</code> or <code>Open Mehteran.command</code>). Closing Mehteran's window stops Mehteran. To use another AI account, click <b>Change</b> on the <b>Setup</b> tab.</p>
+    <p>The rest of this page describes everything else: <a href="#setup">the AI tools</a>, <a href="#run">running</a> and <a href="#build">building</a> workflows, <a href="#local">local models</a> and <a href="#cli">the command line</a>. Schedules and every setting are in the <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">full reference</a>.</p>
+  </section>
+
   <section id="overview">
     <h2>Overview</h2>
     <p>Mehteran runs AI workflows on your computer. A workflow is a series of connected steps: read a document, ask a model, check the answer, ask a person, save a file. Mehteran calls the AI through the command-line tools of your existing subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own.</p>
@@ -64,40 +109,8 @@
   </section>
 
   <section id="install">
-    <h2>Install and start</h2>
-    <h3 id="quick-start">Quick start</h3>
-    <p>You need a computer with Windows or macOS and an internet connection. You do not need to install anything else first. For Linux, see <a href="#install-other">Other ways to install</a>.</p>
-    <ol>
-      <li><b>Download Mehteran.</b> Click this link: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Download Mehteran (zip file)</a>. Your browser saves the file <code>Mehteran-main.zip</code>, usually in the <b>Downloads</b> folder.</li>
-      <li><b>Unpack the zip file.</b>
-        <ul>
-          <li><b>Windows:</b> right-click <code>Mehteran-main.zip</code>, choose <b>Extract All…</b>, then click <b>Extract</b>. Do not start Mehteran from inside the zip file: that does not work.</li>
-          <li><b>Mac:</b> double-click <code>Mehteran-main.zip</code>. If the <code>Mehteran-main</code> folder is already there, skip this step.</li>
-        </ul>
-      </li>
-      <li><b>Start Mehteran.</b> Open the <code>Mehteran-main</code> folder. On Windows, it can contain a second <code>Mehteran-main</code> folder: then open that one.
-        <ul>
-          <li><b>Windows:</b> double-click <code>Open Mehteran.bat</code>. If "Windows protected your PC" appears, click <b>More info</b>, then <b>Run anyway</b>.</li>
-          <li><b>Mac:</b> double-click <code>Open Mehteran.command</code>. If the Mac says that it cannot open the file, open <b>System Settings</b> → <b>Privacy &amp; Security</b>, scroll down, click <b>Open Anyway</b> for <code>Open Mehteran.command</code>, and confirm. On older macOS versions: right-click the file, choose <b>Open</b>, then click <b>Open</b> again.</li>
-        </ul>
-        A window with text opens. This is Mehteran's window. The first start can take a minute or two, because Mehteran prepares itself. Then Mehteran opens in your browser. Keep Mehteran's window open while you use Mehteran.
-      </li>
-      <li><b>Choose your AI account.</b> Mehteran opens on the <b>Setup</b> tab and asks <b>Which AI account do you have?</b> Click your choice:
-        <ul>
-          <li><b>Claude</b>: a Claude Pro or Max subscription.</li>
-          <li><b>ChatGPT</b>: ChatGPT Plus or Pro.</li>
-          <li><b>Google</b>: a Google account.</li>
-          <li><b>No subscription</b>: a free model that runs on this computer. It is slower and needs enough memory.</li>
-        </ul>
-        Mehteran then installs what it needs by itself. This takes a few minutes.
-      </li>
-      <li><b>Sign in.</b> Click <b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>. A window and a sign-in page in your browser open. Sign in there with your account; the Setup page updates by itself. If you chose <b>No subscription</b>, click <b>Download the recommended model</b> instead (the button also shows the model's name). When you see <b>Setup is complete</b>, click <b>Go to workflows →</b>.</li>
-      <li><b>Start your first workflow.</b> On the <b>Workflows</b> tab, find the card <b>Work with a document</b>. To try it with a short sample, click <b>Try with a sample document</b>. To use your own file, click <b>Choose a document</b>, then <b>Choose a file</b>, and pick a document (for example a letter or a contract, as PDF or Word). Then click <b>Start the run</b>.</li>
-      <li><b>Get the result.</b> Mehteran shows each step while it works. When the run is finished, the explanation appears under <b>Results</b>. To save it as a Word file, click <b>↓ Explanation (Word)</b>.</li>
-    </ol>
-    <p>Next time, double-click the same file again (<code>Open Mehteran.bat</code> or <code>Open Mehteran.command</code>). Closing Mehteran's window stops Mehteran. You can change the AI account later on the <b>Setup</b> tab with <b>Change</b>.</p>
-    <p>The rest of this page describes everything else: <a href="#setup">the AI tools</a>, <a href="#run">running</a> and <a href="#build">building</a> workflows, <a href="#local">local models</a> and <a href="#cli">the command line</a>. Schedules and every setting are in the <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">full reference</a>.</p>
-    <h3>Details</h3>
+    <h2>Install: details and other ways</h2>
+    <h3>How Mehteran runs</h3>
     <p>Mehteran runs on macOS, Windows and Linux. It uses Python 3.11 or later; when the computer has none, it installs a private Python (uv) for itself on the first start. The interface opens in your browser at <code>http://127.0.0.1:8766/</code>; if the browser does not open by itself, open that address. It runs while its terminal window stays open. To stop it, close that window or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in it. If macOS still does not start the file, see <a href="#troubleshooting">Troubleshooting</a>.</p>
     <table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
@@ -125,7 +138,14 @@
   <section id="setup">
     <h2>Connect your AI tools</h2>
     <p>On the first start, the <b>Setup</b> tab asks <b>Which AI account do you have?</b>: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> or <b>No subscription</b> (a free model on this computer). Mehteran puts that tool first in the model order and installs what it needs: the tool and the PDF reader (for <b>No subscription</b>, Ollama). Then one button signs you in (<b>Sign in with Claude</b>, <b>Sign in with ChatGPT</b> or <b>Sign in with Google</b>): a window and a sign-in page in your browser open, and the page updates by itself. Without a subscription, <b>Download the recommended model (…)</b> downloads a model that fits the computer's memory. At the end the page shows <b>Setup is complete</b> and "Account: … · <b>Change</b>"; <b>Change</b> asks the question again.</p>
-    <p>Below, the tab shows one card per AI tool, two per row: installed or not, signed in or not, the account it uses, and how much of its usage limit is left. Only "API key (billed)" is marked as a caution. <b>Install missing tools</b> installs the tool of your account and the PDF reader (without a chosen account: the tools that the templates use). Each card has its own install button, its sign-in methods and a <b>Test</b> button. The PDF reader is the first card under <b>Local tools</b>.</p>
+    <p>Below this box, the tab shows one card per AI tool, two per row. A card shows whether the tool is installed and signed in, the account it uses, and how much of its usage limit is left. Only "API key (billed)" is marked as a caution. A tool that is ready shows its name, one status line and <b>Test</b>; the rest is under <b>Details</b>. A tool that is not ready has an install button and its sign-in buttons (for example <b>Sign in with Claude</b>). <b>Install missing tools</b> installs the tool of your account and the PDF reader.</p>
+    <p>Below the cards, four parts are folded under their titles. Click a title to open it.</p>
+    <ul>
+      <li><b>AI tools of the workflows</b>: the settings of the automatic model choice, in four parts. <b>Model order</b> lists the models in the order that <code>auto</code> tries them, with the current automatic choice below; <b>Fast, strong and local-only choices</b> shows the other automatic choices. <b>Settings per tool</b> has, for each tool, <b>At once</b> (the calls it may make at the same time) and <b>Allow an API key (billed)</b>. <b>Scheduled and batch runs</b> has the permission for subscriptions (see <a href="#terms">Subscriptions and the providers' terms</a>). <b>Local server (OpenAI-compatible)</b> is folded again.</li>
+      <li><b>Run in the background</b>: Mehteran starts by itself when you sign in to the computer, so that scheduled runs start on time.</li>
+      <li><b>Local tools</b>: the optional tools of this computer (see <a href="#local">Local models and tools</a>). The PDF reader comes first and is marked <b>Required</b>.</li>
+      <li><b>Video services</b>: the API keys of the <a href="#video">Social video series</a> template.</li>
+    </ul>
     <table>
       <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
       <tbody>
@@ -138,7 +158,7 @@
       </tbody>
     </table>
     <h3>No surprise bills</h3>
-    <p>Mehteran removes the API key variables (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> and the others) from every model call, so a tool cannot bill an API account by accident. To use an API key on purpose, turn on <b>Allow an API key (billed)</b> for that tool on the Setup tab. A key that a tool stores itself (for example a Codex API-key login) is shown on its card as "API key (billed)".</p>
+    <p>Mehteran removes the API key variables (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> and the others) from every model call, so a tool cannot bill an API account by accident. To use an API key on purpose, turn on <b>Allow an API key (billed)</b> for that tool under Setup → <b>AI tools of the workflows</b> → <b>Settings per tool</b>. A key that a tool stores itself (for example a Codex API-key login) is shown on its card as "API key (billed)".</p>
     <h3>Automatic model choice</h3>
     <p>A step's model can be <code>auto</code>. When a run starts, Mehteran picks the first tool of your <b>Model order</b> that is installed, signed in and not billed by an API key. Without your own order it uses Claude Code, Codex, Antigravity, Ollama. Variants:</p>
     <ul>
@@ -148,7 +168,7 @@
     </ul>
     <p>A tool whose usage limit has not reset yet goes to the end of the order. The choice is frozen into the run, so a resumed run uses the same models.</p>
     <h3>Calls at once</h3>
-    <p>Each tool has a limit of calls at the same time over all runs (Claude Code and Codex 2, Antigravity 1, Ollama 1). Change it with <b>At once</b> on the Setup tab. A single run makes at most 4 model calls at the same time.</p>
+    <p>Each tool has a limit of calls at the same time over all runs (Claude Code and Codex 2, Antigravity 1, Ollama 1). Change it with <b>At once</b> under Setup → <b>AI tools of the workflows</b> → <b>Settings per tool</b>. A single run makes at most 4 model calls at the same time.</p>
   </section>
 
   <section id="terms">
@@ -160,8 +180,8 @@
       <li>OpenAI documents <code>codex exec</code> for "repeatable workflows and pipelines" (<a href="https://developers.openai.com/codex/cli">Codex CLI</a>). Its article on <a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan">Codex with a ChatGPT plan</a> does not address automation.</li>
       <li>Google's <a href="https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html">Gemini CLI terms page</a> says which terms apply to each sign-in type. It does not address automation.</li>
     </ul>
-    <p>So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on <b>Allow an API key (billed)</b> for that tool on the Setup tab. A local model (Ollama, LM Studio) has no such terms.</p>
-    <p><b>What Mehteran does by default:</b> scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model <code>auto</code>, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → AI tools of the workflows. A run that you start yourself is not affected.</p>
+    <p>So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on <b>Allow an API key (billed)</b> for that tool under Setup → <b>AI tools of the workflows</b> → <b>Settings per tool</b>. A local model (Ollama, LM Studio) has no such terms.</p>
+    <p><b>What Mehteran does by default:</b> scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model <code>auto</code>, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → <b>AI tools of the workflows</b> → <b>Scheduled and batch runs</b>. A run that you start yourself is not affected.</p>
     <p class="note">This is not legal advice. Checked on 24 November 2026; terms change.</p>
   </section>
 
@@ -181,7 +201,7 @@
       <li><b>Also save the results to this folder</b>: type the full path of a folder. Mehteran confirms it the first time and never overwrites a file: an existing name gets " (2)", " (3)" and so on.</li>
     </ul>
     <h3>Search sites for you</h3>
-    <p>Two templates search sites with a read-only browser agent (Claude Code, the browser of the Setup tab) and compare what they find. <b>Find home or car listings</b>: the kind, buy or rent, the place, the features you want and a budget; you get a table of listings with links, each wanted feature marked ✓, ✗ or ?. <b>Find a place to stay (hotel)</b>: the place, the dates, the guests, a budget and your wishes; you get stays with total and nightly prices, rating, breakfast and cancellation terms. Both run without a window and take about 15 to 20 minutes. They never book, sign in or contact anyone. A site that blocks the search is named in the report with a link, so that you can look there yourself. If a site asks for a check, open it once under Setup → Browser.</p>
+    <p>Two templates search sites with a read-only browser agent (Claude Code, the browser of the Setup tab) and compare what they find. <b>Find home or car listings</b>: the kind, buy or rent, the place, the features you want and a budget; you get a table of listings with links, each wanted feature marked ✓, ✗ or ?. <b>Find a place to stay (hotel)</b>: the place, the dates, the guests, a budget and your wishes; you get stays with total and nightly prices, rating, breakfast and cancellation terms. Both run without a window and take about 15 to 20 minutes. They never book, sign in or contact anyone. A site that blocks the search is named in the report with a link, so that you can look there yourself. If a site asks for a check, open it once with <b>Open the browser to sign in</b> under Setup → <b>Local tools</b> → <b>Browser for agent steps</b>.</p>
     <h3>Experimental templates</h3>
     <p>Four templates carry an <b>Experimental</b> badge on their library card and a notice on their page: <b>Social video series</b> (it needs paid OpenAI and ElevenLabs API keys), <b>Find home or car listings</b>, <b>Find a place to stay (hotel)</b> (a browser agent on websites that change) and <b>Research and prepare an X post</b> (sharing on X). They work, but check the result before you use it.</p>
     <h3>Stop, resume, retry</h3>
@@ -212,7 +232,7 @@
     <ul>
       <li><b>Read a document → AI → Save</b></li>
       <li><b>A text I type → AI → Save</b></li>
-      <li><b>Describe it, I will build it (library)</b>: the box at the top of the Workflows tab. Write what you want and select "Build the workflow"; the automatic choice of your installed tools writes it. A draft that passes the check is saved and opens with <b>Here is what I built</b>: the steps with the instruction the model wrote for each, which you can edit in place, "Change: …" in one sentence, "Looks good" and "Delete". A draft with problems opens in the editor.</li>
+      <li><b>Describe it, I will build it (library)</b>: the box at the top of the Workflows tab. Write what you want and click <b>Build the workflow</b>. The automatic choice of your installed tools writes it. While it works, the box shows <b>Transcript of the AI tool</b>: what the tool writes and does, live. <b>Stop</b> ends it. A draft that passes the check is saved and opens with <b>Here is what I built</b>: the steps with the instruction the model wrote for each, which you can edit in place, "Change: …" in one sentence, "Looks good" and "Delete". A draft with problems opens in the editor.</li>
       <li><b>Describe it, I will build it (editor)</b>: write what the workflow should do and choose a model. The model writes a first draft (one call, plus one repair call when the draft has problems). The draft opens in the editor unsaved. Check the instruction of every step before you run it.</li>
     </ul>
     <figure><div class="shot"><img src="assets/screens/en-editor.png" alt="The visual editor" width="1360" height="860" loading="lazy"></div><figcaption>The editor with a condition: the selected step's instruction and model are on the right.</figcaption></figure>
@@ -291,12 +311,13 @@ outputs:
       <li>Otherwise the step shows "waiting for the usage limit" and tries again when the limit resets. A wait does not count as a failed attempt.</li>
     </ul>
     <p>On the run page, a waiting or failed step offers <b>Keep waiting</b> and <b>Continue with another model</b>. A loop keeps the parts it already has. A limit seen by one run is known to the others, so they do not call that tool until it resets.</p>
-    <p>The header shows what is left of each tool's usage limit on every tab, for example "Remaining · Claude 31% · 5 hours · Codex 7% · Weekly": for each tool, the window closest to its limit, with its name. Click it to see each window (5 hours, weekly) with the time to its reset. Claude Code and Codex report these values; Mehteran asks Claude Code every few minutes without a model call. The tools report percentages, not token counts. The Setup tab shows one bar on each tool's card (the window closest to its limit; every window under <b>Details</b>) and the same values in the table of <b>AI tools of the workflows</b>, with Mehteran's own counts (today, last 5 hours, last 7 days) under <b>Details</b>. From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
+    <p>The header shows what is left of each tool's usage limit on every tab, for example "Remaining · Claude 31% · 5 hours · Codex 7% · Weekly": for each tool, the window closest to its limit, with its name. Click it to see each window (5 hours, weekly) with the time to its reset. Claude Code and Codex report these values; Mehteran asks Claude Code every few minutes without a model call. The tools report percentages, not token counts. On the Setup tab, each tool's card shows one bar (the window closest to its limit). The card's <b>Details</b> show every window and Mehteran's own counts (today, last 5 hours, last 7 days). From the first run on, Mehteran keeps the computer awake, so a run that waits overnight continues.</p>
   </section>
 
   <section id="local">
     <h2>Local models and tools</h2>
-    <p>These are optional. Mehteran installs each one only when you ask, on the Setup tab or the command line. Each is a pinned version, checked against a SHA-256 sum. A copy that is already on the computer is found and used.</p>
+    <p>These are optional. Mehteran installs each one only when you ask, under Setup → <b>Local tools</b> or on the command line. Each is a pinned version, checked against a SHA-256 sum. A copy that is already on the computer is found and used.</p>
+    <p>Under <b>Local tools</b>, the small tools stand side by side: the PDF reader first (<b>Required</b>), then Tesseract OCR, Typst, Pandoc, speech to text, qpdf and the browser for agent steps. The OCR card lists its installed languages in one line; <b>Add languages</b> opens the list of the others. The Ollama card spans the whole width. It has two folded parts: <b>Installed models (N)</b>, and <b>Recommended models</b> with the size, memory and languages of each. Models that are too big for this computer, or not for chatting, are folded under <b>Other models (N)…</b>.</p>
     <table>
       <thead><tr><th>Tool</th><th>What it adds</th></tr></thead>
       <tbody>
@@ -411,7 +432,7 @@ outputs:
     <h3>Windows: Mehteran does not start</h3>
     <p>If Mehteran's window says that it cannot start from inside the zip file, unpack the zip file first (right-click, <b>Extract All…</b>). Start <code>Open Mehteran.bat</code> from the unpacked folder, not from inside the zip file.</p>
     <h3>A tool is "not signed in"</h3>
-    <p>On the Setup tab, click the sign-in button of its card. A window and a sign-in page in your browser open. Sign in there; the page updates by itself. Then you can close the window.</p>
+    <p>On the Setup tab, click the sign-in button of the tool: <b>Sign in with …</b>, in the box at the top or on the tool's card. A window and a sign-in page in your browser open. Sign in there; the page updates by itself. Then you can close the window.</p>
     <h3>A step waits for a usage limit</h3>
     <p>That is normal: the run continues when the limit resets. To go on now, click <b>Continue with another model</b> on the step.</p>
     <h3>PDF export says it needs Typst</h3>
@@ -445,6 +466,51 @@ outputs:
   </header>
   <p class="empty-search" hidden>Bu kelimeleri içeren bir bölüm yok.</p>
 
+  <section id="tr-hizli-baslangic">
+    <h2>Hızlı başlangıç</h2>
+    <p>Windows ya da Mac bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez. Linux için <a href="#tr-diger-kurulum">Diğer kurulum yolları</a> bölümüne bakın.</p>
+    <ol>
+      <li><b>Mehteran'ı indirin.</b> Şu bağlantıya tıklayın: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Mehteran'ı indir (zip dosyası)</a>. Tarayıcınız <code>Mehteran-main.zip</code> dosyasını kaydeder; genellikle <b>İndirilenler</b> klasörüne.</li>
+      <li><b>Zip dosyasını açın.</b>
+        <ul>
+          <li><b>Windows:</b> <code>Mehteran-main.zip</code> dosyasına sağ tıklayın, <b>Tümünü Ayıkla…</b> seçeneğini seçin, sonra <b>Ayıkla</b>'ya tıklayın.</li>
+          <li><b>Mac:</b> <code>Mehteran-main.zip</code> dosyasına çift tıklayın. <code>Mehteran-main</code> klasörü zaten oradaysa bu adımı atlayın.</li>
+        </ul>
+      </li>
+      <li><b>Mehteran'ı başlatın.</b> Açtığınız <code>Mehteran-main</code> klasörüne girin. İçinde ikinci bir <code>Mehteran-main</code> klasörü varsa ona girin.
+        <ul>
+          <li><b>Windows:</b> <code>Open Mehteran.bat</code> dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa <b>Ek bilgi</b>'ye, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
+          <li><b>Mac:</b> <code>Open Mehteran.command</code> dosyasına çift tıklayın. Mac dosyayı açamadığını söylerse <b>Sistem Ayarları</b> → <b>Gizlilik ve Güvenlik</b>'i açın, aşağı kaydırın, <code>Open Mehteran.command</code> için <b>Yine de Aç</b>'a tıklayın ve onaylayın. Eski macOS sürümlerinde: dosyaya sağ tıklayın, <b>Aç</b>'ı seçin, sonra yine <b>Aç</b>'a tıklayın.</li>
+        </ul>
+        İçinde yazılar olan bir pencere açılır. Bu, Mehteran'ın penceresidir: Mehteran'ı kullandığınız sürece açık bırakın. İlk açılış bir-iki dakika sürebilir. Sonra Mehteran tarayıcınızda açılır.
+      </li>
+      <li><b>Yapay zekâ hesabınızı seçin.</b> Mehteran <b>Kurulum</b> sekmesinde açılır ve <b>Hangi yapay zekâ hesabınız var?</b> diye sorar. Birine tıklayın:
+        <ul>
+          <li><b>Claude</b>: Claude Pro veya Max aboneliği.</li>
+          <li><b>ChatGPT</b>: ChatGPT Plus veya Pro.</li>
+          <li><b>Google</b>: Google hesabı.</li>
+          <li><b>Aboneliğim yok</b>: bu bilgisayarda çalışan ücretsiz bir model. Daha yavaştır ve yeterli bellek ister.</li>
+        </ul>
+        Emin değilseniz zaten ödediğiniz hesabı seçin. Mehteran sonra gerekenleri kurar. Bu birkaç dakika sürer.
+      </li>
+      <li><b>Giriş yapın.</b> Kurulum bitince bir giriş düğmesi çıkar. Ona tıklayın: <b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b>. Bir pencere ve tarayıcınızda bir giriş sayfası açılır. Orada hesabınızla giriş yapın. Kurulum sayfası kendiliğinden güncellenir.
+        <ul>
+          <li><b>Aboneliğim yok</b> seçtiyseniz bunun yerine <b>Önerilen modeli indir</b>'e tıklayın. Düğme modelin adını da gösterir.</li>
+        </ul>
+      </li>
+      <li><b>İlk çalıştırmayı başlatın.</b> <b>Kurulum tamamlandı</b> yazısını görünce <b>İş akışlarına git →</b> düğmesine tıklayın. <b>Bir belgeyle çalış</b> kartını bulun.
+        <ul>
+          <li>Kısa bir örnekle denemek için <b>Örnek belgeyle deneyin</b>'e tıklayın.</li>
+          <li>Kendi dosyanızı kullanmak için <b>Belge seç ve başla</b>'ya, sonra <b>Dosya seç</b>'e tıklayın ve bir PDF ya da Word dosyası seçin (örneğin bir resmî yazı ya da bir sözleşme).</li>
+        </ul>
+        Ardından <b>Çalıştırmayı başlat</b>'a tıklayın.
+      </li>
+      <li><b>Sonucu alın.</b> Mehteran çalışırken her adımı gösterir. Çalıştırma bitince anlatım <b>Sonuçlar</b> altında görünür. Word dosyası olarak kaydetmek için <b>↓ Anlatım (Word)</b> düğmesine tıklayın.</li>
+    </ol>
+    <p>Mehteran'ı sonra yeniden başlatmak için aynı dosyaya çift tıklayın (<code>Open Mehteran.bat</code> ya da <code>Open Mehteran.command</code>). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Başka bir yapay zekâ hesabı kullanmak için <b>Kurulum</b> sekmesinde <b>Değiştir</b>'e tıklayın.</p>
+    <p>Bu sayfanın devamı diğer her şeyi anlatır: <a href="#tr-araclar">yapay zekâ araçları</a>, iş akışlarını <a href="#tr-calistir">çalıştırma</a> ve <a href="#tr-olustur">oluşturma</a>, <a href="#tr-yerel">yerel modeller</a> ve <a href="#tr-komut">komut satırı</a>. Zamanlamalar ve bütün ayarlar <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">ayrıntılı başvuru belgesinde</a>.</p>
+  </section>
+
   <section id="tr-genel">
     <h2>Genel bakış</h2>
     <p>Mehteran yapay zekâ iş akışlarını bilgisayarınızda çalıştırır. İş akışı, birbirine bağlı adımlardan oluşur: bir belgeyi okumak, bir modele sormak, cevabı kontrol etmek, bir kişiye sormak, bir dosya kaydetmek. Mehteran yapay zekâyı mevcut aboneliklerinizin komut satırı araçlarıyla (Claude Code, Codex, Antigravity CLI) ya da bu bilgisayardaki modellerle (Ollama, LM Studio, llama.cpp) çağırır. Kendi anahtarı ve hesabı yoktur.</p>
@@ -455,44 +521,12 @@ outputs:
       <div class="card"><h3>Çalıştırma</h3><p>Bir iş akışının sizin girdilerinizle bir kez yürütülmesi. İş akışının dondurulmuş kopyasını, her istemi ve her sonucu saklar.</p></div>
       <div class="card"><h3>Yapay zekâ aracı</h3><p>Modeli çağıran program: Claude Code, Codex, Antigravity CLI, Gemini CLI, Ollama ya da yerel bir sunucu.</p></div>
     </div>
-    <p>Arayüzde üç sekme var: <b>İş akışları</b> (kütüphane ve düzenleyici), <b>Çalıştırmalar</b> (geçmiş ve canlı çalıştırmalar) ve <b>Kurulum</b> (yapay zekâ araçları ve yerel araçlar).</p>
+    <p>Arayüzde üç sekme var: <b>İş akışları</b> (kitaplık ve düzenleyici), <b>Çalıştırmalar</b> (geçmiş ve canlı çalıştırmalar) ve <b>Kurulum</b> (yapay zekâ araçları ve yerel araçlar).</p>
   </section>
 
   <section id="tr-kurulum">
-    <h2>Kurulum ve başlatma</h2>
-    <h3 id="tr-hizli-baslangic">Hızlı başlangıç</h3>
-    <p>Windows ya da macOS yüklü bir bilgisayar ve internet bağlantısı yeterlidir. Önceden başka bir şey kurmanız gerekmez. Linux için <a href="#tr-diger-kurulum">Diğer kurulum yolları</a> bölümüne bakın.</p>
-    <ol>
-      <li><b>Mehteran'ı indirin.</b> Şu bağlantıya tıklayın: <a href="https://github.com/tolgabuyuktanir/Mehteran/archive/refs/heads/main.zip">Mehteran'ı indir (zip dosyası)</a>. Tarayıcınız <code>Mehteran-main.zip</code> dosyasını kaydeder; genellikle <b>İndirilenler</b> klasörüne.</li>
-      <li><b>Zip dosyasını açın.</b>
-        <ul>
-          <li><b>Windows:</b> <code>Mehteran-main.zip</code> dosyasına sağ tıklayın, <b>Tümünü Ayıkla…</b> seçeneğini seçin, sonra <b>Ayıkla</b>'ya tıklayın. Mehteran'ı zip dosyasının içinden başlatmayın; öyle çalışmaz.</li>
-          <li><b>Mac:</b> <code>Mehteran-main.zip</code> dosyasına çift tıklayın. <code>Mehteran-main</code> klasörü zaten oradaysa bu adımı atlayın.</li>
-        </ul>
-      </li>
-      <li><b>Mehteran'ı başlatın.</b> <code>Mehteran-main</code> klasörünü açın. Windows'ta bu klasörün içinde ikinci bir <code>Mehteran-main</code> klasörü olabilir; o zaman onu açın.
-        <ul>
-          <li><b>Windows:</b> <code>Open Mehteran.bat</code> dosyasına çift tıklayın. "Windows bilgisayarınızı korudu" uyarısı çıkarsa <b>Ek bilgi</b>'ye, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
-          <li><b>Mac:</b> <code>Open Mehteran.command</code> dosyasına çift tıklayın. Mac dosyayı açamadığını söylerse <b>Sistem Ayarları</b> → <b>Gizlilik ve Güvenlik</b>'i açın, aşağı kaydırın, <code>Open Mehteran.command</code> için <b>Yine de Aç</b>'a tıklayın ve onaylayın. Eski macOS sürümlerinde: dosyaya sağ tıklayın, <b>Aç</b>'ı seçin, sonra yine <b>Aç</b>'a tıklayın.</li>
-        </ul>
-        İçinde yazılar olan bir pencere açılır. Bu, Mehteran'ın penceresidir. İlk açılış bir-iki dakika sürebilir; Mehteran bu sırada kendini hazırlar. Sonra Mehteran tarayıcınızda açılır. Mehteran'ı kullandığınız sürece bu pencereyi açık bırakın.
-      </li>
-      <li><b>Yapay zekâ hesabınızı seçin.</b> Mehteran <b>Kurulum</b> sekmesinde açılır ve <b>Hangi yapay zekâ hesabınız var?</b> diye sorar. Sizinkine tıklayın:
-        <ul>
-          <li><b>Claude</b>: Claude Pro veya Max aboneliği.</li>
-          <li><b>ChatGPT</b>: ChatGPT Plus veya Pro.</li>
-          <li><b>Google</b>: Google hesabı.</li>
-          <li><b>Aboneliğim yok</b>: bu bilgisayarda çalışan ücretsiz bir model. Daha yavaştır ve yeterli bellek ister.</li>
-        </ul>
-        Mehteran gerekenleri kendisi kurar. Bu birkaç dakika sürer.
-      </li>
-      <li><b>Giriş yapın.</b> <b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b> düğmesine tıklayın. Bir pencere ve tarayıcınızda bir giriş sayfası açılır. Orada hesabınızla giriş yapın; Kurulum sayfası kendiliğinden güncellenir. <b>Aboneliğim yok</b> seçtiyseniz bunun yerine <b>Önerilen modeli indir</b>'e tıklayın (düğme modelin adını da gösterir). <b>Kurulum tamamlandı</b> yazısını görünce <b>İş akışlarına git →</b> düğmesine tıklayın.</li>
-      <li><b>İlk iş akışınızı başlatın.</b> <b>İş akışları</b> sekmesinde <b>Bir belgeyle çalış</b> kartını bulun. Kısa bir örnekle denemek için <b>Örnek belgeyle deneyin</b>'e tıklayın. Kendi dosyanızı kullanmak için <b>Belge seç ve başla</b>'ya, sonra <b>Dosya seç</b>'e tıklayın ve bir belge seçin (örneğin PDF ya da Word olarak bir sözleşme veya resmî yazı). Ardından <b>Çalıştırmayı başlat</b>'a tıklayın.</li>
-      <li><b>Sonucu alın.</b> Mehteran çalışırken her adımı gösterir. Çalıştırma bitince açıklama <b>Sonuçlar</b> altında görünür. Word dosyası olarak kaydetmek için <b>↓ Anlatım (Word)</b> düğmesine tıklayın.</li>
-    </ol>
-    <p>Sonraki seferlerde aynı dosyaya yine çift tıklayın (<code>Open Mehteran.bat</code> ya da <code>Open Mehteran.command</code>). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Yapay zekâ hesabını daha sonra <b>Kurulum</b> sekmesinde <b>Değiştir</b> ile değiştirebilirsiniz.</p>
-    <p>Bu sayfanın devamı diğer her şeyi anlatır: <a href="#tr-araclar">yapay zekâ araçları</a>, iş akışlarını <a href="#tr-calistir">çalıştırma</a> ve <a href="#tr-olustur">oluşturma</a>, <a href="#tr-yerel">yerel modeller</a> ve <a href="#tr-komut">komut satırı</a>. Zamanlamalar ve bütün ayarlar <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">ayrıntılı başvuru belgesinde</a>.</p>
-    <h3>Ayrıntılar</h3>
+    <h2>Kurulum: ayrıntılar ve diğer yollar</h2>
+    <h3>Mehteran nasıl çalışır</h3>
     <p>Mehteran macOS, Windows ve Linux'ta çalışır. Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa ilk açılışta kendine özel bir Python (uv) kurar. Arayüz tarayıcınızda <code>http://127.0.0.1:8766/</code> adresinde açılır; tarayıcı kendiliğinden açılmazsa bu adresi açın. Terminal penceresi açık kaldıkça çalışır. Durdurmak için o pencereyi kapatın ya da içinde <kbd>Ctrl</kbd>+<kbd>C</kbd> tuşlarına basın. macOS dosyayı yine de başlatmazsa <a href="#tr-sorunlar">Sorun giderme</a> bölümüne bakın.</p>
     <table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
@@ -520,7 +554,14 @@ outputs:
   <section id="tr-araclar">
     <h2>Yapay zekâ araçlarını bağlama</h2>
     <p>İlk açılışta <b>Kurulum</b> sekmesi <b>Hangi yapay zekâ hesabınız var?</b> diye sorar: <b>Claude</b>, <b>ChatGPT</b>, <b>Google</b> ya da <b>Aboneliğim yok</b> (bu bilgisayarda ücretsiz bir model). Mehteran o aracı model sırasının başına koyar ve gerekenleri kurar: aracı ve PDF okuyucuyu (<b>Aboneliğim yok</b> için Ollama'yı). Sonra tek bir düğme oturum açtırır (<b>Claude ile giriş yap</b>, <b>ChatGPT ile giriş yap</b> ya da <b>Google ile giriş yap</b>): bir pencere ve tarayıcıda bir giriş sayfası açılır, sayfa kendiliğinden güncellenir. Abonelik yoksa <b>Önerilen modeli indir (…)</b> bilgisayarın belleğine uyan bir model indirir. Sonunda sayfa <b>Kurulum tamamlandı</b> ve "Hesap: … · <b>Değiştir</b>" gösterir; <b>Değiştir</b> soruyu yeniden sorar.</p>
-    <p>Altında sekme her yapay zekâ aracı için, satırda iki tane, bir kart gösterir: kurulu mu, oturum açık mı, hangi hesabı kullanıyor, kullanım sınırından ne kadar kaldı. Yalnızca "API anahtarı (ücretli)" uyarı olarak işaretlenir. <b>Eksikleri kur</b>, hesabınızın aracını ve PDF okuyucuyu kurar (hesap seçilmediyse şablonların kullandığı araçları). Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır. PDF okuyucu, <b>Yerel araçlar</b> altındaki ilk karttır.</p>
+    <p>Bu kutunun altında sekme her yapay zekâ aracı için bir kart gösterir, satırda iki tane. Kart aracın kurulu olup olmadığını, oturumunun açık olup olmadığını, kullandığı hesabı ve kullanım sınırından ne kadar kaldığını gösterir. Yalnızca "API anahtarı (ücretli)" uyarı olarak işaretlenir. Hazır bir araç adını, tek bir durum satırını ve <b>Dene</b> düğmesini gösterir; gerisi <b>Ayrıntılar</b> altındadır. Hazır olmayan bir aracın kurma düğmesi ve oturum açma düğmeleri vardır (örneğin <b>Claude ile giriş yap</b>). <b>Eksikleri kur</b>, hesabınızın aracını ve PDF okuyucuyu kurar.</p>
+    <p>Kartların altında dört bölüm başlıklarının altına katlanmıştır. Açmak için başlığa tıklayın.</p>
+    <ul>
+      <li><b>İş akışlarının yapay zekâ araçları</b>: otomatik model seçiminin ayarları, dört bölümde. <b>Model sırası</b>, <code>auto</code> seçiminin modelleri hangi sırayla denediğini ve altında şu anki otomatik seçimi gösterir; <b>Hızlı, güçlü ve yalnızca yerel seçimler</b> öteki otomatik seçimleri gösterir. <b>Araç başına ayarlar</b> her araç için <b>Aynı anda</b> (aynı anda yapabileceği çağrı sayısı) ve <b>API anahtarına izin ver (ücretli)</b> seçeneğini içerir. <b>Zamanlanmış ve toplu çalıştırmalar</b> aboneliklere verilen izni içerir (bkz. <a href="#tr-kosullar">Abonelikler ve sağlayıcı koşulları</a>). <b>Yerel sunucu (OpenAI uyumlu)</b> ayrıca katlanmıştır.</li>
+      <li><b>Arka planda çalıştır</b>: Mehteran bilgisayarda oturum açınca kendiliğinden başlar; zamanlanmış çalıştırmalar böylece vaktinde başlar.</li>
+      <li><b>Yerel araçlar</b>: bu bilgisayarın isteğe bağlı araçları (bkz. <a href="#tr-yerel">Yerel modeller ve araçlar</a>). PDF okuyucu ilk sıradadır ve <b>Gerekli</b> olarak işaretlidir.</li>
+      <li><b>Video servisleri</b>: <a href="#tr-video">Sosyal medya video serisi</a> şablonunun API anahtarları.</li>
+    </ul>
     <table>
       <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
       <tbody>
@@ -533,7 +574,7 @@ outputs:
       </tbody>
     </table>
     <h3>Sürpriz fatura yok</h3>
-    <p>Mehteran her model çağrısından API anahtarı değişkenlerini (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> ve diğerleri) çıkarır. Böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Bilerek API anahtarı kullanmak için Kurulum sekmesinde o aracın <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Aracın kendi sakladığı bir anahtar (örneğin Codex'te API anahtarıyla oturum) kartında "API anahtarı (ücretli)" olarak görünür.</p>
+    <p>Mehteran her model çağrısından API anahtarı değişkenlerini (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> ve diğerleri) çıkarır. Böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Bilerek API anahtarı kullanmak için Kurulum → <b>İş akışlarının yapay zekâ araçları</b> → <b>Araç başına ayarlar</b> altında o aracın <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Aracın kendi sakladığı bir anahtar (örneğin Codex'te API anahtarıyla oturum) kartında "API anahtarı (ücretli)" olarak görünür.</p>
     <h3>Otomatik model seçimi</h3>
     <p>Bir adımın modeli <code>auto</code> olabilir. Çalıştırma başlarken Mehteran, <b>Model sırası</b> listenizde kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer. Kendi sıranız yoksa sıra şudur: Claude Code, Codex, Antigravity, Ollama. Seçenekler:</p>
     <ul>
@@ -543,7 +584,7 @@ outputs:
     </ul>
     <p>Kullanım sınırı henüz sıfırlanmamış bir araç sıranın sonuna gider. Seçim çalıştırmaya dondurulur; devam ettirilen bir çalıştırma aynı modelleri kullanır.</p>
     <h3>Aynı anda çağrı</h3>
-    <p>Her aracın, bütün çalıştırmalar için aynı anda yapılabilecek çağrı sınırı vardır (Claude Code ve Codex 2, Antigravity 1, Ollama 1). Kurulum sekmesindeki <b>Aynı anda</b> ile değiştirin. Tek bir çalıştırma aynı anda en fazla 4 model çağrısı yapar.</p>
+    <p>Her aracın, bütün çalıştırmalar için aynı anda yapılabilecek çağrı sınırı vardır (Claude Code ve Codex 2, Antigravity 1, Ollama 1). Kurulum → <b>İş akışlarının yapay zekâ araçları</b> → <b>Araç başına ayarlar</b> altındaki <b>Aynı anda</b> ile değiştirin. Tek bir çalıştırma aynı anda en fazla 4 model çağrısı yapar.</p>
   </section>
 
   <section id="tr-kosullar">
@@ -555,8 +596,8 @@ outputs:
       <li>OpenAI, <code>codex exec</code> komutunu "repeatable workflows and pipelines" (tekrarlanabilir iş akışları ve işlem hatları) için belgeler (<a href="https://developers.openai.com/codex/cli">Codex CLI</a>). <a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan">ChatGPT planıyla Codex</a> makalesi otomasyondan söz etmez.</li>
       <li>Google'ın <a href="https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html">Gemini CLI koşullar sayfası</a>, her oturum açma türüne hangi koşulların uygulandığını söyler. Otomasyondan söz etmez.</li>
     </ul>
-    <p>Bu yüzden tüketici aboneliğiyle zamanlanmış, toplu ya da arka planda çalıştırmalara izin verilip verilmediği açıkça belli değildir. Hesabınızın kullanımından siz sorumlusunuz. Yoğun ya da gözetimsiz kullanım için (zamanlamalar, toplu çalıştırmalar, arka plan) sağlayıcıların önerdiği yol API anahtarıdır: Kurulum sekmesinde o araç için <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Yerel bir modelin (Ollama, LM Studio) böyle koşulları yoktur.</p>
-    <p><b>Mehteran'ın varsayılan davranışı:</b> zamanlanmış ve toplu çalıştırmalar yalnızca yerel modelleri ve API anahtarlı araçları kullanır. Abonelik ya da ücretsiz hesap kullanacak bir adım, zamanlama oluşturulurken ya da toplu çalıştırma başlarken nedeni söylenerek reddedilir; model <code>auto</code> ise bu araçlar atlanır. Bu çalıştırmalarda aboneliklere izin vermek için Kurulum → İş akışlarının yapay zekâ araçları altında "Zamanlanmış ve toplu çalıştırmalarda aboneliklere ve ücretsiz hesaplara izin ver" seçeneğini açın. Kendi başlattığınız bir çalıştırma bundan etkilenmez.</p>
+    <p>Bu yüzden tüketici aboneliğiyle zamanlanmış, toplu ya da arka planda çalıştırmalara izin verilip verilmediği açıkça belli değildir. Hesabınızın kullanımından siz sorumlusunuz. Yoğun ya da gözetimsiz kullanım için (zamanlamalar, toplu çalıştırmalar, arka plan) sağlayıcıların önerdiği yol API anahtarıdır: Kurulum → <b>İş akışlarının yapay zekâ araçları</b> → <b>Araç başına ayarlar</b> altında o araç için <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Yerel bir modelin (Ollama, LM Studio) böyle koşulları yoktur.</p>
+    <p><b>Mehteran'ın varsayılan davranışı:</b> zamanlanmış ve toplu çalıştırmalar yalnızca yerel modelleri ve API anahtarlı araçları kullanır. Abonelik ya da ücretsiz hesap kullanacak bir adım, zamanlama oluşturulurken ya da toplu çalıştırma başlarken nedeni söylenerek reddedilir; model <code>auto</code> ise bu araçlar atlanır. Bu çalıştırmalarda aboneliklere izin vermek için Kurulum → <b>İş akışlarının yapay zekâ araçları</b> → <b>Zamanlanmış ve toplu çalıştırmalar</b> altında "Zamanlanmış ve toplu çalıştırmalarda aboneliklere ve ücretsiz hesaplara izin ver" seçeneğini açın. Kendi başlattığınız bir çalıştırma bundan etkilenmez.</p>
     <p class="note">Bu bir hukuki tavsiye değildir. 24 Kasım 2026'da denetlendi; koşullar değişebilir.</p>
   </section>
 
@@ -576,7 +617,7 @@ outputs:
       <li><b>Sonuçları şu klasöre de kaydet</b>: bir klasörün tam yolunu yazın. Mehteran ilk seferde onayınızı ister ve hiçbir dosyanın üzerine yazmaz: var olan bir ada " (2)", " (3)" gibi bir ek getirir.</li>
     </ul>
     <h3>Sizin için sitelerde arama</h3>
-    <p>İki şablon, yalnızca okuyan bir tarayıcı ajanıyla (Claude Code ve Kurulum sekmesindeki tarayıcı) sitelerde arar ve bulduklarını karşılaştırır. <b>Ev ya da araba ilanı bul</b>: tür, satın alma ya da kiralama, yer, istediğiniz özellikler ve bütçe; bağlantılı bir ilan tablosu alırsınız, istenen her özellik ✓, ✗ ya da ? ile işaretlidir. <b>Konaklama bul (otel)</b>: yer, tarihler, kişiler, bütçe ve istekleriniz; toplam ve gecelik fiyatı, puanı, kahvaltıyı ve iptal koşullarını gösteren seçenekler alırsınız. İkisi de pencere açmadan çalışır ve yaklaşık 15-20 dakika sürer. Rezervasyon yapmaz, oturum açmaz, kimseyle iletişime geçmez. Aramayı engelleyen bir site raporda bağlantısıyla yazılır; oraya kendiniz bakabilirsiniz. Bir site doğrulama isterse onu Kurulum → Tarayıcı'dan bir kez açın.</p>
+    <p>İki şablon, yalnızca okuyan bir tarayıcı ajanıyla (Claude Code ve Kurulum sekmesindeki tarayıcı) sitelerde arar ve bulduklarını karşılaştırır. <b>Ev ya da araba ilanı bul</b>: tür, satın alma ya da kiralama, yer, istediğiniz özellikler ve bütçe; bağlantılı bir ilan tablosu alırsınız, istenen her özellik ✓, ✗ ya da ? ile işaretlidir. <b>Konaklama bul (otel)</b>: yer, tarihler, kişiler, bütçe ve istekleriniz; toplam ve gecelik fiyatı, puanı, kahvaltıyı ve iptal koşullarını gösteren seçenekler alırsınız. İkisi de pencere açmadan çalışır ve yaklaşık 15-20 dakika sürer. Rezervasyon yapmaz, oturum açmaz, kimseyle iletişime geçmez. Aramayı engelleyen bir site raporda bağlantısıyla yazılır; oraya kendiniz bakabilirsiniz. Bir site doğrulama isterse onu Kurulum → <b>Yerel araçlar</b> → <b>Ajan adımları için tarayıcı</b> altındaki <b>Oturum açmak için tarayıcıyı aç</b> ile bir kez açın.</p>
     <h3>Deneysel şablonlar</h3>
     <p>Dört şablonun kütüphane kartında <b>Deneysel</b> işareti, sayfasında da bir uyarı vardır: <b>Sosyal medya video serisi</b> (ücretli OpenAI ve ElevenLabs API anahtarları ister), <b>Ev ya da araba ilanı bul</b>, <b>Konaklama bul (otel)</b> (değişen web sitelerinde bir tarayıcı ajanı) ve <b>Araştır ve X paylaşımı hazırla</b> (X'te paylaşma). Çalışırlar, ama sonucu kullanmadan önce denetleyin.</p>
     <h3>Durdurma, devam ettirme, yeniden deneme</h3>
@@ -607,7 +648,7 @@ outputs:
     <ul>
       <li><b>Belge oku → Yapay zekâ → Kaydet</b></li>
       <li><b>Yazdığım metin → Yapay zekâ → Kaydet</b></li>
-      <li><b>Anlat, oluşturayım (kütüphane)</b>: İş akışları sekmesinin en üstündeki kutu. Ne istediğinizi yazın ve "İş akışını kur"u seçin; kurulu araçlarınızın otomatik seçimi onu yazar. Denetimden geçen taslak kaydedilir ve <b>Şunu kurdum</b> kartıyla açılır: modelin her adım için yazdığı talimatla adımlar (yerinde düzenlenebilir), tek cümlelik "Değiştir: …", "Tamam, böyle kalsın" ve "Sil". Sorunlu taslak düzenleyicide açılır.</li>
+      <li><b>Anlat, oluşturayım (kütüphane)</b>: İş akışları sekmesinin en üstündeki kutu. Ne istediğinizi yazın ve <b>İş akışını kur</b>'a tıklayın. Kurulu araçlarınızın otomatik seçimi onu yazar. Araç çalışırken kutu <b>Yapay zekâ aracının dökümü</b>'nü gösterir: aracın yazdıklarını ve yaptıklarını canlı olarak. <b>Durdur</b> onu bitirir. Denetimden geçen taslak kaydedilir ve <b>Şunu kurdum</b> kartıyla açılır: modelin her adım için yazdığı talimatla adımlar (yerinde düzenlenebilir), tek cümlelik "Değiştir: …", "Tamam, böyle kalsın" ve "Sil". Sorunlu taslak düzenleyicide açılır.</li>
       <li><b>Anlat, oluşturayım (düzenleyici)</b>: iş akışının ne yapacağını yazın ve bir model seçin. Model ilk taslağı yazar (bir çağrı; taslakta sorun varsa bir onarım çağrısı daha). Taslak düzenleyicide kaydedilmemiş olarak açılır. Çalıştırmadan önce her adımın talimatını kontrol edin.</li>
     </ul>
     <figure><div class="shot"><img src="assets/screens/tr-editor.png" alt="Görsel düzenleyici" width="1360" height="860" loading="lazy"></div><figcaption>Koşullu bir akışla düzenleyici: seçili adımın talimatı ve modeli sağda.</figcaption></figure>
@@ -686,12 +727,13 @@ outputs:
       <li>Aksi hâlde adım "kullanım sınırını bekliyor" gösterir ve sınır sıfırlanınca yeniden dener. Bekleme başarısız deneme sayılmaz.</li>
     </ul>
     <p>Çalıştırma sayfasında bekleyen ya da başarısız bir adım <b>Bekle</b> ve <b>Başka modelle devam et</b> seçeneklerini sunar. Döngü elindeki parçaları korur. Bir çalıştırmanın gördüğü sınırı diğerleri de bilir; o araç sıfırlanana kadar onu çağırmazlar.</p>
-    <p>Üst çubuk her sekmede araçların kullanım sınırından ne kadar kaldığını gösterir; örneğin "Kalan · Claude %31 · 5 saat · Codex %7 · Haftalık": her araç için sınırına en yakın pencere, adıyla. Tıklayınca her pencereyi (5 saat, haftalık) ve sıfırlanmasına kalan süreyi görürsünüz. Bu değerleri Claude Code ve Codex bildirir; Mehteran Claude Code'a birkaç dakikada bir, model çağrısı yapmadan sorar. Araçlar belirteç (token) sayısı değil, yüzde bildirir. Kurulum sekmesi her aracın kartında tek çubuk (sınırına en yakın pencere; bütün pencereler <b>Ayrıntılar</b> altında), <b>İş akışlarının yapay zekâ araçları</b> tablosunda da aynı değerleri gösterir; Mehteran'ın kendi sayımları (bugün, son 5 saat, son 7 gün) <b>Ayrıntılar</b> altındadır. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
+    <p>Üst çubuk her sekmede araçların kullanım sınırından ne kadar kaldığını gösterir; örneğin "Kalan · Claude %31 · 5 saat · Codex %7 · Haftalık": her araç için sınırına en yakın pencere, adıyla. Tıklayınca her pencereyi (5 saat, haftalık) ve sıfırlanmasına kalan süreyi görürsünüz. Bu değerleri Claude Code ve Codex bildirir; Mehteran Claude Code'a birkaç dakikada bir, model çağrısı yapmadan sorar. Araçlar belirteç (token) sayısı değil, yüzde bildirir. Kurulum sekmesinde her aracın kartı tek bir çubuk gösterir (sınırına en yakın pencere). Kartın <b>Ayrıntılar</b> bölümü bütün pencereleri ve Mehteran'ın kendi sayımlarını (bugün, son 5 saat, son 7 gün) gösterir. İlk çalıştırmadan itibaren Mehteran bilgisayarın uyumasını engeller; gece boyunca bekleyen bir çalıştırma da devam eder.</p>
   </section>
 
   <section id="tr-yerel">
     <h2>Yerel modeller ve araçlar</h2>
-    <p>Bunlar isteğe bağlıdır. Mehteran her birini yalnızca siz isteyince kurar: Kurulum sekmesinde ya da komut satırında. Her biri sabitlenmiş bir sürümdür ve SHA-256 özetiyle doğrulanır. Bilgisayarda zaten kurulu olan bir kopya bulunur ve kullanılır.</p>
+    <p>Bunlar isteğe bağlıdır. Mehteran her birini yalnızca siz isteyince kurar: Kurulum → <b>Yerel araçlar</b> altında ya da komut satırında. Her biri sabitlenmiş bir sürümdür ve SHA-256 özetiyle doğrulanır. Bilgisayarda zaten kurulu olan bir kopya bulunur ve kullanılır.</p>
+    <p><b>Yerel araçlar</b> altında küçük araçlar yan yana durur: önce PDF okuyucu (<b>Gerekli</b>), sonra Tesseract OCR, Typst, Pandoc, konuşmayı yazıya çevirme, qpdf ve ajan adımları için tarayıcı. OCR kartı kurulu dillerini tek satırda gösterir; <b>Dil ekle</b> ötekilerin listesini açar. Ollama kartı bütün genişliği kaplar. İki katlanmış bölümü vardır: <b>Kurulu modeller (N)</b> ve her modelin boyutunu, belleğini ve dillerini gösteren <b>Önerilen modeller</b>. Bu bilgisayar için büyük ya da sohbet için olmayan modeller <b>Diğer modeller (N)…</b> altına katlanmıştır.</p>
     <table>
       <thead><tr><th>Araç</th><th>Ne kazandırır</th></tr></thead>
       <tbody>
@@ -806,7 +848,7 @@ outputs:
     <h3>Windows: Mehteran başlamıyor</h3>
     <p>Mehteran'ın penceresi zip dosyasının içinden başlatılamayacağını söylerse zip dosyasını önce açın (sağ tıklayın, <b>Tümünü Ayıkla…</b>). <code>Open Mehteran.bat</code> dosyasını zip dosyasının içinden değil, açılmış klasörden başlatın.</p>
     <h3>Bir araç "oturum açılmamış" görünüyor</h3>
-    <p>Kurulum sekmesinde kartındaki oturum açma düğmesine tıklayın. Bir pencere ve tarayıcıda bir giriş sayfası açılır. Orada giriş yapın; sayfa kendiliğinden güncellenir. Sonra pencereyi kapatabilirsiniz.</p>
+    <p>Kurulum sekmesinde aracın giriş düğmesine tıklayın: üstteki kutuda ya da aracın kartında <b>… ile giriş yap</b>. Bir pencere ve tarayıcıda bir giriş sayfası açılır. Orada giriş yapın; sayfa kendiliğinden güncellenir. Sonra pencereyi kapatabilirsiniz.</p>
     <h3>Bir adım kullanım sınırını bekliyor</h3>
     <p>Bu normaldir: çalıştırma sınır sıfırlanınca devam eder. Hemen sürdürmek için adımda <b>Başka modelle devam et</b>'e tıklayın.</p>
     <h3>PDF dışa aktarma Typst gerektiğini söylüyor</h3>

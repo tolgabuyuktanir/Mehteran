@@ -968,7 +968,15 @@
   "pull_recommended": "Download the recommended model ({name})",
   "config_details": "Configuration details",
   "welcome_sample": "Try with a sample document",
-  "sample_file_name": "sample-lease.md"
+  "sample_file_name": "sample-lease.md",
+  "tool_settings_title": "Settings per tool",
+  "tool_settings_intro": "How many calls a tool may make at once, and whether it may use an API key (billed per use).",
+  "auto_more": "Fast, strong and local-only choices",
+  "models_more": "Other models ({count}): too big for this computer, or not for chatting",
+  "ocr_add_languages": "Add languages",
+  "models_installed_count": "Installed models ({count})",
+  "describe_transcript": "Transcript of the AI tool",
+  "describe_transcript_wait": "Waiting for the AI tool's first words…"
  },
  "messages": {
   "video_settings_invalid": "Check the key or voice ID. Paste only the value, without spaces.",

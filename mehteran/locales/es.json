@@ -968,7 +968,15 @@
   "pull_recommended": "Descargar el modelo recomendado ({name})",
   "config_details": "Detalles de la configuración",
   "welcome_sample": "Probar con un documento de ejemplo",
-  "sample_file_name": "ejemplo-contrato-alquiler.md"
+  "sample_file_name": "ejemplo-contrato-alquiler.md",
+  "tool_settings_title": "Ajustes por herramienta",
+  "tool_settings_intro": "Cuántas llamadas puede hacer una herramienta a la vez y si puede usar una clave de API (de pago por uso).",
+  "auto_more": "Opciones rápida, potente y solo local",
+  "models_more": "Otros modelos ({count}): demasiado grandes para este equipo o no son para chatear",
+  "ocr_add_languages": "Añadir idiomas",
+  "models_installed_count": "Modelos instalados ({count})",
+  "describe_transcript": "Transcripción de la herramienta de IA",
+  "describe_transcript_wait": "Esperando las primeras palabras de la herramienta de IA…"
  },
  "messages": {
   "video_settings_invalid": "Compruebe la clave o el ID de voz. Pegue solo el valor, sin espacios.",
