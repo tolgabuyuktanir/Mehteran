@@ -10,7 +10,7 @@ Yardımınız için teşekkürler. Hata bildirimleri, çeviri düzeltmeleri, yen
 - Daha büyük bir değişiklik için (yeni bir özellik, yeni bir adım türü, çalıştırmaların işleyişinde bir değişiklik) önce bir issue açın. Sorunu ve planınızı anlatın; böylece kimse aynı işi iki kez yapmaz.
 - Güvenlik sorunları için issue açmayın. [SECURITY.md](SECURITY.md) dosyasına bakın.
 
-Üstlenilebilecek planlı iyileştirmeler [ROADMAP.md](ROADMAP.md) dosyasında.
+Yapacak bir iş mi arıyorsunuz? [ROADMAP.md](ROADMAP.md) maddeleri seviyesiyle (🟢 ilk katkı için iyi, 🟡 orta, 🔴 büyük) ve gereken becerilerle listeler. Birçoğu programlama gerektirmez.
 
 ## Mehteran'ı kaynak koddan çalıştırma
 

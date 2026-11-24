@@ -181,7 +181,13 @@ Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kul
 
 ## Katkı
 
-Hata bildirimleri, çeviri düzeltmeleri ve yeni şablonlar memnuniyetle karşılanır. [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) dosyasına bakın. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin. Herkesin üstlenebileceği planlı iyileştirmeler [ROADMAP.md](ROADMAP.md) dosyasında.
+Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebilirsiniz. **[ROADMAP.md](ROADMAP.md) yapılacakları, her birinin seviyesi ve gereken becerilerle listeler.** Birçoğu birkaç saat sürer:
+
+- **İngilizce dışında bir dil mi konuşuyorsunuz?** Arayüzü kendi dilinizde okuyun, kulağa yanlış geleni düzeltin. Düzeltilmiş tek bir kelime de iyi bir ilk pull request'tir.
+- **Tekrar ettiğiniz bir iş mi var?** Onu bir iş akışı olarak kurun ve herkesle paylaşın.
+- **Python ya da JavaScript mi yazıyorsunuz?** ZIP kopyaları için güncelleme ve iş akışını sesle anlatmak sizi bekliyor.
+
+Başlamak için "Yardım etmek istiyorum" ile bir issue açın ve maddenin adını yazın. Sorularınızı her zaman sorabilirsiniz. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
 
 ## Lisans
 

@@ -181,7 +181,13 @@ The book translation app is no longer part of Mehteran. A computer that used it 
 
 ## Contributing
 
-Bug reports, translation fixes and new templates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately, as described in [SECURITY.md](SECURITY.md). Planned improvements that anyone can take are in [ROADMAP.md](ROADMAP.md).
+Mehteran is for people who do not write code, and you can help them without writing code too. **[ROADMAP.md](ROADMAP.md) lists things to do, each with a level and the skills it needs.** Many take a few hours:
+
+- **Speak a language other than English?** Read the interface in your language and fix what sounds wrong. One fixed word is a good first pull request.
+- **Have a task you repeat?** Build it as a workflow and share it with everyone.
+- **Write Python or JavaScript?** Updates for zip copies and describing a workflow by voice are waiting.
+
+To start, open an issue with "I want to help" and name the item. Questions are always welcome. [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run Mehteran from the source and the checks. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
