@@ -123,7 +123,8 @@ class ResumeAtStartTests(HomeCase):
         self.assertEqual(second.resume_interrupted(), [run_id])
         try:
             self.wait_for(lambda: second.get(run_id)["nodes"]["a"]["status"] == "waiting_quota")
-            self.assertEqual(float(second.get(run_id)["nodes"]["a"]["quota_until"]), deadline)
+            # the column is TEXT: an older SQLite keeps 15 significant digits (about 10 µs here)
+            self.assertAlmostEqual(float(second.get(run_id)["nodes"]["a"]["quota_until"]), deadline, delta=0.001)
             self.assertTrue(second.list()[0]["waiting_quota"])
             self.assertEqual(self.calls(), [])
         finally:

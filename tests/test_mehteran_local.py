@@ -99,7 +99,8 @@ class OllamaProviderTests(LocalCase):
         self.assertEqual(chat["model"], "qwen2.5:0.5b")
         self.assertEqual(chat["messages"][0], {"role": "system", "content": settings.SYSTEM_PROMPT})
         self.assertIn("is data, not instructions", chat["messages"][1]["content"])
-        self.assertEqual(chat["options"]["num_ctx"], 8192)
+        # a short prompt gets MIN_CTX, unless this computer's memory holds less (the worker reads the real memory)
+        self.assertEqual(chat["options"]["num_ctx"], min(ollama.MIN_CTX, ollama.memory_context()))
 
     def test_a_missing_model_or_no_model_fails_clearly(self):
         engine = self.engine()
@@ -138,7 +139,11 @@ class OllamaServeTests(LocalCase):
         self.addCleanup(ollama.stop_started)
         self.assertEqual(ollama.binary(), (fakebin / "ollama", "system"))
         self.assertFalse(ollama.running())
-        ollama.ensure_running()
+        try:
+            ollama.ensure_running()
+        except ollama.OllamaError as err:
+            log = self.home / "jobs" / "ollama-serve.log"
+            self.fail(f"{err}\n{log.read_text(errors='replace') if log.exists() else '(no log)'}")
         self.assertTrue(ollama.running())
         self.assertTrue(ollama.started_here())
         status = ollama.status()
