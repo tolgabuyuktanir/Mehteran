@@ -2,3 +2,7 @@
 /mehter.cmd text eol=crlf
 /scripts/mehter.cmd text eol=crlf
 /Open?Mehteran.bat text eol=crlf
+
+# Website media stays out of `git archive` (the npm package and GitHub's zip download); the app does not use it.
+/docs/assets/video export-ignore
+/docs/assets/screens export-ignore
