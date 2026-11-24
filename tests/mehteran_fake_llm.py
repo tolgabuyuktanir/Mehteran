@@ -60,7 +60,15 @@ if quota:
         sys.exit(1)
 if os.environ.get("MEHTERAN_FAKE_LOG"):
     with open(os.environ["MEHTERAN_FAKE_LOG"], "a", encoding="utf-8") as log:
+        if os.name == "nt":  # an append is not atomic there: two parallel calls could write over each other's line
+            import msvcrt
+            log.seek(0)
+            msvcrt.locking(log.fileno(), msvcrt.LK_LOCK, 1)
         log.write(f"{tag} {start:.3f} {time.time():.3f}\n")
+        if os.name == "nt":
+            log.flush()
+            log.seek(0)
+            msvcrt.locking(log.fileno(), msvcrt.LK_UNLCK, 1)
 if "Encode the approved script as JSON" in prompt:
     import json
     scene = {"narration": "A tree grows.", "visual": "A young tree in the morning sun"}
