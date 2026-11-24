@@ -17,7 +17,7 @@ find_python() {
 # "ui" first brings a git copy up to date, as scripts/start.sh does (the same update of the whole code folder; git
 # replaces this file, the running shell keeps reading the old one).
 if PY=$(find_python); then
-  [ "$1" = "ui" ] && "$PY" -m pipeline update
+  [ "$1" = "ui" ] && "$PY" -m mehteran update
   exec "$PY" -m mehteran "$@"
 fi
 
@@ -33,5 +33,5 @@ if [ -z "$UV" ]; then
   fi
   UV="$HOME/.local/bin/uv"
 fi
-[ "$1" = "ui" ] && "$UV" run --no-project --python 3.12 python -m pipeline update
+[ "$1" = "ui" ] && "$UV" run --no-project --python 3.12 python -m mehteran update
 exec "$UV" run --no-project --python 3.12 python -m mehteran "$@"

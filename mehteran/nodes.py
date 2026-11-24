@@ -202,7 +202,7 @@ def _ocr_text(path: Path, mode: str, langs: str, abort: threading.Event | None) 
 
 
 def _read_one(path: Path, ocr_mode: str, ocr_languages: str, abort: threading.Event | None, speech: tuple[str, str]) -> str:
-    from pipeline import documents
+    from .common import documents
 
     from . import pandoc
     from . import speech as speech_tools
@@ -235,7 +235,7 @@ def read_file(path: Path, limit: int | None = None, ocr_mode: str = "never", ocr
               abort: threading.Event | None = None, speech: tuple[str, str] = ("auto", "auto")) -> str:
     """The text of one document (PDF, Word, EPUB, OpenDocument, RTF, Markdown, text), table (CSV, TSV, Excel), image
     (OCR) or audio/video recording (speech to text), cut to limit. speech: (model, language) of whisper.cpp."""
-    from pipeline.core import PipelineError
+    from .common.core import UserError
 
     from .localtools import ToolError
     try:
@@ -245,7 +245,7 @@ def read_file(path: Path, limit: int | None = None, ocr_mode: str = "never", ocr
             text = _read_repaired(path, first, ocr_mode, ocr_languages, abort, speech)
     except InterruptedError:
         raise Aborted() from None
-    except (PipelineError, tables.TableError, ToolError) as e:
+    except (UserError, tables.TableError, ToolError) as e:
         raise NodeError(message_of(e)) from None
     except subprocess.CalledProcessError as e:
         raise NodeError(t("extract_failed", name=path.name, error=f"{Path(str(e.cmd[0])).name}: {e.returncode}")) from None
@@ -666,7 +666,7 @@ def _ask_model(ctx: Ctx, prompt: Path, stem: str, label: str, stop: threading.Ev
 
 
 class KnownLimit(QuotaWait):
-    """A usage limit met earlier (another run, the Setup test, the translation app) has not reset: no call is made."""
+    """A usage limit met earlier (another run, the Setup test) has not reset: no call is made."""
 
 
 def _known_limit(ctx: Ctx) -> None:
@@ -693,7 +693,7 @@ def _provider_slot(ctx: Ctx, stop: threading.Event | None):
 def call_worker(job: Path, answer: Path, error: Path, ctx: Ctx, quota: Path | None = None) -> str:
     """Runs one model call in a separate process (mehteran.worker), so that cancel and timeout can stop it with
     the tool it started. A usage limit that the tool reports is raised as QuotaWait."""
-    from pipeline import system
+    from .common import system
 
     from . import providers
     env = {**_guarded_env(ctx, providers),
@@ -986,7 +986,7 @@ def split_parts(text: str, how: str, size: int) -> list[tuple[str, str]]:
     blocks = [b.strip() for b in re.split(r"\n\s*\n", text) if b.strip()]
     if how == "paragraphs":
         return [("", b) for b in blocks]
-    from pipeline import documents
+    from .common import documents
     return [("", chunk) for chunk in documents.segment(documents.split_long(blocks, size), size) if chunk.strip()]
 
 

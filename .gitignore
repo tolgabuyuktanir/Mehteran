@@ -4,10 +4,10 @@
 # Logs and state of this computer
 .jobs/
 
-# Written by './translate package'
+# Packages built on this computer
 dist/
 
-# Books, their intermediate work and the translations: each user's own data
+# The book translation's books (see below): each user's own data
 books/
 
 # Secrets never belong in the repository (the application keeps none in this folder)
@@ -28,12 +28,21 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# The user's own settings and instructions: made from config.default.toml and prompts/defaults/ at the first start,
-# never changed by an update ("git pull"). See pipeline/userfiles.py.
+# The book translation app, no longer part of Mehteran: on a computer that used it, Mehteran keeps it from the git
+# history (mehteran/update.py), and these paths stay out of git. Its user files (settings, instructions) too.
+/pipeline/
+/translate
+/translate.cmd
+/scripts/start.sh
+/scripts/start.cmd
+/Open Interface.command
+/Open Interface.bat
+/config.default.toml
+/docs/guide.md
+/docs/guide.tr.md
 /config.toml
-/prompts/*.md
-/prompts/custom/
-/prompts/.defaults.json
+/prompts/
+
 # The publisher's Word template (uploaded in the interface)
 /export/
 /npm/mehteran.tar.gz

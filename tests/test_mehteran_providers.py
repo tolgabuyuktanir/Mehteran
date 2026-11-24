@@ -58,7 +58,7 @@ class SettingsTests(HomeCase):
                         '[providers.mine]\ncommand = ["my-llm"]\n', encoding="utf-8")
         with mock.patch.object(settings, "config_path", lambda: toml):
             cfg = settings.provider_config()
-        self.assertEqual(cfg["providers"]["claude"]["adapter"], "claude", "the translation app's command is not used")
+        self.assertEqual(cfg["providers"]["claude"]["adapter"], "claude", "a config.toml command of the same name is not used")
         self.assertNotIn("chatgpt", cfg["providers"])
         self.assertEqual(cfg["providers"]["codex"]["adapter"], "codex")
         self.assertEqual(cfg["providers"]["mine"]["command"], ["my-llm"], "a provider the user added still works")

@@ -1,6 +1,6 @@
 // Mehteran: the run history and its automation (mehteran/history.py, mehteran/sharing.py).
-// - The Runs tab's list: search, groups per workflow (collapsible), batch rows with progress, the book translations
-//   in their own group; a run's name and note, deleting a run, "delete runs older than".
+// - The Runs tab's list: search, groups per workflow (collapsible), batch rows with progress; a run's name and note,
+//   deleting a run, "delete runs older than".
 // - The run page: a finished run's diagram and progress fold into one line.
 // - The run window: "once per file" (a batch) and "also save the results to a folder".
 // - The workflow drawer's "Share", and the preview before an import (also by dropping a file on the library).
@@ -133,7 +133,6 @@ function historyGroup(key, title, items, count, refresh, icon) {
 function historyList(runs, selected) {
   const draw = (reload) => (reload ? showRuns(selected ? [selected] : []) : historyList(runs, selected));
   historyTools(draw);
-  const books = state.trRuns || [];
   const groups = new Map();
   for (const r of runs) {
     const key = r.template || r.workflow_id;
@@ -155,13 +154,6 @@ function historyList(runs, selected) {
   const plans = (state.schedules || []).filter((p) => !runHistory.query.trim() || fold(p.name).includes(fold(runHistory.query.trim())));
   if (plans.length) items.unshift(...historyGroup("schedules", S("schedules_title"), plans.map((p) => scheduleRow(p, draw)), plans.length, draw));
   const q = fold(runHistory.query.trim());
-  const bookList = books.filter((b) => !q || fold(b.book).includes(q) || fold(S("translation_card_title")).includes(q));
-  const bookItems = bookList.map((b) => h("li", {class: "rl-item"}, h("button", {type: "button", onclick: () => go("workflows/translation/books")},
-    h("span", {class: "rl-main"}, h("span", {class: "rl-name"}, b.book),
-      h("span", {class: "small muted"}, b.started ? fmtTime(b.started) : "", b.stage && b.active ? " · " + b.stage : "")),
-    badge(b.waiting_quota ? "waiting_quota" : b.status)),
-    b.active ? stopButton(S("stop_named", {name: b.book}), (btn) => stopBook(btn, b.book, () => draw(true))) : null));
-  if (bookItems.length) items.push(...historyGroup("translation", S("translation_card_title"), bookItems, bookItems.length, draw, iconTile("translation")));
   if (!items.length && q) items.push(h("li", {class: "muted pl-empty", role: "status"}, S("runs_no_match")));
   if (runs.length && !runHistory.end) items.push(h("li", {},
     h("button", {type: "button", class: "btn small", onclick: async (e) => {

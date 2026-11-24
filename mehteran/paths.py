@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 
 CODE = Path(__file__).resolve().parent          # the mehteran package
-REPO = CODE.parent                              # the folder that also holds the translation app (pipeline/)
+REPO = CODE.parent                              # the code folder (README, launchers, .runtime)
 BUILTIN_TEMPLATES = CODE / "templates"
 SUBFOLDERS = ("templates", "workflows", "executions", "databases")
 
@@ -59,9 +59,8 @@ def replace(src: Path, dst: Path) -> None:
 
 
 def runtime() -> Path:
-    """<code folder>/.runtime, shared with the translation app (pipeline.runtime): the tools installed without
-    administrator rights. MEHTERAN_RUNTIME_ROOT replaces the code folder (the tests set it)."""
+    """<code folder>/.runtime: the tools installed without administrator rights. MEHTERAN_RUNTIME_ROOT replaces the
+    code folder (the tests set it)."""
     if os.environ.get("MEHTERAN_RUNTIME_ROOT"):
         return Path(os.environ["MEHTERAN_RUNTIME_ROOT"]) / ".runtime"
-    from pipeline.core import ROOT
-    return ROOT / ".runtime"
+    return REPO / ".runtime"

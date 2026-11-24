@@ -475,9 +475,6 @@ class ApiTests(LocalCase):
 class CliTests(HomeCase):
     def test_install_local_targets(self):
         from mehteran import cli
-        quiet = mock.patch("pipeline.i18n.set_default")  # the process-wide language of the translation app stays
-        quiet.start()
-        self.addCleanup(quiet.stop)
         with mock.patch.object(speech, "install_models") as models, mock.patch.object(typst, "install") as install_typst:
             self.assertEqual(cli.main(["install-local", "speech-models", "tiny"]), 0)
             self.assertEqual(cli.main(["install-local", "typst"]), 0)

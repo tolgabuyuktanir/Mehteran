@@ -366,7 +366,7 @@ def fake_status(tool):
 
 @mock.patch.object(web.tools, "extend_path", lambda *a: None)
 class SetupRouteTests(ServerCase):
-    """The Setup tab's routes. Every call into pipeline.tools is mocked: nothing is installed, signed in or run."""
+    """The Setup tab's routes. Every call into mehteran.common.tools is mocked: nothing is installed, signed in or run."""
 
     def test_tools_status(self):
         with mock.patch.object(web.tools, "status", side_effect=fake_status), \
@@ -404,11 +404,12 @@ class SetupRouteTests(ServerCase):
         self.assertEqual((status, data["message"]), (200, "ok"))
         login.assert_called_once_with("codex", "key", "k" * 30)
         self.assertEqual(self.json("POST", "/api/tools/pdf/login", body={})[0], 404)
-        with mock.patch("pipeline.providers.run", return_value="OK") as run:
+        with mock.patch("mehteran.common.calls.call_command", return_value="OK") as run:
             status, data = self.json("POST", "/api/models/test", body={"name": "fake/small@high"})
         self.assertEqual(status, 200)
         self.assertIn("OK", data["message"])
-        self.assertEqual(run.call_args.args[1], "fake/small@high")
+        self.assertEqual(run.call_args.args[0], "fake")
+        self.assertEqual(run.call_args.args[2:4], ("small", "high"))
         self.assertEqual(self.json("POST", "/api/models/test", body={"name": "nope"})[0], 400)
         self.assertEqual(self.json("POST", "/api/models/test", body={"name": "-rm"})[0], 400)
 

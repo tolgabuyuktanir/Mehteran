@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Starts Mehteran from npm: "npx mehteran [command ...]" (default: ui).
-// Mehteran is a Python application that keeps the book translation's files (books/, config.toml, prompts/,
-// glossary/, .runtime/) inside its code folder, so the code lives in a fixed folder that npm never deletes:
-// ~/Mehteran, or MEHTERAN_DIR. The first run extracts the source bundled with this npm release.
+// Mehteran is a Python application that installs its tools into its code folder (.runtime/), so the code lives in a
+// fixed folder that npm never deletes: ~/Mehteran, or MEHTERAN_DIR. The first run extracts the source bundled with
+// this npm release.
 "use strict";
 
 const fs = require("fs");

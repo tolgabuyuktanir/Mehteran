@@ -128,7 +128,7 @@ def open_signin(home: Path, url: str = "") -> None:
         raise ToolError(t("browser_needs_chrome"))
     profile = profile_dir(home)
     profile.mkdir(parents=True, exist_ok=True)
-    from pipeline import system
+    from .common import system
     subprocess.Popen([str(program), f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check",
                       "--", url or "about:blank"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, **system.new_process_group())

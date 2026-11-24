@@ -230,7 +230,7 @@ class WebTests(HomeCase):
         fake = next(p for p in info["providers"] if p["name"] == "fake")
         self.assertEqual(fake["models"], ["small", "large"])
         self.assertEqual(fake["efforts"], ["low", "high"])
-        self.assertNotIn("translation_url", info)  # the book translation is part of this page now
+        self.assertNotIn("translation", info)  # the book translation is not part of Mehteran
         # The page's texts: in the asked language, and in English for a key that language lacks.
         status, strings = self.json("GET", "/api/strings", lang="tr")
         self.assertEqual(strings["approve"], {"tr": "Onayla", "en": "Approve"})

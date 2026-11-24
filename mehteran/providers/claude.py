@@ -81,7 +81,7 @@ class Claude(Adapter):
 
     def login(self) -> dict:
         """`claude auth status`: with an API key in the environment (apiKeySource), claude -p bills that key."""
-        from pipeline import tools
+        from ..common import tools
         out = super().login()
         try:
             data = json.loads(tools._run([self.program, "auth", "status"]).stdout)

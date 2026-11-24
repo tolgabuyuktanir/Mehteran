@@ -19,7 +19,7 @@ class Gemini(Adapter):
         return argv + (["--model", model] if model else [])
 
     def parse(self, code: int, stdout: str, stderr: str, out_file: Path) -> tuple[str, str]:
-        from pipeline.providers import parse_json
+        from ..common.calls import parse_json
         try:
             data = parse_json(stdout)
         except ValueError:

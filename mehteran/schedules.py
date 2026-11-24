@@ -143,6 +143,7 @@ def create(engine, ref: str, values: dict, rule, name: str = "", every_step: str
     text, ref = _workflow(ref, home)
     values = {str(k): v for k, v in (values or {}).items()}
     _check_inputs(engine, text, values)
+    engine.unattended_check(text, values, privacy, every_step)  # its models, as at its time
     rule = clean_rule(rule)
     name = " ".join(str(name or "").split())
     if len(name) > NAME_LIMIT:
@@ -207,7 +208,7 @@ def start(engine, item: dict, kick=None) -> str:
             text, ref = _workflow(ref, engine.home)
         _check_inputs(engine, text, item.get("values") or {})
         run_id = engine.start(text, item.get("values") or {}, {}, template=ref, launch=False,
-                              privacy=item.get("privacy") or "", every_step=item.get("every_step") or "")
+                              privacy=item.get("privacy") or "", every_step=item.get("every_step") or "", unattended=True)
     finally:
         i18n.set_request(previous)
     engine.store.update_run(run_id, schedule=item["id"], output_dir=item.get("output_dir"))

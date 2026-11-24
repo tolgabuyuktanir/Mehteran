@@ -2,11 +2,12 @@
 
 - Mehteran's own adapters (mehteran/providers/): claude, codex, antigravity, gemini, ollama, with the user's settings
   of <data>/configurations/providers.toml. The old name "chatgpt" means codex.
-- The other [providers.*] sections of the translation app's config.toml (a provider the user added there): they
-  run through the translation app's call, pipeline.providers.run. Mehteran only reads that file; it never writes it.
-  Its sections for claude, chatgpt, antigravity and gemini are for the book translation only.
-- MEHTERAN_CONFIG names another TOML file with [providers.*] sections; its providers win over the adapters of the
-  same name (the tests use it for a fake tool). Without config.toml, config.default.toml is used.
+- Providers given by their command: the [providers.*] sections (command = [...]) of a TOML file, which also holds
+  [general] (timeout, retries, usage-limit waits). They run through mehteran.common.calls.call_command. The file is
+  MEHTERAN_CONFIG, else <data>/configurations/config.toml, else the config.toml in the code folder that an older
+  Mehteran with the book translation read. Sections named like an adapter (claude, chatgpt, antigravity, gemini) are
+  skipped, except in MEHTERAN_CONFIG, whose providers win over the adapters (the tests use it for a fake tool).
+  Mehteran never writes these files.
 """
 
 from __future__ import annotations
@@ -26,16 +27,14 @@ GENERAL_DEFAULTS = {"timeout": 1200, "retries": 1, "quota_wait_minutes": 30, "qu
 def config_path() -> Path:
     if os.environ.get("MEHTERAN_CONFIG"):
         return Path(os.environ["MEHTERAN_CONFIG"]).expanduser()
-    from pipeline.core import ROOT  # TP_ROOT moves the translation app's data folder; follow it
-    for path in (ROOT / "config.toml", paths.REPO / "config.toml", paths.REPO / "config.default.toml"):
-        if path.exists():
-            return path
-    return paths.REPO / "config.default.toml"
+    own = paths.home() / "configurations" / "config.toml"
+    legacy = paths.REPO / "config.toml"
+    return legacy if legacy.is_file() and not own.is_file() else own
 
 
 def _neutral(command: list) -> list:
-    """The command with Mehteran's own system prompt: the translation app's one describes a translator of Islamic
-    books, which does not fit a paper review or a comparison. The translation app's file is not changed."""
+    """The command with Mehteran's own system prompt: a config.toml of the book translation describes a translator of
+    religious books, which does not fit a paper review or a comparison. The file is not changed."""
     return [SYSTEM_PROMPT if i and command[i - 1] == "--system-prompt" else arg for i, arg in enumerate(command)]
 
 

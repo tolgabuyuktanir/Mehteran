@@ -5,8 +5,7 @@ survives a killed parent, and closing the console window kills Mehteran without 
 job object with the flag "kill on job close" does the work: the system closes the handle when Mehteran ends, however
 it ends, and then ends every process in the job. Child processes of a job member join the job.
 
-Only a model worker and the Ollama server that Mehteran started are put in a job. The translation app's book
-jobs (pipeline) are not: they must go on when the interface window closes.
+Only a model worker and the Ollama server that Mehteran started are put in a job.
 """
 
 from __future__ import annotations

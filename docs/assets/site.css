@@ -212,6 +212,7 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .foot nav { display: flex; gap: 18px; flex-wrap: wrap; }
 .foot a { color: var(--tide-ink); text-decoration-color: var(--tide-line); }
 .foot a:hover { text-decoration-color: currentColor; }
+.foot .foot-note { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.5; max-width: 72ch; }
 .foot .wordmark { display: block; width: min(1120px, 100% - 32px); margin: 40px auto -0.18em; font: 600 clamp(72px, 19vw, 248px)/.9 var(--serif);
   letter-spacing: -.035em; color: transparent; -webkit-text-stroke: 1.5px var(--glow); user-select: none; white-space: nowrap; }
 

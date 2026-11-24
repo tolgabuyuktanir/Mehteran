@@ -24,7 +24,7 @@ import threading
 import time
 from pathlib import Path
 
-from pipeline import system
+from .common import system
 
 from . import paths, schema, yamlio
 from .engine import RunError, _as_list, safe_filename
@@ -465,7 +465,7 @@ def start_batch(engine, text: str, template: str, values: dict, shared: dict, in
     try:
         for path in files:
             run_id = engine.start(text, values, {**shared, input_id: path}, template=template, launch=False,
-                                  every_step=every_step, privacy=privacy)
+                                  every_step=every_step, privacy=privacy, unattended=True)
             created.append(run_id)
             engine.store.update_run(run_id, batch=batch, output_dir=output_dir)
     except BaseException:

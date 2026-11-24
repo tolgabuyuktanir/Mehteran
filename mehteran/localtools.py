@@ -3,8 +3,8 @@ Typst, Pandoc, whisper.cpp with ffmpeg, qpdf):
 checked downloads, sizes, the computer's memory and free disk, and a subprocess that a cancel or a timeout stops.
 
 Every download has a pinned version and a SHA-256 sum written in this code; a file whose sum differs is deleted and
-never used. The download itself is the translation app's (pipeline.runtime._download: progress on stdout, which the
-install job's log shows).
+never used. The download itself is mehteran.common.runtime._download (progress on stdout, which the install job's log
+shows).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class ToolError(RuntimeError):
 
 def download_verified(url: str, dest: Path, sha256: str) -> None:
     """Downloads url to dest and checks its SHA-256 sum; a wrong file is deleted and refused."""
-    from pipeline import runtime
+    from .common import runtime
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_name(dest.name + ".part")
     runtime._download(url, part)
@@ -86,7 +86,7 @@ def run(argv: list[str], abort: threading.Event | None, timeout: float, cwd: Pat
         env: dict | None = None) -> tuple[int, str]:
     """Runs a command; stops it with its children on abort or after timeout. Returns (exit code, the end of its
     error output). Raises ToolError on a timeout and InterruptedError on an abort."""
-    from pipeline import system
+    from .common import system
     proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                             stderr=subprocess.PIPE, **system.new_process_group())  # also: no console window
     errors: list[bytes] = []
@@ -137,7 +137,7 @@ def program_version(program: Path | None, *args: str) -> str | None:
     if not program:
         return None
     try:
-        from pipeline import system
+        from .common import system
         out = subprocess.run([str(program), *(args or ("--version",))], capture_output=True, text=True, timeout=20,
                              encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, **system.hidden_window())
     except (OSError, subprocess.SubprocessError):
@@ -157,7 +157,7 @@ def platform_key() -> tuple[str, str]:
 def install_archive(url: str, sha256: str, target: Path) -> None:
     """Downloads a release archive (zip, tar.gz, tar.xz), checks its SHA-256 sum and unpacks it into target, which it
     replaces. An archive with a single top folder gives that folder's content."""
-    from pipeline import runtime
+    from .common import runtime
     from . import paths
     base = paths.runtime()
     base.mkdir(parents=True, exist_ok=True)
@@ -178,16 +178,16 @@ def install_archive(url: str, sha256: str, target: Path) -> None:
 
 
 def micromamba_missing() -> bool:
-    """True when a conda-forge install must first bring micromamba (with Poppler, the translation app's installer)."""
+    """True when a conda-forge install must first bring micromamba (with Poppler, mehteran.common.runtime)."""
     from . import paths
     return not (paths.runtime() / "micromamba" / exe("micromamba")).exists()
 
 
 def conda_install(prefix: Path, specs: list[str]) -> None:
     """Installs pinned conda-forge packages into prefix with micromamba (which checks every package against the
-    channel's SHA-256 sums). micromamba comes with the translation app's Poppler installer when it is missing.
+    channel's SHA-256 sums). micromamba comes with the Poppler installer (mehteran.common.runtime) when it is missing.
     Output goes to stdout (the job log); raises ToolError when a step fails."""
-    from pipeline import runtime, system
+    from .common import runtime, system
     from . import paths
     base = paths.runtime()
     micromamba = base / "micromamba" / exe("micromamba")

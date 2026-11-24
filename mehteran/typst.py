@@ -231,7 +231,7 @@ class _Converter:
         return out
 
     def paragraph(self, text: str) -> str:
-        from pipeline.export import mostly_rtl
+        from .common.export import mostly_rtl
         content = self.inline(text)
         if not self.rtl_doc and mostly_rtl(text):  # an Arabic passage in a left-to-right text
             return f'#block(width: 100%)[#set text(dir: rtl, lang: "ar")\n{content}]'
@@ -261,7 +261,7 @@ class _Converter:
 
 def to_typst(markdown: str, title: str, lang: str) -> str:
     """The Typst source of a document."""
-    from pipeline.export import is_rtl
+    from .common.export import is_rtl
     language, _, region = (lang or "en").partition("-")
     region_arg = f", region: {string(region)}" if re.fullmatch(r"[A-Za-z]{2}", region) else ""
     converter = _Converter(markdown, is_rtl(lang))

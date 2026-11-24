@@ -12,8 +12,12 @@
   schedules                            the scheduled runs (made in the web interface; they start while it runs)
   background on|off|status             starts the web interface in the background at sign-in (no window), so that
                                        scheduled runs start on time
-  install <tool> ...                   installs tools into <code folder>/.runtime, shared with the translation app
-                                       (used by the Setup tab; pipeline.runtime does the work)
+  install <tool> ...                   installs tools into <code folder>/.runtime (used by the Setup tab)
+  update                               brings a git copy up to date (run by the launcher before "ui")
+  doctor                               checks that each installed AI tool still takes Mehteran's options and
+                                       that its usage report can be read (no model call)
+  eval [--model m] [--case id ...]     runs the evaluation set (evals/cases.json) with real models and checks the
+       [--compare a.json b.json]       results; or compares two of its reports
   install-local ollama|ocr|ocr-languages|typst|pandoc|speech|speech-models|qpdf [name ...]
                                        installs Ollama, Tesseract OCR (and OCR languages), Typst, Pandoc, whisper.cpp
                                        (and speech models) or qpdf into the same .runtime (pinned versions, checked
@@ -89,6 +93,39 @@ def _follow(engine: Engine, run_id: str) -> int:
     if run["error"]:
         _print(run["error"])
     return EXIT.get(run["status"], 1)
+
+
+def cmd_update(args, home: Path) -> int:
+    from . import update
+    return update.update(paths.REPO)
+
+
+def cmd_doctor(args, home: Path) -> int:
+    from . import doctor
+    found = doctor.checks(home)
+    if not found:
+        _print(t("doctor_no_tools"))
+        return 1
+    for name, ok, message in found:
+        _print(f"{'✓' if ok else '✗'} {name}: {message}")
+    return 0 if all(ok for _, ok, _ in found) else 1
+
+
+def cmd_eval(args, home: Path) -> int:
+    import json
+
+    from . import evals
+    if args.compare:
+        before, after = (json.loads(Path(p).read_text(encoding="utf-8")) for p in args.compare)
+        for line in evals.compare(before, after):
+            _print(line)
+        return 0
+    try:
+        report = evals.run(args.model, args.case or None, Path(args.out) if args.out else None, say=_print)
+    except ValueError as e:
+        _print(f"{t('cli_error')}: {e}")
+        return 2
+    return 0 if report["passed"] == report["cases"] else 1
 
 
 def cmd_ui(args, home: Path) -> int:
@@ -171,19 +208,16 @@ def cmd_decide(args, home: Path) -> int:
 
 
 def cmd_install(args, home: Path) -> int:
-    """The translation app's installer (pipeline.runtime, read-only) without loading its project: that may write
-    the translation app's config.toml, which Mehteran never changes."""
-    from pipeline import i18n as pipeline_i18n
-    from pipeline import runtime, tools
-    from pipeline.core import ROOT, PipelineError
-    pipeline_i18n.set_default(i18n.pipeline_lang())
+    """Installs command-line tools into <code folder>/.runtime (mehteran.common.runtime)."""
+    from .common import runtime, tools
+    from .common.core import ROOT, UserError
     tools.extend_path(ROOT)
     for tool in args.tools:
-        name = pipeline_i18n.t(f"tool_name_{tool}") if tools.TOOLS[tool]["provider"] is None else tools.TOOLS[tool]["name"]
+        name = t(f"tool_name_{tool}") if tools.TOOLS[tool]["provider"] is None else tools.TOOLS[tool]["name"]
         _print(f"=== {name} ===")
         try:
             runtime.install_tool(tool, ROOT)
-        except PipelineError as e:
+        except UserError as e:
             _print(f"{t('cli_error')}: {e}")
             return 1
         tools.extend_path(ROOT)
@@ -195,10 +229,7 @@ LOCAL_TARGETS = ["ollama", "ocr", "ocr-languages", "typst", "pandoc", "speech", 
 
 
 def cmd_install_local(args, home: Path) -> int:
-    from pipeline import i18n as pipeline_i18n
-
     from . import browser, ocr, ollama, pandoc, qpdf, speech, typst
-    pipeline_i18n.set_default(i18n.pipeline_lang())  # the download progress of pipeline.runtime: Turkish or English
     try:
         if args.target == "ollama":
             ollama.install()
@@ -212,7 +243,7 @@ def cmd_install_local(args, home: Path) -> int:
             speech.install_models(args.names or speech.DEFAULT_MODELS)
         else:
             {"typst": typst, "pandoc": pandoc, "qpdf": qpdf, "browser": browser}[args.target].install()
-    except Exception as e:  # noqa: BLE001 - ToolError, PipelineError of pipeline.runtime, OSError: the log shows it
+    except Exception as e:  # noqa: BLE001 - ToolError, UserError of mehteran.common.runtime, OSError: the log shows it
         _print(f"{t('cli_error')}: {e}")
         return 1
     return 0
@@ -283,8 +314,15 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("node")
         p.add_argument("--comment", default="")
     sub.add_parser("schedules")
+    sub.add_parser("update", help="bring a git copy up to date")
+    sub.add_parser("doctor", help="check that the installed AI tools still take Mehteran's options")
+    p = sub.add_parser("eval", help="run the evaluation set with real models (evals/cases.json)")
+    p.add_argument("--model", default="", help="one model for every step of every case, e.g. claude/haiku (default: the templates' own)")
+    p.add_argument("--case", action="append", help="only this case (repeatable)")
+    p.add_argument("--out", default="", help="folder of the report (default: <data>/evals)")
+    p.add_argument("--compare", nargs=2, metavar=("BEFORE", "AFTER"), help="compare two reports")
     sub.add_parser("background").add_argument("action", choices=["on", "off", "status"])
-    from pipeline.tools import TOOLS
+    from .common.tools import TOOLS
     sub.add_parser("install").add_argument("tools", nargs="+", choices=list(TOOLS))
     p = sub.add_parser("install-local")
     p.add_argument("target", choices=LOCAL_TARGETS)
@@ -297,7 +335,11 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {"ui": cmd_ui, "templates": cmd_templates, "validate": cmd_validate, "run": cmd_run, "runs": cmd_runs,
                 "resume": cmd_resume, "cancel": cmd_cancel, "approve": cmd_decide, "reject": cmd_decide,
                 "install": cmd_install, "install-local": cmd_install_local, "browser-signin": cmd_browser_signin,
-                "schedules": cmd_schedules, "background": cmd_background}
+                "schedules": cmd_schedules, "background": cmd_background, "update": cmd_update,
+                "doctor": cmd_doctor, "eval": cmd_eval}
+    if args.command != "update":  # "update" does it after the merge
+        from . import update
+        update.keep_translation(paths.REPO)  # a computer that used the book translation keeps it (update.py)
     try:
         return handlers[args.command](args, home)
     except (RunError, templates.TemplateError) as e:

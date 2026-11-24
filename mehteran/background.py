@@ -25,7 +25,7 @@ from . import paths
 
 LABEL = "com.mehteran.ui"
 ENV_FLAG = "MEHTERAN_BACKGROUND"
-PASSED = ("MEHTERAN_HOME", "TP_LANG")  # Mehteran's own settings, when set (never a key)
+PASSED = ("MEHTERAN_HOME", "MEHTERAN_LANG")  # Mehteran's own settings, when set (never a key)
 
 
 def is_background() -> bool:

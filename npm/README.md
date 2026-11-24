@@ -11,7 +11,9 @@ npx mehteran templates  # any Mehteran command: the same as ./mehter <command>
 - Later runs start the existing copy. To try a different release, install it in a new folder with `MEHTERAN_DIR`.
 - Mehteran needs Python 3.11 or later. When the computer has none, Mehteran installs a private Python (uv); no administrator rights are needed.
 - Commands run in the Mehteran folder: give file paths as full paths.
-- Your books and settings stay in the Mehteran folder. npm never deletes them.
+- Your workflows, runs and settings are kept in Mehteran's data folder (the footer of the interface shows it). npm never deletes them.
+
+Mehteran is an independent project, not affiliated with or endorsed by Anthropic, OpenAI or Google. Claude Code, Codex and Antigravity are trademarks of their owners. License: MIT.
 
 ---
 
@@ -26,4 +28,6 @@ npx mehteran templates  # her Mehteran komutu: ./mehter <komut> ile aynı
 - Sonraki çalıştırmalar mevcut kopyayı başlatır. Farklı bir sürümü denemek için `MEHTERAN_DIR` ile yeni bir klasöre kurun.
 - Mehteran Python 3.11 ya da daha yenisini ister. Bilgisayarda yoksa Mehteran kendine ayrı bir Python kurar (uv); yönetici izni gerekmez.
 - Komutlar Mehteran klasöründe çalışır: dosya yollarını tam yol olarak verin.
-- Kitaplarınız ve ayarlarınız Mehteran klasöründe kalır. npm onları hiçbir zaman silmez.
+- İş akışlarınız, çalıştırmalarınız ve ayarlarınız Mehteran'ın veri klasöründe tutulur (arayüzün alt bilgisinde görünür). npm onları hiçbir zaman silmez.
+
+Mehteran bağımsız bir projedir; Anthropic, OpenAI ya da Google ile bağlantılı değildir ve onlar tarafından onaylanmamıştır. Claude Code, Codex ve Antigravity sahiplerinin ticari markalarıdır. Lisans: MIT.

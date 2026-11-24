@@ -136,7 +136,7 @@ class UsageTests(HomeCase):
             run_id = engine.start(workflow(ai("ask", prompt, provider="fake/small"), []))
             self.assertEqual(engine.wait(run_id, 30), "succeeded")
         cfg = engine.provider_cfg
-        data = usage.summary(engine.store, self.home, cfg, self.tmp / "code")
+        data = usage.summary(engine.store, self.home, cfg)
         fake = next(p for p in data["providers"] if p["provider"] == "fake")
         self.assertEqual((fake["calls"], fake["ok"], fake["quota"]), (3, 2, 1))
         self.assertEqual(fake["windows"]["5h"]["calls"], 3)
@@ -210,39 +210,6 @@ class UsageTests(HomeCase):
             self.assertEqual(call.call_count, 1)
 
 
-class TranslationRunTests(HomeCase):
-    """The Runs tab lists the last run of each book of the translation app (read from its run.json)."""
-
-    def book(self, root, name, info):
-        work = root / "books" / name / "work"
-        work.mkdir(parents=True)
-        (work / "run.json").write_text(json.dumps(info), encoding="utf-8")
-
-    def test_states_become_run_statuses_newest_first(self):
-        from mehteran import usage
-        root = self.home / "tp"
-        self.book(root, "old", {"state": "finished", "started": 100, "finished": 200})
-        self.book(root, "stopped", {"state": "stopped", "started": 300})
-        self.book(root, "broken", {"state": "failed", "started": 400, "error": "boom"})
-        self.book(root, "ghost", {"state": "running", "started": 500, "stage": "translate"})  # nobody holds the book
-        self.book(root, "odd", {"state": "something"})
-        (root / "books" / "never").mkdir()
-        runs = usage.translation_runs(root)
-        self.assertEqual([(r["book"], r["status"], r["active"]) for r in runs],
-                         [("ghost", "interrupted", False), ("broken", "failed", False), ("stopped", "cancelled", False),
-                          ("old", "succeeded", False)])
-        self.assertEqual(runs[1]["error"], "boom")
-        self.assertEqual(usage.translation_runs(self.home / "nothing-here"), [])
-
-    def test_a_held_book_is_running(self):
-        from mehteran import usage
-        root = self.home / "tp"
-        self.book(root, "live", {"state": "waiting_quota", "started": 10})
-        with mock.patch("pipeline.web._book_pid", return_value=4242):
-            run, = usage.translation_runs(root)
-        self.assertEqual((run["status"], run["active"], run["waiting_quota"]), ("running", True, True))
-
-
 class ApiTests(HomeCase):
     def test_usage_activity_log_and_switch_routes(self):
         engine = self.engine(quota_delay=120)
@@ -268,11 +235,9 @@ class ApiTests(HomeCase):
 
         run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{self.tmp / 'q'}"), []))
         self.wait_for(lambda: engine.get(run_id)["nodes"]["ask"]["status"] == "waiting_quota")
-        # The translation app's books of a temporary folder: a book that the user translates now is not this test's.
-        with mock.patch("mehteran.web.ROOT", self.tmp / "tp"):
-            status, data = call("GET", "/api/activity")
+        status, data = call("GET", "/api/activity")
         self.assertEqual((status, data["runs"][0]["nodes"][0]["status"]), (200, "waiting_quota"))
-        self.assertEqual(data["translation"], [])
+        self.assertNotIn("translation", data)
         status, data = call("GET", f"/api/runs/{run_id}/log?node=ask&offset=0")
         self.assertEqual(status, 200)
         self.assertIn("Usage limit", data["text"])  # a log is written in the language of the run

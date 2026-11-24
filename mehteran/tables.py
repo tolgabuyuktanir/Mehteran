@@ -1,10 +1,10 @@
 """Tables: spreadsheets (CSV, TSV, Excel .xlsx) read into Markdown tables, and Markdown tables in Word and HTML reports.
 
-Standard library only. An .xlsx file is a zip of XML parts; it is read with the translation app's guarded readers
-(pipeline.documents: no entity declarations, no member that unpacks to more than 100 MB). Large sheets are cut to
+Standard library only. An .xlsx file is a zip of XML parts; it is read with the guarded readers of
+mehteran.common.documents (no entity declarations, no member that unpacks to more than 100 MB). Large sheets are cut to
 the limits below, and the text says so where it was cut.
 
-Reports: the translation app's exporter (pipeline.export, used read-only) knows no tables. Each Markdown table is
+Reports: the exporter (mehteran.common.export) knows no tables. Each Markdown table is
 replaced by a marker paragraph before the export, and the marker is then replaced by a real table in the HTML page
 or in the Word document.
 """
@@ -95,8 +95,8 @@ def _column(ref: str) -> int:
 
 def _xlsx_sheets(path: Path) -> tuple[list[tuple[str, list[list[str]]]], bool]:
     """The visible, non-empty sheets (at most MAX_SHEETS) and whether more were left out."""
-    from pipeline.core import PipelineError
-    from pipeline.documents import _parse_xml, _zip_read
+    from .common.core import UserError
+    from .common.documents import _parse_xml, _zip_read
     try:
         with zipfile.ZipFile(path) as z:
             names = set(z.namelist())
@@ -124,7 +124,7 @@ def _xlsx_sheets(path: Path) -> tuple[list[tuple[str, list[list[str]]]], bool]:
                     return out, True
                 out.append((sheet.get("name") or target, rows))
             return out, False
-    except (zipfile.BadZipFile, KeyError, ValueError, PipelineError) as e:
+    except (zipfile.BadZipFile, KeyError, ValueError, UserError) as e:
         raise TableError(t("table_unreadable", name=path.name, error=e)) from None
 
 
@@ -265,7 +265,7 @@ def extract(markdown: str) -> tuple[str, dict[str, dict]]:
 
 
 def _inline_html(text: str) -> str:
-    from pipeline.export import inlines
+    from .common.export import inlines
     out = []
     for kind, value in inlines(text):
         value = html.escape(value if kind != "note" else f"[^{value}]")
@@ -279,7 +279,7 @@ TABLE_CSS = ("table.md { border-collapse: collapse; margin: .8em 0 1em; font-siz
              "text-align: start; hyphens: manual; } table.md th { background: #f1f1f1; font-weight: 600; }")
 
 
-# Markdown links: "[text](https://...)" and "<https://...>", as pipeline.export.to_html escapes them. Only http(s).
+# Markdown links: "[text](https://...)" and "<https://...>", as mehteran.common.export.to_html escapes them. Only http(s).
 _HTML_LINK = re.compile(r"\[([^\]\n<>]+)\]\((https?://[^\s()<>]+)\)|&lt;(https?://[^\s<>]+?)&gt;")
 _MD_LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s()]+)\)|<(https?://[^\s<>]+)>")
 _CODE = re.compile(r"(<pre\b.*?</pre>|<code\b.*?</code>|<head\b.*?</head>)", re.S)
@@ -299,8 +299,8 @@ def plain_links(markdown: str) -> str:
 
 
 def to_html(markdown: str, title: str, lang: str) -> str:
-    """pipeline.export.to_html with real tables and links."""
-    from pipeline import export
+    """mehteran.common.export.to_html with real tables and links."""
+    from .common import export
     text, tables = extract(markdown)
     page = html_links(export.to_html(text, title, lang))
     for marker, table in tables.items():
@@ -323,7 +323,7 @@ _XML_INVALID = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
 
 def _runs(text: str, bold: bool) -> str:
-    from pipeline.export import inlines
+    from .common.export import inlines
     out = []
     for kind, value in inlines(text):
         props = ("<w:b/><w:bCs/>" if bold or kind == "bold" else "") + ("<w:i/><w:iCs/>" if kind == "italic" else "") + \
@@ -356,8 +356,8 @@ def _docx_table(table: dict, rtl: bool) -> str:
 
 
 def to_docx(markdown: str, title: str, lang: str) -> bytes:
-    """pipeline.export.to_docx with real tables; a link is written as its text and its address."""
-    from pipeline import export
+    """mehteran.common.export.to_docx with real tables; a link is written as its text and its address."""
+    from .common import export
     text, tables = extract(plain_links(markdown))
     data = export.to_docx(text, title, lang)
     if not tables:

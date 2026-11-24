@@ -3,7 +3,7 @@
 An adapter (one module per tool in this package) says how Mehteran calls the tool: the program and Mehteran's own
 safe flags, how the prompt goes in, how the answer and a usage limit come out, which environment variables would
 bill an API account, where the text goes (vendor), the billing kind, the context size and the default number of
-calls at once. The translation app (pipeline/) keeps its own commands in config.toml; nothing here changes them.
+calls at once.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class Adapter:
     id = ""
     name = ""                 # what the user sees ("Claude Code")
     vendor = ""               # where the prompt goes ("Anthropic")
-    tool: str | None = None   # the pipeline.tools id (install, sign-in, model list)
+    tool: str | None = None   # the mehteran.common.tools id (install, sign-in, model list)
     program = ""              # the command
     billing = "subscription"  # the billing kind when signed in normally (BILLING_KINDS)
     keys: tuple = ()          # the BILLED_KEYS that this tool reads
@@ -82,12 +82,12 @@ class Adapter:
 
     # --- the Setup tab ---
     def list_models(self) -> list[str]:
-        from pipeline import tools
+        from ..common import tools
         return tools.list_models(self.tool) if self.tool else list(self.models)
 
     def login(self) -> dict:
         """{signed_in, info, billing}: billing is what a call would use now (BILLING_KINDS)."""
-        from pipeline import tools
+        from ..common import tools
         signed_in, info = tools.login_status(self.tool)
         return {"signed_in": signed_in, "info": info, "billing": self.billing}
 
@@ -114,7 +114,7 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
     """Runs argv with stdin; each line of stdout goes to on_output(line) as it arrives (an error there never stops
     the call). Raises subprocess.TimeoutExpired after timeout seconds (the tool is killed). guard(line) -> a reason
     or None: a reason kills the tool at once and raises Stopped."""
-    from pipeline.system import hidden_window
+    from ..common.system import hidden_window
     proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             encoding="utf-8", errors="replace", cwd=cwd, env=env, **hidden_window())
     out, err = [], []
@@ -137,7 +137,7 @@ def _stream(argv: list, stdin: str, timeout: float, cwd: Path, env: dict, on_out
             reason = guard(line) if guard else None
             if reason and not stopped:
                 stopped.append(reason)
-                from pipeline import system
+                from ..common import system
                 system.stop_tree(proc.pid)  # the tool and the browser server it started
             if on_output:
                 try:
@@ -179,9 +179,9 @@ def run(adapter: Adapter, spec: dict, model: str, effort: str, prompt: str, time
     spec: the provider's settings frozen with the run: "program" (a list that replaces the program, for the tests),
     "api_key" (the user allowed "API key (billed)"). agent: {"mcp_file", "tools", "guard"} for an agent step: the
     tool gets that MCP server and those tools only, and guard(line) may stop it (Stopped)."""
-    from pipeline.i18n import t
-    from pipeline.providers import ACCOUNT_REFUSED, is_quota_message, quota_wait_seconds
-    from pipeline.system import resolve
+    from ..common.calls import ACCOUNT_REFUSED, is_quota_message, quota_wait_seconds
+    from ..i18n import t
+    from ..common.system import resolve
     with tempfile.TemporaryDirectory(prefix="mehteran-call-") as tmp:
         out_file = Path(tmp) / "output.txt"
         cwd = Path(tmp) / "empty"

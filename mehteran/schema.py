@@ -32,7 +32,7 @@ from .nodes import FORMATS, ID_RE, OPERATORS, PROVIDER_RE, REGISTRY
 
 SCHEMA_VERSION = 1
 INPUT_TYPES = ("file", "text", "choice", "provider", "language", "url")  # url: a web page that document.extract reads
-FILE_FORMATS = ("pdf", "docx", "epub", "md", "txt", "csv", "tsv", "xlsx",  # pipeline.documents, and tables.py
+FILE_FORMATS = ("pdf", "docx", "epub", "md", "txt", "csv", "tsv", "xlsx",  # mehteran.common.documents, and tables.py
                 "png", "jpg", "jpeg", "tif", "tiff",  # images: read by OCR (ocr.py)
                 "odt", "rtf",  # read by Pandoc (pandoc.py)
                 "mp3", "wav", "m4a", "ogg", "opus", "flac", "aac", "mp4", "webm", "mov", "mkv")  # speech to text (speech.py)

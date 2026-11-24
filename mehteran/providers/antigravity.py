@@ -1,6 +1,6 @@
 """Antigravity CLI (agy): a personal Google account (Gemini models, free with limits).
 
-Flags as the translation app uses them: stream-json in and out, --disable-slash-commands. Not added: --sandbox and
+Flags: stream-json in and out, --disable-slash-commands. Not added: --sandbox and
 --mode plan (both in `agy --help`): checking that they leave a plain text answer unchanged needs a real model call,
 and plan mode may answer with a plan instead of the text asked for. The call runs in an empty folder with no tools
 asked for."""
@@ -34,6 +34,6 @@ class Antigravity(Adapter):
         return json.dumps({"event": "user", "message": {"content": prompt}}, ensure_ascii=False) + "\n"
 
     def parse(self, code: int, stdout: str, stderr: str, out_file: Path) -> tuple[str, str]:
-        from pipeline.providers import _stream_json_answer  # also deletes the conversation the call stored
-        answer, error = _stream_json_answer(stdout)
+        from ..common.calls import stream_json_answer  # also deletes the conversation the call stored
+        answer, error = stream_json_answer(stdout)
         return answer, (stderr + "\n" + error).strip()

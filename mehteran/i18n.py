@@ -23,7 +23,6 @@ from . import languages
 LANGUAGES = languages.UI_CODES
 FALLBACK = "en"
 LOCALES = Path(__file__).resolve().parent / "locales"
-PIPELINE_LANGUAGES = ("tr", "en")  # the translation app's own messages (pipeline/i18n.py)
 _default = os.environ.get("MEHTERAN_LANG") if os.environ.get("MEHTERAN_LANG") in LANGUAGES else "tr"
 _local = threading.local()
 
@@ -40,12 +39,6 @@ def set_request(lang: str | None) -> None:
 
 def current() -> str:
     return getattr(_local, "lang", None) or _default
-
-
-def pipeline_lang(lang: str | None = None) -> str:
-    """The language for the translation app's code (pipeline.i18n has Turkish and English): English for the others."""
-    lang = lang or current()
-    return lang if lang in PIPELINE_LANGUAGES else FALLBACK
 
 
 class Catalog(dict):
@@ -161,7 +154,7 @@ def localized(value, lang: str | None = None) -> str:
 load_locales()
 
 # Messages that the page shows too (one text, in both catalogs).
-SHARED = ("translation_failed", "translation_not_started", "quota_waiting")
+SHARED = ("quota_waiting",)
 UI.update({key: value for key, value in MESSAGES.items() if key.startswith("status_") or key in SHARED})
 
 # Texts may still be added below as MESSAGES.update({...}) / UI.update({key: {"tr": ..., "en": ...}}); they are merged

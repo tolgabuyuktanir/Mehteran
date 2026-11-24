@@ -6,12 +6,11 @@
 //   - a step's live log (GET /api/runs/<run>/log?node=&offset=), elapsed timers
 //   - the header's activity indicator (GET /api/activity)
 //   - favorites and the run form's last values
-//   - stopping what runs (a workflow run, a book translation) and the cards' icons
+//   - stopping a workflow run, and the cards' icons
 "use strict";
 
-// --- icons: one line drawing (24x24, stroked) per category, and the book of the book translation ---------------
+// --- icons: one line drawing (24x24, stroked) per category ---------------------------------------------------
 const ICONS = {
-  translation: ["M3 5.5c3-1.3 6-1.3 9 .7 3-2 6-2 9-.7V19c-3-1.3-6-1.3-9 .7-3-2-6-2-9-.7Z", "M12 6.2v13.5", "M6 9.5h3", "M6 12.5h3", "M15 9.5h3", "M15 12.5h3"],
   business: ["M4 8h16v11H4Z", "M9 8V5.5h6V8", "M4 13h16"],
   data: ["M4 20h16", "M6.5 20v-7", "M11 20V6", "M15.5 20v-10", "M20 20V9"],
   documents: ["M6 3h8l4 4v14H6Z", "M14 3v4h4", "M9 12h6", "M9 16h6"],
@@ -43,17 +42,10 @@ function icon(name) {
 // The icon tile at the top of a card: the category's icon in the category's colour.
 const iconTile = (name) => h("span", {class: `tpl-icon icon-${ICONS[name] ? name : "other"}`}, icon(name));
 
-// --- stopping: a workflow run (it can be resumed later), a book translation (the translation app's own stop) -----
+// --- stopping a workflow run (it can be resumed later) -----------------------------------------------------------
 async function stopRun(button, runId, after) {
   if (!confirm(S("confirm_cancel"))) return;
   if (await act(button, () => api("POST", `/api/runs/${runId}/cancel`))) { toast(S("cancel_sent")); pollActivity(); if (after) after(); }
-}
-
-async function stopBook(button, book, after) {
-  if (!confirm(S("confirm_stop_book", {book}))) return;
-  if (await act(button, () => api("POST", `/api/tr/books/${encodeURIComponent(book)}/stop`))) {
-    toast(S("book_stopped", {book})); pollActivity(); if (after) after();
-  }
 }
 
 const stopButton = (label, onclick) => h("button", {type: "button", class: "icon-btn danger stop-btn", "aria-label": label, title: label,
@@ -369,7 +361,7 @@ async function pollActivity() {
   activity.at = Date.now();
   try { activity.data = await api("GET", "/api/activity"); } catch { /* keeps the last answer */ }
   drawActivity();
-  const busy = activity.data && (activity.data.runs.length || activity.data.translation.length);
+  const busy = activity.data && activity.data.runs.length;
   // Often while something works; rarely when nothing does; slower again while the window is hidden.
   activity.timer = setTimeout(pollActivity, (busy ? 4000 : 20000) * (document.hidden ? 4 : 1));
 }
@@ -383,9 +375,9 @@ function drawActivity() {
   const button = document.getElementById("activity");
   const pop = document.getElementById("activity-pop");
   if (!button || !activity.data) return;
-  const {runs, translation} = activity.data;
-  const count = runs.length + translation.length;
-  const waiting = runs.some((r) => r.waiting_quota) || translation.some((b) => b.state === "waiting_quota");
+  const {runs} = activity.data;
+  const count = runs.length;
+  const waiting = runs.some((r) => r.waiting_quota);
   button.hidden = !count;
   button.className = "activity-btn" + (waiting ? " warn" : "");
   fill(button, h("span", {class: "dot", "aria-hidden": "true"}), S("activity_count", {count}));
@@ -393,16 +385,12 @@ function drawActivity() {
   if (!count) pop.hidden = true;
   const now = Date.now() / 1000;
   fill(pop, h("h3", {}, S("activity_title")),
-    runs.length || translation.length ? h("ul", {class: "plain activity-list"},
+    runs.length ? h("ul", {class: "plain activity-list"},
       runs.map((r) => h("li", {}, h("div", {class: "activity-head"}, h("button", {type: "button", class: "linkish", onclick: () => { pop.hidden = true; go("runs/" + r.id); }},
         h("b", {}, r.workflow_name)), stopButton(S("stop_named", {name: r.workflow_name}), (b) => stopRun(b, r.id))),
         h("div", {class: "small muted"}, S(r.waiting_quota ? "status_waiting_quota" : "status_" + r.status), " · ",
           S("nodes_done", {done: r.done, total: r.total}), " · ", r.started ? h("span", {"data-since": r.started}, duration(r.started, now)) : ""),
-        r.nodes.map((n) => h("div", {class: "small"}, "· ", n.id, n.progress ? ` (${n.progress})` : "", n.waiting_reason ? h("span", {class: "warn-text"}, " — " + n.waiting_reason) : "")))),
-      translation.map((b) => h("li", {}, h("div", {class: "activity-head"}, h("button", {type: "button", class: "linkish", onclick: () => { pop.hidden = true; go("workflows/translation/books"); }},
-        h("b", {}, S("translation_card_title"), ": ", b.book)), stopButton(S("stop_named", {name: b.book}), (btn) => stopBook(btn, b.book))),
-        h("div", {class: "small muted"}, S(b.state === "waiting_quota" ? "status_waiting_quota" : "status_running"),
-          b.stage ? " · " + b.stage : "", " · ", b.started ? h("span", {"data-since": b.started}, duration(b.started, now)) : ""))))
+        r.nodes.map((n) => h("div", {class: "small"}, "· ", n.id, n.progress ? ` (${n.progress})` : "", n.waiting_reason ? h("span", {class: "warn-text"}, " — " + n.waiting_reason) : "")))))
       : h("p", {class: "small muted"}, S("activity_none")));
 }
 

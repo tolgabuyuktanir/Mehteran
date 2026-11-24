@@ -1,5 +1,4 @@
-"""Usage of the AI tools: Mehteran's own count of its model calls, what the tools themselves report, and the usage
-limits that the translation app met.
+"""Usage of the AI tools: Mehteran's own count of its model calls, and what the tools themselves report.
 
 - Own counts: every model call of a run is a row of the calls table (store.py): provider, model, start, seconds,
   outcome (ok, failed, quota, aborted) and, for a usage limit, until when. Counted per provider and model, today,
@@ -7,7 +6,7 @@ limits that the translation app met.
 - What the tools report (only what they write themselves; no credentials file is read; None when unknown):
   - Codex writes its rate limits (used percent of the 5-hour and the weekly window, reset times, plan) into its session
     logs, ~/.codex/sessions/**/rollout-*.jsonl ($CODEX_HOME). The newest entry is shown with the time it was written.
-    Mehteran's own Codex calls are --ephemeral (the translation app's command) and write no session log, so the value
+    Mehteran's own Codex calls are --ephemeral and write no session log, so the value
     is from the last interactive Codex use.
   - Claude Code answers "/usage" in print mode without a model call (claude_usage: the used percent of the session
     window, of the week, and of the week of one model, with the reset times). Mehteran asks again in the background
@@ -16,8 +15,7 @@ limits that the translation app met.
     A Claude Code that does not answer "/usage" is asked with one very short model call, only when the user asks
     (probe_claude). Kept in configurations/usage.json.
   - Gemini CLI and Antigravity CLI report token counts per answer, but no limits: None.
-- The translation app's usage limits: <code folder>/.jobs/quota.json (read only), and the last limit met by a model
-  test on the Setup tab: <data>/configurations/quota.json.
+- The last limit met by a model test on the Setup tab: <data>/configurations/quota.json.
 """
 
 from __future__ import annotations
@@ -78,13 +76,12 @@ def program_of(spec: dict) -> str:
     return getattr(adapter, "program", "") or ""
 
 
-def summary(store, home: Path, cfg: dict, root: Path) -> dict:
+def summary(store, home: Path, cfg: dict) -> dict:
     """{generated, providers: [...]} for GET /api/usage."""
     now = time.time()
     midnight = time.mktime(time.localtime(now)[:3] + (0, 0, 0, 0, 0, -1))
     starts = {"today": midnight, "5h": now - WINDOWS["5h"], "7d": now - WINDOWS["7d"]}
     rows = store.calls(0)
-    translation = _read_json(root / ".jobs" / "quota.json")
     setup = _read_json(home / "configurations" / "quota.json")
     probed = _read_json(home / "configurations" / "usage.json")
     names = list(dict.fromkeys([*cfg["providers"], *(r["provider"] for r in rows)]))
@@ -106,7 +103,6 @@ def summary(store, home: Path, cfg: dict, root: Path) -> dict:
         entry["last_quota"] = {"at": last["started"], "until": last["until"], "message": last["message"]} if last else None
         entry["resets_at"] = last["until"] if last and last["until"] and last["until"] > now else None
         entry["tool_reported"] = tool_reported(entry["tool"], probed)
-        entry["translation_quota"] = translation.get(name) or None
         entry["setup_quota"] = setup.get(name) or None
         out.append(entry)
     return {"generated": now, "providers": out, "refreshing": _refresh["running"]}
@@ -229,7 +225,7 @@ def parse_claude_usage(text: str, now: float | None = None) -> dict | None:
 def claude_usage(home: Path, program: str = "claude", timeout: int = 60) -> dict | None:
     """Asks Claude Code "/usage" in print mode: it answers from the account, without a model call. None when this
     Claude Code does not know the command or is not signed in with a subscription."""
-    from pipeline import system
+    from .common import system
 
     from . import providers
     allowed = providers.read_settings(home)["providers"].get("claude", {}).get("api_key", False)
@@ -306,7 +302,7 @@ def parse_claude_events(text: str) -> dict | None:
 def probe_claude(home: Path, program: str = "claude", timeout: int = 120) -> dict | None:
     """Asks Claude Code for one word with its smallest model in stream-json mode and keeps its rate_limit_event.
     The environment has no API key unless the user allowed it (the billing guard of mehteran/providers)."""
-    from pipeline import system
+    from .common import system
 
     from . import providers
     allowed = providers.read_settings(home)["providers"].get("claude", {}).get("api_key", False)
@@ -332,51 +328,3 @@ def remember(home: Path, tool: str, found: dict) -> None:
     tmp_path = path.with_name(f"{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
     tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     paths.replace(tmp_path, path)
-
-
-# --- the translation app's running books ------------------------------------------------
-
-def translation_activity(root: Path) -> list[dict]:
-    """Books of the translation app that are being translated now (their run.json; read only)."""
-    try:
-        from pipeline.web import _book_pid
-    except ImportError:
-        return []
-    out, now = [], time.time()
-    for book_dir in sorted(p for p in (root / "books").glob("*") if p.is_dir()):
-        info = _read_json(book_dir / "work" / "run.json")
-        if info.get("state") not in ("running", "waiting_quota") or not _book_pid(book_dir):
-            continue
-        started = info.get("started")
-        out.append({"book": book_dir.name, "state": info.get("state"), "stage": info.get("stage"), "started": started,
-                    "elapsed": round(now - started, 1) if isinstance(started, (int, float)) else None,
-                    "quota": info.get("quota") or {}})
-    return out
-
-
-# The translation app's run states (pipeline/runstatus.py, pipeline/cli.py) as Mehteran's run statuses.
-_BOOK_STATUS = {"running": "running", "waiting_quota": "running", "finished": "succeeded", "stopped": "cancelled",
-                "failed": "failed"}
-
-
-def translation_runs(root: Path) -> list[dict]:
-    """The last run of each book of the translation app (its run.json; read only), newest first: shown in the
-    Runs tab next to the workflow runs. A run that says "running" while no process holds the book was interrupted."""
-    try:
-        from pipeline.web import _book_pid
-    except ImportError:
-        return []
-    out = []
-    for book_dir in sorted(p for p in (root / "books").glob("*") if p.is_dir()):
-        info = _read_json(book_dir / "work" / "run.json")
-        state = info.get("state")
-        if state not in _BOOK_STATUS:
-            continue
-        active = state in ("running", "waiting_quota") and bool(_book_pid(book_dir))
-        status = _BOOK_STATUS[state] if active or state not in ("running", "waiting_quota") else "interrupted"
-        started = info.get("started") if isinstance(info.get("started"), (int, float)) else None
-        out.append({"book": book_dir.name, "status": status, "active": active, "waiting_quota": active and state == "waiting_quota",
-                    "stage": info.get("stage"), "started": started,
-                    "finished": info.get("finished") if isinstance(info.get("finished"), (int, float)) else None,
-                    "error": info.get("error") if isinstance(info.get("error"), str) else None})
-    return sorted(out, key=lambda r: r["started"] or 0, reverse=True)

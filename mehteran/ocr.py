@@ -3,8 +3,7 @@ pdftoppm.
 
 - Finding them: Mehteran's own copies in <code folder>/.runtime first (tesseract/, poppler/), then PATH.
 - Installing: only when the user asks (the Setup tab, `mehter install-local ocr`). Poppler and micromamba come from
-  the translation app's installer (pipeline.runtime.install_poppler: micromamba checked against its published
-  SHA-256 sum); Tesseract is the pinned conda-forge package (micromamba checks every package against the channel's
+  mehteran.common.runtime.install_poppler (micromamba checked against its published SHA-256 sum); Tesseract is the pinned conda-forge package (micromamba checks every package against the channel's
   SHA-256 sums) in .runtime/tesseract. The language data is the "fast" model set of tesseract-ocr/tessdata_fast,
   tag 4.1.0, each file checked against the SHA-256 sum written below (the downloads were checked against the git
   blob hashes of that tag when the sums were written). It goes to .runtime/tessdata.
@@ -23,7 +22,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from pipeline import system
+from .common import system
 
 from . import paths
 from .i18n import t
@@ -218,7 +217,7 @@ def pdf_ocr(pdf: Path, pages: list[int], langs: str, abort: threading.Event | No
 def install(langs: list[str] | None = None) -> None:
     """Poppler (with micromamba) if missing, Tesseract into .runtime/tesseract, and the language files. Output goes
     to stdout (the job log)."""
-    from pipeline import runtime
+    from .common import runtime
     base = paths.runtime()
     micromamba = base / "micromamba" / _exe("micromamba")
     if not micromamba.exists() or pdftoppm() is None:

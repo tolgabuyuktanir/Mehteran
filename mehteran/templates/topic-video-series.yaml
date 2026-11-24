@@ -2,6 +2,7 @@ schema_version: 1
 id: topic-video-series
 version: "2.1"
 category: education
+tier: experimental
 name: {tr: "Sosyal medya video serisi", en: "Social video series"}
 description:
   tr: "Konu başına bir video. Claude Opus senaryoyu yazar, GPT Image 2.6 Sunburst sahneleri çizer ve Eleven v4 seslendirir. OpenAI ve ElevenLabs API anahtarları, FFmpeg ve Pango gerekir. Görsel ve ses istekleri ücretli olabilir."

@@ -80,19 +80,16 @@ class FavoriteTests(HomeCase):
         stored = json.loads((self.home / "configurations" / "library.json").read_text(encoding="utf-8"))
         self.assertEqual(stored["favorites"], [f"builtin:{builtin}"])
 
-    def test_the_book_translation_is_a_favorite_like_a_template(self):
-        self.assertFalse(self.json("GET", "/api/info")[1]["translation"]["favorite"])
-        self.assertEqual(self.json("PUT", "/api/templates/app/translation/favorite", body={"on": True}), (200, {"favorite": True}))
-        self.assertTrue(self.json("GET", "/api/info")[1]["translation"]["favorite"])
-        stored = json.loads((self.home / "configurations" / "library.json").read_text(encoding="utf-8"))
-        self.assertEqual(stored["favorites"], ["app:translation"])
-        self.assertEqual(self.favorites(), set())  # not a template: the template list does not show it
-        self.assertEqual(self.json("PUT", "/api/templates/app/other/favorite", body={"on": True})[0], 404)
-        self.json("PUT", "/api/templates/app/translation/favorite", body={"on": False})
-        self.assertFalse(self.json("GET", "/api/info")[1]["translation"]["favorite"])
-        status, runs = self.json("GET", "/api/translation/runs")  # the books' runs, for the Runs tab
-        self.assertEqual((status, type(runs)), (200, list))
-        self.assertEqual(self.json("GET", "/api/translation/runs", token=False)[0], 403)
+    def test_the_book_translation_is_not_part_of_mehteran(self):
+        """The book translation app was removed: its favorite, its runs and its interface are gone, and an old
+        favorite of it is dropped."""
+        self.assertNotIn("translation", self.json("GET", "/api/info")[1])
+        self.assertEqual(self.json("PUT", "/api/templates/app/translation/favorite", body={"on": True})[0], 404)
+        self.assertEqual(self.json("GET", "/api/translation/runs")[0], 404)
+        self.assertEqual(self.call("GET", "/tr/app.js", token=False)[0], 404)
+        (self.home / "configurations").mkdir(parents=True, exist_ok=True)
+        (self.home / "configurations" / "library.json").write_text(json.dumps({"favorites": ["app:translation"]}), encoding="utf-8")
+        self.assertEqual(self.favorites(), set())
 
     def test_live_script_is_served_before_the_page_script(self):
         status, body, headers = self.call("GET", "/live.js", token=False)

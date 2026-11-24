@@ -8,7 +8,6 @@ import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
-from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -111,9 +110,6 @@ class EstimateTests(HomeCase):
 class WebCase(HomeCase):
     def setUp(self):
         super().setUp()
-        root = mock.patch.object(web, "ROOT", self.tmp / "trroot")  # no books of the real translation app
-        root.start()
-        self.addCleanup(root.stop)
         self.app = App(self.engine())
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), None)
         self.port = self.server.server_address[1]
@@ -167,8 +163,7 @@ class WelcomeTests(WebCase):
                 self.assertIn(template_id, known)
             if choice["action"] == "category":
                 self.assertEqual({known[x]["category"] for x in choice["templates"]}, {choice["category"]})
-            if choice["action"] != "translation":
-                self.assertEqual(choice["providers"], ["claude"], choice["id"])  # the templates' default model
+            self.assertEqual(choice["providers"], ["claude"], choice["id"])  # the templates' default model
         # Every template named in the choices is in the library (a renamed template would drop out silently).
         named = [x for _, target in web.WELCOME_CHOICES for x in (target.get("templates") or [target.get("template")]) if x]
         self.assertEqual([x for x in named if x not in known], [])
@@ -190,14 +185,6 @@ class WelcomeTests(WebCase):
         self.assertEqual(self.json("GET", "/api/welcome"), (200, {"show": False}))
         stored = json.loads((self.home / "configurations" / "library.json").read_text(encoding="utf-8"))
         self.assertEqual(stored["welcome_closed"], "used")
-
-    def test_standalone_book_translation_does_not_hide_welcome(self):
-        work = self.tmp / "trroot" / "books" / "kitap" / "work"
-        work.mkdir(parents=True)
-        (work / "run.json").write_text(json.dumps({"state": "finished", "started": 1.0}), encoding="utf-8")
-        status, data = self.json("GET", "/api/welcome")
-        self.assertEqual(status, 200)
-        self.assertTrue(data["show"])
 
 
 if __name__ == "__main__":

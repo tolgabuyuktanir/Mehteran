@@ -88,16 +88,16 @@
       </tbody>
     </table>
     <h3>With npm</h3>
-    <p>If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), run <code>npx mehteran</code>. The first run installs Mehteran into <code>~/Mehteran</code> (with <code>git clone</code> when git is on the computer) and opens the interface. Next time, run <code>npx mehteran</code> again. Every command works the same way: <code>npx mehteran templates</code> is <code>./mehter templates</code>. Commands run in the Mehteran folder, so give file paths as full paths. To use another folder, set <code>MEHTERAN_DIR</code>.</p>
+    <p>If Node.js 18 or later is on the computer (Claude Code, Codex and Gemini CLI are installed with it), run <code>npx mehteran</code>. The first run installs the source bundled with the npm release into <code>~/Mehteran</code> and opens the interface. Next time, run <code>npx mehteran</code> again. Every command works the same way: <code>npx mehteran templates</code> is <code>./mehter templates</code>. Commands run in the Mehteran folder, so give file paths as full paths. To use another folder, set <code>MEHTERAN_DIR</code>.</p>
     <h3>Updates</h3>
-    <p>If you got Mehteran with <code>git clone</code>, it updates itself from GitHub before the interface starts. A copy installed with <code>npx mehteran</code> does the same when git was on the computer at install time; without git, it is like a zip copy. If you downloaded a zip file, download the new zip. Your workflows and runs are not in the code folder, so they stay where they are (see <a href="#data">Where your data is</a>). For the book translation, move <code>books/</code>, <code>glossary/</code>, <code>config.toml</code> and the <code>.md</code> files of <code>prompts/</code> (and <code>prompts/custom/</code>) from the old folder into the new one. When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
+    <p>If you got Mehteran with <code>git clone</code>, <code>mehter update</code> brings it up to date. The launcher runs it before the interface starts. It fetches from GitHub and applies only a fast-forward merge. Without internet or a GitHub sign-in, or when the code was changed on this computer, it skips the update with a message, and Mehteran starts as it is. A copy installed with <code>npx mehteran</code> is not updated: to try a new npm release, install it in a new folder with <code>MEHTERAN_DIR</code>. If you downloaded a zip file, download the new zip. Your workflows and runs are not in the code folder, so they stay where they are (see <a href="#data">Where your data is</a>). When the code changes while the interface runs, the page shows a banner: close the terminal window and start Mehteran again.</p>
     <h3>Where the tools go</h3>
     <p>The tools that Mehteran installs go into the code folder (<code>.runtime/</code>) or into your user folder (Claude Code, Antigravity CLI and the private Python: <code>~/.local/bin</code>; on Windows under <code>%LOCALAPPDATA%</code>). No administrator rights are needed.</p>
   </section>
 
   <section id="setup">
     <h2>Connect your AI tools</h2>
-    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and how much of its usage limit is left. <b>Install missing tools</b> installs the tools that the templates and the book translation use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
+    <p>The <b>Setup</b> tab shows one card per tool: installed or not, signed in or not, how it is billed, and how much of its usage limit is left. <b>Install missing tools</b> installs the tools that the templates use. Each card has its own install button, its sign-in methods and a <b>Test</b> button.</p>
     <table>
       <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
       <tbody>
@@ -123,9 +123,23 @@
     <p>Each tool has a limit of calls at the same time over all runs (Claude Code and Codex 2, Antigravity 1, Ollama 1). Change it with <b>At once</b> on the Setup tab. A single run makes at most 4 model calls at the same time.</p>
   </section>
 
+  <section id="terms">
+    <h2>Subscriptions and the providers' terms</h2>
+    <p>Mehteran starts the providers' own, unmodified command-line tools on your computer, signed in with your own account. It never reads, stores or forwards your sign-in.</p>
+    <ul>
+      <li>Anthropic's <a href="https://www.anthropic.com/legal/consumer-terms">Consumer Terms</a>, section 3.7, prohibit accessing the services "through automated or non-human means, whether through a bot, script, or otherwise". The exceptions are an Anthropic API key and uses that Anthropic explicitly permits.</li>
+      <li>Claude Code's <a href="https://code.claude.com/docs/en/legal-and-compliance">legal page</a> allows "an end user [...] signing in to the unmodified Claude Code binary with their own Claude subscription". It also says: "Advertised usage limits for Pro, Max, and Ultra plans assume ordinary, individual usage of Claude Code". Developers who build products "should use API key authentication".</li>
+      <li>OpenAI documents <code>codex exec</code> for "repeatable workflows and pipelines" (<a href="https://developers.openai.com/codex/cli">Codex CLI</a>). Its article on <a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan">Codex with a ChatGPT plan</a> does not address automation.</li>
+      <li>Google's <a href="https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html">Gemini CLI terms page</a> says which terms apply to each sign-in type. It does not address automation.</li>
+    </ul>
+    <p>So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on <b>Allow an API key (billed)</b> for that tool on the Setup tab. A local model (Ollama, LM Studio) has no such terms.</p>
+    <p><b>What Mehteran does by default:</b> scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model <code>auto</code>, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → AI tools of the workflows. A run that you start yourself is not affected.</p>
+    <p class="note">This is not legal advice. Checked on 24 November 2026; terms change.</p>
+  </section>
+
   <section id="run">
     <h2>Run a workflow</h2>
-    <p>On the <b>Workflows</b> tab, find a workflow and click <b>Open</b>. Its page opens like the book translation, with three sections: <b>Run</b> (the run form, shown first), <b>Instructions</b> (the steps in plain words, each AI step with its instruction) and <b>Runs</b> (this workflow's runs). The star and <b>⋯</b> (edit, duplicate, download, share, delete) are beside them.</p>
+    <p>On the <b>Workflows</b> tab, find a workflow and click <b>Open</b>. Its page opens with three sections: <b>Run</b> (the run form, shown first), <b>Instructions</b> (the steps in plain words, each AI step with its instruction) and <b>Runs</b> (this workflow's runs). The star and <b>⋯</b> (edit, duplicate, download, share, delete) are beside them.</p>
     <ol>
       <li>Fill in the inputs: upload the file, type the text, choose the output language. The models are chosen automatically; to change them, open <b>Options</b>. <b>Same as last time</b> fills in the values of your last run (never files or anything like a password).</li>
       <li>Read the line beside <b>Start the run</b>: the number of model calls and the tools. <b>Details</b> shows the whole estimate: the upper bound with retries, each tool's usage now, and where each step sends its text ("Sent to: Anthropic", "Stays on this computer").</li>
@@ -140,6 +154,8 @@
     </ul>
     <h3>Search sites for you</h3>
     <p>Two templates search sites with a read-only browser agent (Claude Code, the browser of the Setup tab) and compare what they find. <b>Find home or car listings</b>: the kind, buy or rent, the place, the features you want and a budget; you get a table of listings with links, each wanted feature marked ✓, ✗ or ?. <b>Find a place to stay (hotel)</b>: the place, the dates, the guests, a budget and your wishes; you get stays with total and nightly prices, rating, breakfast and cancellation terms. Both run without a window and take about 15 to 20 minutes. They never book, sign in or contact anyone. A site that blocks the search is named in the report with a link, so that you can look there yourself. If a site asks for a check, open it once under Setup → Browser.</p>
+    <h3>Experimental templates</h3>
+    <p>Four templates carry an <b>Experimental</b> badge on their library card and a notice on their page: <b>Social video series</b> (it needs paid OpenAI and ElevenLabs API keys), <b>Find home or car listings</b>, <b>Find a place to stay (hotel)</b> (a browser agent on websites that change) and <b>Research and prepare an X post</b> (sharing on X). They work, but check the result before you use it.</p>
     <h3>Stop, resume, retry</h3>
     <p>Everything that runs has a stop button (■): in the run list, on the run page and in the header's activity list. <b>Resume</b> continues a failed, cancelled or interrupted run; the steps that finished are kept. A failed step can be retried alone. A run whose program ended (a closed terminal) shows as "interrupted" and can be resumed.</p>
   </section>
@@ -299,13 +315,28 @@ outputs:
 ./mehter resume &lt;run&gt; [--node &lt;id&gt;]         <span class="c"># continue a run, or retry one step</span>
 ./mehter cancel &lt;run&gt;                       <span class="c"># stop a run</span>
 ./mehter approve &lt;run&gt; &lt;node&gt;               <span class="c"># approve a waiting approval step</span>
+./mehter update                             <span class="c"># bring a git copy up to date</span>
+./mehter doctor                             <span class="c"># check the installed AI tools (no model call)</span>
+./mehter eval [--model m] [--case id ...] [--out folder]   <span class="c"># run the evaluation set</span>
+./mehter eval --compare before.json after.json   <span class="c"># compare two evaluation reports</span>
 ./mehter --lang tr runs                     <span class="c"># messages in another language</span></code></pre>
     <p><code>run</code> takes a template id or a path to a <code>.yaml</code> file. An input with several files takes <code>--input &lt;id&gt;=&lt;file&gt;</code> once per file. <kbd>Ctrl</kbd>+<kbd>C</kbd> cancels the run. Exit code: 0 finished, 3 waiting for an approval, 1 otherwise. On Windows, use <code>mehter</code> instead of <code>./mehter</code>.</p>
+    <h3>Check the AI tools: <code>mehter doctor</code></h3>
+    <p>An update of an AI tool can drop an option that Mehteran uses. <code>mehter doctor</code> checks each installed tool without a model call: every option that Mehteran passes must appear in the tool's <code>--help</code> (of its subcommand, for example <code>codex exec</code>). It also checks that Claude Code's <code>/usage</code> report can be read and whether Codex has a usage log. It prints one line per check. The exit code is 1 when a check failed.</p>
+    <h3>The evaluation set: <code>mehter eval</code></h3>
+    <p><code>mehter eval</code> runs the cases of <code>evals/cases.json</code>: 7 cases over 6 core templates (<code>document-summary</code>, <code>meeting-minutes-actions</code>, <code>contract-risk-review</code>, <code>email-reply-draft</code>, <code>code-review</code>, <code>ask-your-documents</code>). One case asks a question that the document does not answer; one document hides an injected instruction. Rules check each result: the output language, the required facts, forbidden text and the length.</p>
+    <ul>
+      <li>The runs make real model calls with the tools of the Setup tab, so they use your usage limits.</li>
+      <li><code>--model</code> sets one model for every step of every case. <code>--case</code> runs only that case (repeat it for more).</li>
+      <li>The runs use a temporary data folder, so your run history stays clean. The report (JSON) goes to <code>&lt;data&gt;/evals/</code>, or to <code>--out</code>.</li>
+      <li><code>--compare</code> shows what changed between two reports, for example before and after you changed an instruction.</li>
+      <li>The checks are rules, not a judge: a passed case can still read badly.</li>
+    </ul>
   </section>
 
   <section id="translation">
-    <h2>Optional book translation</h2>
-    <p>Run the separate translation app with <code>./translate ui</code>. Configure your books, models and instructions with the <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.md">translation guide</a>.</p>
+    <h2>The book translation</h2>
+    <p>The book translation app is no longer part of Mehteran. A computer that used it (a book in <code>books/</code>, or a <code>config.toml</code> in the code folder) keeps it: when its code is missing, Mehteran puts it back once from the git history, in the same place. <code>./translate ui</code> (Windows: <code>translate ui</code>), the books, the settings and the instructions keep working. The translation app gets no more updates. A copy installed from npm or a zip file is not changed. New installations do not get the translation app.</p>
   </section>
 
   <section id="languages">
@@ -359,14 +390,16 @@ outputs:
     <p>Install Tesseract OCR on the Setup tab, with the languages of the document.</p>
     <h3>The page says the code changed</h3>
     <p>Click <b>Restart</b> on the message: Mehteran starts again with the new code and the page reloads. It waits while a run is going on. A Mehteran started before this button existed is restarted by hand once: close its terminal window and start it again.</p>
+    <h3>An AI tool fails after the tool was updated</h3>
+    <p>Run <code>./mehter doctor</code> (Windows: <code>mehter doctor</code>). It names each option of Mehteran's command that the tool no longer knows, and says whether the usage report can still be read.</p>
   </section>
 
   <section id="reference">
     <h2>Reference and development</h2>
     <ul>
       <li><a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">Full reference</a>: every screen, setting, API route and limit (<a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">Türkçe</a>).</li>
-      <li>Code: <code>mehteran/</code>, Python standard library only (PyYAML vendored). The interface is plain JavaScript with no build step.</li>
-      <li>Tests: <code>python3 -m unittest discover tests</code>. They use a fake AI tool and make no network calls.</li>
+      <li>Code: <code>mehteran/</code>, Python standard library only (PyYAML vendored). Shared code (the tool installer, document reading, the Word and HTML export) is in <code>mehteran/common/</code>. The interface is plain JavaScript with no build step.</li>
+      <li>Tests: <code>python3 -m unittest discover tests</code>. They use a fake AI tool and make no network calls. CI runs them on Ubuntu (Python 3.11 and 3.14), macOS and Windows (Python 3.12). It does not run the evaluation set (<code>mehter eval</code>), which makes real model calls.</li>
       <li>A new step type: add a <code>NodeType</code> in <code>mehteran/nodes.py</code>; the check, the engine and the editor pick it up.</li>
     </ul>
   </section>
@@ -420,16 +453,16 @@ outputs:
       </tbody>
     </table>
     <h3>npm ile</h3>
-    <p>Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) <code>npx mehteran</code> komutunu çalıştırın. İlk çalıştırma Mehteran'ı <code>~/Mehteran</code> klasörüne kurar (bilgisayarda git varsa <code>git clone</code> ile) ve arayüzü açar. Sonraki seferlerde yine <code>npx mehteran</code> yazın. Her komut aynı şekilde çalışır: <code>npx mehteran templates</code>, <code>./mehter templates</code> ile aynıdır. Komutlar Mehteran klasöründe çalışır; dosya yollarını tam yol olarak verin. Başka bir klasör için <code>MEHTERAN_DIR</code> değişkenini ayarlayın.</p>
+    <p>Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) <code>npx mehteran</code> komutunu çalıştırın. İlk çalıştırma npm sürümündeki kaynak kodu <code>~/Mehteran</code> klasörüne kurar ve arayüzü açar. Sonraki seferlerde yine <code>npx mehteran</code> yazın. Her komut aynı şekilde çalışır: <code>npx mehteran templates</code>, <code>./mehter templates</code> ile aynıdır. Komutlar Mehteran klasöründe çalışır; dosya yollarını tam yol olarak verin. Başka bir klasör için <code>MEHTERAN_DIR</code> değişkenini ayarlayın.</p>
     <h3>Güncellemeler</h3>
-    <p>Mehteran'ı <code>git clone</code> ile aldıysanız, arayüz başlamadan önce kendini GitHub'dan günceller. <code>npx mehteran</code> ile kurulan kopya, kurulumda bilgisayarda git varsa aynısını yapar; git yoksa zip kopyası gibidir. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, oldukları yerde kalırlar (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Kitap çevirisi için eski klasördeki <code>books/</code>, <code>glossary/</code>, <code>config.toml</code> ve <code>prompts/</code> içindeki <code>.md</code> dosyalarını (ve <code>prompts/custom/</code>) yeni klasöre taşıyın. Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
+    <p>Mehteran'ı <code>git clone</code> ile aldıysanız, <code>mehter update</code> onu günceller. Başlatıcı bunu arayüz başlamadan önce çalıştırır. GitHub'dan çeker ve yalnızca ileri sarma (fast-forward) birleştirmesi uygular. İnternet ya da GitHub girişi yoksa, ya da kod bu bilgisayarda değiştirildiyse güncellemeyi bir mesajla atlar ve Mehteran olduğu gibi açılır. <code>npx mehteran</code> ile kurulan kopya güncellenmez: yeni bir npm sürümünü denemek için onu <code>MEHTERAN_DIR</code> ile yeni bir klasöre kurun. Zip dosyası indirdiyseniz yeni zip'i indirin. İş akışlarınız ve çalıştırmalarınız kod klasöründe değildir, oldukları yerde kalırlar (bkz. <a href="#tr-veri">Verileriniz nerede</a>). Arayüz çalışırken kod değişirse sayfada bir uyarı çıkar: terminal penceresini kapatıp Mehteran'ı yeniden başlatın.</p>
     <h3>Araçlar nereye kurulur</h3>
     <p>Mehteran'ın kurduğu araçlar kod klasörüne (<code>.runtime/</code>) ya da kullanıcı klasörünüze gider (Claude Code, Antigravity CLI ve özel Python: <code>~/.local/bin</code>; Windows'ta <code>%LOCALAPPDATA%</code> altı). Yönetici yetkisi gerekmez.</p>
   </section>
 
   <section id="tr-araclar">
     <h2>Yapay zekâ araçlarını bağlama</h2>
-    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, kullanım sınırından ne kadar kaldı. <b>Eksikleri kur</b>, şablonların ve kitap çevirisinin kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
+    <p><b>Kurulum</b> sekmesi her araç için bir kart gösterir: kurulu mu, oturum açık mı, nasıl ücretlendiriliyor, kullanım sınırından ne kadar kaldı. <b>Eksikleri kur</b>, şablonların kullandığı araçları kurar. Her kartta ayrı bir kurma düğmesi, oturum açma yolları ve <b>Dene</b> düğmesi vardır.</p>
     <table>
       <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
       <tbody>
@@ -455,9 +488,23 @@ outputs:
     <p>Her aracın, bütün çalıştırmalar için aynı anda yapılabilecek çağrı sınırı vardır (Claude Code ve Codex 2, Antigravity 1, Ollama 1). Kurulum sekmesindeki <b>Aynı anda</b> ile değiştirin. Tek bir çalıştırma aynı anda en fazla 4 model çağrısı yapar.</p>
   </section>
 
+  <section id="tr-kosullar">
+    <h2>Abonelikler ve sağlayıcı koşulları</h2>
+    <p>Mehteran, sağlayıcıların kendi değiştirilmemiş komut satırı araçlarını bilgisayarınızda, kendi hesabınızla açılmış oturumla başlatır. Oturum bilgilerinizi hiçbir zaman okumaz, saklamaz ya da başka bir yere iletmez.</p>
+    <ul>
+      <li>Anthropic'in <a href="https://www.anthropic.com/legal/consumer-terms">Tüketici Koşulları</a> (Consumer Terms), madde 3.7, hizmetlere "through automated or non-human means, whether through a bot, script, or otherwise" (otomatik ya da insan dışı yollarla; bot, betik ya da başka bir yolla) erişmeyi yasaklar. İstisnalar, Anthropic API anahtarı ve Anthropic'in açıkça izin verdiği kullanımlardır.</li>
+      <li>Claude Code'un <a href="https://code.claude.com/docs/en/legal-and-compliance">hukuk sayfası</a> şuna izin verir: "an end user [...] signing in to the unmodified Claude Code binary with their own Claude subscription" (bir son kullanıcının değiştirilmemiş Claude Code programında kendi Claude aboneliğiyle oturum açması). Sayfa şunu da söyler: "Advertised usage limits for Pro, Max, and Ultra plans assume ordinary, individual usage of Claude Code" (Pro, Max ve Ultra planlarının duyurulan kullanım sınırları, Claude Code'un olağan, bireysel kullanımını varsayar). Ürün geliştirenler ise "should use API key authentication" (API anahtarıyla kimlik doğrulama kullanmalıdır).</li>
+      <li>OpenAI, <code>codex exec</code> komutunu "repeatable workflows and pipelines" (tekrarlanabilir iş akışları ve işlem hatları) için belgeler (<a href="https://developers.openai.com/codex/cli">Codex CLI</a>). <a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan">ChatGPT planıyla Codex</a> makalesi otomasyondan söz etmez.</li>
+      <li>Google'ın <a href="https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html">Gemini CLI koşullar sayfası</a>, her oturum açma türüne hangi koşulların uygulandığını söyler. Otomasyondan söz etmez.</li>
+    </ul>
+    <p>Bu yüzden tüketici aboneliğiyle zamanlanmış, toplu ya da arka planda çalıştırmalara izin verilip verilmediği açıkça belli değildir. Hesabınızın kullanımından siz sorumlusunuz. Yoğun ya da gözetimsiz kullanım için (zamanlamalar, toplu çalıştırmalar, arka plan) sağlayıcıların önerdiği yol API anahtarıdır: Kurulum sekmesinde o araç için <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Yerel bir modelin (Ollama, LM Studio) böyle koşulları yoktur.</p>
+    <p><b>Mehteran'ın varsayılan davranışı:</b> zamanlanmış ve toplu çalıştırmalar yalnızca yerel modelleri ve API anahtarlı araçları kullanır. Abonelik ya da ücretsiz hesap kullanacak bir adım, zamanlama oluşturulurken ya da toplu çalıştırma başlarken nedeni söylenerek reddedilir; model <code>auto</code> ise bu araçlar atlanır. Bu çalıştırmalarda aboneliklere izin vermek için Kurulum → İş akışlarının yapay zekâ araçları altında "Zamanlanmış ve toplu çalıştırmalarda aboneliklere ve ücretsiz hesaplara izin ver" seçeneğini açın. Kendi başlattığınız bir çalıştırma bundan etkilenmez.</p>
+    <p class="note">Bu bir hukuki tavsiye değildir. 24 Kasım 2026'da denetlendi; koşullar değişebilir.</p>
+  </section>
+
   <section id="tr-calistir">
     <h2>İş akışı çalıştırma</h2>
-    <p><b>İş akışları</b> sekmesinde bir iş akışı bulun ve <b>Aç</b>'a tıklayın. Sayfası kitap çevirisi gibi üç bölümle açılır: <b>Çalıştır</b> (çalıştırma formu, ilk gösterilen), <b>Talimatlar</b> (adımlar sade sözlerle, her yapay zekâ adımı talimatıyla) ve <b>Çalıştırmalar</b> (bu iş akışının çalıştırmaları). Yıldız ve <b>⋯</b> (düzenle, çoğalt, indir, paylaş, sil) yanlarındadır.</p>
+    <p><b>İş akışları</b> sekmesinde bir iş akışı bulun ve <b>Aç</b>'a tıklayın. Sayfası üç bölümle açılır: <b>Çalıştır</b> (çalıştırma formu, ilk gösterilen), <b>Talimatlar</b> (adımlar sade sözlerle, her yapay zekâ adımı talimatıyla) ve <b>Çalıştırmalar</b> (bu iş akışının çalıştırmaları). Yıldız ve <b>⋯</b> (düzenle, çoğalt, indir, paylaş, sil) yanlarındadır.</p>
     <ol>
       <li>Girdileri doldurun: dosyayı yükleyin, metni yazın, çıktı dilini seçin. Modeller kendiliğinden seçilir; değiştirmek için <b>Seçenekler</b>'i açın. <b>Geçen seferki gibi</b>, son çalıştırmanızın değerlerini doldurur (dosyaları ve parolaya benzeyen hiçbir şeyi doldurmaz).</li>
       <li><b>Çalıştırmayı başlat</b>'ın yanındaki satırı okuyun: model çağrısı sayısı ve araçlar. <b>Ayrıntılar</b> tahminin tamamını gösterir: yeniden denemelerle üst sınır, her aracın şu anki kullanımı ve her adımın metnini nereye gönderdiği ("Gönderildiği yer: Anthropic", "Bu bilgisayarda kalır").</li>
@@ -472,6 +519,8 @@ outputs:
     </ul>
     <h3>Sizin için sitelerde arama</h3>
     <p>İki şablon, yalnızca okuyan bir tarayıcı ajanıyla (Claude Code ve Kurulum sekmesindeki tarayıcı) sitelerde arar ve bulduklarını karşılaştırır. <b>Ev ya da araba ilanı bul</b>: tür, satın alma ya da kiralama, yer, istediğiniz özellikler ve bütçe; bağlantılı bir ilan tablosu alırsınız, istenen her özellik ✓, ✗ ya da ? ile işaretlidir. <b>Konaklama bul (otel)</b>: yer, tarihler, kişiler, bütçe ve istekleriniz; toplam ve gecelik fiyatı, puanı, kahvaltıyı ve iptal koşullarını gösteren seçenekler alırsınız. İkisi de pencere açmadan çalışır ve yaklaşık 15-20 dakika sürer. Rezervasyon yapmaz, oturum açmaz, kimseyle iletişime geçmez. Aramayı engelleyen bir site raporda bağlantısıyla yazılır; oraya kendiniz bakabilirsiniz. Bir site doğrulama isterse onu Kurulum → Tarayıcı'dan bir kez açın.</p>
+    <h3>Deneysel şablonlar</h3>
+    <p>Dört şablonun kütüphane kartında <b>Deneysel</b> işareti, sayfasında da bir uyarı vardır: <b>Sosyal medya video serisi</b> (ücretli OpenAI ve ElevenLabs API anahtarları ister), <b>Ev ya da araba ilanı bul</b>, <b>Konaklama bul (otel)</b> (değişen web sitelerinde bir tarayıcı ajanı) ve <b>Araştır ve X paylaşımı hazırla</b> (X'te paylaşma). Çalışırlar, ama sonucu kullanmadan önce denetleyin.</p>
     <h3>Durdurma, devam ettirme, yeniden deneme</h3>
     <p>Çalışan her şeyin bir durdurma düğmesi (■) vardır: çalıştırma listesinde, çalıştırma sayfasında ve üst çubuktaki etkinlik listesinde. <b>Devam ettir</b>, başarısız, iptal edilmiş ya da yarıda kalmış bir çalıştırmayı sürdürür; biten adımlar korunur. Başarısız bir adım tek başına yeniden denenebilir. Programı kapanan (terminali kapatılan) bir çalıştırma "yarıda kaldı" olarak görünür ve devam ettirilebilir.</p>
   </section>
@@ -631,13 +680,28 @@ outputs:
 ./mehter resume &lt;run&gt; [--node &lt;id&gt;]         <span class="c"># çalıştırmayı sürdür ya da bir adımı yeniden dene</span>
 ./mehter cancel &lt;run&gt;                       <span class="c"># çalıştırmayı durdur</span>
 ./mehter approve &lt;run&gt; &lt;node&gt;               <span class="c"># bekleyen bir onay adımını onayla</span>
+./mehter update                             <span class="c"># git kopyasını güncelle</span>
+./mehter doctor                             <span class="c"># kurulu yapay zekâ araçlarını denetle (model çağrısı yok)</span>
+./mehter eval [--model m] [--case id ...] [--out klasör]   <span class="c"># değerlendirme setini çalıştır</span>
+./mehter eval --compare once.json sonra.json   <span class="c"># iki değerlendirme raporunu karşılaştır</span>
 ./mehter --lang en runs                     <span class="c"># mesajlar başka bir dilde</span></code></pre>
     <p><code>run</code> bir şablon kimliği ya da bir <code>.yaml</code> dosyasının yolunu alır. Birden çok dosya alan bir girdiye her dosya için bir kez <code>--input &lt;id&gt;=&lt;dosya&gt;</code> yazılır. <kbd>Ctrl</kbd>+<kbd>C</kbd> çalıştırmayı iptal eder. Çıkış kodu: 0 bitti, 3 onay bekliyor, diğer durumlarda 1. Windows'ta <code>./mehter</code> yerine <code>mehter</code> yazın.</p>
+    <h3>Yapay zekâ araçlarını denetleme: <code>mehter doctor</code></h3>
+    <p>Bir yapay zekâ aracının güncellemesi, Mehteran'ın kullandığı bir seçeneği kaldırabilir. <code>mehter doctor</code> kurulu her aracı model çağrısı yapmadan denetler: Mehteran'ın verdiği her seçenek aracın <code>--help</code> çıktısında (alt komutununkinde, örneğin <code>codex exec</code>) geçmelidir. Ayrıca Claude Code'un <code>/usage</code> raporunun okunabildiğini ve Codex'in bir kullanım günlüğü olup olmadığını denetler. Her denetim için bir satır yazar. Bir denetim başarısız olursa çıkış kodu 1'dir.</p>
+    <h3>Değerlendirme seti: <code>mehter eval</code></h3>
+    <p><code>mehter eval</code>, <code>evals/cases.json</code> içindeki durumları çalıştırır: 6 temel şablon üzerinde 7 durum (<code>document-summary</code>, <code>meeting-minutes-actions</code>, <code>contract-risk-review</code>, <code>email-reply-draft</code>, <code>code-review</code>, <code>ask-your-documents</code>). Bir durum, belgede cevabı olmayan bir soru sorar; bir belge gizli, içine yerleştirilmiş bir talimat taşır. Her sonucu kurallar denetler: çıktı dili, gerekli bilgiler, yasak metinler ve uzunluk.</p>
+    <ul>
+      <li>Çalıştırmalar Kurulum sekmesindeki araçlarla gerçek model çağrıları yapar; bu yüzden kullanım sınırlarınızdan harcar.</li>
+      <li><code>--model</code>, her durumun her adımı için tek bir model seçer. <code>--case</code> yalnızca o durumu çalıştırır (birden çok durum için yineleyin).</li>
+      <li>Çalıştırmalar geçici bir veri klasörü kullanır; çalıştırma geçmişiniz temiz kalır. Rapor (JSON) <code>&lt;veri&gt;/evals/</code> klasörüne ya da <code>--out</code> ile verilen klasöre yazılır.</li>
+      <li><code>--compare</code> iki rapor arasında neyin değiştiğini gösterir; örneğin bir talimatı değiştirmeden önce ve sonra.</li>
+      <li>Denetimler kuraldır, bir değerlendirici değildir: geçen bir durum yine de kötü okunabilir.</li>
+    </ul>
   </section>
 
   <section id="tr-ceviri">
-    <h2>İsteğe bağlı kitap çevirisi</h2>
-    <p>Bağımsız çeviri uygulamasını <code>./translate ui</code> ile başlatın. Kitapları, modelleri ve talimatları kurmak için <a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/guide.tr.md">çeviri kılavuzunu</a> izleyin.</p>
+    <h2>Kitap çevirisi</h2>
+    <p>Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kullanmış bir bilgisayar (<code>books/</code> içinde bir kitap ya da kod klasöründe bir <code>config.toml</code> varsa) onu korur: kodu eksikse Mehteran onu git geçmişinden aynı yere bir kez geri koyar. <code>./translate ui</code> (Windows'ta <code>translate ui</code>), kitaplar, ayarlar ve talimatlar çalışmayı sürdürür. Çeviri uygulaması artık güncelleme almaz. npm'den ya da zip dosyasından kurulan bir kopya değiştirilmez. Yeni kurulumlara çeviri uygulaması gelmez.</p>
   </section>
 
   <section id="tr-diller">
@@ -691,14 +755,16 @@ outputs:
     <p>Kurulum sekmesinde Tesseract OCR'ı belgenin dilleriyle birlikte kurun.</p>
     <h3>Sayfa kodun değiştiğini söylüyor</h3>
     <p>Mesajdaki <b>Yeniden başlat</b>'a tıklayın: Mehteran yeni kodla yeniden başlar ve sayfa yenilenir. Bir çalıştırma sürerken bekler. Bu düğmeden önce başlatılmış bir Mehteran bir kez elle yeniden başlatılır: terminal penceresini kapatıp yeniden başlatın.</p>
+    <h3>Bir yapay zekâ aracı güncellendikten sonra hata veriyor</h3>
+    <p><code>./mehter doctor</code> komutunu çalıştırın (Windows'ta <code>mehter doctor</code>). Komut, Mehteran'ın komutundaki seçeneklerden aracın artık tanımadıklarını söyler ve kullanım raporunun hâlâ okunup okunamadığını bildirir.</p>
   </section>
 
   <section id="tr-basvuru">
     <h2>Başvuru ve geliştirme</h2>
     <ul>
       <li><a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.tr.md">Ayrıntılı başvuru</a>: her ekran, ayar, API yolu ve sınır (<a href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/docs/mehteran.md">English</a>).</li>
-      <li>Kod: <code>mehteran/</code>, yalnızca Python standart kütüphanesi (PyYAML projeye dahil). Arayüz derleme adımı olmayan düz JavaScript'tir.</li>
-      <li>Testler: <code>python3 -m unittest discover tests</code>. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz.</li>
+      <li>Kod: <code>mehteran/</code>, yalnızca Python standart kütüphanesi (PyYAML projeye dahil). Ortak kod (araç kurucusu, belge okuma, Word ve HTML dışa aktarma) <code>mehteran/common/</code> içindedir. Arayüz derleme adımı olmayan düz JavaScript'tir.</li>
+      <li>Testler: <code>python3 -m unittest discover tests</code>. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz. CI onları Ubuntu (Python 3.11 ve 3.14), macOS ve Windows (Python 3.12) üzerinde çalıştırır. Gerçek model çağrıları yapan değerlendirme setini (<code>mehter eval</code>) çalıştırmaz.</li>
       <li>Yeni bir adım türü: <code>mehteran/nodes.py</code> içine bir <code>NodeType</code> ekleyin; denetim, motor ve düzenleyici onu kendiliğinden tanır.</li>
     </ul>
   </section>
@@ -713,7 +779,10 @@ outputs:
       <a data-l="en" href="#install">Install</a><a data-l="tr" href="#tr-kurulum">Kurulum</a>
       <a data-l="en" href="#reference">Reference</a><a data-l="tr" href="#tr-basvuru">Başvuru</a>
       <a href="https://github.com/tolgabuyuktanir/Mehteran">GitHub</a>
+      <a data-l="en" href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/CONTRIBUTING.md">Contributing</a>
+      <a data-l="tr" href="https://github.com/tolgabuyuktanir/Mehteran/blob/main/CONTRIBUTING.tr.md">Katkı</a>
     </nav>
+    <p class="foot-note"><span data-l="en">MIT license. An independent project, not affiliated with or endorsed by Anthropic, OpenAI or Google. Claude, Codex, Gemini and Antigravity are trademarks of their owners.</span><span data-l="tr">MIT lisansı. Bağımsız bir projedir; Anthropic, OpenAI ya da Google ile bağlantılı değildir ve onlar tarafından onaylanmamıştır. Claude, Codex, Gemini ve Antigravity sahiplerinin ticari markalarıdır.</span></p>
   </div>
   <span class="wordmark" aria-hidden="true">Mehteran</span>
 </footer>

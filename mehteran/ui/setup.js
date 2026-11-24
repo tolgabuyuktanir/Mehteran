@@ -1,6 +1,6 @@
 "use strict";
 
-// --- setup (the same tools, installs and sign-ins as the translation app) ---------------------------
+// --- setup: installing the tools and signing in ------------------------------------------------------
 async function loadTools() {
   clearTimeout(state.toolPoll);
   if (!$("#tools").children.length) fill($("#tools"), skeleton("tools"));  // live.js
@@ -22,8 +22,8 @@ async function loadTools() {
   else if (watchingSignIn) state.toolPoll = setTimeout(loadTools, 4000);
 }
 
-// A sign-in is needed for the tools that a template or the translation workflow uses.
-const neededTools = (data) => data.tools.filter((tool) => tool.templates.length || tool.translation);
+// A sign-in is needed for the tools that a template uses.
+const neededTools = (data) => data.tools.filter((tool) => tool.templates.length);
 const toolsReady = (data) => data.tools.every((tool) => !tool.required || tool.installed) && neededTools(data).every((tool) => tool.signed_in);
 
 function setReady(ready) {
@@ -103,8 +103,8 @@ function toolCard(tool, terminal) {
       b.textContent = S("test");
     }}, S("test")));
   }
-  // Who uses the tool: the translation workflow, then the templates.
-  const names = [...(tool.translation ? [S("translation_card_title")] : []), ...(tool.templates || [])];
+  // Who uses the tool: the templates.
+  const names = tool.templates || [];
   const uses = !tool.provider ? S("pdf_uses") : !tool.configured ? S("not_configured")
     : names.length ? S("used_by", {names: names.slice(0, 3).join(", ") + (names.length > 3 ? " " + S("and_more", {count: names.length - 3}) : "")})
     : S("not_used");
@@ -121,10 +121,10 @@ function toolCard(tool, terminal) {
       h("div", {class: "badges"}, h("span", {class: "badge good"}, S(tool.provider ? "signed_in" : "installed") + (tool.sign_in_info ? " · " + tool.sign_in_info : "")),
         tool.billing ? billingBadge(tool.billing) : null),
       quota && q.until > Date.now() / 1000 ? quota : null,
-      tool.provider ? usageMini(tool.provider) : null,  // live.js: what is left of its limit, without opening Details
+      tool.provider ? usageMini(canonicalProvider(tool.provider)) : null,  // live.js: what is left of its limit, without opening Details
       h("details", {class: "tool-more"}, h("summary", {class: "small"}, S("details")),
         h("div", {class: "stack"}, h("div", {class: "uses"}, uses), h("div", {class: "small muted"}, tool.requirements),
-          tool.provider ? usageSlot(tool.provider) : null, keyForm, h("div", {class: "actions"}, actions.filter((b) => b !== test)))),
+          tool.provider ? usageSlot(canonicalProvider(tool.provider)) : null, keyForm, h("div", {class: "actions"}, actions.filter((b) => b !== test)))),
       test ? h("div", {class: "actions"}, test) : null);
   }
   return h("article", {class: "card tool", "data-id": tool.id},
@@ -139,7 +139,7 @@ function toolCard(tool, terminal) {
     h("div", {class: "small muted"}, tool.requirements),
     tool.installed && !tool.signed_in && tool.sign_in_help ? h("div", {class: "small"}, tool.sign_in_help) : null,
     quota,
-    tool.provider ? usageSlot(tool.provider) : null,
+    tool.provider ? usageSlot(canonicalProvider(tool.provider)) : null,
     !terminal && tool.installed && !tool.signed_in && tool.provider ? h("p", {class: "small muted"}, S("run_command", {command: tool.login_command})) : null,
     keyForm,
     job ? h("pre", {class: "log"}, job.log.slice(-4000)) : null,
@@ -148,7 +148,7 @@ function toolCard(tool, terminal) {
 
 // A provider whose models run on this computer (Ollama).
 const localTag = (p) => (p && p.local ? h("span", {class: "local-tag", title: S("local_hint")}, S("local")) : null);
-// "Required" for the tools that the templates or the translation use (and the PDF reader); "optional" otherwise.
+// "Required" for the tools that the templates use (and the PDF reader); "optional" otherwise.
 const need = (required) => h("span", {class: "need " + (required ? "required" : "optional")}, S(required ? "need_required" : "need_optional"));
 const GB = 1024 * 1024 * 1024;
 const gb = (bytes) => (bytes == null ? "–" : bytes >= GB ? `${(bytes / GB).toFixed(1)} GB` : fileSize(bytes));

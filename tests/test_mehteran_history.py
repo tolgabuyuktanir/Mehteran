@@ -210,7 +210,7 @@ class HistoryTests(Server):
         self.app.engine.cancel(run_id)
         self.app.engine.wait(run_id, 30)
         # A finished run whose lock another process holds: not deleted.
-        from pipeline import system
+        from mehteran.common import system
         with open(self.app.engine.run_dir(run_id) / ".lock", "a+") as handle:
             self.assertTrue(system.try_lock(handle))
             with mock.patch.object(self.app.engine, "is_active", return_value=False):

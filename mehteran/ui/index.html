@@ -7,10 +7,9 @@
 <meta name="referrer" content="no-referrer">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <title>Mehteran</title>
-<!-- Shared styles first, then Mehteran-specific rules. -->
-<link rel="stylesheet" href="/tr/style.css">
+<!-- The base styles first, then the rules of each part. -->
+<link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/style.css">
-<script src="/tr/app.js" defer></script>
 <script src="/langpicker.js" defer></script>
 <script src="/canvas.js" defer></script>
 <script src="/editor.js" defer></script>
@@ -84,25 +83,9 @@
         <div id="template-filters"></div>
         <span id="library-count" class="small muted" role="status" aria-live="polite"></span>
       </div>
-      <p id="existing-book-translation" hidden>
-        <a class="btn" href="#workflows/translation/books" data-i18n="go_translation"></a>
-      </p>
       <div id="template-grid"></div>
     </div>
-    <!-- the book translation: the translation app's own interface (/tr/app.js), mounted here by app.js -->
-    <section id="translation" class="translation-view" hidden>
-      <div class="subnav">
-        <button type="button" class="btn small" data-goto="workflows" data-i18n="back_to_workflows"></button>
-        <span class="subnav-title"><span data-icon="translation"></span><b data-i18n="translation_card_title"></b></span>
-        <nav class="subtabs" role="tablist" data-i18n-label="translation_sections">
-          <button type="button" class="subtab" role="tab" data-sub="books" aria-controls="tr-books" data-i18n="tr_books"></button>
-          <button type="button" class="subtab" role="tab" data-sub="workflow" aria-controls="tr-workflow" data-i18n="tr_workflow"></button>
-          <button type="button" class="subtab" role="tab" data-sub="prompts" aria-controls="tr-prompts" data-i18n="tr_prompts"></button>
-        </nav>
-      </div>
-      <div id="translation-body" class="tr-body"></div>
-    </section>
-    <!-- one workflow's page (app.js: showWorkflowPage), built like the book translation's: Run, Instructions, Runs -->
+    <!-- one workflow's page (app.js: showWorkflowPage): Run, Instructions, Runs -->
     <section id="workflow-page" class="wf-page" hidden>
       <div class="subnav">
         <button type="button" class="btn small" data-goto="workflows" data-i18n="back_to_workflows"></button>

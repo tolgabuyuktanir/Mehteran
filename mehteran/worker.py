@@ -3,8 +3,8 @@
 The engine starts this process for each ai.cli attempt, so that a cancel or a timeout can stop it together with
 the command-line tool it started. An adapter's tool (mehteran/providers/) gets the prompt on stdin, in an empty
 temporary folder, and its stdout goes to the node's live log as it arrives (mehteran/toolstream.py). A provider that
-the user added to config.toml runs through the translation app's call (pipeline.providers.run). The environment has
-no API key that would bill an account, unless the user allowed it (nodes.call_worker).
+is given by its command (MEHTERAN_CONFIG, config.toml) runs through mehteran.common.calls.call_command. The
+environment has no API key that would bill an account, unless the user allowed it (nodes.call_worker).
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def _write(path: Path, text: str) -> None:
 def _end_with_parent() -> None:
     """If the engine process dies (killed, or the terminal closed), this process and the tool it started end too;
     otherwise the tool would go on using the account's quota for an answer that nobody reads. POSIX only: there
-    this process leads its own process group (see pipeline.system.new_process_group)."""
+    this process leads its own process group (see mehteran.common.system.new_process_group)."""
     if os.name != "posix":
         return
     parent = os.getppid()
@@ -48,12 +48,10 @@ def main(job_file: str) -> int:
     _end_with_parent()
     job = json.loads(Path(job_file).read_text(encoding="utf-8"))
     root = Path(job["root"])
-    sys.path.insert(0, str(root))
-    from pipeline import i18n, providers, tools
-    from pipeline.core import PipelineError, Project
+    from mehteran import i18n
+    from mehteran.common import calls, tools
     i18n.set_default(job.get("lang"))
     tools.extend_path(root)
-    proj = Project(root, job["cfg"])
     prompt = Path(job["prompt"]).read_text(encoding="utf-8")
     log = Path(job["log"]) if job.get("log") else None
     prefix = f"{job['label']}: " if job.get("label") else ""
@@ -82,19 +80,21 @@ def main(job_file: str) -> int:
         return _local_server_call(job, spec, prompt, log, prefix, model)
     if spec.get("adapter") in adapters.ADAPTERS:  # one of Mehteran's own adapters (mehteran/providers/)
         return _adapter_call(job, spec, prompt, log, prefix)
-    # A provider of config.toml that the user added: the translation app's call, as it is.
+    # A provider given by its command. One attempt and no waiting for a usage limit here: the engine counts attempts,
+    # applies the timeout and waits for a usage limit itself (it can be cancelled meanwhile).
     if log:
         livelog.append(log, f"{prefix}--- {job['name']}: {' '.join(Path(a).name for a in spec.get('command', [])[:1])} ---\n")
     try:
-        # One attempt and no waiting for a usage limit here: the engine counts attempts, applies the timeout and
-        # waits for a usage limit itself (it can be cancelled meanwhile). The translation app detects the limit.
-        answer = providers.run(proj, job["name"], prompt, wait_for_quota=False, attempts=1, timeout=job["timeout"])
-    except providers.QuotaError as e:
+        if not spec.get("command"):
+            raise calls.CommandError(i18n.t("provider_not_configured", name=provider))
+        answer = calls.call_command(provider, spec, model, job["name"].partition("@")[2], prompt, job["timeout"],
+                                    job["cfg"]["general"].get("quota_wait_minutes", 30) * 60)
+    except calls.QuotaError as e:
         _write(Path(job["error"]), str(e))
         if job.get("quota"):
             _write(Path(job["quota"]), json.dumps({"until": e.until}))
         return 1
-    except PipelineError as e:
+    except calls.CommandError as e:
         _write(Path(job["error"]), str(e))
         return 1
     except Exception as e:  # noqa: BLE001 - reported to the engine as the node's error
@@ -148,7 +148,7 @@ def _agent(job: dict, log: Path | None, prefix: str) -> dict | None:
 def _adapter_call(job: dict, spec: dict, prompt: str, log: Path | None, prefix: str) -> int:
     """One call through an adapter: the tool's output goes to the live log as it arrives (toolstream.py)."""
     from mehteran import usage
-    from pipeline.i18n import t
+    from mehteran.i18n import t
     adapter = adapters.ADAPTERS[spec["adapter"]]
     provider, model, effort = adapters.split(job["name"])
     if log:

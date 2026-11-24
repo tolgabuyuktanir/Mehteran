@@ -5,9 +5,14 @@ on: [push, pull_request]
 jobs:
   tests:
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python: ["3.11", "3.14"]
-    runs-on: ubuntu-latest
+        include:  # the computers Mehteran is used on
+          - {os: macos-latest, python: "3.12"}
+          - {os: windows-latest, python: "3.12"}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -18,6 +23,6 @@ jobs:
         with:
           node-version: "22"
       - run: python -m pip install ruff==0.4.10
-      - run: ruff check mehteran pipeline tests
+      - run: ruff check mehteran tests
       - run: node --test tests/mehteran_markdown_test.mjs
       - run: python -m unittest discover tests

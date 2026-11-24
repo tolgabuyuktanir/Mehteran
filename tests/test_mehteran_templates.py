@@ -11,7 +11,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from mehteran_support import HomeCase  # noqa: E402
-from test_pipeline import make_docx  # noqa: E402
+from test_mehteran_common import make_docx  # noqa: E402
 
 from mehteran import paths, schema, templates  # noqa: E402
 from mehteran.templates import TemplateError  # noqa: E402

@@ -2,9 +2,9 @@
 
 [Türkçe](mehteran.tr.md) · [Back to the README](../README.md)
 
-Mehteran runs AI workflows on this computer. A workflow is a YAML file: a graph of nodes (read a document, ask a model, merge texts, ask a person, save a report). The models are called through the command-line tools that the translation app already uses (Claude Code, Codex, Antigravity CLI, Gemini CLI). Mehteran keeps no keys and no accounts of its own.
+Mehteran runs AI workflows on this computer. A workflow is a YAML file: a graph of nodes (read a document, ask a model, merge texts, ask a person, save a report). The models are called through the providers' own command-line tools (Claude Code, Codex, Antigravity CLI, Gemini CLI) or local models. Mehteran keeps no keys and no accounts of its own. Using a subscription this way is subject to the provider's terms: see "Subscriptions and the providers' terms".
 
-Use the standalone `./translate ui` app for book translation.
+The book translation app is no longer part of Mehteran: see "The book translation".
 
 ## Start
 
@@ -15,18 +15,21 @@ Use the standalone `./translate ui` app for book translation.
 | Command line | `./mehter <command>` | `mehter <command>` |
 | With npm (Node.js 18+): installs into `~/Mehteran` (or `MEHTERAN_DIR`) on the first run | `npx mehteran [<command>]` | `npx mehteran [<command>]` |
 
-The interface opens at `http://127.0.0.1:8766/`. When the code changes while the interface runs (an update), the page says so in a banner: close the terminal window of the server and start it again. Starting `mehter ui` a second time on a busy port says the same when the running one is out of date. It runs while the terminal window stays open. The launcher works like the translation app's (`scripts/start.sh`, `scripts/start.cmd`): it uses Python 3.11 or later and installs a private Python (uv) when the computer has none, and before `ui` it brings a git copy of the code folder up to date (`python -m pipeline update`, the translation app's own update step).
+The interface opens at `http://127.0.0.1:8766/`. When the code changes while the interface runs (an update), the page says so in a banner: close the terminal window of the server and start it again. Starting `mehter ui` a second time on a busy port says the same when the running one is out of date. It runs while the terminal window stays open. The launcher (`scripts/mehter.sh`, `scripts/mehter.cmd`) uses Python 3.11 or later and installs a private Python (uv) when the computer has none. Before `ui` it runs `mehter update` (`python -m mehteran update`, see "Updates").
+
+### Updates
+
+`mehter update` (`mehteran/update.py`) brings a git copy of the code folder up to date: `git fetch`, then a fast-forward merge of the branch's upstream. It never asks for a user name or password. Without network or a sign-in, or when the code was changed on this computer (no fast-forward possible), it skips the update with a message; Mehteran then starts as it is. The exit code is always 0. A copy without git (a zip file, the npm package) is not updated.
 
 The language button (a flag and the language's name) is at the top right: 18 interface languages, see "Languages". On the command line, use `--lang <code>` (`tr`, `en`, `de`, `ar`...) before the command.
 
 ## Web interface
 
-The interface has the same design as the translation app's and three tabs: Workflows, Runs, Setup. Addresses of earlier versions (`#templates`, `#workflow/...`, `#runs/new/...`) still open the matching screen. The first screen is Setup while the tools are not ready, otherwise the tab used last; the Mehteran name at the top left goes there too.
+The interface has three tabs: Workflows, Runs, Setup. Addresses of earlier versions (`#templates`, `#workflow/...`, `#runs/new/...`) still open the matching screen. The first screen is Setup while the tools are not ready, otherwise the tab used last; the Mehteran name at the top left goes there too.
 
-- To translate existing books, run `./translate ui` from the project folder. To also show translation inside Mehteran, set `embed_book_translation = true` in `configurations/engine.toml` in your data folder and restart Mehteran.
-- **Workflows**: the library and the visual editor. The library has two views. "My workflows" (the first view once you have your own workflows, favorites or runs) shows your own workflows, drafts, favorites, the workflows run last and the book translation when it is starred or has books. "Templates" shows a "Start here" group (about 20 general templates), the book translation and then one group per category. Each card shows what a run needs, for example "1 document · 2 model calls" ("up to" when a choice picks one branch), a search that ignores case and accents (also Turkish ones: "sozlesme" finds "Sözleşme") and a filter per category. Each card has a star (favorite), "Edit" and "Open". "Open", or the card itself, opens the workflow's page (`#workflows/<source>/<id>/<run|steps|runs>`; an `about` address of earlier versions opens `steps`), built like the book translation's: "← Workflows", the workflow's icon and name, and three sections. **Run** is the run form in place (see below). **Runs** lists this workflow's runs. **Instructions** lists the steps in plain words, numbered; an AI step shows its instruction (three lines, then "more"). On your own workflow, "Edit the instruction" changes it in place and saves it. Below them: "Open in the visual editor", and, folded, the drawing and the YAML (your workflows have a YAML editor there). Beside the sections are the favorite star and "⋯": "Open in the visual editor" (a built-in template opens as your own unsaved copy), "Duplicate" (a copy of your own under the first free `<id>-copy` name; it records the template and version it came from in `based_on`, and a later update of the built-in template never changes it), "Download YAML", "Share" and "Delete" (your workflows only). "Import" adds a workflow file; "New workflow" starts an empty one.
-- **Runs**: select a record in the searchable history to open its details. The Runs link returns to the list. Each record shows its flow live (the editor's canvas, read-only, each box coloured by its status), a progress line per node, the results (read them formatted, compare them with another run, edit and export them: see "A run's results" below), and the panel of the selected node: its outputs (read them in the reader or download them), the prompt sent to the model, approve or reject, retry. Below the workflow runs, the list shows the last run of each book of the book translation (`GET /api/translation/runs`, read from each book's `work/run.json`); a click opens the books. Everything that runs has a stop button (■) in the list. "Resume" continues a failed, cancelled or interrupted run; "Cancel" stops it; "Run again" opens the Run section of the same workflow.
-- **Setup**: the same tool cards as the translation app's Setup tab, on the same code (`pipeline.tools`, `pipeline.runtime`): installed and signed-in status, "Install missing tools" (the tools that the translation workflow and the templates use, and the PDF reader), an install button per tool, the sign-in methods (account, or an API key for Codex and Gemini), "Test", the last usage limit, and a getting-started box. Each card says who uses the tool (Translation, templates). The tools go into the same `<code folder>/.runtime` as the translation app's, so both share one installation. Each AI tool card also shows its billing (subscription, free account, local, or API key (billed); see "AI tools of the workflows" below). Below the cards, the panel "AI tools of the workflows" (open by default) starts with a table of the tools: status, billing, remaining usage, calls at once and "Allow an API key (billed)". Below the table it holds the model order of `auto` and the current automatic choice. "Video services" is the last section of the tab. Each card is marked "Required" (used by a template or the translation, and the PDF reader) or "Optional". Below them, "Local tools" (all optional): the Ollama card (status, install after a confirmation that names the version, the source and the folder, the install log with Cancel), its models (installed ones with Delete; recommended ones with size, memory and languages, and a warning when one is too big for this computer; another model by name; one download at a time with progress and Cancel), the Tesseract OCR card (install after a confirmation, languages to add), and the Typst, Pandoc, speech to text (with its models) and qpdf cards (install after a confirmation that names the version, the download size, the source and the folder; the install log with Cancel). Local models are marked "local" wherever a model is chosen. A tool that is ready shows only its name, one status line and "Test"; the rest is under "Details". "Run in the background", "Local tools" and "Video services" are folded under their titles; "AI tools of the workflows" is open. When Mehteran was updated while it runs, a banner says so, and its "Restart" button starts the server again with the new code and reloads the page (refused while a run or a draft is going on; a server started before this button is restarted by hand once).
+- **Workflows**: the library and the visual editor. The library has two views. "My workflows" (the first view once you have your own workflows, favorites or runs) shows your own workflows, drafts, favorites and the workflows run last. "Templates" shows a "Start here" group (about 20 general templates) and then one group per category. An experimental template (`tier: experimental`) has an "Experimental" badge on its card and a notice on its page. Each card shows what a run needs, for example "1 document · 2 model calls" ("up to" when a choice picks one branch), a search that ignores case and accents (also Turkish ones: "sozlesme" finds "Sözleşme") and a filter per category. Each card has a star (favorite), "Edit" and "Open". "Open", or the card itself, opens the workflow's page (`#workflows/<source>/<id>/<run|steps|runs>`; an `about` address of earlier versions opens `steps`): "← Workflows", the workflow's icon and name, and three sections. **Run** is the run form in place (see below). **Runs** lists this workflow's runs. **Instructions** lists the steps in plain words, numbered; an AI step shows its instruction (three lines, then "more"). On your own workflow, "Edit the instruction" changes it in place and saves it. Below them: "Open in the visual editor", and, folded, the drawing and the YAML (your workflows have a YAML editor there). Beside the sections are the favorite star and "⋯": "Open in the visual editor" (a built-in template opens as your own unsaved copy), "Duplicate" (a copy of your own under the first free `<id>-copy` name; it records the template and version it came from in `based_on`, and a later update of the built-in template never changes it), "Download YAML", "Share" and "Delete" (your workflows only). "Import" adds a workflow file; "New workflow" starts an empty one.
+- **Runs**: select a record in the searchable history to open its details. The Runs link returns to the list. Each record shows its flow live (the editor's canvas, read-only, each box coloured by its status), a progress line per node, the results (read them formatted, compare them with another run, edit and export them: see "A run's results" below), and the panel of the selected node: its outputs (read them in the reader or download them), the prompt sent to the model, approve or reject, retry. Everything that runs has a stop button (■) in the list. "Resume" continues a failed, cancelled or interrupted run; "Cancel" stops it; "Run again" opens the Run section of the same workflow.
+- **Setup**: one card per tool (`mehteran.common.tools`, `mehteran.common.runtime`): installed and signed-in status, "Install missing tools" (the tools that the templates use, and the PDF reader), an install button per tool, the sign-in methods (account, or an API key for Codex and Gemini), "Test", the last usage limit, and a getting-started box. Each card names the templates that use the tool. The tools go into `<code folder>/.runtime`. Each AI tool card also shows its billing (subscription, free account, local, or API key (billed); see "AI tools of the workflows" below). Below the cards, the panel "AI tools of the workflows" (open by default) starts with a table of the tools: status, billing, remaining usage, calls at once and "Allow an API key (billed)". Below the table it holds the model order of `auto` and the current automatic choice. "Video services" is the last section of the tab. Each card is marked "Required" (used by a template, and the PDF reader) or "Optional". Below them, "Local tools" (all optional): the Ollama card (status, install after a confirmation that names the version, the source and the folder, the install log with Cancel), its models (installed ones with Delete; recommended ones with size, memory and languages, and a warning when one is too big for this computer; another model by name; one download at a time with progress and Cancel), the Tesseract OCR card (install after a confirmation, languages to add), and the Typst, Pandoc, speech to text (with its models) and qpdf cards (install after a confirmation that names the version, the download size, the source and the folder; the install log with Cancel). Local models are marked "local" wherever a model is chosen. A tool that is ready shows only its name, one status line and "Test"; the rest is under "Details". "Run in the background", "Local tools" and "Video services" are folded under their titles; "AI tools of the workflows" is open. When Mehteran was updated while it runs, a banner says so, and its "Restart" button starts the server again with the new code and reloads the page (refused while a run or a draft is going on; a server started before this button is restarted by hand once).
 
 A run starts in the Run section of the workflow's page ("Open" on a card, "Run" in the editor, "Run again" on a run: the form opens with that run's values, files excepted). The section is one column: "N steps · View the instructions", the description, the inputs (a file input takes an upload), then "Options", folded: the model inputs, "Model for every step" and "Only models on this computer" (the models are chosen automatically; opened, a model input offers the configured tools with lists of their models and thinking levels), "Also save the results to this folder" and the schedule (not shown for a workflow that needs a file). At the end: "Start the run" with one line of what the run calls ("Calls: 4 · Claude Code"), and the whole estimate under "Details". "Start the run" opens the run on the Runs tab.
 
@@ -38,9 +41,7 @@ A run starts in the Run section of the workflow's page ("Open" on a card, "Run" 
 - "Steps after a condition": such a step runs only when its branch is taken, so the run can make fewer calls.
 - The tools do not tell how much of a usage limit one call takes. The window therefore shows no percentage per run.
 
-The book translation has its own estimate in its own interface.
-
-**The first-start welcome.** Until you run something, the Workflows tab shows "What would you like to do?" above the library, with one card per choice: work with a document (opens the Run section of `document-explainer`), write or reply (the library with six writing workflows only), analyse data, education and exams, research and review (each the library filtered by that category). Each card names the AI tool that the choice needs with its state from the Setup tab's data (`GET /api/tools`). When the tool is missing, the card has the "Install" button; when it is not signed in, the "Sign in" button (the account sign-in of the Setup tab). Both call the Setup tab's own addresses. An API key and the details stay on the Setup tab; the card links there. `GET /api/welcome` answers `{show, choices: [{id, action, category, templates, providers}]}`. The panel is not shown again after the first workflow run or book translation, or after "Do not show again" (`PUT /api/welcome {"dismissed": true}`). The server keeps that in `<data>/configurations/library.json` (`welcome_closed`: `used` or `dismissed`), not in the browser: the browser's storage belongs to one address and port, and the choice must hold for every browser and port.
+**The first-start welcome.** Until you run something, the Workflows tab shows "What would you like to do?" above the library, with one card per choice: work with a document (opens the Run section of `document-explainer`), write or reply (the library with six writing workflows only), analyse data, education and exams, research and review (each the library filtered by that category). Each card names the AI tool that the choice needs with its state from the Setup tab's data (`GET /api/tools`). When the tool is missing, the card has the "Install" button; when it is not signed in, the "Sign in" button (the account sign-in of the Setup tab). Both call the Setup tab's own addresses. An API key and the details stay on the Setup tab; the card links there. `GET /api/welcome` answers `{show, choices: [{id, action, category, templates, providers}]}`. The panel is not shown again after the first workflow run, or after "Do not show again" (`PUT /api/welcome {"dismissed": true}`). The server keeps that in `<data>/configurations/library.json` (`welcome_closed`: `used` or `dismissed`), not in the browser: the browser's storage belongs to one address and port, and the choice must hold for every browser and port.
 
 ### Building a workflow: starters, "Describe it", warnings, "Test this step"
 
@@ -56,16 +57,6 @@ The book translation has its own estimate in its own interface.
 - **"Test this step"** (under the instruction of an AI step, or the question of a condition that asks a model) runs only that step, with your unsaved changes. The texts of the steps before it come from the last run of this workflow in which those steps finished (the panel names that run), or from a sample text that you paste. The panel shows the model, its tool's usage, and then the answer. It is one model call; it counts for the usage page; nothing is saved and the source run does not change.
 
 How it works: `mehteran/drafting.py`. The draft prompt has a summary of the node types made from the registry (`nodes.REGISTRY`, the same data as `GET /api/node-types`), the rules, two example files, and your description between data tags. Both features are jobs of the server (`POST /api/editor/draft`, `POST /api/editor/try`, state and live log with `POST /api/editor/jobs/<id>`, stop with `POST /api/editor/jobs/<id>/cancel`); the model call runs in its own process like a run's step, so "Stop" ends the tool too. `schema.warnings()` makes the warnings.
-
-### The book translation
-
-The book translation is the translation app's own interface, inside Mehteran's page: `pipeline/ui/app.js` (served as `/tr/app.js`, the same file, no copy) draws Books, the translation workflow and the instructions in the Workflows tab (`TranslationUI.mount`), with Mehteran's language, session key and message line. Its links to Setup open Mehteran's Setup tab.
-
-Its requests go to `/api/tr/...` of Mehteran's own server (`mehteran/translation.py`). With `embed_book_translation = true`, startup loads the translation project once, the way `./translate ui` does (`pipeline.web.App(Project.load(...))`), without a second server. A request to `/api/tr/<path>` is answered by the translation app's own request handling (`pipeline.web.make_handler`) as `/api/<path>`: the same routes, checks, streamed uploads (up to 300 MB), downloads and error codes. Mehteran's Host and session-key checks come first; the translation app takes Mehteran's session key. When the project cannot load, the book translation view and the terminal say why; the rest of Mehteran works. `./translate ui` (port 8765) can run at the same time: a book's run is locked per book, across programs.
-
-The translation workflow's diagram ("Translation workflow", in Mehteran and in `./translate ui`) is zoomable: −, + and the zoom level (a click: 100 %), "Fit", Ctrl/⌘ + wheel or a trackpad pinch, and dragging empty space to pan. The chosen zoom is kept in the browser and put back after every redraw; without one the diagram fits the canvas, at 85 % or more. "Full screen" gives the diagram and the panel of the selected step the whole window (Esc ends it; new steps come in through the "+" between the steps there). The steps are drawn larger, with a clear number, the whole model names and a clear selected step; "+ Add step" before the delivery says what the "+" does. On a wide window the panel of the selected step is next to the diagram, otherwise below it. Selecting steps, changing models, dragging, adding, removing and reordering steps and saving work as before.
-
-When the translation app's code changes (`pipeline/*.py`, `pipeline/ui/*`) while `mehter ui` runs, the page shows the same "restart the server" banner as for Mehteran's own code.
 
 ### A run's results: read, compare, edit, export
 
@@ -83,7 +74,7 @@ The API (with the session key, like every run route; `<output>` is the original 
 
 ### The run history, batches, saving to a folder, sharing
 
-- **The list** (Runs tab): a search field (it finds the workflow name, the run's name and note, its main input, its id and its status; case and accents are ignored) and one group per workflow; a click on a group's title folds it (the browser remembers it). The book translations have their own group. Each row shows the run's main input: the name of its first file, or else the first 40 characters of its first text or address input. A run that you named shows its name instead.
+- **The list** (Runs tab): a search field (it finds the workflow name, the run's name and note, its main input, its id and its status; case and accents are ignored) and one group per workflow; a click on a group's title folds it (the browser remembers it). Each row shows the run's main input: the name of its first file, or else the first 40 characters of its first text or address input. A run that you named shows its name instead.
 - **Name and note** ("✎ Rename" on a run's page): a name (at most 120 characters) and a note (at most 2000). The name replaces the workflow name in the list and on the page; the note is shown under the title and as the row's tooltip. `PUT /api/runs/<run>/label {label, note}`; an empty text removes it.
 - **Delete** ("Delete" on the page of a finished run): the confirmation names the size of the run's folder. The run's rows and its folder `executions/<run>` are deleted; the usage records of its model calls stay. A run that is queued, running or waiting for an approval, or whose lock another process holds (`executions/<run>/.lock`), is not deleted: stop it first. Only paths inside the data folder are removed; a link inside the run folder is removed as a link, never followed. `DELETE /api/runs/<run>` (`{"dry_run": true}`: only `{size, deletable}`).
 - **Delete runs older than…** (under the search field): 30, 90 or 365 days. The window first names how many finished runs and how many bytes; working runs are kept. `POST /api/runs/cleanup {days, dry_run}`.
@@ -96,10 +87,10 @@ The API (with the session key, like every run route; `<output>` is the original 
 
 ## Languages
 
-One list holds every language: `mehteran/languages.json` (the language registry). An entry has the code, the language's own name, its English name, the country code of its flag and its direction: `{"code": "ar", "native": "العربية", "english": "Arabic", "flag": "sa", "dir": "rtl", "ui": true}`. The Mehteran page, the book translation's interface and the workflows use this list (`mehteran/languages.py`, `GET /api/languages`). It contains every language of the translation app's default list (`config.default.toml`, `[languages]`); a test checks that.
+One list holds every language: `mehteran/languages.json` (the language registry). An entry has the code, the language's own name, its English name, the country code of its flag and its direction: `{"code": "ar", "native": "العربية", "english": "Arabic", "flag": "sa", "dir": "rtl", "ui": true}`. The Mehteran page and the workflows use this list (`mehteran/languages.py`, `GET /api/languages`).
 
 - **Interface languages** (`"ui": true`): Türkçe, English, العربية, Deutsch, Français, Español, Português, Italiano, Русский, فارسی, اردو, Bahasa Indonesia, Bahasa Melayu, Azərbaycanca, Bosanski, Shqip, 简体中文, 日本語. Choose one with the language button at the top right: a list with flags and a search field (type a name in any language, or the code). The keyboard works: Enter, Space or ↓ opens the list, ↑ ↓ move, Enter chooses, Esc closes. The choice is kept in the browser. Arabic, Persian and Urdu turn the page right to left (`<html dir="rtl">`); the workflow drawing, code and logs stay left to right.
-- **Complete and partial languages**: Turkish and English have every text. Another language may have only some of the texts; a text that it lacks is shown in English (the page and the server messages both). Today all 18 languages have every text of the interface and of the server messages; `coverage` shows it. The labels and help texts of the step settings in the editor are Turkish and English only. The translation app's own server messages (`pipeline/i18n.py`) are Turkish or English: every other interface language gets them in English.
+- **Complete and partial languages**: Turkish and English have every text. Another language may have only some of the texts; a text that it lacks is shown in English (the page and the server messages both). Today all 18 languages have every text of the interface and of the server messages; `coverage` shows it. The labels and help texts of the step settings in the editor are Turkish and English only.
 - **Flags**: a flag is a country's, a language is not: the flag only helps to find the row, the language's own name is always written beside it. The flags are SVG files of this program (`mehteran/ui/flags/<country>.svg`, from flag-icons 7.2.3, MIT; the license is in that folder), because emoji flags do not show on Windows. Nothing is loaded from the internet.
 - **Output language of a workflow**: an input of type `language` offers every language of the registry in the same flag list. A `choice` input whose options are all language codes (and whose id contains `lang`) is shown as the flag list too, with only its options. The Run section starts at the interface language when the workflow offers it; else at the workflow's default.
 
@@ -109,18 +100,19 @@ One list holds every language: `mehteran/languages.json` (the language registry)
 |---|---|---|
 | Mehteran's page (`S("key")` in `mehteran/ui/*.js`) | `mehteran/locales/tr.json`, `en.json`: `"ui"` | `mehteran/locales/<code>.json`: `"ui"` |
 | Server and command-line messages (`i18n.t("key")`) | the same files: `"messages"` | the same files: `"messages"` |
-| The book translation's interface | `I18N` in `pipeline/ui/app.js` (its own page has only that file) | `pipeline/ui/locales/<code>.json` (`{key: text}`; Mehteran serves them as `/tr/locales/<code>.json` and gives them to `TranslationUI.mount` / `setLang`) |
+
+These are the only two groups of texts (`"ui"` and `"messages"`), each with English as the reference.
 
 - A text added in `mehteran/i18n.py` as `MESSAGES.update({...})` or `UI.update({"key": {"tr": ..., "en": ...}})` still works: it is merged into the loaded texts and does not remove the other languages of that key. `python3 -m mehteran.i18n_tools absorb` moves such blocks into the locale files (run it when nobody else edits `i18n.py`).
 - The server reads the locale files when it starts: restart it after a change (the page says so).
-- A text keeps the `{name}` placeholders of the English text; a text of the book translation's interface keeps its HTML tags too.
+- A text keeps the `{name}` placeholders of the English text.
 
 ```text
 python3 -m mehteran.i18n_tools coverage              how many texts each language has
 python3 -m mehteran.i18n_tools missing de            the keys German lacks, with the English text
-python3 -m mehteran.i18n_tools missing de --json     the same as {"ui": {...}, "messages": {...}, "translation": {...}}
+python3 -m mehteran.i18n_tools missing de --json     the same as {"ui": {...}, "messages": {...}}
 python3 -m mehteran.i18n_tools merge de done.json    adds a translated file of that form to the locale files
-python3 -m mehteran.i18n_tools validate [de]         complete tr and en, known keys, equal placeholders and tags
+python3 -m mehteran.i18n_tools validate [de]         complete tr and en, known keys, equal placeholders
 ```
 
 A new interface language: set `"ui": true` on its entry in `mehteran/languages.json`, then `missing <code> --json`, translate the values, `merge`, `validate`.
@@ -129,7 +121,7 @@ A new interface language: set `"ui": true` on its entry in `mehteran/languages.j
 
 They are optional and are installed only when you ask (the Setup tab, or the command line below); so are Typst, Pandoc, speech to text (whisper.cpp with ffmpeg) and qpdf, described after them. Each one that is already on the computer (on PATH) is found and used; Mehteran's own copy in `.runtime` comes first. They go into the same `<code folder>/.runtime` folder as the other tools; no administrator rights are needed.
 
-**Ollama** runs models on this computer; nothing is sent anywhere. Mehteran's adapter `ollama` calls it (the translation app's `config.toml` is not changed). A step uses it as `ollama/<model>`, for example `ollama/gemma3:4b`; the run form offers the installed models. Mehteran calls Ollama's HTTP API on `127.0.0.1` (port 11434) with its own system prompt and the same data tags as for any other model, in the same separate process, so cancel and timeout work the same.
+**Ollama** runs models on this computer; nothing is sent anywhere. Mehteran's adapter `ollama` calls it. A step uses it as `ollama/<model>`, for example `ollama/gemma3:4b`; the run form offers the installed models. Mehteran calls Ollama's HTTP API on `127.0.0.1` (port 11434) with its own system prompt and the same data tags as for any other model, in the same separate process, so cancel and timeout work the same.
 
 - An Ollama that already runs is used as it is. Else the system's `ollama` (PATH, the macOS app, the Windows install), else the one Mehteran installed. Mehteran starts `ollama serve` on 127.0.0.1 when a run or a download needs it and stops it when Mehteran ends, only if Mehteran started it (its log: `<data>/jobs/ollama-serve.log`).
 - Install: Ollama 0.40.16, the official archive of the GitHub release (`ollama-darwin.tgz`, `ollama-linux-amd64.tar.zst` / `-arm64`, `ollama-windows-amd64.zip` / `-arm64`), checked against the SHA-256 sums written in `mehteran/ollama.py` (from the release's `sha256sum.txt`, which matches GitHub's own digests). No install script is run. On Linux, unpacking needs Python 3.14 or the `zstd` program.
@@ -138,7 +130,7 @@ They are optional and are installed only when you ask (the Setup tab, or the com
 
 **Tesseract OCR** reads scanned PDFs and images. A PDF page becomes an image with Poppler's `pdftoppm` (300 dpi), then Tesseract reads it.
 
-- Install: Poppler (and micromamba) through the translation app's installer when missing; Tesseract 5.5.4 from conda-forge (micromamba checks every package) into `.runtime/tesseract` (about 460 MB: the package brings the language data of 125 languages, among them `tur`, `eng`, `ara`, `fas`); only when a language is still missing, the language data `eng`, `tur`, `ara`, `fas` from `tesseract-ocr/tessdata_fast`, tag 4.1.0, each checked against a SHA-256 sum written in `mehteran/ocr.py`, into `.runtime/tessdata`. An installed Tesseract (for example from Homebrew) is used too, with its own languages. There is no Tesseract model for Ottoman Turkish (`ota` does not exist); use `ara` or `fas` for the Arabic script.
+- Install: Poppler (and micromamba) through Mehteran's tool installer (`mehteran/common/runtime.py`) when missing; Tesseract 5.5.4 from conda-forge (micromamba checks every package) into `.runtime/tesseract` (about 460 MB: the package brings the language data of 125 languages, among them `tur`, `eng`, `ara`, `fas`); only when a language is still missing, the language data `eng`, `tur`, `ara`, `fas` from `tesseract-ocr/tessdata_fast`, tag 4.1.0, each checked against a SHA-256 sum written in `mehteran/ocr.py`, into `.runtime/tessdata`. An installed Tesseract (for example from Homebrew) is used too, with its own languages. There is no Tesseract model for Ottoman Turkish (`ota` does not exist); use `ara` or `fas` for the Arabic script.
 - More languages, offered in the Setup tab and downloaded only when chosen: `deu`, `fra`, `spa`, `ita`, `por`, `nld`, `rus`, `ell`, `aze`, `kmr` (Kurmanji), `urd`, `heb`, `hin`, `chi_sim`, `jpn`, `kor` (tessdata_fast 4.1.0, each checked against its SHA-256 sum; the sums were also checked against the git blob hashes of the tag). The conda-forge Tesseract already brings most of them; only the missing ones are downloaded. Without a choice, `ocr-languages` installs `eng tur ara fas` as before.
 - `document.extract` takes `ocr`: `auto` (the default: only the pages of a PDF that have almost no text layer, and images), `always`, `never`; and `ocr_languages` (`tur+eng`; empty: Turkish and English as far as installed). File inputs also take images: `png`, `jpg`, `jpeg`, `tif`, `tiff`. Limits: 500 pages per file, 180 seconds per page; cancel stops the running program. Without Tesseract, a PDF that has a text layer on some pages is read as before; a fully scanned one fails with a message that says what to install.
 
@@ -162,7 +154,7 @@ They are optional and are installed only when you ask (the Setup tab, or the com
 
 **qpdf** repairs damaged PDFs and removes the encryption of PDFs that open without a password. When `document.extract` cannot read a PDF (pdftotext fails), it lets qpdf write a repaired copy and reads that; without qpdf the first error stands. Install: the pinned conda-forge package `qpdf=12.4.2` (about 6 MB download) into `.runtime/qpdf`.
 
-The conda-forge installs (speech to text, qpdf) need micromamba; when it is missing, the translation app's installer brings it with Poppler first (the confirmation says so).
+The conda-forge installs (speech to text, qpdf) need micromamba; when it is missing, Mehteran's tool installer brings it with Poppler first (the confirmation says so).
 
 **Recommended Ollama models** also list a vision model (`qwen2.5vl:7b`, 6.0 GB) and an embedding model (`bge-m3:567m`, 1.2 GB), labelled as such. Mehteran's steps do not send images to a model yet, and an embedding model cannot be a step's model: they are listed for later use.
 
@@ -198,7 +190,7 @@ The API of the Setup tab:
 
 ## AI tools of the workflows (providers)
 
-Mehteran calls the AI tools through adapters of its own, one module per tool in `mehteran/providers/`: `claude` (Claude Code), `codex` (Codex CLI; the old name `chatgpt` still works), `antigravity` (Antigravity CLI), `gemini` (Gemini CLI) and `ollama` (local models). Each adapter knows the tool's command and Mehteran's own safe flags, the neutral system prompt, how the answer and a usage limit come out, where the text goes, the billing kind, the context size and the default number of calls at once. The book translation keeps its own commands in `config.toml`; they are not changed.
+Mehteran calls the AI tools through adapters of its own, one module per tool in `mehteran/providers/`: `claude` (Claude Code), `codex` (Codex CLI; the old name `chatgpt` still works), `antigravity` (Antigravity CLI), `gemini` (Gemini CLI) and `ollama` (local models). Each adapter knows the tool's command and Mehteran's own safe flags, the neutral system prompt, how the answer and a usage limit come out, where the text goes, the billing kind, the context size and the default number of calls at once. A provider given by its command (a `[providers.*]` section of the settings file, see "Where the data is") runs through `mehteran.common.calls.call_command`.
 
 | Tool | Billing shown | Text goes to | Flags Mehteran adds |
 |---|---|---|---|
@@ -217,7 +209,7 @@ The Claude flags were checked against `claude --help` (2.1.316). The Codex flags
 
 **`auto`.** A model may be `auto`, `auto:fast`, `auto:strong` or `auto:local` (the templates' default is `auto`). When a run starts, Mehteran takes the user's model order (Setup: "Model order", with ↑ ↓ and ✕; without one, the installed and signed-in tools in the order Claude Code, Codex, Antigravity, Ollama) and keeps only the tools that are installed, signed in and not billed by an API key. `auto` takes the first one; `auto:fast` its fast model (Claude: `haiku`) or a low thinking level; `auto:strong` its strong model (Claude: `opus`) or a high level; `auto:local` only a model on this computer. A provider with a usage limit that has not reset goes to the end. The choice and the other candidates are frozen into the run (`provider_cfg.auto`). The run form shows "Automatic: <model> · <usage>" and lets you choose a tool instead; a template whose default tool cannot run here starts on `auto`.
 
-**Usage limits across runs.** Before each call, a provider whose last usage limit has not reset (the `calls` table of all runs, and the translation app's `.jobs/quota.json`) is treated as blocked without a call. An `auto` step then moves to the next model of its candidates; when every one is blocked, it waits until the earliest reset. A step with a fixed model waits as before. A step does not count its own limit this way (it waits for it itself; a resume tries again).
+**Usage limits across runs.** Before each call, a provider whose last usage limit has not reset (known only from Mehteran's own call records: the `calls` table of all runs) is treated as blocked without a call. An `auto` step then moves to the next model of its candidates; when every one is blocked, it waits until the earliest reset. A step with a fixed model waits as before. A step does not count its own limit this way (it waits for it itself; a resume tries again).
 
 **Calls at once.** Each tool has a limit of calls at once over all runs of one Mehteran program (defaults: Claude Code and Codex 2, Antigravity 1, Ollama 1; Setup: "At once"). It comes on top of the 4 calls per run.
 
@@ -239,6 +231,21 @@ options = {num_ctx = 8192}
 
 API: `GET /api/providers` → `{providers: [{name, label, vendor, local, adapter, installed, signed_in, billing, default_billing, api_key_allowed, key_dropped, problem, concurrency, in_use, blocked_until, models}], order, order_is_default, auto: {auto|auto:fast|auto:strong|auto:local: {name, vendor, local}|null}}`; `PUT /api/providers {order?: [model], providers?: {name: {api_key?, concurrency?}}}`. `POST /api/runs` and the estimate take `privacy: "local"`. Claude Code's live output: its stream-json events are shown as text in the step's live log, and each call's `rate_limit_event` updates `usage.json`.
 
+## Subscriptions and the providers' terms
+
+Mehteran starts the providers' own, unmodified command-line tools on your computer, signed in with your own account. It never reads, stores or forwards your sign-in.
+
+- Anthropic's [Consumer Terms](https://www.anthropic.com/legal/consumer-terms), section 3.7, prohibit accessing the services "through automated or non-human means, whether through a bot, script, or otherwise". The exceptions are an Anthropic API key and uses that Anthropic explicitly permits.
+- Claude Code's [legal page](https://code.claude.com/docs/en/legal-and-compliance) allows "an end user [...] signing in to the unmodified Claude Code binary with their own Claude subscription". It also says: "Advertised usage limits for Pro, Max, and Ultra plans assume ordinary, individual usage of Claude Code". Developers who build products "should use API key authentication".
+- OpenAI documents `codex exec` for "repeatable workflows and pipelines" ([Codex CLI](https://developers.openai.com/codex/cli)). Its article on [Codex with a ChatGPT plan](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan) does not address automation.
+- Google's [Gemini CLI terms page](https://google-gemini.github.io/gemini-cli/docs/tos-privacy.html) says which terms apply to each sign-in type. It does not address automation.
+
+So it is not clearly settled whether scheduled, batch or background runs on a consumer subscription are allowed. You are responsible for the use of your account. For heavy or unattended use (schedules, batches, the background), the providers recommend an API key: turn on "Allow an API key (billed)" for that tool on the Setup tab (see "Billing guard"). A local model (Ollama, LM Studio) has no such terms.
+
+**What Mehteran does by default:** scheduled and batch runs use only local models and tools with an API key. A step that would use a subscription or a free account is refused, with the reason, when the schedule is made or the batch starts; with the model `auto`, such tools are skipped. To allow subscriptions for these runs, turn on "Allow subscriptions and free accounts for scheduled and batch runs" under Setup → AI tools of the workflows. A run that you start yourself is not affected. The rule is `Engine.unattended_problem`; the setting is `unattended_subscriptions = true` in `<data>/configurations/providers.toml` (`PUT /api/providers {"unattended_subscriptions": bool}`). A provider given by its command has no known billing and is not refused.
+
+This is not legal advice. Checked on 24 November 2026; terms change.
+
 ## Usage, switching the model of a step, live logs
 
 **Usage** (`GET /api/usage`). Mehteran counts each of its model calls (table `calls`: provider, model, start, seconds, outcome `ok` / `failed` / `quota` / `aborted`, for a limit until when). Per provider:
@@ -248,7 +255,7 @@ API: `GET /api/providers` → `{providers: [{name, label, vendor, local, adapter
   calls, ok, failed, quota, aborted, seconds, last_call,
   windows: {today|5h|7d: {calls, ok, failed, quota, aborted, seconds}}, models: {<model>: {...the same counts}},
   last_quota: {at, until, message}|null, resets_at (until, while it is in the future)|null,
-  tool_reported: {...}|null, translation_quota: <the translation app's .jobs/quota.json entry>|null,
+  tool_reported: {...}|null,
   setup_quota: <the last limit of a Setup model test>|null}]}
 ```
 
@@ -264,7 +271,7 @@ A step may name a fallback model (off unless written): `fallback_provider: gemin
 
 **Live logs** (`GET /api/runs/<run>/log?node=<node>&offset=<bytes>` → `{text, offset, size, done, status}`): each node writes `nodes/<node>/log.txt` while it works: attempts, each model call (and its answer), a "still working" line every 30 seconds, usage-limit waits, model switches, loop parts. Read it from `offset` 0, then from the returned `offset`; `done` is true when the node has ended and everything was read. At most 64 KB per answer, 2 MB per log; obvious secrets (`sk-…`, `Bearer …`, Google and GitHub keys) are masked. A log is written in the language of the run.
 
-What streams: Ollama's answer streams into the log as the model writes it. The command-line tools (Claude Code, Codex, Gemini CLI, Antigravity) are called through Mehteran's adapters (`mehteran/providers/base.py` `run`); its `on_output` callback gives each line of the tool's stdout as it arrives, and the worker writes it to the log (`mehteran/toolstream.py`). The answer that the call returns is the same as without it. A provider that the user added to `config.toml` runs through `pipeline.providers.run` and shows its answer at the end. A tool shows live only what it prints on stdout while it works:
+What streams: Ollama's answer streams into the log as the model writes it. The command-line tools (Claude Code, Codex, Gemini CLI, Antigravity) are called through Mehteran's adapters (`mehteran/providers/base.py` `run`); its `on_output` callback gives each line of the tool's stdout as it arrives, and the worker writes it to the log (`mehteran/toolstream.py`). The answer that the call returns is the same as without it. A provider given by its command (`[providers.*]` of the settings file) runs through `mehteran.common.calls.call_command` and shows its answer at the end. A tool shows live only what it prints on stdout while it works:
 
 - Antigravity CLI (`--output-format stream-json`): its JSON events are turned into text: the answer's text as it is written, and an error line from a failed result.
 - Claude Code (`--output-format stream-json --verbose`, Mehteran's adapter): the assistant's text as each message arrives, and each tool use as a short line (`· tool: Read`), never the raw JSON. Its `rate_limit_event` is kept for the usage page.
@@ -273,7 +280,7 @@ What streams: Ollama's answer streams into the log as the model writes it. The c
 
 Meanwhile the log shows the call and the heartbeat lines. Streamed text is written in whole lines (a long line up to its last word but one), so that secrets are masked whole; the parts of a loop write whole lines with their label (`part 3: `). When the streamed text already ends with the answer, the answer is not written a second time.
 
-**Activity** (`GET /api/activity` → `{runs: [...], translation: [...], time}`), cheap enough for a header indicator: each running, queued or waiting run `{id, workflow_name, status, started, elapsed, done, total, waiting_quota, nodes: [{id, status, started, elapsed, attempts, waiting_reason, progress}]}` (only the nodes that work or wait), and each book the translation app is translating now `{book, state ("running"|"waiting_quota"), stage, started, elapsed, quota}` (its `run.json`, read only).
+**Activity** (`GET /api/activity` → `{runs: [...], time}`), cheap enough for a header indicator: each running, queued or waiting run `{id, workflow_name, status, started, elapsed, done, total, waiting_quota, nodes: [{id, status, started, elapsed, attempts, waiting_reason, progress}]}` (only the nodes that work or wait).
 
 **In the interface** (`mehteran/ui/live.js`):
 
@@ -282,8 +289,8 @@ Meanwhile the log shows the call and the heartbeat lines. Streamed text is writt
 - The run form and the model choice of a step show a short usage hint next to the tool ("5 hours: 54 %"), in a warning colour near a limit.
 - The run page: an overall progress bar, elapsed timers, attempts and the waiting reason of each step, and the live log of the selected step (else the step that works now): monospace, it follows the end, pauses when you scroll up ("Paused · jump to the end"), "Copy". A step that waits for a usage limit, failed, was cancelled or was interrupted offers "Keep waiting" (the default) and "Continue with another model" (every configured model, with its usage hint); the step's panel lists its model switches.
 - The editor: "Fallback model" in the advanced settings of a step that takes a model (empty: off).
-- The header shows what runs now ("2 running", in a warning colour while something waits for a usage limit); a click lists the runs and the books being translated, each a link with a stop button (■). It asks every 4 seconds while something runs, every 20 seconds otherwise, and less often while the window is hidden.
-- The library: a star on each card and beside the sections of the workflow's page marks a favorite (kept in `<data>/configurations/library.json`; `PUT /api/templates/<source>/<id>/favorite {on}`; the list's `favorite` flag). "Favorites" comes right under the book translation, with a "★ Favorites" filter; "Recently used" lists the workflows of the last runs, each with "Open", which goes to the workflow's page. The run form remembers the last values of each workflow in this browser (models, choices, texts; never files or anything named like a key or password): "Same as last time" fills them in. "/" puts the cursor in the search.
+- The header shows what runs now ("2 running", in a warning colour while something waits for a usage limit); a click lists the runs, each a link with a stop button (■). It asks every 4 seconds while something runs, every 20 seconds otherwise, and less often while the window is hidden.
+- The library: a star on each card and beside the sections of the workflow's page marks a favorite (kept in `<data>/configurations/library.json`; `PUT /api/templates/<source>/<id>/favorite {on}`; the list's `favorite` flag). "Favorites" comes first, with a "★ Favorites" filter; "Recently used" lists the workflows of the last runs, each with "Open", which goes to the workflow's page. The run form remembers the last values of each workflow in this browser (models, choices, texts; never files or anything named like a key or password): "Same as last time" fills them in. "/" puts the cursor in the search.
 
 ## Command line
 
@@ -312,13 +319,41 @@ Save your OpenAI and ElevenLabs API keys under Setup → Video services. Paste a
 ./mehter approve <run> <node> [--comment ...]    approve a waiting approval node (reject: the same)
 ./mehter schedules                               the scheduled runs
 ./mehter background on|off|status                start Mehteran in the background at sign-in
+./mehter update                                  bring a git copy up to date (see "Updates")
+./mehter doctor                                  check that the installed AI tools still take Mehteran's options
+./mehter eval [--model m] [--case id ...] [--out folder]   run the evaluation set
+./mehter eval --compare before.json after.json   compare two evaluation reports
 ```
 
 `run` takes a template id (`builtin:<id>`, `user:<id>` or a bare id) or a path to a `.yaml` file. An input with `multiple: true` takes `--input <id>=<file>` once per file. `--every-step <model>` runs every step with one model (`codex`, `claude/opus@high`, `auto`). It shows the status of each node until the run ends. Ctrl+C cancels the run. Exit code: 0 finished, 3 waiting for an approval, 1 otherwise.
 
+Every command except `update` first runs the check of the book translation app (see "The book translation"); `update` runs it after the merge.
+
+### `mehter doctor`
+
+`mehteran/doctor.py`. Mehteran calls the tools with fixed options (`mehteran/providers/`) and reads what some of them report about their usage limits (`mehteran/usage.py`). An update of a tool can drop an option or change a report. For each installed command-line tool, without a model call:
+
+- every `--` option of Mehteran's command must appear in the tool's `--help` (of its subcommand when the command starts with one, as `codex exec`);
+- Claude Code: its `/usage` report can be read (it answers from the account, without a model call);
+- Codex: its newest session log has a usage entry that can be read (missing until Codex was used once interactively; this is not a failure).
+
+It prints one line per check (`✓` or `✗`, the tool, the message). The exit code is 1 when a check failed, and when no AI tool is installed.
+
+### `mehter eval`
+
+`mehteran/evals.py` runs the evaluation set: built-in templates with real models on fixed inputs, checked by rules. The cases are in `evals/cases.json`, their documents in `evals/docs/`. There are 7 cases over 6 core templates: `summary-tr` (`document-summary`), `minutes-en` (`meeting-minutes-actions`), `contract-tr` (`contract-risk-review`), `email-en` (`email-reply-draft`), `code-review-tr` (`code-review`), `ask-answered-tr` and `ask-missing-tr` (`ask-your-documents`; in the second one the answer is not in the document). One document holds a hidden injected instruction.
+
+- Checks of a case: `language` (`tr` or `en`: the result must be in that language, counted from common words and Turkish letters); `any_of: [[a, b], ...]` (each group needs one of its texts in the result; case and accents ignored); `not_contains` / `not_regex` (texts or patterns that must not appear, for example an invented fact or the hidden instruction); `min_chars` / `max_chars`.
+- The result is the Markdown of the workflow's export step (else the text of its last model step). An approval step is approved without a comment.
+- `--model` sets one model for every step of every case (for example `claude/haiku`; default: the templates' own models). `--case <id>` runs only that case (repeatable). `--out` sets the folder of the report.
+- Every run makes real model calls with the tools of the Setup tab: it uses their usage limits. The runs use a temporary data folder with a copy of the Setup tab's settings, so the run history stays clean.
+- The report (JSON, `report-<date>-<time>.json`) goes to `<data>/evals/` (or `--out`). `--compare before.json after.json` shows what changed between two reports, for example before and after a change of the instructions.
+- The exit code is 0 when every case passed, 1 otherwise, 2 for a wrong argument.
+- The checks are rules, not a judge: a passed case can still read badly. CI does not run the evaluation set.
+
 ## Built-in templates
 
-78 built-in templates in 10 categories. Each one is described in the Templates view (what it does, its inputs, its flow). A star after a name marks the templates of the "Start here" group (field `tier: core`). The exam templates (SAT, AP, LGS, YKS) are in `exams`; `education` is general study and teaching.
+78 built-in templates in 10 categories. Each one is described in the Templates view (what it does, its inputs, its flow). A star after a name marks the templates of the "Start here" group (field `tier: core`). The field `tier` takes `core` or `experimental`. Four templates are `tier: experimental`: `topic-video-series` (it needs paid OpenAI and ElevenLabs API keys), `listing-search` and `stay-search` (a browser agent on websites that change) and `research-to-x-post` (sharing on X). The library card shows an "Experimental" badge, and the workflow's page shows a notice. The exam templates (SAT, AP, LGS, YKS) are in `exams`; `education` is general study and teaching.
 
 Some older templates were merged into others. The old ids still work (runs, favorites and `mehter run` accept them): `multi-document-comparison` → `document-comparison`; `chapter-summaries` → `document-summary`; `multi-length-summary` → `document-summary`; `terms-plain-language` → `plain-language-rewrite`; `proofreading-change-list` → `writing-polish`; `abstract-title-improvement` → `writing-polish`; `sat-math-practice-set` → `exam-practice-set`; `sat-reading-writing-practice` → `exam-practice-set`; `lgs-yks-practice` → `exam-practice-set`; `ap-mcq-from-notes` → `ap-question-generator`; `ap-frq-generator` → `ap-question-generator`; `policy-gap-analysis` → `regulatory-compliance-checklist`; `client-follow-up-email` → `email-reply-draft`.
 
@@ -401,16 +436,23 @@ The environment variable `MEHTERAN_HOME` replaces this folder. Subfolders:
 - `databases/mehteran.sqlite3`: the state of every run and node (SQLite, WAL mode).
 - `configurations/`: what the Setup tab keeps: `providers.toml` (the model order, calls at once, "API key (billed)", the Ollama model and options; no secrets), `models.json` (the model lists read from the tools), `quota.json` (the last usage limit that a model test met) and `usage.json` (what Claude Code last reported about its limits).
 - `jobs/`: the logs of the installs started from the Setup tab.
+- `evals/`: the reports of `mehter eval`.
 - `workflows/`: reserved for later versions; empty now.
 
-The workflows use Mehteran's own adapters (`mehteran/providers/`, see "AI tools of the workflows"). The translation app's `config.toml` is only read: its `[general]` timeouts and limits, and any `[providers.*]` section that the user added under another name. Its `claude`, `chatgpt`, `antigravity` and `gemini` sections belong to the book translation only. Sign-ins are kept by the tools themselves, in their own folders (as in the translation app). `MEHTERAN_CONFIG` can name another TOML file with `[providers.*]` sections; there, a provider wins over the adapter of the same name (the tests use it for a fake tool).
+The workflows use Mehteran's own adapters (`mehteran/providers/`, see "AI tools of the workflows"). Providers given by their command (`[providers.<name>]` with `command = [...]`) and the `[general]` time limits (`timeout`, `retries`, `quota_wait_minutes`, `quota_max_hours`) come from one TOML settings file (`mehteran/settings.py`):
+
+1. `MEHTERAN_CONFIG`, when it is set;
+2. else `<data>/configurations/config.toml`;
+3. else the `config.toml` in the code folder, which an older Mehteran with the book translation read (read only, for older installations; when `<data>/configurations/config.toml` exists, that one wins).
+
+Mehteran never writes these files. A section named like an adapter (`claude`, `chatgpt`, `antigravity`, `gemini`) is skipped, except in `MEHTERAN_CONFIG`, where a provider wins over the adapter of the same name (the tests use it for a fake tool). A missing or broken file gives only the adapters and the defaults (`timeout` 1200, `retries` 1, `quota_wait_minutes` 30, `quota_max_hours` 24). Sign-ins are kept by the tools themselves, in their own folders.
 
 ## How a run works
 
 - A node starts as soon as all nodes it is connected from have finished. Nodes that do not depend on each other run at the same time (at most 4 per run).
 - Each node has a number of retries and a timeout per attempt. A timeout or a cancel stops the model call together with the tool it started.
-- A model gets the prompt on stdin, in an empty temporary folder, through Mehteran's adapter of the tool (`mehteran/providers/base.py`), without the API keys that would bill an account. A provider that the user added to `config.toml` runs through the translation app's call (`pipeline.providers.run`). Mehteran makes one attempt per call; the engine counts the retries.
-- Usage limits: when a tool reports a usage or rate limit (the adapter's own report, such as Claude Code's `rate_limit_event`, or the limit messages that `pipeline.providers.is_quota_message` knows), the node does not fail. An `auto` step moves to the next model of the order first, and a limit seen earlier by another run is known without a call (see "AI tools of the workflows"). It shows "waiting for the usage limit" (`waiting_quota`), the event log says until when, and it tries again when the limit resets: the time the tool names, else `quota_wait_minutes` of `config.toml` (`[general]`). A wait is not counted as a failed attempt. When the waiting would last longer than `quota_max_hours` in total, the node fails. Cancel ends the wait at once.
+- A model gets the prompt on stdin, in an empty temporary folder, through Mehteran's adapter of the tool (`mehteran/providers/base.py`), without the API keys that would bill an account. A provider given by its command (the settings file, see "Where the data is") runs through `mehteran.common.calls.call_command`. Mehteran makes one attempt per call; the engine counts the retries.
+- Usage limits: when a tool reports a usage or rate limit (the adapter's own report, such as Claude Code's `rate_limit_event`, or the limit messages that `mehteran.common.calls.is_quota_message` knows), the node does not fail. An `auto` step moves to the next model of the order first, and a limit seen earlier by another run is known without a call (see "AI tools of the workflows"). It shows "waiting for the usage limit" (`waiting_quota`), the event log says until when, and it tries again when the limit resets: the time the tool names, else `quota_wait_minutes` of the settings file (`[general]`; default 30). A wait is not counted as a failed attempt. When the waiting would last longer than `quota_max_hours` in total, the node fails. Cancel ends the wait at once.
 - At most 4 model calls run at the same time per run, also those of loop parts.
 - Conditions: a `condition` node outputs only the port of the branch it takes (`true` or `false`). The nodes connected to the other port are skipped, and so is everything that depends only on them. A join (`text.merge`, `document.export`) runs when at least one of its connections comes from a branch that was taken; the output of a skipped branch is an empty text there. Any other node runs only when all its connections were taken. A skipped branch does not fail the run; a failed node still skips everything after it and fails the run.
 - Loops: an `ai.map` node splits a text into parts and asks the model once per part, in parallel. Each answer is stored with a hash of its prompt: a retry or a resumed run asks only for the parts that have no answer yet. The node's timeout applies to each model call, not to the whole node; the retries apply to the node (finished parts are kept between attempts).
@@ -418,7 +460,7 @@ The workflows use Mehteran's own adapters (`mehteran/providers/`, see "AI tools 
 - Resume: the nodes that finished are kept; only the others run. A run whose program ended (closed terminal, crash) shows as "interrupted" and can be resumed.
 - An approval node stops its branch until a person approves or rejects it. No program needs to stay open meanwhile; the approval can come from the interface or the command line, also after a restart.
 - Only one program drives a run at a time (a lock file in the run folder).
-- Keep awake: from the first run on, Mehteran asks the system not to sleep (`pipeline.system.keep_awake`: `caffeinate` on macOS, the execution state on Windows, `systemd-inhibit` on Linux). This holds until Mehteran ends, so a run that waits for a usage limit keeps the computer awake too.
+- Keep awake: from the first run on, Mehteran asks the system not to sleep (`mehteran.common.system.keep_awake`: `caffeinate` on macOS, the execution state on Windows, `systemd-inhibit` on Linux). This holds until Mehteran ends, so a run that waits for a usage limit keeps the computer awake too.
 - Resume at start (opt-in): with `resume_interrupted = true` in `<data>/configurations/engine.toml`, `mehter ui` resumes the runs that were running or waiting for a usage limit when the previous program ended (not cancelled, failed or finished ones, and not a run that another program drives). They continue with their frozen settings. Off by default.
 - Empty input: a `document.export` step with an empty text fails ("the text to save is empty") and writes no file. An `ai.cli` step that receives data (a connection, a `{{nodes.*}}` reference or a file input) but all of it is empty fails before the model is called. A step with no data at all is an instruction only ("write a haiku") and runs as written; the editor's `schema.warnings()` warn about it.
 - A loop part that reports a usage limit stops the parts that have not started; after the wait (or a switch) the loop asks only for the parts without an answer. Part headings ("Part 1") use the language of the run's output: the workflow's `language` input when it has one, else the language of the run.
@@ -483,9 +525,9 @@ Node types:
 | Type | Settings (`config`) | Outputs | Default retries / timeout |
 |---|---|---|---|
 | `document.extract` | `file` (exactly one file placeholder), `max_chars` (per file), `max_age_days` (feeds), `ocr` (`auto`, `always`, `never`), `ocr_languages`, `speech_model`, `speech_language` | `text` (empty when an optional file input was left empty; with several files, each between `<document name="<file>" index="<n>">` and `</document>`) | 0 / 3600 s |
-| `ai.cli` | `provider`, `prompt`, `output` (`text` or `json`), `json_schema` (optional, with `json`) | `text` (with `json`: the answer as pretty-printed JSON) | 2 / the `timeout` of `config.toml` |
+| `ai.cli` | `provider`, `prompt`, `output` (`text` or `json`), `json_schema` (optional, with `json`) | `text` (with `json`: the answer as pretty-printed JSON) | 2 / the `timeout` of the settings file (default 1200 s) |
 | `condition` | `value` (the text to test; default: the connected text), `operator` (`ai`, `contains`, `not_contains`, `equals`, `regex`, `is_yes`, `empty`; default `contains`), `question` and `provider` (for `ai`), `match` (not for `ai`, `is_yes` and `empty`), `case_sensitive` (default false), `pass` (the text the branch carries; default: `value`) | `true` or `false`: only the branch taken, carrying `pass` or `value` | 0 / 60 s |
-| `ai.map` | `source`, `split` (`headings`, `paragraphs`, `chunks`, `files`), `chunk_chars` (500–200000, default 12000), `max_items` (1–200, default 50), `provider`, `prompt` (may use `{{item.text}}`, `{{item.title}}`, `{{item.index}}`, `{{item.count}}`), `heading` (default true) | `text`: the answers in order, each under `## <part title>` | 2 / the `timeout` of `config.toml`, per model call |
+| `ai.map` | `source`, `split` (`headings`, `paragraphs`, `chunks`, `files`), `chunk_chars` (500–200000, default 12000), `max_items` (1–200, default 50), `provider`, `prompt` (may use `{{item.text}}`, `{{item.title}}`, `{{item.index}}`, `{{item.count}}`), `heading` (default true) | `text`: the answers in order, each under `## <part title>` | 2 / the `timeout` of the settings file (default 1200 s), per model call |
 | `text.merge` | `template` | `text` | 0 / 60 s |
 | `approval` | `show` (the text to approve), `instructions` | `text`, `comment` | none (waits for a person) |
 | `ai.agent` | `provider` (Claude Code), `prompt`, `sites` (one host per line), `mode` (`read`, `act`; `act` needs an approval before it), `headless` | `text` (the model's report) | 0 / 1800 s |
@@ -586,7 +628,7 @@ A loop:
       prompt: "Summarise chapter {{item.index}} of {{item.count}}: {{item.title}} {{item.text}}"
 ```
 
-`split: paragraphs` makes one part per paragraph; `chunks` groups paragraphs into parts of about `chunk_chars` characters (the translation app's segmenter); `files` makes one part per file of a several-files extract (the title is the file name). In the prompt, `{{item.text}}` and `{{item.title}}` are put between data tags like node outputs. `{{item.*}}` is allowed only in the prompt of an `ai.map` node.
+`split: paragraphs` makes one part per paragraph; `chunks` groups paragraphs into parts of about `chunk_chars` characters (`mehteran.common.documents.segment`); `files` makes one part per file of a several-files extract (the title is the file name). In the prompt, `{{item.text}}` and `{{item.title}}` are put between data tags like node outputs. `{{item.*}}` is allowed only in the prompt of an `ai.map` node.
 
 Placeholders: `{{inputs.<id>}}` and `{{nodes.<id>.<output>}}` (and `{{item.*}}` in a loop's prompt). A file input with several files gives its paths, one per line. Rules:
 
@@ -601,43 +643,45 @@ The check rejects: unknown keys at any level, duplicate ids or keys, connections
 - The interface listens only on `127.0.0.1`. Requests must be addressed to `127.0.0.1:<port>` or `localhost:<port>`.
 - Each start creates a new session key; every API request must carry it (compared in constant time).
 - Size limits: 2 MB for a JSON request, 300 MB for an upload, 20 files and 500 MB together for an input with several files. An uploaded file name is reduced to a safe base name.
-- An .xlsx file is read with the translation app's guarded XML reader: no entity declarations, no part that unpacks to more than 100 MB.
+- An .xlsx file is read with a guarded XML reader (`mehteran/common/documents.py`): no entity declarations, no part that unpacks to more than 100 MB.
 - Every file access is resolved inside the data folder; a path that leaves it is refused. Word and HTML results are only downloaded, never shown inside the interface. A Markdown result is shown formatted from DOM elements and text nodes; its raw HTML stays text and its links open only `http`/`https` addresses in a new tab without the opener.
 - Answers carry `X-Content-Type-Options: nosniff`, `Cache-Control: no-store` and a strict Content-Security-Policy (no inline scripts or styles, no frames). No other page may frame Mehteran.
 - A `url` input reads only public addresses (see "Web pages" above): the guard checks every resolved address and every redirect, uses no proxy, and limits time and size.
 - Saving results to a folder writes only into a folder that the user typed and confirmed, never into a system folder or Mehteran's folders, and never over an existing file. Deleting a run removes only its folder inside the data folder, and never while a process drives the run.
 
-## The boundary with the translation app
+## Shared code (`mehteran/common/`)
 
-The translation app's Python code is not changed by Mehteran. Mehteran changes none of these files: `pipeline/*.py`, `prompts/`, `config.default.toml`, `config.toml`, `scripts/start.sh`, `scripts/start.cmd`, `translate`, `translate.cmd`, `Open Interface.*`, `books/`. The translation app's interface (`pipeline/ui/`) is shared: `app.js` mounts itself on its own page and in Mehteran's (`TranslationUI.mount`), and `style.css` scopes its own rules under `.tr-app`. Mehteran's stylesheet starts with a copy of the base rules of `pipeline/ui/style.css`; the page loads `pipeline/ui/style.css` before it, for the book translation.
-
-Mehteran imports these parts of `pipeline` and only reads or calls them:
+Mehteran's own code does not depend on the book translation app. The code that its parts share is in `mehteran/common/` (Python standard library only):
 
 | Module | Used for |
 |---|---|
-| `pipeline.providers.run` | the model call of a provider that the user added to `config.toml` (in `mehteran/worker.py`) |
-| `pipeline.providers.is_quota_message`, `quota_wait_seconds`, `ACCOUNT_REFUSED`, `parse_json`, `_stream_json_answer` | reading a tool's answer and its usage limit (Mehteran's adapters, as pure functions) |
-| `pipeline.core.Project`, `pipeline.core.ROOT` | the provider call's settings object; where `config.toml` is |
-| `pipeline.documents.read_blocks` | the text of PDF, Word, EPUB, Markdown and text files |
-| `pipeline.documents.segment`, `split_long`, `_parse_xml`, `_zip_read` | the parts of a loop split by length; reading .xlsx safely |
-| `pipeline.export.to_docx`, `to_html`, `inlines` | Word and HTML reports (`mehteran/tables.py` adds the tables) |
-| `pipeline.providers.QuotaError` | a usage limit reported by a tool (the worker passes it on; the engine waits) |
-| `pipeline.system` | process groups, stopping a process tree, the run lock |
-| `pipeline.tools` | finding the installed tools; their status, sign-in and model lists (Setup tab) |
-| `pipeline.runtime.install_tool` | installing a tool into `.runtime` (`mehter install`, started by the Setup tab) |
-| `pipeline.i18n` | the messages of `pipeline.tools` in the same language (Turkish or English; English for the other interface languages) |
-| `pipeline.web` | the book translation's API (its `App`, and its request handling for `/api/tr/...`) |
-| `pipeline.stages` | which tools the translation workflow uses (Setup) |
+| `mehteran.common.system` | process groups, stopping a process tree, the run lock, keeping the computer awake |
+| `mehteran.common.runtime` | installing a tool into `.runtime` (`install_tool`; `mehter install`, started by the Setup tab), the PDF reader (Poppler) and micromamba |
+| `mehteran.common.tools` | finding the installed tools; their status, sign-in and model lists (Setup tab) |
+| `mehteran.common.documents` | the text of PDF, Word, EPUB, Markdown and text files (`read_blocks`); the parts of a loop split by length (`segment`, `split_long`); reading .xlsx safely (`_parse_xml`, `_zip_read`) |
+| `mehteran.common.export` | Word and HTML reports (`to_docx`, `to_html`, `inlines`; `mehteran/tables.py` adds the tables) |
+| `mehteran.common.calls` | the usage-limit messages of the tools (`is_quota_message`, `quota_wait_seconds`, `QuotaError`), `parse_json`, `stream_json_answer`, and one call of a provider given by its command (`call_command`) |
+| `mehteran.common.core` | paths and file helpers of these modules |
 
-For its workflows, Mehteran builds its `Project` object directly from the read settings and does not call `Project.load()`, because that may update `config.toml` and the instructions. The book translation is the exception: it is the translation app itself, so it loads its project as `./translate ui` does (`pipeline.web.App(Project.load(...))`). Mehteran's installer (`mehter install <tool>`) calls `pipeline.runtime` directly, without loading the project, for the same reason as the workflows. The launcher's update step is the translation app's own (`python -m pipeline update`), as in `scripts/start.sh`.
+## The book translation
+
+The book translation app (`pipeline/`, `./translate`) was part of this repository. It is no longer part of Mehteran: no tab, card, run list, activity entry or API route of Mehteran shows it. An old `#translation` address opens the Workflows tab.
+
+A computer that used it keeps it (`mehteran/update.py`, `keep_translation`):
+
+- "Used" means: `books/` in the code folder holds a book (a folder), or the code folder has its `config.toml`.
+- When its code is missing (`pipeline/core.py`), Mehteran puts the translation app's files back from the git history into the same place, once: `pipeline/`, `translate`, `translate.cmd`, `scripts/start.sh`, `scripts/start.cmd`, `Open Interface.command`, `Open Interface.bat`, `config.default.toml`, `prompts/defaults/`, `docs/guide.md`, `docs/guide.tr.md`. `mehter update` does it after the merge; every other `mehter` command does it at its start.
+- `./translate ui` (Windows: `translate ui`), the books, the settings and the instructions keep working as before. The user's own files (`books/`, `config.toml`, `prompts/*.md`, `prompts/custom/`, `glossary/`) were never in git, so no update touched them.
+- The restored paths are in `.gitignore`, so later updates leave them alone. The translation app gets no more updates.
+- A copy without git history (installed from npm or a zip file) is not changed. A new installation does not get the translation app.
 
 ## Not in this slice
 
-Deliberately left out: plugins and a plugin registry, registering any command-line tool from the interface, shell or Python code nodes, scheduling, and an online place to share workflows (sharing is a file: "Share" and "Import").
+Deliberately left out: plugins and a plugin registry, registering any command-line tool from the interface, shell or Python code nodes, and an online place to share workflows (sharing is a file: "Share" and "Import").
 
 ## Development
 
-- Tests: `python3 -m unittest discover tests` (the Mehteran tests are `tests/test_mehteran_*.py`; they use the fake tool `tests/mehteran_fake_llm.py`, set `MEHTERAN_HOME` to a temporary folder and make no network calls).
-- Code: `mehteran/` (stdlib only). YAML: PyYAML 6.0.2, pure Python, vendored in `mehteran/_vendor/yaml/` (MIT license there), used only through the safe loader and safe dumper.
+- Tests: `python3 -m unittest discover tests` (the Mehteran tests are `tests/test_mehteran_*.py`; they use the fake tool `tests/mehteran_fake_llm.py`, set `MEHTERAN_HOME` to a temporary folder and make no network calls). CI (`.github/workflows/checks.yml`) runs `ruff check mehteran tests`, the Markdown renderer test (`node --test tests/mehteran_markdown_test.mjs`) and the unit tests on Ubuntu (Python 3.11 and 3.14), macOS and Windows (Python 3.12). CI does not run `mehter eval`: it makes real model calls.
+- Code: `mehteran/` (stdlib only). The parts that matter here: `mehteran/common/` (shared code, see "Shared code"), `mehteran/update.py` (`mehter update` and keeping the book translation), `mehteran/doctor.py` (`mehter doctor`), `mehteran/evals.py` (`mehter eval`), `mehteran/settings.py` (the providers and the settings file), `mehteran/providers/` (the adapters). The evaluation set is in `evals/` (`cases.json`, `docs/`). YAML: PyYAML 6.0.2, pure Python, vendored in `mehteran/_vendor/yaml/` (MIT license there), used only through the safe loader and safe dumper.
 - A new node type: add a `NodeType` to `mehteran/nodes.py` (`register(...)`) with a label, a description and labelled config fields. The schema and the engine pick it up. `GET /api/node-types` describes every type for the editor's forms: `[{type, label, description, outputs: [{name, kind}], outputs_from ("formats" for document.export, else null), joins, branches, takes_retries, default_retries, default_timeout, timeout_per_call, config: [{name, kind (template | localized | int | bool | choice | formats | id), widget ("area", "provider" or ""), required, default, label, help, options: [{value, label}], min, max (int only), item_fields (fields that take {{item.*}})}]}]`; labels and help are `{tr, en}`.
-- Interface: `mehteran/ui/` (vanilla JavaScript, no build step): `app.js` (tabs, the book translation, the library, the Run section, Runs, Setup), `editor.js` (the visual editor), `canvas.js` (the canvas, also used by the run monitor). The book translation's interface is the translation app's `pipeline/ui/app.js` and `style.css`, served as `/tr/app.js` and `/tr/style.css` (`mehteran/translation.py`). Every element is made with DOM calls and text nodes, never from HTML text.
+- Interface: `mehteran/ui/` (vanilla JavaScript, no build step): `app.js` (tabs, the library, the Run section, Runs, Setup), `editor.js` (the visual editor), `canvas.js` (the canvas, also used by the run monitor). Every element is made with DOM calls and text nodes, never from HTML text.

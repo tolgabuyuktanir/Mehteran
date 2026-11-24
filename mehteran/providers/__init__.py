@@ -1,7 +1,7 @@
 """Mehteran's own AI tool adapters (one module per tool) and the user's provider settings.
 
 - The adapters: claude, codex, antigravity, gemini, ollama (base.py says what each one declares). Old names keep
-  working: "chatgpt" (the translation app's name for Codex) means "codex".
+  working: "chatgpt" (an older name for Codex) means "codex".
 - The user's settings: <data>/configurations/providers.toml. No secrets are kept there.
       order = ["claude", "codex/gpt-5.5@high", "ollama/qwen3:8b"]   # the model order of `auto`
       [providers.claude]
@@ -65,7 +65,9 @@ def split(name: str) -> tuple[str, str, str]:
 # --- the user's settings ------------------------------------------------------------------
 
 def read_settings(home: Path) -> dict:
-    """{"order": [entry], "providers": {id: {api_key, concurrency, model, options}}}: only known keys and values."""
+    """{"order": [entry], "unattended_subscriptions": bool, "providers": {id: {api_key, concurrency, model, options}}}:
+    only known keys and values. unattended_subscriptions: scheduled and batch runs may use a tool signed in with a
+    consumer subscription or a free account (off: only local models and API keys; see Engine.unattended_check)."""
     try:
         with settings_path(home).open("rb") as f:
             data = tomllib.load(f)
@@ -73,7 +75,8 @@ def read_settings(home: Path) -> dict:
         data = {}
     order = [canonical(e) for e in data.get("order") or [] if isinstance(e, str) and ENTRY_RE.match(e)] \
         if isinstance(data.get("order"), list) else []
-    out = {"order": list(dict.fromkeys(e for e in order if split(e)[0] in ADAPTERS)), "providers": {}}
+    out = {"order": list(dict.fromkeys(e for e in order if split(e)[0] in ADAPTERS)),
+           "unattended_subscriptions": data.get("unattended_subscriptions") is True, "providers": {}}
     raw = data.get("providers") if isinstance(data.get("providers"), dict) else {}
     for name, spec in raw.items():
         name = canonical(name)
@@ -114,6 +117,8 @@ def write_settings(home: Path, data: dict) -> dict:
     from mehteran import paths
     text = "# Mehteran's AI tool settings (the Setup tab writes this file). No secrets here.\n"
     text += f"order = {_toml([e for e in data.get('order') or [] if isinstance(e, str) and ENTRY_RE.match(e)])}\n"
+    if data.get("unattended_subscriptions") is True:
+        text += "unattended_subscriptions = true\n"
     for name, spec in (data.get("providers") or {}).items():
         if name in ADAPTERS and isinstance(spec, dict) and spec:
             text += f"\n[providers.{name}]\n" + "".join(f"{k} = {_toml(v)}\n" for k, v in spec.items())
@@ -206,7 +211,7 @@ def forget_status(name: str | None = None) -> None:
 
 def statuses(names=None, fresh: bool = False) -> dict:
     from concurrent.futures import ThreadPoolExecutor
-    from pipeline import tools
+    from ..common import tools
     tools.extend_path()
     names = list(names or ADAPTERS)
     with ThreadPoolExecutor(max_workers=max(1, len(names))) as pool:
@@ -292,35 +297,21 @@ def candidates(kind: str, states: dict, user: dict, local_only: bool = False) ->
     return list(dict.fromkeys(out))
 
 
-# --- usage limits known from earlier calls (all runs, the Setup test, the translation app) ----------
+# --- usage limits known from earlier calls (all runs, the Setup test) -----------------------------
 
-def blocked(store, root: Path | None = None, now: float | None = None,
-            exclude: tuple[str, str] | None = None) -> dict[str, float]:
+def blocked(store, now: float | None = None, exclude: tuple[str, str] | None = None) -> dict[str, float]:
     """{provider: until} for the providers whose last usage limit has not reset yet (no successful call since).
     exclude: (run id, node id) whose own calls do not count."""
     now = time.time() if now is None else now
     out: dict[str, float] = {}
-    last_ok: dict[str, float] = {}
     for row in store.calls(now - 2 * 86400):
         if exclude and (row["run_id"], row["node_id"]) == exclude:
             continue
         name = canonical(row["provider"])
         if row["outcome"] == "ok":
-            last_ok[name] = row["started"]
             out.pop(name, None)
         elif row["outcome"] == "quota" and row["until"] and row["until"] > now:
             out[name] = max(out.get(name, 0), row["until"])
-    if root is not None:
-        try:
-            known = json.loads((Path(root) / ".jobs" / "quota.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            known = {}
-        for name, event in (known.items() if isinstance(known, dict) else []):
-            if not isinstance(event, dict) or not isinstance(event.get("until"), (int, float)):
-                continue
-            since = event.get("since") or 0
-            if event["until"] > now and not (event.get("cleared") or 0) > since and last_ok.get(canonical(name), 0) < since:
-                out[canonical(name)] = max(out.get(canonical(name), 0), event["until"])
     return out
 
 

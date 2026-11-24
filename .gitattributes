@@ -1,6 +1,4 @@
 # Windows batch files need CRLF line endings (cmd can lose a label in a file with LF only).
-# Only Mehteran's own launchers: the translation app's launchers (translate.cmd, scripts/start.cmd, Open Interface.bat)
-# are left as they are.
 /mehter.cmd text eol=crlf
 /scripts/mehter.cmd text eol=crlf
 /Open?Mehteran.bat text eol=crlf

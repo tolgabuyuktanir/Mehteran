@@ -166,7 +166,7 @@ class InstallTests(LocalCase):
         def fake_download(url, dest):
             Path(dest).write_bytes(b"payload")
         target = self.tmp / "dl" / "file.bin"
-        with mock.patch("pipeline.runtime._download", fake_download):
+        with mock.patch("mehteran.common.runtime._download", fake_download):
             with self.assertRaises(localtools.ToolError):
                 localtools.download_verified("https://example.invalid/f", target, "0" * 64)
             self.assertFalse(target.exists())

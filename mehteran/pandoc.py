@@ -91,7 +91,7 @@ def _run(args: list[str], abort: threading.Event | None, name: str) -> None:
 
 def export(markdown: str, fmt: str, title: str, lang: str, abort: threading.Event | None = None) -> bytes:
     """A docx or epub file of a Markdown text."""
-    from pipeline.export import is_rtl
+    from .common.export import is_rtl
     with tempfile.TemporaryDirectory(prefix="mehteran-pandoc-") as tmp:
         source, out = Path(tmp) / "document.md", Path(tmp) / f"document.{fmt}"
         source.write_text(markdown, encoding="utf-8")

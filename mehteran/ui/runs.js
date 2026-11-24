@@ -17,15 +17,13 @@ async function showRuns(parts) {
   }
   fill($("#run"));
   const query = runHistory.query;
-  const [runs, books, plans] = await Promise.all([api("GET", historyUrl()), api("GET", "/api/translation/runs").catch(() => []),
-    api("GET", "/api/schedules").catch(() => [])]);
+  const [runs, plans] = await Promise.all([api("GET", historyUrl()), api("GET", "/api/schedules").catch(() => [])]);
   if (state.hash !== "runs" || query !== runHistory.query) return;
-  state.trRuns = books;
   state.schedules = plans;
   runHistory.end = runs.length < 200;
   renderRunList(runs, null);
   if (returning) $(".run-search").focus();
-  if (!runs.length && !books.length && !plans.length && !query.trim()) fill($("#run"), h("div", {class: "welcome"}, h("h2", {}, S("first_run_title")), h("p", {}, S("first_run_text")),
+  if (!runs.length && !plans.length && !query.trim()) fill($("#run"), h("div", {class: "welcome"}, h("h2", {}, S("first_run_title")), h("p", {}, S("first_run_text")),
       h("button", {type: "button", class: "btn primary", onclick: () => go("workflows")}, S("go_workflows"))));
 }
 
@@ -45,9 +43,8 @@ async function showSavedRunForm(id) {
   }
 }
 
-// The workflow runs, then the last run of each book of the book translation (it opens the translation's books).
-// What runs has a stop button: a workflow run can be resumed later, a book translation continues where it stopped.
-// history.js draws it: a search field, a group per workflow (a batch as one row), the book translations' group.
+// The workflow runs. A run that goes on has a stop button: it can be resumed later.
+// history.js draws it: a search field, a group per workflow (a batch as one row).
 function renderRunList(runs, selected) {
   historyList(runs, selected);
 }

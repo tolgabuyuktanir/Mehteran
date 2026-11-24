@@ -57,15 +57,14 @@ class UiStringTests(unittest.TestCase):
 
 
 class LocaleTests(unittest.TestCase):
-    """The texts are in mehteran/locales/<code>.json (and pipeline/ui/locales/ for the book translation's interface).
-    Turkish and English are complete; another language may be partial, with the placeholders of the English text."""
+    """The texts are in mehteran/locales/<code>.json. Turkish and English are complete; another language may be partial, with the placeholders of the English text."""
 
     def test_turkish_and_english_are_complete_and_every_language_is_valid(self):
         for lang in languages.UI_CODES:
             self.assertEqual(i18n_tools.problems(lang), [], lang)
         for lang in ("tr", "en"):
             self.assertEqual({group: len(keys) for group, keys in i18n_tools.missing(lang).items()},
-                             {"ui": 0, "messages": 0, "translation": 0}, lang)
+                             {"ui": 0, "messages": 0}, lang)
 
     def test_a_wrong_placeholder_or_an_unknown_key_is_reported(self):
         english = dict(i18n.UI["new_run_title"])
@@ -84,7 +83,6 @@ class LocaleTests(unittest.TestCase):
         with mock.patch.dict(i18n.MESSAGES, {"test_only_text": {"tr": "İzin yok.", "en": "Not allowed."}}):
             self.assertEqual(i18n.t("test_only_text"), "Not allowed.")  # no German text: the English one
         self.assertEqual(i18n.localized({"tr": "Rapor dili", "en": "Report language"}), "Report language")
-        self.assertEqual(i18n.pipeline_lang(), "en")  # the translation app's messages are Turkish or English
         self.assertEqual(i18n.ui_strings("de")["approve"], {"de": "Genehmigen", "en": "Approve"})
         self.assertEqual(i18n.ui_strings("tr")["approve"], {"tr": "Onayla", "en": "Approve"})
 
@@ -94,11 +92,7 @@ class LocaleTests(unittest.TestCase):
         self.assertEqual(catalog["hello"], {"en": "Hello!", "de": "Hallo", "tr": "Merhaba"})
         self.assertEqual(catalog["new"], {"tr": "Yeni", "en": "New"})
 
-    def test_the_registry_has_every_language_of_the_translation_app_and_a_flag_for_each(self):
-        import tomllib
-        with open(paths.REPO / "config.default.toml", "rb") as f:
-            configured = tomllib.load(f)["languages"]
-        self.assertEqual(sorted(set(configured) - set(languages.CODES)), [])
+    def test_the_registry_has_a_flag_for_each_language(self):
         for item in languages.LANGUAGES:
             self.assertEqual(set(item) - {"ui"}, {"code", "native", "english", "flag", "dir"}, item)
             self.assertIn(item["dir"], ("ltr", "rtl"))
@@ -159,17 +153,15 @@ class StaleServerTests(HomeCase):
         else:
             self.assertEqual(status, 404)  # not there yet: a clean 404, not a server error
 
-    def test_flags_and_the_translation_texts_are_served(self):
+    def test_flags_are_served(self):
         status, body, headers = self.get("/flags/tr.svg")
         self.assertEqual((status, headers["Content-Type"]), (200, "image/svg+xml"))
         self.assertEqual(self.get("/flags/es-ct.svg")[0], 200)
         self.assertEqual(self.get("/flags/zz.svg")[0], 404)
         self.assertEqual(self.get("/flags/..%2Fapp.js")[0], 404)
         self.assertEqual(self.get("/flags/LICENSE")[0], 404)
-        status, body, headers = self.get("/tr/locales/de.json")
-        self.assertEqual(status, 200)
-        self.assertEqual(json.loads(body)["tab_books"], "Bücher")
-        self.assertEqual(self.get("/tr/locales/tr.json")[0], 404)  # Turkish and English are in the interface's own file
+        self.assertEqual(self.get("/tr/locales/de.json")[0], 404)  # the book translation's texts are gone
+        self.assertEqual(self.get("/base.css")[0], 200)
         self.assertEqual(self.get("/langpicker.js")[0], 200)
 
     def test_busy_port_is_not_mehteran(self):

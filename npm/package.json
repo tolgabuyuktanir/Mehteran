@@ -21,6 +21,6 @@
     "url": "git+https://github.com/tolgabuyuktanir/Mehteran.git"
   },
   "homepage": "https://tolgabuyuktanir.github.io/Mehteran/",
-  "keywords": ["ai", "workflow", "claude", "codex", "ollama", "translation"],
+  "keywords": ["ai", "workflow", "claude", "codex", "ollama"],
   "license": "MIT"
 }

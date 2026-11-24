@@ -144,7 +144,7 @@ const Editor = (() => {
     loadModels();
   }
 
-  // The model lists of the tools (as the translation app reads them); the editor works before they arrive.
+  // The model lists of the tools; the editor works before they arrive.
   async function loadModels() {
     if (ed.modelsLoaded) return;
     ed.modelsLoaded = true;

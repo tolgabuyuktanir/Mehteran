@@ -27,9 +27,9 @@ rem "ui" first brings a git copy up to date, as scripts\start.cmd does. The upda
 rem reads a batch file line by line while it runs, and the update can change this file. No parentheses around %*: an
 rem argument with a ")" (a path like C:\Program Files (x86)\a.pdf) would end such a block early.
 :run_uv
-if /i "%~1"=="ui" "%UV%" run --no-project --python 3.12 python -m pipeline update & "%UV%" run --no-project --python 3.12 python -m mehteran %* & exit /b
+if /i "%~1"=="ui" "%UV%" run --no-project --python 3.12 python -m mehteran update & "%UV%" run --no-project --python 3.12 python -m mehteran %* & exit /b
 "%UV%" run --no-project --python 3.12 python -m mehteran %* & exit /b
 
 :run_python
-if /i "%~1"=="ui" %PY% -m pipeline update & %PY% -m mehteran %* & exit /b
+if /i "%~1"=="ui" %PY% -m mehteran update & %PY% -m mehteran %* & exit /b
 %PY% -m mehteran %* & exit /b

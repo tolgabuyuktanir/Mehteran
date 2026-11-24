@@ -32,7 +32,7 @@ import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
-from pipeline import system
+from .common import system
 
 from . import i18n, languages, livelog, paths, placeholders, schema, settings
 from . import providers as adapters
@@ -112,8 +112,6 @@ class Engine:
         self.home = Path(home) if home else paths.home()
         self.store = Store(self.home / "databases" / "mehteran.sqlite3")
         self._provider_cfg = provider_cfg
-        # the usage limits that the translation app met count too (not for providers given here or by MEHTERAN_CONFIG)
-        self.translation_limits = provider_cfg is None and not os.environ.get("MEHTERAN_CONFIG")
         self.parallel = max(1, parallel)
         self.retry_delay = retry_delay
         self.quota_delay = quota_delay  # tests: seconds to wait for a usage limit instead of the tool's reset time
@@ -138,7 +136,8 @@ class Engine:
     # --- starting ----------------------------------------------------------------
 
     def start(self, workflow_yaml: str, values: dict | None = None, files: dict | None = None, template: str = "",
-              move_files: bool = False, launch: bool = True, privacy: str = "", every_step: str = "") -> str:
+              move_files: bool = False, launch: bool = True, privacy: str = "", every_step: str = "",
+              unattended: bool = False) -> str:
         """Checks the workflow and the inputs, records the run and starts it in a background thread (launch=False:
         the run stays "queued" until launch(); the batches of history.py start their runs a few at a time).
 
@@ -146,7 +145,8 @@ class Engine:
         an input with "multiple: true"} for file inputs (copied into the run folder, or moved when move_files is set).
         privacy "local" (or the workflow's "privacy: local"): only models that run on this computer.
         every_step: one model ("codex", "claude/opus@high", or an `auto` kind) for every model step of the run, in
-        place of the models the workflow and its inputs set (for a person who has only one of the AI tools)."""
+        place of the models the workflow and its inputs set (for a person who has only one of the AI tools).
+        unattended: a scheduled or batch run: see unattended_problem."""
         wf = schema.parse(workflow_yaml)
         inputs, problems = self._inputs(wf, values or {}, files or {})
         every_step = (every_step or "").strip()
@@ -159,7 +159,7 @@ class Engine:
                     inputs[input_id] = every_step  # the run's record says which model the steps used
         privacy = "local" if "local" in (privacy, wf.data.get("privacy")) else ""
         providers, auto = self._resolve_providers(wf, inputs, problems, privacy,
-                                                  every_step)
+                                                  every_step, unattended)
         if problems:
             raise RunError(problems)
         input_bytes = sum(Path(item).stat().st_size for value in (files or {}).values() for item in _as_list(value))
@@ -238,15 +238,46 @@ class Engine:
     # --- stream P: the model of each step (aliases, `auto`, privacy, known usage limits) -------------------------
     tool_states = None  # tests: a function that gives providers.statuses() without asking the real tools
 
+    def unattended_problem(self, name: str) -> str | None:
+        """Why a scheduled or batch run may not use this model (a message), or None. Unless the user allowed it on
+        the Setup tab (providers.toml: unattended_subscriptions), such runs use only local models and API keys: the
+        providers' consumer terms do not clearly allow automated use of a subscription (docs: "Subscriptions and
+        the providers' terms"). A provider given by its command has no known billing and is not refused."""
+        provider = adapters.split(name)[0]
+        adapter = (self.provider_cfg["providers"].get(provider) or {}).get("adapter")
+        if adapter not in adapters.ADAPTERS:
+            return None
+        user = adapters.read_settings(self.home)
+        if user["unattended_subscriptions"]:
+            return None
+        state = ((self.tool_states or adapters.statuses)()).get(adapter) or {}
+        if adapters.effective_billing(adapter, state, user) in ("subscription", "free"):
+            return t("unattended_subscription", name=adapters.ADAPTERS[adapter].name)
+        return None
+
+    def unattended_check(self, workflow_yaml: str, values: dict, privacy: str = "", every_step: str = "") -> None:
+        """The models a scheduled run of this workflow would use, checked now (a schedule is refused when it is
+        made, not later at its time). Raises RunError."""
+        wf = schema.parse(workflow_yaml)
+        inputs, problems = self._inputs(wf, values or {}, {})
+        if every_step:
+            inputs.update({i: every_step for i, spec in wf.inputs.items() if spec["type"] == "provider"})
+        privacy = "local" if "local" in (privacy, wf.data.get("privacy")) else ""
+        self._resolve_providers(wf, inputs, problems, privacy, every_step, True)
+        if problems:
+            raise RunError(problems)
+
     def _resolve_providers(self, wf: schema.Workflow, inputs: dict, problems: list, privacy: str,
-                           every_step: str = "") -> tuple[dict, dict]:
+                           every_step: str = "", unattended: bool = False) -> tuple[dict, dict]:
         """({node_id: model, "<node>:fallback": model}, {"nodes": {node_id: kind}, "candidates": {kind: [model]}}).
 
         An old name becomes the adapter's ("chatgpt" -> "codex"). `auto` kinds take the first usable model of the
         user's model order whose provider has no known usage limit now; the others stay as candidates for a later
         usage limit. privacy "local": `auto` becomes auto:local and any model that does not run here is refused.
         every_step: this model for every step and every fallback, whatever the workflow sets (a browser agent keeps its
-        own model unless every_step is Claude Code or `auto`). privacy "local" refuses a browser agent: it reads sites."""
+        own model unless every_step is Claude Code or `auto`). privacy "local" refuses a browser agent: it reads sites.
+        unattended (a scheduled or batch run): `auto` takes only the models that unattended_problem accepts, and a
+        model named by the workflow or the form that it refuses is a problem."""
         cfg = self.provider_cfg
         local_only = privacy == "local"
         auto: dict = {"nodes": {}, "candidates": {}}
@@ -259,7 +290,7 @@ class Engine:
                     known["states"] = (self.tool_states or adapters.statuses)()
                     known["blocked"] = self.known_limits()
                 found = [c for c in adapters.candidates(kind, known["states"], known["user"], local_only)
-                         if adapters.split(c)[0] in cfg["providers"]]
+                         if adapters.split(c)[0] in cfg["providers"] and not (unattended and self.unattended_problem(c))]
                 auto["candidates"][kind] = sorted(found, key=lambda c: adapters.split(c)[0] in known["blocked"])
             return auto["candidates"][kind]
 
@@ -271,7 +302,7 @@ class Engine:
                 if agent:  # a browser agent: only Claude Code
                     found = [c for c in found if adapters.split(c)[0] == "claude"]
                 if not found:
-                    problems.append(f"{where}: {t('auto_none_local' if kind == 'auto:local' else 'auto_none')}")
+                    problems.append(f"{where}: {t('auto_none_local' if kind == 'auto:local' else 'auto_none_unattended' if unattended else 'auto_none')}")
                     return name
                 if where.count(".") == 1:  # a step's own model (not its fallback)
                     auto["nodes"][where.split(".")[1]] = kind
@@ -279,6 +310,8 @@ class Engine:
             problem = self.provider_problem(name)
             if not problem and local_only and not self.is_local(name):
                 problem = t("privacy_refused", name=name)
+            if not problem and unattended:
+                problem = self.unattended_problem(name)
             if problem:
                 problems.append(f"{where}: {problem}")
             return name
@@ -325,10 +358,9 @@ class Engine:
         return adapters.destination(provider, model or spec.get("model") or "", spec)["local"]
 
     def known_limits(self, exclude: tuple[str, str] | None = None) -> dict[str, float]:
-        """{provider: until} of the usage limits that have not reset (all runs, the translation app). exclude:
-        (run id, node id) whose own limits do not count (the step waits for them itself; a resume tries again)."""
-        from pipeline.core import ROOT
-        return adapters.blocked(self.store, ROOT if self.translation_limits else None, exclude=exclude)
+        """{provider: until} of the usage limits that have not reset (all runs). exclude: (run id, node id) whose
+        own limits do not count (the step waits for them itself; a resume tries again)."""
+        return adapters.blocked(self.store, exclude=exclude)
 
     def _next_auto(self, run: dict, node_id: str, provider: str, until: float) -> str | None:
         """After a usage limit of an `auto` step: the next candidate without a known limit, or, when every one has
@@ -535,7 +567,7 @@ class Engine:
         return runs
 
     def _keep_awake(self) -> None:
-        """Keeps the computer awake from the first run on. pipeline.system.keep_awake holds until this process ends,
+        """Keeps the computer awake from the first run on. mehteran.common.system.keep_awake holds until this process ends,
         so it is called once, not per run."""
         with self._lock:
             if self.awake and not Engine._awake_started:

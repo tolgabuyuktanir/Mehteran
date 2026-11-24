@@ -7,13 +7,11 @@
     python3 -m mehteran.i18n_tools validate [lang]     checks the locale files; exit code 1 when there is a problem
     python3 -m mehteran.i18n_tools absorb              moves the texts written in mehteran/i18n.py into the locale files
 
-Three groups of texts, each with English as the reference:
+Two groups of texts, each with English as the reference:
     ui           mehteran/locales/<lang>.json, "ui"        the web interface (S("key") in mehteran/ui/*.js)
     messages     mehteran/locales/<lang>.json, "messages"  the server and command-line messages (i18n.t("key"))
-    translation  pipeline/ui/locales/<lang>.json           the book translation's interface; its Turkish and English
-                                                           are in pipeline/ui/app.js (I18N), where its own page needs them
 Rules: Turkish and English have every key. Another language may have only some; a missing text is shown in English.
-A text keeps the {name} placeholders of the English text, and (in "translation") its HTML tags.
+A text keeps the {name} placeholders of the English text.
 """
 
 from __future__ import annotations
@@ -26,39 +24,20 @@ from pathlib import Path
 
 from . import i18n, languages
 
-GROUPS = ("ui", "messages", "translation")
+GROUPS = ("ui", "messages")
 COMPLETE = ("tr", "en")
-TRANSLATION_UI = Path(__file__).resolve().parent.parent / "pipeline" / "ui"
 PLACEHOLDER = re.compile(r"(?<!\{)\{([A-Za-z_][A-Za-z_0-9]*)\}(?!\})")
-TAG = re.compile(r"</?[a-z][a-z0-9]*\b[^>]*>")
-_PAIR = re.compile(r'\b([a-z_][a-z_0-9]*):\s*("(?:[^"\\]|\\.)*")')
 
 
 def placeholders(text: str) -> set[str]:
     return set(PLACEHOLDER.findall(text))
 
 
-def translation_builtin() -> dict[str, dict[str, str]]:
-    """The Turkish and English texts of the book translation's interface, read from I18N in pipeline/ui/app.js."""
-    js = (TRANSLATION_UI / "app.js").read_text(encoding="utf-8")
-    block = js[js.index("const I18N = {"):js.index("\n};", js.index("const I18N = {"))]
-    out = {}
-    for lang, body in re.findall(r"\n  (tr|en): \{\n(.*?)\n  \},", block + "\n  },", re.S):
-        out[lang] = {key: json.loads(text) for key, text in _PAIR.findall(body)}
-    return out
-
-
-def _read(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-
-
 def texts(lang: str) -> dict[str, dict[str, str]]:
     """{group: {key: text}} of one language, as stored (no fallback)."""
     own_ui = {key: entry for key, entry in i18n.UI.items() if entry is not i18n.MESSAGES.get(key)}
-    out = {"ui": {k: e[lang] for k, e in own_ui.items() if e.get(lang)},
-           "messages": {k: e[lang] for k, e in i18n.MESSAGES.items() if e.get(lang)}}
-    out["translation"] = translation_builtin()[lang] if lang in COMPLETE else _read(TRANSLATION_UI / "locales" / f"{lang}.json")
-    return out
+    return {"ui": {k: e[lang] for k, e in own_ui.items() if e.get(lang)},
+            "messages": {k: e[lang] for k, e in i18n.MESSAGES.items() if e.get(lang)}}
 
 
 def missing(lang: str) -> dict[str, dict[str, str]]:
@@ -71,18 +50,16 @@ def problems(lang: str) -> list[str]:
     out = []
     if lang not in languages.UI_CODES:
         return [f"{lang}: not an interface language (mehteran/languages.json, \"ui\": true)"]
-    for path, sections in ((i18n.LOCALES / f"{lang}.json", ("ui", "messages")), (TRANSLATION_UI / "locales" / f"{lang}.json", None)):
-        if not path.is_file():
-            continue
+    path = i18n.LOCALES / f"{lang}.json"
+    if path.is_file():
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except ValueError as e:
-            out.append(f"{path.name}: not valid JSON ({e})")
-            continue
-        maps = [data.get(s, {}) for s in sections] if sections else [data]
-        if not isinstance(data, dict) or (sections and set(data) - set(sections)) or \
-                not all(isinstance(m, dict) and all(isinstance(v, str) for v in m.values()) for m in maps):
-            out.append(f"{path}: must be " + ('{"ui": {key: text}, "messages": {key: text}}' if sections else "{key: text}"))
+            return [f"{path.name}: not valid JSON ({e})"]
+        if not isinstance(data, dict) or set(data) - set(GROUPS) or \
+                not all(isinstance(data.get(g, {}), dict) and all(isinstance(v, str) for v in data.get(g, {}).values())
+                        for g in GROUPS):
+            out.append(f'{path}: must be {{"ui": {{key: text}}, "messages": {{key: text}}}}')
     if out:
         return out
     reference, own = texts("en"), texts(lang)
@@ -96,8 +73,6 @@ def problems(lang: str) -> list[str]:
             if placeholders(text) != placeholders(reference[group][key]):
                 out.append(f"{lang} {group}.{key}: placeholders {sorted(placeholders(text))}, English has "
                            f"{sorted(placeholders(reference[group][key]))}")
-            if group == "translation" and sorted(TAG.findall(text)) != sorted(TAG.findall(reference[group][key])):
-                out.append(f"{lang} {group}.{key}: the HTML tags differ from the English text")
         if lang in COMPLETE:
             out += [f"{lang} {group}.{key}: missing" for key in reference[group] if not own[group].get(key)]
     if lang == "en":
@@ -131,11 +106,6 @@ def merge(lang: str, new: dict) -> int:
                 own[group][key] = text
                 count += 1
     write_locale(lang, own["ui"], own["messages"])
-    if lang not in COMPLETE and own["translation"]:
-        folder = TRANSLATION_UI / "locales"
-        folder.mkdir(exist_ok=True)
-        ordered = {k: own["translation"][k] for k in reference["translation"] if own["translation"].get(k)}
-        (folder / f"{lang}.json").write_text(json.dumps(ordered, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return count
 
 

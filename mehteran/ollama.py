@@ -198,7 +198,7 @@ def ensure_running(timeout: float = 30) -> None:
         if program is None:
             raise OllamaError(t("ollama_missing"))
         if _server is None or _server.poll() is not None:
-            from pipeline import system
+            from .common import system
             log = paths.home() / "jobs" / "ollama-serve.log"
             log.parent.mkdir(parents=True, exist_ok=True)
             env = {**os.environ, "OLLAMA_HOST": base_url().removeprefix("http://")}
@@ -225,7 +225,7 @@ def stop_started() -> None:
     """Stops the Ollama server that this process started (never one that was already running)."""
     global _server, _server_job
     if started_here():
-        from pipeline import system
+        from .common import system
         system.stop_tree(_server.pid)
         try:
             _server.wait(10)
@@ -412,7 +412,7 @@ def asset() -> tuple[str, str]:
 
 def _untar_zst(archive: Path, dest: Path) -> None:
     """A .tar.zst archive: Python 3.14 reads it itself; earlier versions need the zstd program."""
-    from pipeline import runtime
+    from .common import runtime
     try:
         import compression.zstd  # noqa: F401  (Python 3.14 and later)
         with tarfile.open(archive, "r:zst") as tar:
@@ -430,7 +430,7 @@ def _untar_zst(archive: Path, dest: Path) -> None:
 
 def install() -> Path:
     """Downloads Ollama VERSION into <code folder>/.runtime/ollama and checks it. Output goes to stdout (the job log)."""
-    from pipeline import runtime
+    from .common import runtime
     name, sha256 = asset()
     print(t("ollama_downloading", version=VERSION, name=name), flush=True)
     base = paths.runtime()
@@ -459,7 +459,7 @@ def install() -> Path:
 
 def _program_version(program: Path) -> str | None:
     try:
-        from pipeline import system
+        from .common import system
         out = subprocess.run([str(program), "--version"], capture_output=True, text=True, timeout=10,
                              encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, **system.hidden_window())
     except (OSError, subprocess.SubprocessError):

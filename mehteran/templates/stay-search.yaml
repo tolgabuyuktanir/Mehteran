@@ -13,6 +13,7 @@ description:
     the matching stays with prices and links. It books nothing. Needs Claude Code and the browser of the Setup tab.
 version: "1.1"
 category: web
+tier: experimental
 
 inputs:
   - id: destination

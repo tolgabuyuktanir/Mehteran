@@ -2,8 +2,7 @@
 
 The data is mehteran/languages.json: one entry per language with its code, its own name ("native"), its English
 name, the country code of its flag (mehteran/ui/flags/<flag>.svg) and its direction ("ltr" or "rtl"). An entry with
-"ui": true is an interface language: it has a file mehteran/locales/<code>.json. Every language of the translation
-app's default list (config.default.toml, [languages]) is here too.
+"ui": true is an interface language: it has a file mehteran/locales/<code>.json.
 """
 
 from __future__ import annotations

@@ -1,10 +1,7 @@
-// Mehteran web interface: vanilla JavaScript, no build step, the same design as the translation app's interface
-// (pipeline/ui). Every element is made with h() and text nodes: no HTML strings, so no text (a model's answer, a
-// template) can become markup. Tabs and screens are chosen by the address hash:
-//   #workflows/translation[/books|workflow|prompts]   the book translation: the translation app's own interface
-//                                           (/tr/app.js, mounted here; the old #translation[/...] leads there)
+// Mehteran web interface: vanilla JavaScript, no build step. Every element is made with h() and text nodes: no HTML
+// strings, so no text (a model's answer, a template) can become markup. Tabs and screens are chosen by the address hash:
 //   #workflows                              the workflow library
-//   #workflows/<source>/<id>[/run|about|runs]   one workflow's page, like the book translation's: the run form
+//   #workflows/<source>/<id>[/run|about|runs]   one workflow's page: the run form
 //                                           in place, the description and diagram, the workflow's runs
 //   #workflows/import                       import a YAML file          #workflows/new             a new workflow
 //   #workflows/edit/<source>/<id>           the visual editor (a built-in opens as your own unsaved copy)
@@ -20,14 +17,13 @@ let TOKEN = TOKEN_META.content;
 const FINAL = new Set(["succeeded", "failed", "cancelled", "interrupted"]);
 const RETRYABLE = new Set(["failed", "rejected", "skipped", "cancelled", "interrupted"]);
 const TABS = ["workflows", "runs", "setup"];
-const TR_TABS = ["books", "workflow", "prompts"];
 // LANG: the interface language; LANGUAGES: the language registry (GET /api/languages: code, native, english, flag,
 // dir); UI_LANGS: the codes the interface can be shown in. A text that LANG has no translation for is shown in English.
 let LANG = "tr", LANGUAGES = [], UI_LANGS = ["tr", "en"];
 try { LANG = localStorage.getItem("mehteran.lang") || (navigator.language || "en").slice(0, 2).toLowerCase(); } catch { /* no storage */ }
 let UI = {}, INFO = null, NODE_TYPES = {};  // NODE_TYPES: GET /api/node-types by type, in the server's order
 const state = {tab: "", toolPoll: null, runPoll: null, signInUntil: 0, templates: [], tplQuery: "", tplCategory: "",
-  runCanvas: null, selectedNode: null, hash: "", trTab: "books", tr: null, trLang: "", trStrings: {}};
+  runCanvas: null, selectedNode: null, hash: ""};
 
 // --- helpers -------------------------------------------------------------------------------------
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -185,7 +181,7 @@ function duration(a, b) {
 
 const STATUS_TONE = {succeeded: "good", failed: "bad", rejected: "bad", running: "warn", queued: "", waiting_approval: "warn", waiting_quota: "warn",
   cancelled: "warn", interrupted: "warn", skipped: "", pending: ""};
-// A status word starts with a capital in a badge (as in the book translation); in a sentence it stays as written.
+// A status word starts with a capital in a badge; in a sentence it stays as written.
 const capital = (text) => text.charAt(0).toLocaleUpperCase(LANG) + text.slice(1);
 const badge = (status) => h("span", {class: "badge " + (STATUS_TONE[status] || "")}, capital(S("status_" + status)));
 const typeLabel = (type) => L(NODE_TYPES[type] && NODE_TYPES[type].label) || type;
@@ -208,8 +204,7 @@ function applyStaticTexts() {
   document.documentElement.lang = LANG;
   document.documentElement.dir = (langInfo(LANG) || {}).dir || "ltr";
   document.title = S("app_title");
-  // Mehteran's own elements; the book translation's (.tr-app) have the translation app's texts.
-  const own = (sel) => [...document.querySelectorAll(sel)].filter((el) => !el.closest(".tr-app"));
+  const own = (sel) => document.querySelectorAll(sel);
   own("[data-i18n]").forEach((el) => (el.textContent = S(el.dataset.i18n)));
   own("[data-i18n-placeholder]").forEach((el) => (el.placeholder = S(el.dataset.i18nPlaceholder)));
   own("[data-i18n-label]").forEach((el) => el.setAttribute("aria-label", S(el.dataset.i18nLabel)));
@@ -243,7 +238,7 @@ function home() {
 function current(parts) {
   const [first, ...rest] = parts;
   if (first === "templates") return ["workflows", ...rest];
-  if (first === "translation") return ["workflows", "translation", ...rest];  // the book translation is a workflow now
+  if (first === "translation") return ["workflows"];  // the book translation is no longer part of Mehteran
   if (first === "workflow") return !rest.length ? ["workflows"] : rest[0] === "new" ? ["workflows", "new"] : ["workflows", "edit", ...rest];
   return parts;
 }
@@ -253,7 +248,7 @@ async function route() {
   // #runs/new/<source>/<id> of earlier versions: the Run section of the workflow's page
   if (parts[0] === "runs" && parts[1] === "new" && parts.length === 4) parts = ["workflows", parts[2], parts[3], "run"];
   parts = current(parts);
-  if (parts[0] === "workflows" && parts[1] === "translation" && !embeddedTranslation()) parts = ["workflows"];
+  if (parts[0] === "workflows" && parts[1] === "translation") parts = ["workflows"];
   if (!TABS.includes(parts[0])) parts = [home()];
   const hash = parts.map(encodeURIComponent).join("/");
   if (location.hash !== "#" + hash) history.replaceState(null, "", "#" + hash);
@@ -267,7 +262,6 @@ async function route() {
   state.tab = tab;
   remember("mehteran.tab", tab);
   const editing = isEditorHash(hash);
-  const translating = tab === "workflows" && parts[1] === "translation";
   document.body.classList.toggle("fill", editing);
   document.body.classList.toggle("editing", editing);
   clearTimeout(state.toolPoll);
@@ -280,7 +274,7 @@ async function route() {
   });
   document.querySelectorAll("main > .panel").forEach((p) => (p.hidden = p.id !== tab));
   // null: not known yet in this browser (the first check of the tools answers in a few seconds): no banner until then
-  $("#setup-banner").hidden = state.ready !== false || !(tab === "runs" || (tab === "workflows" && !editing && !translating));
+  $("#setup-banner").hidden = state.ready !== false || !(tab === "runs" || (tab === "workflows" && !editing));
   if (!(tab === "workflows" && parts[1] === "import")) closeDrawer();  // the drawer holds only the import now
   if (hash !== "workflows/new" && $("#new-dialog").open) $("#new-dialog").close();  // its name is asked only there
   try {
@@ -291,64 +285,6 @@ async function route() {
     toast(err.message, true);
   }
 }
-
-// --- the book translation: the translation app's own interface (pipeline/ui/app.js, served as /tr/app.js) -----
-// Mounted once and kept: an open book or a text being edited stays while other tabs are used. Its requests go to
-// /api/tr/ of this server (mehteran/translation.py) with this page's session key; its links to Setup open Mehteran's
-// Setup tab; Mehteran's language switch changes it too.
-function setSubtabs(sub) {
-  document.querySelectorAll("#translation .subtab").forEach((b) => {
-    b.classList.toggle("active", b.dataset.sub === sub);
-    b.setAttribute("aria-selected", String(b.dataset.sub === sub));
-  });
-}
-
-// The address follows the section the translation app shows (it can refuse to leave a text with unsaved changes).
-function trShown(name) {
-  state.trTab = name;
-  setSubtabs(name);
-  if (!state.hash.startsWith("workflows/translation")) return;
-  state.hash = "workflows/translation/" + name;
-  if (location.hash !== "#" + state.hash) history.replaceState(null, "", "#" + state.hash);
-}
-
-// The book translation's texts in a language other than Turkish and English (those two are in its own file).
-async function trStrings(lang) {
-  if (lang === "tr" || lang === "en") return null;
-  if (!(lang in state.trStrings)) {
-    try {
-      const res = await fetch(`/tr/locales/${lang}.json`);
-      state.trStrings[lang] = res.ok ? await res.json() : {};
-    } catch { state.trStrings[lang] = {}; }
-  }
-  return state.trStrings[lang];
-}
-
-function embeddedTranslation() {
-  return INFO.translation.running || INFO.translation.error === "translation_failed";
-}
-
-async function showTranslation(parts) {
-  const sub = TR_TABS.includes(parts[0]) ? parts[0] : state.trTab;
-  const info = INFO.translation;
-  if (!info.running || !window.TranslationUI) {
-    setSubtabs(sub);
-    fill($("#translation-body"), h("div", {class: "tr-message"}, h("div", {class: "notice warn"},
-      h("b", {}, S(info.error || "translation_not_started", {error: info.detail || ""})))));
-    return;
-  }
-  const lang = LANG, strings = await trStrings(lang);
-  if (!state.tr) {
-    state.trLang = lang;
-    state.tr = TranslationUI.mount($("#translation-body"), {apiBase: "/api/tr", token: () => TOKEN, refreshToken, lang, strings,
-      tabs: TR_TABS, initial: sub, onTab: trShown, onSetup: () => go("setup"), toast});
-  } else {
-    if (state.trLang !== lang) { state.trLang = lang; state.tr.setLang(lang, strings); }
-    state.tr.show(sub);
-  }
-  trShown(state.tr.tab());
-}
-
 
 // --- workflows: the library (cards), one workflow (drawer), import ----------------------------------------
 async function loadTemplateList() {
@@ -401,13 +337,10 @@ function templateMatches(item) {
 
 async function showWorkflows(parts) {
   const editing = parts[0] === "new" || (parts[0] === "edit" && parts.length === 3);
-  const translating = parts[0] === "translation";
-  const page = !editing && !translating && parts.length >= 2 && ["builtin", "user"].includes(parts[0]);
-  $("#library").hidden = editing || translating || page;
+  const page = !editing && parts.length >= 2 && ["builtin", "user"].includes(parts[0]);
+  $("#library").hidden = editing || page;
   $("#workflow-editor").hidden = !editing;
-  $("#translation").hidden = !translating;
   $("#workflow-page").hidden = !page;
-  if (translating) return showTranslation(parts.slice(1));
   if (editing) return Editor.open(parts[0] === "new" ? ["new"] : parts.slice(1));
   if (page) {
     if (!state.templates.length) fill($("#wf-body"), skeleton("cards"));  // live.js: shapes until the list comes
@@ -439,7 +372,6 @@ function needsLine(item) {
 }
 
 function renderLibrary() {
-  $("#existing-book-translation").hidden = !embeddedTranslation();
   if (!state.libView) state.libView = hasOwnWork() ? "mine" : "all";
   const view = state.libView;
   const categories = [...new Set(state.templates.filter((t) => t.source === "builtin").map((t) => t.category || ""))]
@@ -521,6 +453,7 @@ function templateCard(item) {
       // The group heading names the category of a built-in; one of your own shows its category here.
       h("span", {class: "tpl-head"}, iconTile(kind), h("span", {class: "tpl-badges"},
         item.draft ? h("span", {class: "badge warn"}, S("draft")) : null,
+        item.tier === "experimental" ? h("span", {class: "badge warn", title: S("experimental_note")}, S("experimental")) : null,
         item.source === "user" && item.category ? h("span", {class: "badge"}, categoryLabel(item.category)) : null,
         item.valid || item.draft ? null : h("span", {class: "badge bad"}, S("invalid")))),
       h("span", {class: "tpl-name"}, L(item.name) || item.id),
@@ -657,7 +590,7 @@ function closeDrawer() {
   if ($("#drawer").open) $("#drawer").close();
 }
 
-// --- one workflow's page: the same frame as the book translation (← Workflows, its icon and name, sections) ------
+// --- one workflow's page: ← Workflows, its icon and name, its sections ------------------------------------------
 // Run: the run form in place (runForm). Instructions: the steps in plain words, each AI step with its instruction
 // (editable on the user's own workflows), the diagram and the YAML folded. Runs: this workflow's runs. Beside the
 // sections: the favorite star and "⋯" (open in the editor, duplicate, YAML, share, delete).
@@ -691,7 +624,8 @@ async function showWorkflowPage(source, id, tab) {
   const built = state.built === key && source === "user" ? builtCard(tpl, source, id)
     : steps ? h("p", {class: "small wf-steps-line"}, S("steps_count", {count: steps}), " · ",
       h("button", {type: "button", class: "linkish", onclick: () => go(`workflows/${source}/${id}/steps`)}, S("view_instructions"))) : null;
-  fill(body, built, tpl.valid ? runForm(tpl, source, id)
+  const experimental = item.tier === "experimental" ? h("p", {class: "notice warn small"}, h("b", {}, S("experimental")), " · ", S("experimental_note")) : null;
+  fill(body, experimental, built, tpl.valid ? runForm(tpl, source, id)
     : [problemsBox({message: S(tpl.draft ? "draft_cannot_run" : "template_invalid", {count: (tpl.problems || []).length}), problems: tpl.problems || []}),
       h("button", {type: "button", class: "btn", onclick: () => go(`workflows/edit/${source}/${id}`)}, S("edit"))]);
 }
@@ -925,7 +859,7 @@ async function loadProviderStates(force) {
 
 const providerInfo = (name) => ((providerStates.data && providerStates.data.providers) || []).find((p) => p.name === name) || null;
 const autoChoice = (kind) => (providerStates.data && providerStates.data.auto && providerStates.data.auto[kind]) || null;
-const canonicalProvider = (name) => (name === "chatgpt" ? "codex" : name);  // the translation app's name for Codex
+const canonicalProvider = (name) => (name === "chatgpt" ? "codex" : name);  // an older name for Codex
 const BILLING_LEVEL = {subscription: "good", free: "good", local: "good", api_key: "warn"};
 const billingBadge = (billing) => (billing ? h("span", {class: "badge billing " + (BILLING_LEVEL[billing] || "")}, S("billing_" + billing)) : null);
 
@@ -1156,9 +1090,21 @@ function drawProviders(data, save) {
         rows.length ? h("ol", {class: "plain order-list"}, rows) : h("p", {class: "small warn-text"}, S("order_empty")), add),
       h("section", {class: "stack"}, h("h3", {}, S("auto_title")), h("ul", {class: "plain auto-list small"}, autoLines),
         h("p", {class: "small muted"}, S("auto_explain")))),
+    unattendedForm(data, save),
     localServerForm(data, save),
     h("p", {class: "small muted"}, S("providers_file_note")));
   fillUsageSlots();  // live.js
+}
+
+// Scheduled and batch runs: only local models and API keys, unless the user allows subscriptions (Engine.unattended_problem).
+const TERMS_URL = (lang) => `https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=${lang === "tr" ? "tr#tr-kosullar" : "en#terms"}`;
+
+function unattendedForm(data, save) {
+  return h("section", {class: "stack"}, h("h3", {}, S("unattended_title")),
+    h("label", {class: "check"}, h("input", {type: "checkbox", checked: Boolean(data.unattended_subscriptions),
+      onchange: (e) => save(e.currentTarget, {unattended_subscriptions: e.currentTarget.checked})}), h("span", {}, S("unattended_label"))),
+    h("p", {class: "small muted"}, S("unattended_note"), " ",
+      h("a", {href: TERMS_URL(LANG), target: "_blank", rel: "noopener noreferrer"}, S("unattended_terms_link"))));
 }
 
 // A local server with an OpenAI-compatible API (LM Studio, llama.cpp, vLLM): its address on this computer and model.
@@ -1831,7 +1777,6 @@ async function boot() {
     next.focus();
     go(next.dataset.tab);
   });
-  document.querySelectorAll("#translation .subtab").forEach((b) => b.addEventListener("click", () => go("workflows/translation/" + b.dataset.sub)));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => go(b.dataset.goto)));
   $("#brand").addEventListener("click", (e) => { e.preventDefault(); go(home()); });
   $("#video-settings-details").addEventListener("toggle", (e) => { if (e.currentTarget.open) loadVideoSettings(); });
