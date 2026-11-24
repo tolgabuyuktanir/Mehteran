@@ -316,7 +316,7 @@ class LoopTests(HomeCase):
     def test_a_failed_part_is_asked_again_alone(self):
         flag = self.tmp / "fail"
         engine = self.engine(parallel=1)  # the fake's failure counter is not safe for calls at the same time
-        run_id = engine.start(LOOP.replace("MARK", f"FAIL=1:{flag}"), files={"book": self.doc("book.md", BOOK)})
+        run_id = engine.start(LOOP.replace("MARK", f"FAIL=1:{flag.as_posix()}"), files={"book": self.doc("book.md", BOOK)})
         self.assertEqual(engine.wait(run_id, 60), "failed")
         self.assertIn("1 of 4 parts failed", engine.get(run_id)["nodes"]["each"]["error"])
         self.assertEqual(len(self.calls()), 3)
@@ -327,7 +327,7 @@ class LoopTests(HomeCase):
     def test_cancel_during_a_loop_then_resume_keeps_finished_parts(self):
         engine = self.engine(parallel=1)
         once = self.tmp / "slow"
-        run_id = engine.start(LOOP.replace("MARK", f"SLEEPONCE=30:{once}"), files={"book": self.doc("book.md", BOOK)})
+        run_id = engine.start(LOOP.replace("MARK", f"SLEEPONCE=30:{once.as_posix()}"), files={"book": self.doc("book.md", BOOK)})
         self.wait_for(lambda: once.exists())
         time.sleep(0.3)
         engine.cancel(run_id)

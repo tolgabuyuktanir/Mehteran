@@ -146,9 +146,17 @@ class OllamaServeTests(LocalCase):
             log = self.home / "jobs" / "ollama-serve.log"
             server = ollama._server
             probe = subprocess.run([str(fakebin / "ollama"), "--version"], capture_output=True, text=True, timeout=30)
-            self.fail(f"{err}\nexit code: {server.poll() if server else None}, port {port}\n"
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/version", timeout=5) as res:
+                    direct = res.read()
+            except Exception as e:  # noqa: BLE001 - a diagnostic
+                direct = repr(e)
+            files = subprocess.run(["lsof", "-nP", "-a", "-i", "-p", str(server.pid)], capture_output=True, text=True,
+                                   timeout=30).stdout if server else ""
+            self.fail(f"{err}\nexit code: {server.poll() if server else None}, port {port}, base {ollama.base_url()}\n"
                       f"log: {log.read_text(errors='replace') if log.exists() else '(no log)'}\n"
-                      f"--version: {probe.returncode} {probe.stdout!r} {probe.stderr!r}")
+                      f"--version: {probe.returncode} {probe.stdout!r} {probe.stderr!r}\n"
+                      f"GET /api/version: {direct!r}\nsockets: {files}")
         self.assertTrue(ollama.running())
         self.assertTrue(ollama.started_here())
         status = ollama.status()
