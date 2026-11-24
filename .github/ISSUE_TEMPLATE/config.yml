@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Question / Soru
+    url: https://github.com/tolgabuyuktanir/Mehteran/discussions/categories/q-a
+    about: Ask how to install or use Mehteran. / Mehteran'ı kurmayı ya da kullanmayı sorun.
   - name: Security problem / Güvenlik sorunu
     url: https://github.com/tolgabuyuktanir/Mehteran/blob/main/SECURITY.md
     about: Do not open a public issue. Report it privately. / Herkese açık issue açmayın; özel olarak bildirin.
