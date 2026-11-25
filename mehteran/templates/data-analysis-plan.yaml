@@ -34,7 +34,9 @@ inputs:
       tr: "Örnek: 'Hangi bölgede satışlar en çok arttı ve bu indirimle ilişkili mi?'"
       en: "For example: 'Which region grew sales most, and is that related to the discount?'"
     required: false
-    default: "Describe what the data can tell us and which questions it can answer."
+    default:
+      tr: "Verilerin bize neler anlatabileceğini ve hangi soruları yanıtlayabileceğini açıklayın."
+      en: "Describe what the data can tell us and which questions it can answer."
   - id: context
     type: text
     multiline: true

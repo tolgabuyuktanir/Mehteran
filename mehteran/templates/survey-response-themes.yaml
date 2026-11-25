@@ -32,7 +32,9 @@ inputs:
       tr: "İsteğe bağlı. Yanıtların verildiği sorunun tam metni."
       en: "Optional. The exact text of the question the responses answer."
     required: false
-    default: "Not stated: infer the question from the responses"
+    default:
+      tr: "Belirtilmemiş: soruyu yanıtlardan çıkarın"
+      en: "Not stated: infer the question from the responses"
   - id: context
     type: text
     multiline: true

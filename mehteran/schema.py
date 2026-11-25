@@ -232,17 +232,17 @@ def _ident(value, where: str, add, required: bool = False) -> bool:
     return True
 
 
-def _localized(value, where: str, add, required: bool = False) -> None:
+def _localized(value, where: str, add, required: bool = False, limit: int = 2000) -> None:
     if value is None:
         if required:
             add(where, "missing")
         return
     if isinstance(value, str):
-        if not value.strip() or len(value) > 2000:
+        if not value.strip() or len(value) > limit:
             add(where, "bad_localized")
         return
     if not isinstance(value, dict) or not value or set(value) - {"tr", "en"} or \
-            not all(isinstance(v, str) and v.strip() and len(v) <= 2000 for v in value.values()):
+            not all(isinstance(v, str) and v.strip() and len(v) <= limit for v in value.values()):
         add(where, "bad_localized")
 
 
@@ -328,7 +328,9 @@ def _inputs(value, add) -> dict[str, dict]:
             if "default" in item and item["default"] not in languages.BY_CODE:
                 add(f"{here}.default", "bad_language", value=item["default"])
         elif kind == "text":
-            if "default" in item and not (isinstance(item["default"], str) and len(item["default"]) <= TEXT_LIMIT):
+            if isinstance(item.get("default"), dict):
+                _localized(item["default"], f"{here}.default", add, limit=TEXT_LIMIT)
+            elif "default" in item and not (isinstance(item["default"], str) and len(item["default"]) <= TEXT_LIMIT):
                 add(f"{here}.default", "bad_text")
             if "multiline" in item and not isinstance(item["multiline"], bool):
                 add(f"{here}.multiline", "not_a_bool")

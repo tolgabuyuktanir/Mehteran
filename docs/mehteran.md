@@ -487,6 +487,8 @@ Mehteran never writes these files. A section named like an adapter (`claude`, `c
 
 ## Workflow file reference (schema_version 1)
 
+A text input’s `default` can be a string shared by all languages or a map such as `{tr: "genel okur", en: "the general reader"}`. The run form and runs started without a value use the interface language, falling back to English and then to the available translation.
+
 ```yaml
 schema_version: 1
 id: my-review                 # lower-case letters, digits, "-" and "_"; at most 64

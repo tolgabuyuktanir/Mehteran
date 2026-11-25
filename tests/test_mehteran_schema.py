@@ -34,6 +34,22 @@ class SchemaTests(HomeCase):
         self.assertEqual(wf.upstream["b"], {"a"})
         self.assertEqual(wf.graph()["nodes"][1]["layer"], 1)
 
+    def test_localized_text_default_and_override(self):
+        text = workflow(ai("a", "Read {{inputs.reader}}"), [], inputs=(
+            "  - {id: reader, type: text, default: {tr: okur, en: reader}}\n"))
+        engine = self.engine()
+        try:
+            for lang, expected in (("tr", "okur"), ("en", "reader"), ("de", "reader")):
+                i18n.set_request(lang)
+                run = engine.start(text, launch=False)
+                self.assertEqual(engine.get(run)["inputs"]["reader"], expected)
+            run = engine.start(text, {"reader": "custom"}, launch=False)
+            self.assertEqual(engine.get(run)["inputs"]["reader"], "custom")
+        finally:
+            i18n.set_request(None)
+        for invalid in ("{}", "{tr: 12}", "{other: reader}"):
+            self.assertTrue(problems(text.replace("{tr: okur, en: reader}", invalid)))
+
     def test_unknown_keys_are_rejected_at_every_level(self):
         self.assertRejected(VALID + "colour: red\n", "colour: unknown key")
         self.assertRejected(VALID.replace("type: ai.cli,", "type: ai.cli, speed: 3,", 1), "nodes.a.speed: unknown key")

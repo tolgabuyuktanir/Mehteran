@@ -24,7 +24,9 @@ inputs:
   - id: audience
     type: text
     required: false
-    default: "a general professional audience"
+    default:
+      tr: "çeşitli mesleklerden dinleyiciler"
+      en: "a general professional audience"
     label: {tr: "Dinleyiciler", en: "Audience"}
     description:
       tr: "Sunumu kim dinleyecek? Örnek: 'yönetim kurulu', 'birinci sınıf öğrencileri'."

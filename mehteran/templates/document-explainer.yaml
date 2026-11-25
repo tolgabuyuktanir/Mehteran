@@ -26,7 +26,9 @@ inputs:
   - id: reader
     type: text
     required: false
-    default: "a person with no legal or technical background"
+    default:
+      tr: "hukuki veya teknik bilgisi olmayan biri"
+      en: "a person with no legal or technical background"
     label: {tr: "Kim okuyacak", en: "Who will read it"}
     description:
       tr: "Örnek: 'ilk kez ev kiralayan bir öğrenci'."

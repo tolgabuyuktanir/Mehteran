@@ -28,7 +28,9 @@ inputs:
       tr: "Sizin tarafınızın adı ya da rolü, örnek: 'Alıcı', 'Yüklenici', 'ABC Ltd.'"
       en: "The name or role of your side, for example 'Buyer', 'Contractor', 'ABC Ltd.'"
     required: false
-    default: "the weaker party of the contract (infer it from the document)"
+    default:
+      tr: "sözleşmenin daha zayıf tarafı (belgeden çıkarın)"
+      en: "the weaker party of the contract (infer it from the document)"
   - id: concerns
     type: text
     multiline: true

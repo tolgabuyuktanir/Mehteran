@@ -38,7 +38,9 @@ inputs:
       tr: "İsteğe bağlı. Örnek: 'Uzaktan çalışma verimliliği nasıl etkiliyor?'"
       en: "Optional. For example: 'How does remote work affect productivity?'"
     required: false
-    default: "The common research question of these papers (infer it from them)"
+    default:
+      tr: "Bu çalışmaların ortak araştırma sorusu (çalışmalardan çıkarın)"
+      en: "The common research question of these papers (infer it from them)"
   - id: language
     type: language
     label: {tr: Rapor dili, en: Report language}
