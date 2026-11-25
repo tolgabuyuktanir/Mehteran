@@ -28,7 +28,7 @@ inputs:
     type: text
     required: false
     default:
-      tr: "Seyahat, Yemek, Ofis, Yazılım, Elektrik ve su gibi giderler, Diğer"
+      tr: "Seyahat, Yemek, Ofis, Yazılım, Faturalar, Diğer"
       en: "Travel, Meals, Office, Software, Utilities, Other"
     label: {tr: "Gider kategorileri", en: "Expense categories"}
     description:
