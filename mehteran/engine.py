@@ -413,7 +413,10 @@ class Engine:
                 if size > FILES_SIZE_LIMIT:
                     problems.append(t("input_files_too_large", id=input_id, limit=FILES_SIZE_LIMIT // 1024 // 1024))
                 continue
-            value = values.get(input_id, spec.get("default"))
+            default = spec.get("default")
+            if spec["type"] == "text" and isinstance(default, dict):
+                default = i18n.localized(default)
+            value = values.get(input_id, default)
             if spec["type"] == "language" and not value:
                 value = i18n.current()  # no language given and no default: the language of whoever starts the run
             if value is None or (isinstance(value, str) and not value.strip() and spec["type"] != "text"):

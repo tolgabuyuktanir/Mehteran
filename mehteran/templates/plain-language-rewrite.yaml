@@ -31,7 +31,9 @@ inputs:
   - id: audience
     type: text
     label: {tr: Okurlar, en: Readers}
-    default: "general public"
+    default:
+      tr: "genel okur kitlesi"
+      en: "general public"
     description:
       tr: "Metni kim okuyacak? Örnek: 'genel okur', 'lise öğrencileri', 'Türkçeyi yeni öğrenen yetişkinler'."
       en: "Who will read it? For example: 'general public', 'high-school students', 'adults learning the language'."

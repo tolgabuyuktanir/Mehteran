@@ -27,11 +27,15 @@ inputs:
       tr: "Örnek: 'şirket yöneticileri', 'velilere', 'teknik olmayan müşteriler'."
       en: "For example: 'company executives', 'parents', 'non-technical customers'."
     required: false
-    default: "the general reader"
+    default:
+      tr: "genel okur"
+      en: "the general reader"
   - id: tone
     type: text
     label: {tr: Ton, en: Tone}
-    default: "clear and friendly"
+    default:
+      tr: "açık ve samimi"
+      en: "clear and friendly"
     description:
       tr: "Örnek: 'resmî', 'samimi ve sıcak', 'kısa ve kararlı'."
       en: "For example: 'formal', 'warm and personal', 'short and decisive'."
@@ -39,7 +43,9 @@ inputs:
   - id: channel
     type: text
     label: {tr: Kanal ve uzunluk, en: Channel and length}
-    default: "e-mail, at most 250 words"
+    default:
+      tr: "e-posta, en fazla 250 kelime"
+      en: "e-mail, at most 250 words"
     description:
       tr: "Örnek: 'e-posta, en fazla 250 kelime', 'LinkedIn gönderisi', 'bir sayfalık bilgi notu'."
       en: "For example: 'e-mail, at most 250 words', 'LinkedIn post', 'one-page briefing note'."

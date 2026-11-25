@@ -24,6 +24,13 @@ with TemporaryDirectory() as folder:
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(channel="chrome", headless=True)
+                for locale, expected in (("tr-TR", "hukuki veya teknik bilgisi olmayan biri"),
+                                         ("en-US", "a person with no legal or technical background"),
+                                         ("de-DE", "a person with no legal or technical background")):
+                    page = browser.new_page(locale=locale)
+                    page.goto(f"http://127.0.0.1:{port}/#workflows/builtin/document-explainer/run")
+                    assert page.locator("#in-reader").input_value() == expected
+                    page.close()
                 for width in (375, 1280):
                     page = browser.new_page(viewport={"width": width, "height": 800}, locale="tr-TR")
                     run = {"id": "old-run", "template": "builtin:document-summary", "created": 1700000000}

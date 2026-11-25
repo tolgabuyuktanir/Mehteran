@@ -534,7 +534,7 @@ def start_try(jobs: Jobs, engine, model: dict, node_id: str, provider: str, run_
                 return spec.get("default") or lang
             if spec["type"] == "text" and sample is not None and not wf.upstream[node_id]:
                 return sample  # a step that reads only the run form: the sample stands for the typed text
-            return str(spec.get("default") or "")
+            return i18n.localized(spec.get("default"), lang)
         if sample is not None:
             return sample
         rel = (nodes_of.get(ident) or {}).get("outputs", {}).get(port)

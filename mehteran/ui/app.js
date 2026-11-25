@@ -1302,7 +1302,7 @@ function runForm(tpl, source, id, priorRun) {
       control = spec.type === "url" && spec.multiple ? h("textarea", {rows: 6, dir: "ltr", class: "mono", placeholder: "https://…\nhttps://…"})
         : spec.multiline ? h("textarea", {rows: 3})
         : h("input", spec.type === "url" ? {type: "url", placeholder: "https://…", dir: "ltr"} : {type: "text"});
-      control.value = spec.default || "";
+      control.value = spec.type === "text" ? L(spec.default) : spec.default || "";
       if (spec.required !== false) control.required = true;
       control.read = () => control.value;
       control.write = (v) => { control.value = v; };

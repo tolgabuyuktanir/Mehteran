@@ -487,6 +487,8 @@ Mehteran bu dosyalara hiçbir zaman yazmaz. Bir bağdaştırıcıyla aynı adı 
 
 ## İş akışı dosyası başvurusu (schema_version 1)
 
+Metin girdisinin `default` alanı tüm diller için tek bir metin ya da `{tr: "genel okur", en: "the general reader"}` gibi bir eşleme olabilir. Çalıştırma formu ve değer verilmeden başlatılan çalışmalar arayüz dilini kullanır. Bu dilde metin yoksa önce İngilizce, o da yoksa mevcut çeviri kullanılır.
+
 ```yaml
 schema_version: 1
 id: my-review                 # küçük harf, rakam, "-" ve "_"; en çok 64

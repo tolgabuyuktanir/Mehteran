@@ -1082,8 +1082,8 @@ const Editor = (() => {
         setOrDelete(item, "multiline", e.target.checked || "");
         changed();
       }}), S("multiline")));
-      extra.push(field(S("default"), textControl(() => item.default, (v) => setOrDelete(item, "default", v), where + ".default",
-        {area: item.multiline === true, rows: 2}), where + ".default", {wide: true}));
+      extra.push(localizedPair(item, "default", where + ".default", S("default"),
+        {area: item.multiline === true, rows: 2, wide: true}));
     } else if (item.type === "provider") {
       const names = [...AUTO_KINDS, ...(INFO.providers || []).flatMap((p) => [p.name, ...p.models.map((x) => `${p.name}/${x}`)])];
       const def = textControl(() => item.default, (v) => setOrDelete(item, "default", v.trim()), where + ".default", {mono: true, placeholder: "auto"});
