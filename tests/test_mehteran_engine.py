@@ -112,8 +112,9 @@ class EngineTests(HomeCase):
                                 env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.addCleanup(lambda: proc.poll() is None and proc.kill())
         store = Store(self.home / "databases" / "mehteran.sqlite3")
-        run_id = self.wait_for(lambda: (store.runs() or [{}])[0].get("id"))
-        self.wait_for(lambda: store.states(run_id).get("b") == "running" and flag.exists(), 30)
+        # A new Python process: slow to start on a busy CI runner (Windows took over 20 s once).
+        run_id = self.wait_for(lambda: (store.runs() or [{}])[0].get("id"), 60)
+        self.wait_for(lambda: store.states(run_id).get("b") == "running" and flag.exists(), 60)
         proc.kill()  # the process ends without any clean-up: a crash
         proc.wait(10)
         if os.name == "posix":
