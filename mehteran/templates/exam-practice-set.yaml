@@ -11,7 +11,7 @@ description:
   en: >-
     Writes original practice questions with an answer key for SAT, LGS or YKS; you approve the set. It copies no
     real questions, is not affiliated with the exam bodies, and a teacher should check it.
-version: "1.1"
+version: "1.2"
 category: exams
 
 inputs:
@@ -164,6 +164,8 @@ nodes:
         Difficulty: {{inputs.difficulty}} (mixed = easy, medium and hard)
         Number of questions: {{inputs.count}} (write exactly this many; 10 if it is empty or not a number)
 
+        Difficulty levels follow the real exam. A hard question is at the level of the hardest questions of the exam, not a long easy one: two to four steps of reasoning, at least two ideas combined, a situation the student must model or a graph or figure the student must read, and wrong choices that catch the likely mistakes. Examples for SAT Math: a system of equations with a parameter and no solution or infinitely many; a quadratic or exponential function read from its graph; the vertex, a zero or an intersection from a graph together with an equation; a circle equation after completing the square; a percent change of a percent change; similar triangles with right-triangle trigonometry; the line of best fit of a scatterplot used for a prediction. Hard never means heavy arithmetic.
+
         Follow only the block of the chosen exam.
 
         Block sat_math (digital SAT Math):
@@ -192,7 +194,18 @@ nodes:
 
         Rules:
         - Original questions only. Never copy, paraphrase or closely adapt a real SAT, College Board, MEB, ÖSYM, deneme-book or textbook question. Invent new contexts, texts and numbers.
-        - No figures. If a graph or a shape is needed, describe it in words or give a small Markdown table.
+        - Figures: use a figure wherever the real test would, and give it the information the student must read. For sat_math about half of the questions have a figure (a graph of one or two functions, a scatterplot, a bar chart or a geometric figure), and every geometry question shows its figure with the labelled points, as the real test does; for sat_rw a command-of-evidence question may have a small table or bar chart; for lgs, tyt and ayt use them where the subject needs them. A table is a Markdown table.
+        - A figure is a fenced code block with the word figure after the opening backticks, holding one JSON object. Mehteran draws it. Never write SVG, an image link or a drawing made of characters. The figure must agree exactly with the text and the answer. Its "alt" is one sentence that tells a reader who cannot see the figure what it shows, without giving the answer away.
+        - A coordinate plane: {"type": "plot", "alt": "...", "x": [-6, 6], "y": [-4, 8], "grid": 1, "items": [...]}. Optional: "xlabel" and "ylabel" (short, at most 50 characters, for example "Time (hours)"), "caption". The items:
+          - {"fn": "0.5(x - 2)^2 - 3", "label": "y = f(x)"}: the graph of a function of x. Allowed: numbers, x, + - * / ^, parentheses, sqrt abs sin cos tan exp ln log, pi. Optional "domain": [a, b], "dash": true.
+          - {"line": [[0, 1], [4, 3]]}: a segment or a broken line through the points; "closed": true makes a polygon, "fill": true shades it.
+          - {"points": [[1, 2, "A"], [3, 5]]}: marked points, each with an optional label (a scatterplot is one "points" item with many points).
+          - {"circle": [0, 0, 5]}: the centre x, the centre y and the radius.
+          - {"text": "8 cm", "at": [2, -1]}: a label at a place.
+          - Each item may have "color": 0 to 3; functions get different colours by themselves.
+        - A geometric figure without axes: the same object with "axes": false. It uses the same scale for x and y, so give the vertices real coordinates that make the lengths and the angles look right, and write the given lengths and angles as "text" items. If the figure is not drawn to scale, the question says so.
+        - A bar chart: {"type": "bar", "alt": "...", "ylabel": "Number of students", "bars": [["Mon", 12], ["Tue", 7]]}.
+        - Put the figure after the sentences that introduce it and before the line that asks the question. A student must be able to answer from the text and the figure together; a value the question needs is either written or exactly readable from the grid.
         - Every question has exactly one correct answer and unambiguous wording.
         - Do not write answers, hints or solutions here.
 
@@ -212,7 +225,7 @@ nodes:
         Subject or domain (it may be empty): {{inputs.subject}}
         Topic (it may be empty): {{inputs.topic}}
 
-        The questions:
+        The questions (a fenced block marked "figure" is a figure that the student sees drawn; its JSON gives the exact data of the drawing):
 
         {{nodes.items.text}}
 
@@ -240,12 +253,13 @@ nodes:
 
         Output language: the language with the code "{{inputs.language}}". Write your remarks in this language; keep the question's own words as they are.
 
-        The question ({{item.index}} of {{item.count}}):
+        The question ({{item.index}} of {{item.count}}; a fenced block marked "figure" is a figure that the student sees drawn, and its JSON gives the exact data of the drawing):
 
         {{item.text}}
 
         Rules:
         - Solve step by step and check the result. Do not guess. If the question cannot be answered from its text, write that under "Problems".
+        - If the question has a figure, check that it agrees with the text: a value read from the figure must match the given values. A mismatch, or a value that cannot be read exactly from the figure, is a problem.
         - Use only the text of the question. Be strict: if a second choice could be defended by a careful reader, name it.
 
         Write exactly these lines (translate the labels):
@@ -347,7 +361,7 @@ nodes:
         Rules:
         - Key wrong: correct the key entry. Blind solver wrong: change nothing. Question flawed, ambiguous or too close to a reference: repair the question, or replace it with a new original question of the same skill and difficulty (with its own key entry), or drop it. When a replacement cannot be made sound, drop the question.
         - Solve every repaired or new question yourself and check it before you write its key entry. Replacements must also not copy or closely adapt a reference or a real exam question.
-        - Keep the questions that were not flagged exactly as they are. Number the questions again from 1 in one run.
+        - Keep the questions that were not flagged exactly as they are, with their figure blocks unchanged. A repaired or new question may have a figure in the same format: a fenced code block marked figure with one JSON object, as in the questions above. Never write SVG or an image link. Number the questions again from 1 in one run.
         - Remove every "FLAW:" line and every internal marker from the output.
         - Do not write a section about what you changed. Output only the final set.
         - End with a short notice paragraph, in the output language, that says: this is original practice material in the style of the exam, written by an AI; it is not a real exam item and is not affiliated with or endorsed by the exam body (College Board for the SAT; MEB and ÖSYM for LGS and YKS); it may contain errors; the answers must be checked before use; for LGS and YKS the curriculum can change and a teacher should check the set.
@@ -380,10 +394,10 @@ nodes:
     type: text.merge
     label: {tr: "Seti birleştir", en: "Combine the set"}
     config:
+      # Only the final set: the approval shows the verification too, which numbers the questions before the fix.
+      # The connection from approve makes this step wait for the decision.
       template: |
         {{nodes.fix.text}}
-
-        {{nodes.approve.text}}
 
   - id: export
     type: document.export

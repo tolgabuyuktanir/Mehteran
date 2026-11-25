@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import languages, paths, tables, winjob
+from .common import figure
 from .i18n import MESSAGES, message_of, t, text_of
 from .placeholders import only_reference, references
 from .placeholders import parse as parse_ref
@@ -797,6 +798,7 @@ def export_document(markdown: str, formats: list[str], title: str, lang: str, fo
     data = {fmt: structured(markdown, fmt) for fmt in ("json", "csv") if fmt in formats}  # NodeError: no JSON/table
     folder.mkdir(parents=True, exist_ok=True)
     out = {}
+    plain = figure.as_text(markdown)  # Word, PDF, EPUB and e-mail show a figure as its description
     try:
         for fmt in formats:
             path = folder / f"{name}.{fmt}"
@@ -805,13 +807,13 @@ def export_document(markdown: str, formats: list[str], title: str, lang: str, fo
             elif fmt in data:
                 path.write_text(data[fmt], encoding="utf-8", newline="" if fmt == "csv" else "\n")
             elif fmt == "eml":
-                path.write_bytes(email_draft(markdown, title, lang))
+                path.write_bytes(email_draft(plain, title, lang))
             elif fmt == "docx" and docx_by_pandoc or fmt == "epub":
-                path.write_bytes(pandoc.export(markdown, fmt, title, lang, abort))
+                path.write_bytes(pandoc.export(plain, fmt, title, lang, abort))
             elif fmt == "docx":
-                path.write_bytes(tables.to_docx(markdown, title, lang))
+                path.write_bytes(tables.to_docx(plain, title, lang))
             elif fmt == "pdf":
-                path.write_bytes(typst.to_pdf(markdown, title, lang, abort))
+                path.write_bytes(typst.to_pdf(plain, title, lang, abort))
             else:
                 path.write_text(tables.to_html(markdown, title, lang), encoding="utf-8", newline="\n")
             out[fmt] = path

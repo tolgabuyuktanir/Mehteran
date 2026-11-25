@@ -1,14 +1,39 @@
-<p align="center"><img src="docs/assets/icon.svg" width="88" alt="Mehteran"></p>
+<p align="center"><img src="docs/assets/icon.svg" width="96" alt="Mehteran"></p>
 
 <h1 align="center">Mehteran</h1>
 
-<p align="center"><b>Kendi bilgisayarınızda, zaten sahip olduğunuz yapay zekâ abonelikleriyle iş akışları.</b></p>
+<p align="center"><b>Kendi bilgisayarınızda, zaten sahip olduğunuz yapay zekâ abonelikleriyle iş akışları.</b><br>Ücretsiz ve açık kaynak · ek fatura yok · dosyalarınız sizde kalır</p>
 
-<p align="center"><a href="README.md">English</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">Web sitesi</a> · <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr">Belgeler</a> · <a href="docs/mehteran.tr.md">Ayrıntılı başvuru</a></p>
+<p align="center">
+  <a href="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml"><img src="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml/badge.svg" alt="Kontroller"></a>
+  <a href="https://www.npmjs.com/package/mehteran"><img src="https://img.shields.io/npm/v/mehteran?color=2151af&label=npm" alt="npm sürümü"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/tolgabuyuktanir/Mehteran?color=017272" alt="MIT lisansı"></a>
+  <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-11213e" alt="macOS, Windows, Linux">
+  <img src="https://img.shields.io/badge/diller-18-2151af" alt="18 arayüz dili">
+  <a href="https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22good+first+issue%22"><img src="https://img.shields.io/github/issues/tolgabuyuktanir/Mehteran/good%20first%20issue?label=ilk%20katk%C4%B1%20i%C3%A7in&color=57b6b6" alt="İlk katkı için maddeler"></a>
+</p>
+
+<p align="center">
+  <a href="#hızlı-başlangıç"><b>Hızlı başlangıç</b></a> ·
+  <a href="#nasıl-görünüyor">Ekran görüntüleri</a> ·
+  <a href="#neden-mehteran">Özellikler</a> ·
+  <a href="#yapay-zekâ-araçları">Yapay zekâ araçları</a> ·
+  <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr">Belgeler</a> ·
+  <a href="#katkı">Katkı</a> ·
+  <a href="README.md">English</a>
+</p>
+
+<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr"><img src="docs/assets/video/intro-tr.jpg" width="720" alt="Mehteran tanıtım videosu"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">▶ 39 saniyede Mehteran'ı izleyin</a></p>
 
 Mehteran, yapay zekâyla tekrarlanan işleri kendi bilgisayarınızda yapar. Örneğin bir belgeyi okur, yapay zekâdan bir özet ister, onayınızı bekler ve sonucu Word dosyası olarak kaydeder. Zaten sahip olduğunuz yapay zekâ hesabını (Claude, ChatGPT ya da Google) ya da bu bilgisayarda çalışan ücretsiz bir modeli kullanır. Mehteran'ın kendisi ücretsizdir.
 
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr"><img src="docs/assets/video/intro-tr.jpg" width="640" alt="Mehteran tanıtım videosu"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">▶ 39 saniyede Mehteran'ı izleyin</a></p>
+<table>
+<tr>
+<td width="33%" valign="top"><h3>🔒 Dosyalarınız sizde kalır</h3>Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. Arayüz yalnızca bu bilgisayarda çalışır. "Yalnızca yerel" bir iş akışı hiçbir metni dışarı göndermez.</td>
+<td width="33%" valign="top"><h3>💳 Ek fatura yok</h3>Mehteran zaten ödediğiniz yapay zekâ aboneliğini ya da bu bilgisayardaki ücretsiz bir modeli kullanır. Anahtar saklamaz, ücret almaz.</td>
+<td width="33%" valign="top"><h3>🧩 78 hazır iş akışı</h3>Bir sözleşmeyi anlatın, toplantı tutanağı yazın, sınav sorusu hazırlayın, teklifleri karşılaştırın. Ya da kendi işinizi tek cümleyle anlatın.</td>
+</tr>
+</table>
 
 ## Hızlı başlangıç
 
@@ -39,15 +64,27 @@ Windows ya da Mac bir bilgisayar ve internet bağlantısı yeterlidir. Önceden 
    Ardından **Çalıştırmayı başlat**'a tıklayın.
 7. **Sonucu alın.** Mehteran çalışırken her adımı gösterir. Çalıştırma bitince anlatım **Sonuçlar** altında görünür. Word dosyası olarak kaydetmek için **↓ Anlatım (Word)** düğmesine tıklayın.
 
-Mehteran'ı sonra yeniden başlatmak için aynı dosyaya çift tıklayın (`Open Mehteran.bat` ya da `Open Mehteran.command`). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Başka bir yapay zekâ hesabı kullanmak için **Kurulum** sekmesinde **Değiştir**'e tıklayın.
+> [!TIP]
+> Mehteran'ı sonra yeniden başlatmak için aynı dosyaya çift tıklayın (`Open Mehteran.bat` ya da `Open Mehteran.command`). Mehteran'ın penceresini kapatmak Mehteran'ı durdurur. Başka bir yapay zekâ hesabı kullanmak için **Kurulum** sekmesinde **Değiştir**'e tıklayın.
 
 Ayarlar, yerel modeller, zamanlamalar ve komut satırı gibi diğer her şey [belgelerde](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr) anlatılır.
 
-## Daha fazlasını deneyin
+## Nasıl görünüyor
 
-![Mehteran iş akışı kitaplığı](docs/assets/screens/tr-library.png)
+<table>
+<tr>
+<td width="50%"><img src="docs/assets/readme/tr-setup.jpg" alt="Girişten sonra Kurulum sekmesi"><br><b>1. Kurulum.</b> Yapay zekâ hesabınızı seçin, tek düğmeyle giriş yapın.</td>
+<td width="50%"><img src="docs/assets/readme/tr-library.jpg" alt="İş akışı kitaplığı"><br><b>2. Seçin.</b> Hazır bir iş akışından başlayın ya da kendinizinkini anlatın.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/readme/tr-run.jpg" alt="Devam eden bir çalıştırma"><br><b>3. İzleyin.</b> Her adım canlı görünür. Bir şey kaydedilmeden önce siz onaylarsınız.</td>
+<td width="50%"><img src="docs/assets/readme/tr-result.jpg" alt="Bir çalıştırmanın sonucu"><br><b>4. Sonucu alın.</b> Okuyun, düzenleyin; Word, HTML ya da Markdown olarak indirin.</td>
+</tr>
+</table>
 
-Toplantı notlarınızı **Toplantı tutanağı ve aksiyonlar** iş akışına verin. İş akışı bir özet ve bir aksiyon listesi hazırlar, incelemenizi bekler ve sonucu Word, HTML ya da Markdown dosyası olarak kaydeder.
+**Daha fazlasını deneyin:** toplantı notlarınızı **Toplantı tutanağı ve aksiyonlar** iş akışına verin. İş akışı bir özet ve bir aksiyon listesi hazırlar, incelemenizi bekler ve sonucu Word, HTML ya da Markdown dosyası olarak kaydeder. Ya da **Sınav alıştırma seti** ile zor SAT Matematik soruları hazırlayın: grafikler ve şekiller dahil, çözümlü cevap anahtarı ve bağımsız bir kontrolle:
+
+<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-tr.mp4"><img src="docs/assets/video/sat-tr.jpg" width="560" alt="Video: Mehteran ile grafikli, zor SAT Matematik soruları"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-tr.mp4">▶ İzleyin: 47 saniyede grafikli, zor SAT Matematik soruları</a></p>
 
 [İlk iş akışınızı çalıştırın](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-calistir) · [Kendi iş akışınızı oluşturun](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-olustur)
 
@@ -55,14 +92,14 @@ Toplantı notlarınızı **Toplantı tutanağı ve aksiyonlar** iş akışına v
 
 Mehteran, zaten kullandığınız yapay zekâ araçlarını tekrar tekrar kullanılabilen iş akışlarına dönüştürür. Bir iş akışı belgeyi okur, modele sorar, cevabı kontrol eder, bir kişinin onayını alır ve sonucu Word ya da PDF olarak kaydeder. Mehteran yapay zekâyı aboneliklerinizin komut satırı araçlarıyla (Claude Code, Codex, Antigravity CLI) ya da bu bilgisayardaki modellerle (Ollama, LM Studio, llama.cpp) çağırır. Kendi anahtarı ve hesabı yoktur; hiçbir ücret almaz. Kendi planlarınızı, onların koşulları içinde kullanırsınız (bkz. [Abonelikler ve sağlayıcı koşulları](#abonelikler-ve-sağlayıcı-koşulları)). macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
 
-- **Ek fatura yok.** Mehteran her model çağrısından API anahtarlarını çıkarır; böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Ücretli bir API anahtarı yalnızca o araç için izin verirseniz kullanılır.
-- **Dosyalarınız sizde kalır.** Arayüz yalnızca `127.0.0.1` üzerinde çalışır. Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. "Yalnızca yerel" işaretli bir iş akışı bilgisayardan hiçbir metin göndermez.
-- **10 kategoride 78 hazır şablon:** internetten araştırma, belgeler, yazı, iş, hukuk, eğitim, sınavlar, araştırma, veri ve yazılım. Bunların dördü "Deneysel" olarak işaretlidir: sık değişen web sitelerine ya da ücretli servislere bağlıdırlar.
-- **"Anlat, oluşturayım":** ne istediğinizi bir cümleyle yazın. Kurulu yapay zekâ aracınız iş akışını kurar ve kaydeder; o çalışırken dökümünü izlersiniz. Sonra her adımın talimatını görür ve düzenleyebilirsiniz. Ya da adımları bir tuvale çizin (yapay zekâ adımları, koşullar, döngüler, kişi onayları). "Bu adımı dene" tek bir adımı tek başına çalıştırır.
-- **Sizin için sitelerde arar:** ev ya da araba ilanı, tarihlerinize uygun otel; bağlantılarıyla tek bir tabloda karşılaştırılır. Bunu yalnızca okuyan bir tarayıcı pencere açmadan yapar; rezervasyon yapmaz, kimseyle iletişime geçmez.
-- **Gerçek belgeler girer, çıkar.** PDF, Word, EPUB, Excel, web sayfaları, taranmış belgeler (OCR) ve ses kayıtlarını (konuşmayı yazıya çevirme) okur. Markdown, Word, HTML, PDF, EPUB, e-posta taslağı, JSON ve CSV olarak kaydeder.
-- **Kullanım sınırları çalıştırmayı bozmaz.** Adım sınırın sıfırlanmasını bekler ya da model sıranızdaki bir sonraki modelle devam eder.
-- **Her çalıştırma saklanır:** canlı izleyin, durdurup devam ettirin, iki çalıştırmayı karşılaştırın, bir sonucu düzenleyip dışa aktarın.
+- 💳 **Ek fatura yok.** Mehteran her model çağrısından API anahtarlarını çıkarır; böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Ücretli bir API anahtarı yalnızca o araç için izin verirseniz kullanılır.
+- 🔒 **Dosyalarınız sizde kalır.** Arayüz yalnızca `127.0.0.1` üzerinde çalışır. Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. "Yalnızca yerel" işaretli bir iş akışı bilgisayardan hiçbir metin göndermez.
+- 🧩 **10 kategoride 78 hazır şablon:** internetten araştırma, belgeler, yazı, iş, hukuk, eğitim, sınavlar, araştırma, veri ve yazılım. Bunların dördü "Deneysel" olarak işaretlidir: sık değişen web sitelerine ya da ücretli servislere bağlıdırlar.
+- ✦ **"Anlat, oluşturayım":** ne istediğinizi bir cümleyle yazın. Kurulu yapay zekâ aracınız iş akışını kurar ve kaydeder; o çalışırken dökümünü izlersiniz. Sonra her adımın talimatını görür ve düzenleyebilirsiniz. Ya da adımları bir tuvale çizin (yapay zekâ adımları, koşullar, döngüler, kişi onayları). "Bu adımı dene" tek bir adımı tek başına çalıştırır.
+- 🔎 **Sizin için sitelerde arar:** ev ya da araba ilanı, tarihlerinize uygun otel; bağlantılarıyla tek bir tabloda karşılaştırılır. Bunu yalnızca okuyan bir tarayıcı pencere açmadan yapar; rezervasyon yapmaz, kimseyle iletişime geçmez.
+- 📄 **Gerçek belgeler girer, çıkar.** PDF, Word, EPUB, Excel, web sayfaları, taranmış belgeler (OCR) ve ses kayıtlarını (konuşmayı yazıya çevirme) okur. Markdown, Word, HTML, PDF, EPUB, e-posta taslağı, JSON ve CSV olarak kaydeder.
+- ⏳ **Kullanım sınırları çalıştırmayı bozmaz.** Adım sınırın sıfırlanmasını bekler ya da model sıranızdaki bir sonraki modelle devam eder.
+- 🗂️ **Her çalıştırma saklanır:** canlı izleyin, durdurup devam ettirin, iki çalıştırmayı karşılaştırın, bir sonucu düzenleyip dışa aktarın.
 
 ## Yapay zekâ araçları
 
@@ -83,6 +120,11 @@ En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar ve oturum açma
 
 Mehteran, sağlayıcıların kendi değiştirilmemiş komut satırı araçlarını bilgisayarınızda, kendi hesabınızla açılmış oturumla başlatır. Oturum bilgilerinizi hiçbir zaman okumaz, saklamaz ya da başka bir yere iletmez.
 
+**Mehteran'ın varsayılan davranışı:** zamanlanmış ve toplu çalıştırmalar yalnızca yerel modelleri ve API anahtarlı araçları kullanır. Abonelik ya da ücretsiz hesap kullanacak bir adım, zamanlama oluşturulurken ya da toplu çalıştırma başlarken nedeni söylenerek reddedilir; model `auto` ise bu araçlar atlanır. Bu çalıştırmalarda aboneliklere izin vermek için Kurulum → İş akışlarının yapay zekâ araçları → Zamanlanmış ve toplu çalıştırmalar altında "Zamanlanmış ve toplu çalıştırmalarda aboneliklere ve ücretsiz hesaplara izin ver" seçeneğini açın. Kendi başlattığınız bir çalıştırma bundan etkilenmez.
+
+<details>
+<summary><b>Sağlayıcıların koşulları ne diyor</b></summary>
+
 - Anthropic'in [Tüketici Koşulları](https://www.anthropic.com/legal/consumer-terms) (Consumer Terms), madde 3.7, hizmetlere "through automated or non-human means, whether through a bot, script, or otherwise" (otomatik ya da insan dışı yollarla; bot, betik ya da başka bir yolla) erişmeyi yasaklar. İstisnalar, Anthropic API anahtarı ve Anthropic'in açıkça izin verdiği kullanımlardır.
 - Claude Code'un [hukuk sayfası](https://code.claude.com/docs/en/legal-and-compliance) şuna izin verir: "an end user [...] signing in to the unmodified Claude Code binary with their own Claude subscription" (bir son kullanıcının değiştirilmemiş Claude Code programında kendi Claude aboneliğiyle oturum açması). Sayfa şunu da söyler: "Advertised usage limits for Pro, Max, and Ultra plans assume ordinary, individual usage of Claude Code" (Pro, Max ve Ultra planlarının duyurulan kullanım sınırları, Claude Code'un olağan, bireysel kullanımını varsayar). Ürün geliştirenler ise "should use API key authentication" (API anahtarıyla kimlik doğrulama kullanmalıdır).
 - OpenAI, `codex exec` komutunu "repeatable workflows and pipelines" (tekrarlanabilir iş akışları ve işlem hatları) için belgeler ([Codex CLI](https://developers.openai.com/codex/cli)). [ChatGPT planıyla Codex](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan) makalesi otomasyondan söz etmez.
@@ -90,23 +132,30 @@ Mehteran, sağlayıcıların kendi değiştirilmemiş komut satırı araçların
 
 Bu yüzden tüketici aboneliğiyle zamanlanmış, toplu ya da arka planda çalıştırmalara izin verilip verilmediği açıkça belli değildir. Hesabınızın kullanımından siz sorumlusunuz. Yoğun ya da gözetimsiz kullanım için (zamanlamalar, toplu çalıştırmalar, arka plan) sağlayıcıların önerdiği yol API anahtarıdır: Kurulum → İş akışlarının yapay zekâ araçları → Araç başına ayarlar altında o araç için "API anahtarına izin ver (ücretli)" seçeneğini açın. Yerel bir modelin (Ollama, LM Studio) böyle koşulları yoktur.
 
-**Mehteran'ın varsayılan davranışı:** zamanlanmış ve toplu çalıştırmalar yalnızca yerel modelleri ve API anahtarlı araçları kullanır. Abonelik ya da ücretsiz hesap kullanacak bir adım, zamanlama oluşturulurken ya da toplu çalıştırma başlarken nedeni söylenerek reddedilir; model `auto` ise bu araçlar atlanır. Bu çalıştırmalarda aboneliklere izin vermek için Kurulum → İş akışlarının yapay zekâ araçları → Zamanlanmış ve toplu çalıştırmalar altında "Zamanlanmış ve toplu çalıştırmalarda aboneliklere ve ücretsiz hesaplara izin ver" seçeneğini açın. Kendi başlattığınız bir çalıştırma bundan etkilenmez.
-
 Bu bir hukuki tavsiye değildir. 24 Kasım 2026'da denetlendi; koşullar değişebilir.
+
+</details>
 
 ## Diğer kurulum yolları
 
 [Hızlı başlangıç](#hızlı-başlangıç), GitHub sayfasının zip dosyasını kullanır (sayfada da var: **Code**, sonra **Download ZIP**). Her sistemde başlatıcı Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa Mehteran ilk açılışta kendine ayrı bir Python (uv) kurar (bir-iki dakika). Arayüz tarayıcıda `http://127.0.0.1:8766/` adresinde açılır ve terminal penceresi açık kaldıkça çalışır. Tarayıcı kendiliğinden açılmazsa bu adresi açın.
 
-### Linux
+<details>
+<summary><b>Linux</b></summary>
 
 Zip dosyasını açın (ya da `git clone https://github.com/tolgabuyuktanir/Mehteran.git`), sonra o klasörde bir terminalde `./mehter ui` komutunu çalıştırın.
 
-### git ile
+</details>
+
+<details>
+<summary><b>git ile</b></summary>
 
 `git clone` ile alınan bir kopya (macOS, Windows ya da Linux) güncel kalır: başlatıcı, arayüz açılmadan önce `mehter update` komutunu çalıştırır (bkz. [Güncellemeler](#güncellemeler)).
 
-### npm ile
+</details>
+
+<details>
+<summary><b>npm ile</b></summary>
 
 Bilgisayarda Node.js 18 ya da daha yenisi varsa (Claude Code, Codex ve Gemini CLI onunla kurulur) tek komut yeterlidir:
 
@@ -116,11 +165,19 @@ npx mehteran
 
 İlk çalıştırma npm sürümündeki kaynak kodu `~/Mehteran` klasörüne kurar ve arayüzü açar. Kurulum için `tar` gerekir. Sonraki seferlerde yine `npx mehteran` yazın. Her komut aynı şekilde çalışır: `npx mehteran templates`, `./mehter templates` ile aynıdır. Başka bir klasör için `MEHTERAN_DIR` değişkenini ayarlayın.
 
-### macOS dosyayı başlatmazsa
+</details>
+
+<details>
+<summary><b>macOS dosyayı başlatmazsa</b></summary>
 
 "Gerekli erişim izinleriniz yok" uyarısı çıkarsa: Terminal'i açın, `sh ` yazıp (sonunda boşluk) `Open Mehteran.command` dosyasını Terminal penceresine sürükleyin ve Enter'a basın.
 
+</details>
+
 ## Komut satırı
+
+<details>
+<summary><b>Komutlar, <code>mehter doctor</code> ve <code>mehter eval</code></b></summary>
 
 ```
 ./mehter templates                                     şablonları listeler
@@ -138,7 +195,12 @@ Windows'ta `./mehter` yerine `mehter` yazın.
 
 `mehter eval`, `evals/cases.json` içindeki değerlendirme setini çalıştırır: 6 temel şablon üzerinde 7 durum (`document-summary`, `meeting-minutes-actions`, `contract-risk-review`, `email-reply-draft`, `code-review`, `ask-your-documents`). Bir durum, belgede cevabı olmayan bir soru sorar; bir belge gizli, içine yerleştirilmiş bir talimat taşır. Çalıştırmalar Kurulum sekmesindeki araçlarla gerçek model çağrıları yapar; bu yüzden kullanım sınırlarınızdan harcar. Her sonucu kurallar denetler: çıktı dili, gerekli bilgiler, yasak metinler ve uzunluk. `--model`, her durumun her adımı için tek bir model seçer. Çalıştırmalar geçici bir veri klasörü kullanır; çalıştırma geçmişiniz temiz kalır. Rapor (JSON) `<veri>/evals/` klasörüne yazılır. Denetimler kuraldır, bir değerlendirici değildir: geçen bir durum yine de kötü okunabilir.
 
+</details>
+
 ## Güncellemeler
+
+<details>
+<summary><b>git, npm ve zip kopyaları; araçların kurulduğu yerler</b></summary>
 
 Uygulamayı git ile aldıysanız (`git clone` veya `gh repo clone`), `mehter update` onu günceller. Başlatıcı bunu arayüz her açılmadan önce çalıştırır. GitHub'dan çeker ve yalnızca ileri sarma (fast-forward) birleştirmesi uygular. İnternet ya da GitHub girişi yoksa, ya da kod bu bilgisayarda değiştirildiyse güncellemeyi bir mesajla atlar ve Mehteran olduğu gibi açılır.
 
@@ -148,7 +210,12 @@ Zip dosyası indirdiyseniz yeni zip'i indirin. Mehteran'ın iş akışları ve �
 
 Codex, Node.js ve PDF okuyucu uygulamanın kendi klasörüne (`.runtime/`) kurulur. Claude Code, Antigravity CLI ve ayrı Python (uv) kullanıcı klasörünüze (`~/.local/bin`; Windows'ta `%LOCALAPPDATA%` altına) kurulur. Uygulamayı silmek için klasörünü ve Mehteran'ın veri klasörünü silin (bkz. belgeler).
 
+</details>
+
 ## Çalıştırma dosyalarını saklama
+
+<details>
+<summary><b>Çöp kutusu, eski çalıştırmaları silme ve otomatik bakım</b></summary>
 
 Silinen bir çalıştırma **Çalıştırmalar** sekmesindeki **Çöp kutusu**'na gider. Geri almak için orada **Geri yükle**'ye tıklayın. **Eski çalıştırmaları sil…** eski çalıştırmaları ve dosyalarını kalıcı olarak siler. Mehteran verilerinin boyutunu ve boş disk alanını da gösterir.
 
@@ -162,9 +229,16 @@ max_run_storage_gib = 10
 
 Bakım arayüz açıldığında ve açık kaldığı sürece günde bir çalışır. `retain_runs_days` tamamlanmış eski çalıştırmaları çöp kutusundakiler dahil kalıcı olarak siler. `retain_usage_days` eski kullanım kayıtlarını temizler. Depolama sınırı yeni çalıştırmaların kabulünde denetlenir. Devam eden işlerin yazabileceği çıktı boyutunu sınırlamaz.
 
+</details>
+
 ## Kitap çevirisi
 
+<details>
+<summary><b>Eski kitap çevirisi uygulamasını kullanmış bilgisayarlar için</b></summary>
+
 Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kullanmış bir bilgisayar (`books/` içinde bir kitap ya da kod klasöründe bir `config.toml` varsa) onu korur: kodu eksikse Mehteran onu git geçmişinden aynı yere bir kez geri koyar. `./translate ui` (Windows'ta `translate ui`), kitaplar, ayarlar ve talimatlar çalışmayı sürdürür. Çeviri uygulaması artık güncelleme almaz. npm'den ya da zip dosyasından kurulan bir kopya değiştirilmez. Yeni kurulumlara çeviri uygulaması gelmez.
+
+</details>
 
 ## Belgeler
 
@@ -173,24 +247,31 @@ Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kul
 
 ## Geliştirme
 
+<details>
+<summary><b>Kod, testler ve sürümler</b></summary>
+
 - Kod: `mehteran/`, yalnızca Python standart kütüphanesi ve `mehteran/_vendor/` içine konmuş PyYAML (araç kurucusu, belge okuma ve Word dışa aktarma gibi ortak kod `mehteran/common/` içindedir); arayüz derleme adımı olmayan düz JavaScript'tir.
 - Testler: `python3 -m unittest discover tests`. Sahte bir yapay zekâ aracı kullanır, ağa bağlanmaz. CI onları Ubuntu (Python 3.11 ve 3.14), macOS ve Windows (Python 3.12) üzerinde çalıştırır.
 - Değerlendirme seti (`evals/`, `mehter eval`) gerçek model çağrıları yapar. CI onu çalıştırmaz.
 - npm paketi (`npx mehteran`) `npm/` klasöründedir: bağımlılığı olmayan tek bir Node betiğidir; kod klasörünü kurar ve başlatıcısını çalıştırır. Yeni sürüm için `npm/package.json` içindeki `version` değerini artırın ve değişikliği commit edin. `npm pack` mevcut commit'in arşivini pakete koyar. Paketi kontrol ettikten sonra yayımlayın.
 - Web sitesi `docs/` içindeki statik HTML'dir (`index.html`, `docs.html`, `assets/`); başka sunuculardan hiçbir şey yüklemez.
 
+</details>
+
 ## Katkı
 
 Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebilirsiniz. **[ROADMAP.md](ROADMAP.md) yapılacakları, seviyeleri ve gereken becerileriyle listeler.** Birçoğu küçük işlerdir:
 
-- **İngilizce dışında bir dil mi konuşuyorsunuz?** Arayüzü kendi dilinizde okuyun, kulağa yanlış geleni düzeltin. Düzeltilmiş tek bir kelime de iyi bir ilk pull request'tir.
-- **Tekrar ettiğiniz bir iş mi var?** Onu bir iş akışı olarak kurun ve herkesle paylaşın.
-- **Python ya da JavaScript mi yazıyorsunuz?** ZIP kopyaları için güncelleme ve iş akışını sesle anlatmak sizi bekliyor.
+| | Kim | Nasıl yardım edebilirsiniz |
+|---|---|---|
+| 🌍 | **İngilizce dışında bir dil konuşuyorsanız** | Arayüzü kendi dilinizde okuyun, kulağa yanlış geleni düzeltin. Düzeltilmiş tek bir kelime de iyi bir ilk pull request'tir. |
+| 🧩 | **Tekrar ettiğiniz bir iş varsa** | Onu bir iş akışı olarak kurun ve herkesle paylaşın. |
+| 🛠️ | **Python ya da JavaScript yazıyorsanız** | ZIP kopyaları için güncelleme ve iş akışını sesle anlatmak sizi bekliyor. |
 
-Başlamak için maddenin issue'suna bir yorum yazın ([açık maddelerin hepsi](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). Kendi fikriniz için "Yardım etmek istiyorum" ile bir issue açın. Sorularınızı her zaman sorabilirsiniz. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
+Başlamak için maddenin issue'suna bir yorum yazın ([açık maddelerin hepsi](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). Kendi fikriniz için "Yardım etmek istiyorum" ile bir issue açın. Sorularınızı her zaman sorabilirsiniz; [Discussions](https://github.com/tolgabuyuktanir/Mehteran/discussions) da açık. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
 
 ## Lisans
 
 MIT. Ayrıntılar: [LICENSE](LICENSE).
 
-Mehteran bağımsız bir projedir. Anthropic, OpenAI ya da Google ile bağlantılı değildir; bu şirketler tarafından onaylanmamış ya da desteklenmemiştir. Claude ve Claude Code, Anthropic'in; Codex ve ChatGPT, OpenAI'ın; Gemini ve Antigravity, Google'ın ticari markalarıdır. Diğer adlar sahiplerinin ticari markalarıdır.
+<sub>Mehteran bağımsız bir projedir. Anthropic, OpenAI ya da Google ile bağlantılı değildir; bu şirketler tarafından onaylanmamış ya da desteklenmemiştir. Claude ve Claude Code, Anthropic'in; Codex ve ChatGPT, OpenAI'ın; Gemini ve Antigravity, Google'ın ticari markalarıdır. Diğer adlar sahiplerinin ticari markalarıdır.</sub>

@@ -282,7 +282,7 @@ TABLE_CSS = ("table.md { border-collapse: collapse; margin: .8em 0 1em; font-siz
 # Markdown links: "[text](https://...)" and "<https://...>", as mehteran.common.export.to_html escapes them. Only http(s).
 _HTML_LINK = re.compile(r"\[([^\]\n<>]+)\]\((https?://[^\s()<>]+)\)|&lt;(https?://[^\s<>]+?)&gt;")
 _MD_LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s()]+)\)|<(https?://[^\s<>]+)>")
-_CODE = re.compile(r"(<pre\b.*?</pre>|<code\b.*?</code>|<head\b.*?</head>)", re.S)
+_CODE = re.compile(r"(<pre\b.*?</pre>|<code\b.*?</code>|<head\b.*?</head>|<svg\b.*?</svg>)", re.S)
 
 
 def html_links(page: str) -> str:

@@ -11,7 +11,7 @@ description:
   en: >-
     Give example questions; get new, original questions in the same style, with an answer key and explanations.
     The examples are not copied; you approve the set before it is saved.
-version: "1.1"
+version: "1.2"
 category: education
 
 inputs:
@@ -355,10 +355,10 @@ nodes:
     type: document.export
     label: {tr: "Soruları kaydet", en: "Save the questions"}
     config:
+      # Only the final set: the approval shows the verification too, which numbers the questions before the fix.
+      # The connection from approve makes this step wait for the decision.
       source: |
         {{nodes.fix.text}}
-
-        {{nodes.approve.text}}
       title: "New question variants"
       lang: "{{inputs.language}}"
       formats: [md, docx, html]

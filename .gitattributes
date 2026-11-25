@@ -6,3 +6,5 @@
 # Website media stays out of `git archive` (the npm package and GitHub's zip download); the app does not use it.
 /docs/assets/video export-ignore
 /docs/assets/screens export-ignore
+/docs/assets/readme export-ignore
+/docs/assets/social.jpg export-ignore

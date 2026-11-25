@@ -9,6 +9,7 @@ Thank you for helping. Bug reports, translation fixes, new templates and code ch
 - For a small fix (a typo, a wrong translation, a clear bug), open a pull request directly.
 - For a larger change (a new feature, a new step type, a change in how runs work), open an issue first. Describe the problem and your plan, so that nobody does the same work twice.
 - For a security problem, do not open an issue. See [SECURITY.md](SECURITY.md).
+- Everyone in the project follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 Looking for something to do? [ROADMAP.md](ROADMAP.md) lists items with a level (🟢 good first item, 🟡 medium, 🔴 larger) and the skills each needs. Many need no programming.
 

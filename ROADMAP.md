@@ -39,7 +39,7 @@ The interface has 18 languages. The 16 other than English and Turkish were trans
 
 ### New screenshots
 🟢 · [issue #3](https://github.com/tolgabuyuktanir/Mehteran/issues/3) · You need: to run Mehteran (see the quick start in the README) with a signed-in AI tool or a local model, for the result screen.
-The screenshots on the website and in the README (`docs/assets/screens/`) show the old colors and an older Workflows page.
+The screenshots on the website (`docs/assets/screens/`) show the old colors and an older Workflows page.
 - **Done when:** the same eight files show the current interface: `en-` and `tr-` versions of `library`, `editor`, `runform` and `reader`. The old ones are 2720×1720 pixels (a 1360×860 window on a 2× screen); 1360×860 is fine too.
 
 ### Test with a screen reader and the keyboard
@@ -130,7 +130,7 @@ Arayüz 18 dilde. İngilizce ve Türkçe dışındaki 16 dil yapay zekâ araçla
 
 ### Yeni ekran görüntüleri
 🟢 · [issue #3](https://github.com/tolgabuyuktanir/Mehteran/issues/3) · Gereken: sonuç ekranı için Mehteran'ı giriş yapılmış bir yapay zekâ aracıyla ya da yerel bir modelle çalıştırmak (README'deki hızlı başlangıca bakın).
-Web sitesindeki ve README'deki ekran görüntüleri (`docs/assets/screens/`) eski renkleri ve İş akışları sayfasının eski hâlini gösteriyor.
+Web sitesindeki ekran görüntüleri (`docs/assets/screens/`) eski renkleri ve İş akışları sayfasının eski hâlini gösteriyor.
 - **Bitti sayılır:** aynı sekiz dosya güncel arayüzü gösterdiğinde: `library`, `editor`, `runform` ve `reader` görüntülerinin `en-` ve `tr-` sürümleri. Eskileri 2720×1720 piksel (2× ekranda 1360×860 bir pencere); 1360×860 da olur.
 
 ### Ekran okuyucu ve klavyeyle deneyin

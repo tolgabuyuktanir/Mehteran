@@ -128,7 +128,18 @@ class BuiltinTemplateTests(HomeCase):
         self.assertIn("row 1", run["nodes"]["validate"]["error"])
         self.assertEqual(run["nodes"]["export"]["status"], "skipped")
 
-    def run_builtin(self, engine, template_id: str) -> None:
+    def test_question_sets_are_saved_once_and_after_the_approval(self):
+        # The approval shows the verification and the set; the saved file holds the final set alone, once.
+        engine = self.engine()
+        for template_id, last in (("exam-practice-set", "report"), ("question-variants-from-references", "export")):
+            with self.subTest(template=template_id):
+                run_id = self.run_builtin(engine, template_id)
+                run, run_dir = engine.get(run_id), engine.run_dir(run_id)
+                saved = (run_dir / run["nodes"]["export"]["outputs"]["md"]).read_text(encoding="utf-8")
+                self.assertEqual(saved.strip(), (run_dir / "nodes" / "fix" / "text.md").read_text(encoding="utf-8").strip())
+                self.assertGreaterEqual(run["nodes"][last]["started"], run["nodes"]["approve"]["finished"])
+
+    def run_builtin(self, engine, template_id: str) -> str:
         text = templates.read("builtin", template_id, self.home)
         wf = schema.parse(text)
         values, files = {}, {}
@@ -172,6 +183,7 @@ class BuiltinTemplateTests(HomeCase):
                 self.assertIn("<html", (run_dir / outputs["html"]).read_text(encoding="utf-8"))
             if "eml" in outputs:
                 self.assertIn(b"X-Unsent: 1", (run_dir / outputs["eml"]).read_bytes())
+        return run_id
 
 
 if __name__ == "__main__":

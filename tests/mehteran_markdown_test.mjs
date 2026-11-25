@@ -19,6 +19,7 @@ const doc = {
     Object.defineProperty(node, "innerHTML", {set() { throw new Error("innerHTML used"); }});
     return node;
   },
+  createElementNS(ns, tag) { const node = this.createElement(tag); node.ns = ns; return node; },
   createTextNode(text) { return {text: String(text)}; },
 };
 
@@ -127,6 +128,21 @@ test("empty and odd input", () => {
   assert.equal(html("**unclosed and `tick"), '<p dir="auto">**unclosed and `tick</p>');
   assert.equal(html("[a](b"), '<p dir="auto">[a](b</p>');
   assert.equal(html("a\r\nb"), '<p dir="auto">a<br></br>b</p>');
+});
+
+test("figures are drawn as SVG elements; an invalid one stays code", () => {
+  const spec = {alt: "A <line>", caption: "Fig. 1", x: [0, 4], y: [0, 4], items: [{line: [[0, 0], [4, 4]]}, {text: "<b>", at: [1, 1]}]};
+  const page = Markdown.render("```figure\n" + JSON.stringify(spec) + "\n```", {document: doc});
+  const fig = page.children[0], svg = fig.children[0];
+  assert.equal(fig.tag, "figure");
+  assert.equal(svg.tag, "svg");
+  assert.equal(svg.ns, "http://www.w3.org/2000/svg");
+  assert.equal(svg.attrs.role, "img");
+  assert.equal(svg.attrs["aria-label"], "A <line>");
+  assert.equal("xmlns" in svg.attrs, false);
+  assert.match(show(page), /<text class="fig-text"[^>]*>&lt;b&gt;<\/text>/);
+  assert.match(show(page), /<figcaption dir="auto">Fig. 1<\/figcaption>/);
+  assert.equal(html("```figure\n{\"alt\": \"a\"}\n```"), '<pre dir="ltr" class="md-code"><code data-lang="figure">{"alt": "a"}</code></pre>');
 });
 
 console.log(`ok ${count}`);

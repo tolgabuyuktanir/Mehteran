@@ -9,6 +9,7 @@ Yardımınız için teşekkürler. Hata bildirimleri, çeviri düzeltmeleri, yen
 - Küçük bir düzeltme için (yazım hatası, yanlış çeviri, açık bir hata) doğrudan pull request açın.
 - Daha büyük bir değişiklik için (yeni bir özellik, yeni bir adım türü, çalıştırmaların işleyişinde bir değişiklik) önce bir issue açın. Sorunu ve planınızı anlatın; böylece kimse aynı işi iki kez yapmaz.
 - Güvenlik sorunları için issue açmayın. [SECURITY.md](SECURITY.md) dosyasına bakın.
+- Projedeki herkes [davranış kurallarına](CODE_OF_CONDUCT.md#davranış-kuralları) uyar.
 
 Yapacak bir iş mi arıyorsunuz? [ROADMAP.md](ROADMAP.md) maddeleri seviyeleriyle (🟢 ilk katkı için iyi, 🟡 orta, 🔴 büyük) ve gereken becerileriyle listeler. Birçoğu programlama gerektirmez.
 

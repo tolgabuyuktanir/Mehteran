@@ -13,6 +13,8 @@ import re
 import zipfile
 from xml.sax.saxutils import escape as xml_escape
 
+from . import figure
+
 RTL_LANGUAGES = {"ar", "fa", "ur", "he", "ps", "sd", "ug", "yi", "ckb", "dv"}
 _NOTE_LINE = re.compile(r"^\[\^(\d+)\]:\s?(.*)$")
 _INLINE = re.compile(r"\*\*(.+?)\*\*|(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])|`([^`]+)`|\[\^(\d+)\]")
@@ -98,10 +100,10 @@ def _report_blocks(markdown: str) -> list[dict]:
             else:
                 blocks[-1]["lines"].append(line)
             continue
-        opener = re.match(r"^(`{3,}|~{3,})", stripped)
+        opener = re.match(r"^(`{3,}|~{3,})\s*([^\s`]*)", stripped)
         if opener:
             fence = opener[1]
-            blocks.append({"type": "code", "lines": []})
+            blocks.append({"type": "code", "lang": opener[2], "lines": []})
             continue
         note = _NOTE_LINE.match(stripped)
         if note:
@@ -181,6 +183,54 @@ def mostly_rtl(text: str) -> bool:
     return bool(letters) and sum(1 for c in letters if re.match(f"[{_RTL}]", c)) > len(letters) / 2
 
 
+# The report's look: sans-serif headings in the Mehteran blue, answer choices as a grid of boxes, framed figures.
+_SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif'
+REPORT_CSS = f"""  .report {{ max-width: 40em; }}
+  .report :is(h1, h2, h3, h4) {{ font-family: {_SANS}; color: #11213e; letter-spacing: -.01em; }}
+  .report h1 {{ font-size: 1.9em; margin: .3em 0 1.1em; padding-bottom: .45em; border-bottom: 3px solid #2151af; }}
+  .report h2 {{ font-size: 1.22em; margin: 2em 0 .8em; padding-top: 1em; border-top: 1px solid #e3e7ef; }}
+  .report h1 + h2 {{ border-top: 0; padding-top: 0; margin-top: 0; }}
+  .report h3 {{ font-size: 1.04em; color: #2151af; margin: 1.6em 0 .5em; }}
+  .report blockquote {{ background: #f5f7fb; border-inline-start-color: #2151af; padding: .5em 1em; border-radius: 0 8px 8px 0; }}
+  .choices {{ list-style: none; padding: 0; margin: .5em 0 1.2em; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+             gap: .45em .9em; break-inside: avoid; page-break-inside: avoid; }}
+  .choices.wide {{ grid-template-columns: 1fr; }}
+  .choices li {{ display: flex; gap: .65em; align-items: baseline; margin: 0; padding: .45em .75em; border: 1px solid #dfe4ee;
+                border-radius: 8px; background: #fafbfd; }}
+  .choices .letter {{ flex: none; display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%;
+                     background: #e6edfb; color: #2151af; font: 600 .78em/1 {_SANS}; }}
+  .fig-box {{ margin: .8em 0 1.2em; padding: .9em; border: 1px solid #e3e7ef; border-radius: 10px; background: #fbfcfe;
+             text-align: center; break-inside: avoid; page-break-inside: avoid; }}
+  .fig-box svg {{ max-width: 100%; height: auto; font: 12px {_SANS}; }}
+  .fig-box figcaption {{ font: .85em {_SANS}; color: #5a6475; margin-top: .4em; }}
+  .fig .fig-grid {{ stroke: #e3e7ef; stroke-width: 1; fill: none; }}
+  .fig .fig-axis {{ stroke: #161f30; stroke-width: 1.3; fill: none; }}
+  .fig .fig-arrow {{ fill: #161f30; }}
+  .fig .fig-tick {{ fill: #5a6475; font-size: 11px; }}
+  .fig .fig-label {{ fill: #161f30; font-style: italic; font-size: 13px; }}
+  .fig .fig-line {{ fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }}
+  .fig .fig-dash {{ stroke-dasharray: 6 5; }}
+  .fig .fig-text {{ fill: #161f30; font-size: 13px; font-weight: 600; paint-order: stroke; stroke: #fbfcfe; stroke-width: 3px; }}
+  .fig .fig-bar {{ fill: #2151af; opacity: .85; }}
+  .fig .fig-value {{ fill: #161f30; font-size: 11px; font-weight: 600; }}
+  .fig .fig-fill {{ fill-opacity: .12; }}
+""" + "".join(f"  .fig .fig-c{n} {{ stroke: {c}; }} .fig :is(.fig-t{n}, .fig-d{n}, .fig-f{n}) {{ fill: {c}; }}\n"
+              for n, c in enumerate(("#2151af", "#b6322b", "#1c6d51", "#5b4a9e")))
+
+_CHOICE = re.compile(r"^\(?([A-F])[).]\s+(.+)$")
+
+
+def _choices(text: str) -> list[tuple[str, str]] | None:
+    """The answer choices of a paragraph whose lines are "A) ...", "B) ..." in order (2 to 6 lines), or None."""
+    lines = text.split("\n")
+    found = [_CHOICE.match(line.strip()) for line in lines]
+    if not 2 <= len(lines) <= 6 or not all(found):
+        return None
+    if [m[1] for m in found] != list("ABCDEF"[:len(lines)]):
+        return None
+    return [(m[1], m[2]) for m in found]
+
+
 BOOK_FONTS = '"Charis SIL", "Noto Serif", "Gentium Plus", "Times New Roman", Georgia, serif'
 ARABIC_FONTS = '"Noto Naskh Arabic", "Amiri", "Scheherazade New", "Geeza Pro", "Traditional Arabic", "Times New Roman", serif'
 
@@ -237,7 +287,20 @@ def to_html(markdown: str, title: str, lang: str, print_on_load: bool = False, l
         if block["type"] == "heading" and block["level"] == top and not lists:
             notes_html()  # the notes of a chapter stand at its end
         if block["type"] == "code":
-            body.append("<pre><code>" + html.escape(block["text"]) + "</code></pre>")
+            spec = figure.load(block["text"]) if block.get("lang") == "figure" else None
+            if spec is not None:
+                caption = figure.caption(spec)
+                body.append('<figure class="fig-box">' + figure.serialize(figure.tree(spec))
+                            + (f"<figcaption>{html.escape(caption)}</figcaption>" if caption else "") + "</figure>")
+            else:
+                body.append("<pre><code>" + html.escape(block["text"]) + "</code></pre>")
+            continue
+        choices = _choices(block["text"]) if lists and block["type"] == "para" else None
+        if choices:
+            wide = max(len(c) for _, c in choices) > 28
+            items = "".join(f'<li><span class="letter">{html.escape(letter)}</span><span>{render(c, block["notes"])}</span></li>'
+                            for letter, c in choices)
+            body.append(f'<ol class="choices{" wide" if wide else ""}">{items}</ol>')
             continue
         text = render(block["text"], block["notes"])
         if block["type"] == "heading":
@@ -308,6 +371,7 @@ def to_html(markdown: str, title: str, lang: str, print_on_load: bool = False, l
   .notes .back {{ text-decoration: none; color: #888; }}
   pre {{ overflow-x: auto; }}
   code {{ font-family: Menlo, Consolas, monospace; font-size: 10pt; }}
+{REPORT_CSS if lists else ""}
   @page {{ size: {page}; {page_number} }}
   @media print {{ body {{ max-width: none; margin: 0; padding: 0; }} a {{ color: inherit; }} .notes .back {{ display: none; }} }}
 </style>
