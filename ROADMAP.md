@@ -21,7 +21,7 @@ Mehteran is for people who do not write code. Every improvement here makes it ea
 | --- | --- |
 | No programming | [Review a translation](#review-a-translation) · [The sample document in your language](#the-sample-document-in-your-language) · [New screenshots](#new-screenshots) · [Test with a screen reader and the keyboard](#test-with-a-screen-reader-and-the-keyboard) · [Share a workflow](#share-a-workflow) |
 | A terminal | [Audio through Gemini](#audio-through-gemini) |
-| Python and JavaScript | [Template defaults in the interface language](#template-defaults-in-the-interface-language) · [Updates for zip copies](#updates-for-zip-copies) · [Sign-in without a terminal window](#sign-in-without-a-terminal-window) · [Describe a workflow by voice](#describe-a-workflow-by-voice) |
+| Python and JavaScript | [Template defaults in the interface language](#template-defaults-in-the-interface-language) · [Updates for zip copies](#updates-for-zip-copies) · [Sign-in without a terminal window](#sign-in-without-a-terminal-window) · [Describe a workflow by voice](#describe-a-workflow-by-voice) · [MCP servers in agent steps](#mcp-servers-in-agent-steps) · [Instructions file for a step](#instructions-file-for-a-step) |
 
 ## No programming
 
@@ -87,6 +87,20 @@ Setup opens a terminal window to sign in to an AI tool. When it cannot (`can_ope
 A 🎤 button in the "Describe it, I will build it" box (`#describe-box` in `mehteran/ui/editor.js`). The browser records the voice. Mehteran's own speech-to-text tool (whisper.cpp, `mehteran/speech.py`) writes it down on this computer. The text goes into the box, and the user reads and corrects it. Nothing leaves the computer and no AI usage is spent.
 - **Done when:** the button works when whisper.cpp is installed, and offers to install it when it is not.
 
+### MCP servers in agent steps
+🔴 · [issue #13](https://github.com/tolgabuyuktanir/Mehteran/issues/13) · You need: Python, JavaScript, an MCP server to test with.
+Today a Browser agent step (`ai.agent`) gets one MCP server: Playwright MCP, which Mehteran installs itself. The other AI steps get no tools: Claude Code runs with `--safe-mode`, and Codex with `--ignore-user-config`. So a workflow cannot read, for example, your issue tracker or your notes app.
+- **Do:** let the user register an MCP server once in Setup (a command or a URL, and the values it needs). Let an agent step name that server and list the exact tools it may use. A tool that writes or sends needs an `approval` step before it, as `mode: act` does now. A workflow that uses such a server says so on its card, because it runs only where that server is set up.
+- **Start at:** `mehteran/browser.py` (`mcp_config`, `allowed_tools`), the `ai.agent` node in `mehteran/nodes.py`, `agent_argv` in `mehteran/providers/claude.py`, the guard in `mehteran/worker.py`, `mehteran/schema.py`.
+- **Done when:** a workflow can use one registered server with only its listed tools, a step that writes is refused without an approval before it, tests cover both, and the reference (`docs/mehteran.md`, `docs/mehteran.tr.md`) describes it.
+
+### Instructions file for a step
+🟡 · [issue #14](https://github.com/tolgabuyuktanir/Mehteran/issues/14) · You need: Python, JavaScript, YAML.
+A Claude Code skill is a `SKILL.md` file of instructions, sometimes with scripts. Mehteran turns skills off (`--safe-mode`), so that a workflow gives the same result on every computer and with every AI tool.
+- **Do:** give a model step an optional instructions file (for example a `SKILL.md`). Mehteran reads its text and puts it into the step's prompt. It never runs the file's scripts. Show the file's name on the step in the visual editor.
+- **Start at:** `mehteran/schema.py`, the model steps in `mehteran/nodes.py`, `mehteran/ui/editor.js`.
+- **Done when:** a step with an instructions file sends its text to every AI tool, a missing or very large file gives a clear error before the run, and a test covers it.
+
 ---
 
 # Yol haritası: yapılacaklar
@@ -112,7 +126,7 @@ Mehteran, kod yazmayan insanlar için. Buradaki her iyileştirme, onlardan birin
 | --- | --- |
 | Programlama bilmiyorum | [Bir çeviriyi gözden geçirin](#bir-çeviriyi-gözden-geçirin) · [Örnek belge sizin dilinizde](#örnek-belge-sizin-dilinizde) · [Yeni ekran görüntüleri](#yeni-ekran-görüntüleri) · [Ekran okuyucu ve klavyeyle deneyin](#ekran-okuyucu-ve-klavyeyle-deneyin) · [Bir iş akışı paylaşın](#bir-iş-akışı-paylaşın) |
 | Terminal | [Gemini üzerinden ses](#gemini-üzerinden-ses) |
-| Python ve JavaScript | [Şablon varsayılanları arayüz dilinde](#şablon-varsayılanları-arayüz-dilinde) · [ZIP kopyaları için güncelleme](#zip-kopyaları-için-güncelleme) · [Terminal penceresi olmadan giriş](#terminal-penceresi-olmadan-giriş) · [Sesle iş akışı anlatmak](#sesle-iş-akışı-anlatmak) |
+| Python ve JavaScript | [Şablon varsayılanları arayüz dilinde](#şablon-varsayılanları-arayüz-dilinde) · [ZIP kopyaları için güncelleme](#zip-kopyaları-için-güncelleme) · [Terminal penceresi olmadan giriş](#terminal-penceresi-olmadan-giriş) · [Sesle iş akışı anlatmak](#sesle-iş-akışı-anlatmak) · [Ajan adımlarında MCP sunucuları](#ajan-adımlarında-mcp-sunucuları) · [Bir adım için talimat dosyası](#bir-adım-için-talimat-dosyası) |
 
 ## Programlama gerekmez
 
@@ -177,3 +191,17 @@ Kurulum, bir yapay zekâ aracına giriş için terminal penceresi açar. Açamad
 🔴 · [issue #10](https://github.com/tolgabuyuktanir/Mehteran/issues/10) · Gereken: Python, JavaScript.
 "Anlat, oluşturayım" kutusunda (`mehteran/ui/editor.js` içindeki `#describe-box`) bir 🎤 düğmesi. Tarayıcı sesi kaydeder. Mehteran'ın kendi konuşmayı yazıya dökme aracı (whisper.cpp, `mehteran/speech.py`) sesi bu bilgisayarda yazıya döker. Metin kutuya gelir; kullanıcı okuyup düzeltir. Hiçbir şey bilgisayardan çıkmaz ve yapay zekâ kullanım hakkınızdan harcamaz.
 - **Bitti sayılır:** düğme whisper.cpp kuruluyken çalıştığında ve kurulu değilken kurmayı önerdiğinde.
+
+### Ajan adımlarında MCP sunucuları
+🔴 · [issue #13](https://github.com/tolgabuyuktanir/Mehteran/issues/13) · Gereken: Python, JavaScript, denemek için bir MCP sunucusu.
+Bugün bir Tarayıcı ajanı adımı (`ai.agent`) tek bir MCP sunucusu alır: Mehteran'ın kendisinin kurduğu Playwright MCP. Diğer yapay zekâ adımları hiçbir araç almaz: Claude Code `--safe-mode` ile, Codex `--ignore-user-config` ile çalışır. Bu yüzden bir iş akışı, örneğin iş takip aracınızı ya da not uygulamanızı okuyamaz.
+- **Yapılacak:** kullanıcının bir MCP sunucusunu Kurulum'da bir kez kaydetmesini sağlayın (bir komut ya da adres ve gereken değerler). Bir ajan adımı bu sunucunun adını ve kullanabileceği araçları tek tek yazsın. Yazan ya da gönderen bir araçtan önce, bugünkü `mode: act` gibi bir `approval` adımı gereksin. Böyle bir sunucu kullanan iş akışı bunu kartında söylesin, çünkü yalnızca o sunucunun kurulu olduğu yerde çalışır.
+- **Nereden başlanır:** `mehteran/browser.py` (`mcp_config`, `allowed_tools`), `mehteran/nodes.py` içindeki `ai.agent` adımı, `mehteran/providers/claude.py` içindeki `agent_argv`, `mehteran/worker.py` içindeki denetim, `mehteran/schema.py`.
+- **Bitti sayılır:** bir iş akışı kayıtlı bir sunucuyu yalnızca listelenen araçlarıyla kullanabildiğinde, yazan bir adım öncesinde onay yoksa reddedildiğinde, testler ikisini de denetlediğinde ve başvuru belgesi (`docs/mehteran.md`, `docs/mehteran.tr.md`) bunu anlattığında.
+
+### Bir adım için talimat dosyası
+🟡 · [issue #14](https://github.com/tolgabuyuktanir/Mehteran/issues/14) · Gereken: Python, JavaScript, YAML.
+Claude Code'da bir beceri (skill), talimatlardan oluşan bir `SKILL.md` dosyasıdır; bazen betikler de içerir. Mehteran becerileri kapatır (`--safe-mode`); böylece bir iş akışı her bilgisayarda ve her yapay zekâ aracıyla aynı sonucu verir.
+- **Yapılacak:** bir model adımına isteğe bağlı bir talimat dosyası verin (örneğin bir `SKILL.md`). Mehteran dosyanın metnini okuyup adımın istemine ekler. Dosyadaki betikleri asla çalıştırmaz. Görsel düzenleyicide dosyanın adını adımın üzerinde gösterin.
+- **Nereden başlanır:** `mehteran/schema.py`, `mehteran/nodes.py` içindeki model adımları, `mehteran/ui/editor.js`.
+- **Bitti sayılır:** talimat dosyası olan bir adım metnini her yapay zekâ aracına gönderdiğinde, eksik ya da çok büyük bir dosya çalıştırmadan önce açık bir hata verdiğinde ve bir test bunu denetlediğinde.
