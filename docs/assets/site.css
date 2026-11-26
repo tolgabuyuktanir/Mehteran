@@ -230,7 +230,9 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 /* --- docs page ---------------------------------------------------------------------------------------- */
 .docs { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; padding: 40px 0 80px; }
 .toc { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 110px); overflow: auto; font-size: 14.5px; padding-right: 6px; }
-.toc p { font: 600 12px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.toc summary { font: 600 12px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
+  list-style: none; }
+.toc summary::-webkit-details-marker { display: none; }
 .toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .toc a { display: block; padding: 5px 10px; border-radius: 7px; color: var(--ink); text-decoration: none; border-left: 2px solid transparent; }
 .toc a:hover { background: var(--surface-2); }
@@ -241,6 +243,12 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
   .docs { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .toc { position: static; max-height: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
   .toc ol { grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
+  /* the contents fold here, so that the text starts on the first screen */
+  .toc summary { display: flex; align-items: center; justify-content: space-between; margin: 0; padding: 4px 0; cursor: pointer; }
+  .toc summary::after { content: ""; width: 8px; height: 8px; border: solid var(--muted); border-width: 0 2px 2px 0;
+    transform: rotate(45deg); margin: -4px 4px 0 0; transition: transform .15s; }
+  .toc details[open] summary { margin-bottom: 12px; }
+  .toc details[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
 }
 
 .prose { max-width: 780px; }
@@ -251,12 +259,15 @@ section.band.alt { background: var(--paper); border-block: 1px solid var(--line)
 .prose section { padding-top: 36px; }
 .prose h2 { font-size: 30px; margin-bottom: 14px; }
 .prose h3 { font-size: 21px; margin: 26px 0 8px; }
-.prose p, .prose ul, .prose ol, .prose table, .prose pre, .prose .note { margin: 0 0 14px; }
+.prose p, .prose ul, .prose ol, .prose pre, .prose .note { margin: 0 0 14px; }
+.prose :is(p, li) code { overflow-wrap: anywhere; }  /* a long address or command breaks instead of widening the page */
+.prose td code { white-space: nowrap; }  /* in a table the frame scrolls instead */
 .prose ul, .prose ol { padding-left: 22px; }
 .prose li { margin: 5px 0; }
 .prose li::marker { color: var(--gold); }
-.prose table { width: 100%; border-collapse: collapse; font-size: 14.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
-  overflow: hidden; display: block; overflow-x: auto; }
+/* A wide table scrolls inside its frame; the table itself fills the frame. */
+.prose .table-wrap { margin: 0 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.prose table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
 .prose th, .prose td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
 .prose thead th { border-top: 0; background: var(--surface-2); font-weight: 600; white-space: nowrap; }
 .prose pre { background: var(--tide); color: var(--tide-ink); padding: 16px 18px; border-radius: 10px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }

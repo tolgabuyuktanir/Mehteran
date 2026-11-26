@@ -103,7 +103,15 @@
       if (none) none.hidden = shown > 0;
     };
 
-    search.addEventListener("input", filter);
+    // The contents are open beside the text and folded above it (a narrow screen); a chosen section folds them again.
+    var list = document.querySelector(".toc-list");
+    var narrow = window.matchMedia("(max-width: 900px)");
+    var fit = function () { list.open = !narrow.matches; };
+    if (narrow.addEventListener) narrow.addEventListener("change", fit);
+    fit();
+    toc.addEventListener("click", function (ev) { if (narrow.matches && ev.target.closest("a")) list.open = false; });
+
+    search.addEventListener("input", function () { if (search.value.trim()) list.open = true; filter(); });
     search.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { search.value = ""; filter(); } });
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "/" && document.activeElement !== search && !/input|textarea/i.test(document.activeElement.tagName)) {

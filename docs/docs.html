@@ -21,6 +21,7 @@
     <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="34" height="34"><b>Mehteran</b></a>
     <nav class="nav" aria-label="Main">
       <a href="./#features"><span data-l="en">Features</span><span data-l="tr">Özellikler</span></a>
+      <a href="./#how"><span data-l="en">How it works</span><span data-l="tr">Nasıl çalışır</span></a>
       <a href="./#templates"><span data-l="en">Templates</span><span data-l="tr">Şablonlar</span></a>
       <a href="docs.html" aria-current="page"><span data-l="en">Docs</span><span data-l="tr">Belgeler</span></a>
       <a href="https://github.com/tolgabuyuktanir/Mehteran">GitHub</a>
@@ -36,8 +37,10 @@
 <div class="wrap docs">
   <aside class="toc">
     <input class="search" type="search" placeholder="Search the docs  ( / )" data-ph-en="Search the docs  ( / )" data-ph-tr="Belgelerde ara  ( / )" aria-label="Search / Ara">
-    <p><span data-l="en">On this page</span><span data-l="tr">Bu sayfada</span></p>
-    <ol></ol>
+    <details class="toc-list" open>
+      <summary><span data-l="en">On this page</span><span data-l="tr">Bu sayfada</span></summary>
+      <ol></ol>
+    </details>
   </aside>
 
 <!-- ================================================================================================= ENGLISH -->
@@ -112,7 +115,7 @@
     <h2>Install: details and other ways</h2>
     <h3>How Mehteran runs</h3>
     <p>Mehteran runs on macOS, Windows and Linux. It uses Python 3.11 or later; when the computer has none, it installs a private Python (uv) for itself on the first start. The interface opens in your browser at <code>http://127.0.0.1:8766/</code>; if the browser does not open by itself, open that address. It runs while its terminal window stays open. To stop it, close that window or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in it. If macOS still does not start the file, see <a href="#troubleshooting">Troubleshooting</a>.</p>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
       <tbody>
         <tr><td>Interface (double-click)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
@@ -120,7 +123,7 @@
         <tr><td>Command line</td><td><code>./mehter &lt;command&gt;</code></td><td><code>mehter &lt;command&gt;</code></td></tr>
         <tr><td>With npm (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;command&gt;]</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <h3 id="install-other">Other ways to install</h3>
     <ul>
       <li><b>From the GitHub page:</b> click <b>Code</b>, then <b>Download ZIP</b>. This is the same zip file as in the quick start.</li>
@@ -146,7 +149,7 @@
       <li><b>Local tools</b>: the optional tools of this computer (see <a href="#local">Local models and tools</a>). The PDF reader comes first and is marked <b>Required</b>.</li>
       <li><b>Video services</b>: the API keys of the <a href="#video">Social video series</a> template.</li>
     </ul>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Tool</th><th>Billing shown</th><th>Text goes to</th></tr></thead>
       <tbody>
         <tr><td>Claude Code</td><td>Subscription (Claude Pro / Max)</td><td>Anthropic</td></tr>
@@ -156,7 +159,7 @@
         <tr><td>Ollama</td><td>Local</td><td>This computer</td></tr>
         <tr><td>Local server (LM Studio, llama.cpp, vLLM)</td><td>Local</td><td>This computer</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <h3>No surprise bills</h3>
     <p>Mehteran removes the API key variables (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> and the others) from every model call, so a tool cannot bill an API account by accident. To use an API key on purpose, turn on <b>Allow an API key (billed)</b> for that tool under Setup → <b>AI tools of the workflows</b> → <b>Settings per tool</b>. A key that a tool stores itself (for example a Codex API-key login) is shown on its card as "API key (billed)".</p>
     <h3>Automatic model choice</h3>
@@ -250,7 +253,7 @@
 
   <section id="steps">
     <h2>Step types</h2>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Type</th><th>What it does</th><th>Main settings</th></tr></thead>
       <tbody>
         <tr><td><code>document.extract</code></td><td>Reads a file or a web page into text. Scans go through OCR, audio and video through speech to text.</td><td><code>file</code>, <code>ocr</code>, <code>max_chars</code></td></tr>
@@ -261,7 +264,7 @@
         <tr><td><code>approval</code></td><td>Stops the branch until a person approves or rejects. No program needs to stay open meanwhile.</td><td><code>instructions</code></td></tr>
         <tr><td><code>document.export</code></td><td>Saves the text as files. Markdown tables become real tables.</td><td><code>formats</code>: <code>md</code>, <code>docx</code>, <code>html</code>, <code>pdf</code>, <code>epub</code>, <code>eml</code>, <code>json</code>, <code>csv</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p>Input files can be <code>pdf</code>, <code>docx</code>, <code>epub</code>, <code>md</code>, <code>txt</code>, <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>odt</code>, <code>rtf</code>, images (<code>png</code>, <code>jpg</code>, <code>tif</code>) and audio or video (<code>mp3</code>, <code>wav</code>, <code>m4a</code>, <code>mp4</code>, <code>mov</code> and more). An <code>eml</code> export is an e-mail draft that your mail program opens; Mehteran never sends mail.</p>
   </section>
 
@@ -318,7 +321,7 @@ outputs:
     <h2>Local models and tools</h2>
     <p>These are optional. Mehteran installs each one only when you ask, under Setup → <b>Local tools</b> or on the command line. Each is a pinned version, checked against a SHA-256 sum. A copy that is already on the computer is found and used.</p>
     <p>Under <b>Local tools</b>, the small tools stand side by side: the PDF reader first (<b>Required</b>), then Tesseract OCR, Typst, Pandoc, speech to text, qpdf and the browser for agent steps. The OCR card lists its installed languages in one line; <b>Add languages</b> opens the list of the others. The Ollama card spans the whole width. It has two folded parts: <b>Installed models (N)</b>, and <b>Recommended models</b> with the size, memory and languages of each. Models that are too big for this computer, or not for chatting, are folded under <b>Other models (N)…</b>.</p>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Tool</th><th>What it adds</th></tr></thead>
       <tbody>
         <tr><td>Ollama</td><td>Models that run on this computer. Install it, then download recommended models with their size and memory needs. A step uses <code>ollama/&lt;model&gt;</code>.</td></tr>
@@ -329,7 +332,7 @@ outputs:
         <tr><td>Speech to text</td><td>whisper.cpp with ffmpeg: turns audio and video files into text, on this computer.</td></tr>
         <tr><td>qpdf</td><td>Repairs damaged PDFs before they are read.</td></tr>
       </tbody>
-    </table>
+    </table></div>
 <pre><code>./mehter install-local ollama
 ./mehter install-local ocr tur eng
 ./mehter install-local typst
@@ -396,14 +399,14 @@ outputs:
 
   <section id="data">
     <h2>Where your data is</h2>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>System</th><th>Folder</th></tr></thead>
       <tbody>
         <tr><td>macOS</td><td><code>~/Library/Application Support/Mehteran</code></td></tr>
         <tr><td>Windows</td><td><code>%LOCALAPPDATA%\Mehteran</code></td></tr>
         <tr><td>Linux</td><td><code>$XDG_DATA_HOME/mehteran</code>, else <code>~/.local/share/mehteran</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <ul>
       <li><code>templates/</code>: your own workflows, one YAML file each.</li>
       <li><code>executions/&lt;run&gt;/</code>: one folder per run: the frozen workflow, the uploaded files, each step's outputs and prompts, and edited results.</li>
@@ -528,7 +531,7 @@ outputs:
     <h2>Kurulum: ayrıntılar ve diğer yollar</h2>
     <h3>Mehteran nasıl çalışır</h3>
     <p>Mehteran macOS, Windows ve Linux'ta çalışır. Python 3.11 ya da üstünü kullanır; bilgisayarda yoksa ilk açılışta kendine özel bir Python (uv) kurar. Arayüz tarayıcınızda <code>http://127.0.0.1:8766/</code> adresinde açılır; tarayıcı kendiliğinden açılmazsa bu adresi açın. Terminal penceresi açık kaldıkça çalışır. Durdurmak için o pencereyi kapatın ya da içinde <kbd>Ctrl</kbd>+<kbd>C</kbd> tuşlarına basın. macOS dosyayı yine de başlatmazsa <a href="#tr-sorunlar">Sorun giderme</a> bölümüne bakın.</p>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th></th><th>macOS / Linux</th><th>Windows</th></tr></thead>
       <tbody>
         <tr><td>Arayüz (çift tıklama)</td><td><code>Open Mehteran.command</code></td><td><code>Open Mehteran.bat</code></td></tr>
@@ -536,7 +539,7 @@ outputs:
         <tr><td>Komut satırı</td><td><code>./mehter &lt;komut&gt;</code></td><td><code>mehter &lt;komut&gt;</code></td></tr>
         <tr><td>npm ile (Node.js 18+)</td><td colspan="2"><code>npx mehteran [&lt;komut&gt;]</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <h3 id="tr-diger-kurulum">Diğer kurulum yolları</h3>
     <ul>
       <li><b>GitHub sayfasından:</b> <b>Code</b>, sonra <b>Download ZIP</b> düğmesine tıklayın. Bu, hızlı başlangıçtaki zip dosyasının aynısıdır.</li>
@@ -562,7 +565,7 @@ outputs:
       <li><b>Yerel araçlar</b>: bu bilgisayarın isteğe bağlı araçları (bkz. <a href="#tr-yerel">Yerel modeller ve araçlar</a>). PDF okuyucu ilk sıradadır ve <b>Gerekli</b> olarak işaretlidir.</li>
       <li><b>Video servisleri</b>: <a href="#tr-video">Sosyal medya video serisi</a> şablonunun API anahtarları.</li>
     </ul>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Araç</th><th>Gösterilen ücretlendirme</th><th>Metin nereye gider</th></tr></thead>
       <tbody>
         <tr><td>Claude Code</td><td>Abonelik (Claude Pro / Max)</td><td>Anthropic</td></tr>
@@ -572,7 +575,7 @@ outputs:
         <tr><td>Ollama</td><td>Yerel</td><td>Bu bilgisayar</td></tr>
         <tr><td>Yerel sunucu (LM Studio, llama.cpp, vLLM)</td><td>Yerel</td><td>Bu bilgisayar</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <h3>Sürpriz fatura yok</h3>
     <p>Mehteran her model çağrısından API anahtarı değişkenlerini (<code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code> ve diğerleri) çıkarır. Böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Bilerek API anahtarı kullanmak için Kurulum → <b>İş akışlarının yapay zekâ araçları</b> → <b>Araç başına ayarlar</b> altında o aracın <b>API anahtarına izin ver (ücretli)</b> seçeneğini açın. Aracın kendi sakladığı bir anahtar (örneğin Codex'te API anahtarıyla oturum) kartında "API anahtarı (ücretli)" olarak görünür.</p>
     <h3>Otomatik model seçimi</h3>
@@ -666,7 +669,7 @@ outputs:
 
   <section id="tr-adimlar">
     <h2>Adım türleri</h2>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Tür</th><th>Ne yapar</th><th>Başlıca ayarlar</th></tr></thead>
       <tbody>
         <tr><td><code>document.extract</code></td><td>Bir dosyayı ya da web sayfasını metne çevirir. Taranmış belgeler OCR'dan, ses ve video konuşmayı yazıya çevirmeden geçer.</td><td><code>file</code>, <code>ocr</code>, <code>max_chars</code></td></tr>
@@ -677,7 +680,7 @@ outputs:
         <tr><td><code>approval</code></td><td>Bir kişi onaylayana ya da reddedene kadar dalı bekletir. Bu sırada hiçbir programın açık kalması gerekmez.</td><td><code>instructions</code></td></tr>
         <tr><td><code>document.export</code></td><td>Metni dosya olarak kaydeder. Markdown tablolar gerçek tablolara dönüşür.</td><td><code>formats</code>: <code>md</code>, <code>docx</code>, <code>html</code>, <code>pdf</code>, <code>epub</code>, <code>eml</code>, <code>json</code>, <code>csv</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p>Girdi dosyaları <code>pdf</code>, <code>docx</code>, <code>epub</code>, <code>md</code>, <code>txt</code>, <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>odt</code>, <code>rtf</code>, görseller (<code>png</code>, <code>jpg</code>, <code>tif</code>) ve ses ya da video (<code>mp3</code>, <code>wav</code>, <code>m4a</code>, <code>mp4</code>, <code>mov</code> ve diğerleri) olabilir. <code>eml</code> çıktısı, e-posta programınızın açtığı bir e-posta taslağıdır; Mehteran hiçbir zaman e-posta göndermez.</p>
   </section>
 
@@ -734,7 +737,7 @@ outputs:
     <h2>Yerel modeller ve araçlar</h2>
     <p>Bunlar isteğe bağlıdır. Mehteran her birini yalnızca siz isteyince kurar: Kurulum → <b>Yerel araçlar</b> altında ya da komut satırında. Her biri sabitlenmiş bir sürümdür ve SHA-256 özetiyle doğrulanır. Bilgisayarda zaten kurulu olan bir kopya bulunur ve kullanılır.</p>
     <p><b>Yerel araçlar</b> altında küçük araçlar yan yana durur: önce PDF okuyucu (<b>Gerekli</b>), sonra Tesseract OCR, Typst, Pandoc, konuşmayı yazıya çevirme, qpdf ve ajan adımları için tarayıcı. OCR kartı kurulu dillerini tek satırda gösterir; <b>Dil ekle</b> ötekilerin listesini açar. Ollama kartı bütün genişliği kaplar. İki katlanmış bölümü vardır: <b>Kurulu modeller (N)</b> ve her modelin boyutunu, belleğini ve dillerini gösteren <b>Önerilen modeller</b>. Bu bilgisayar için büyük ya da sohbet için olmayan modeller <b>Diğer modeller (N)…</b> altına katlanmıştır.</p>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Araç</th><th>Ne kazandırır</th></tr></thead>
       <tbody>
         <tr><td>Ollama</td><td>Bu bilgisayarda çalışan modeller. Kurun, sonra önerilen modelleri boyutları ve bellek ihtiyaçlarıyla indirin. Adımda <code>ollama/&lt;model&gt;</code> yazılır.</td></tr>
@@ -745,7 +748,7 @@ outputs:
         <tr><td>Konuşmayı yazıya çevirme</td><td>whisper.cpp ve ffmpeg: ses ve video dosyalarını bu bilgisayarda metne çevirir.</td></tr>
         <tr><td>qpdf</td><td>Bozuk PDF'leri okunmadan önce onarır.</td></tr>
       </tbody>
-    </table>
+    </table></div>
 <pre><code>./mehter install-local ollama
 ./mehter install-local ocr tur eng
 ./mehter install-local typst
@@ -812,14 +815,14 @@ outputs:
 
   <section id="tr-veri">
     <h2>Verileriniz nerede</h2>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Sistem</th><th>Klasör</th></tr></thead>
       <tbody>
         <tr><td>macOS</td><td><code>~/Library/Application Support/Mehteran</code></td></tr>
         <tr><td>Windows</td><td><code>%LOCALAPPDATA%\Mehteran</code></td></tr>
         <tr><td>Linux</td><td><code>$XDG_DATA_HOME/mehteran</code>, yoksa <code>~/.local/share/mehteran</code></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <ul>
       <li><code>templates/</code>: kendi iş akışlarınız, her biri bir YAML dosyası.</li>
       <li><code>executions/&lt;run&gt;/</code>: her çalıştırma için bir klasör: dondurulmuş iş akışı, yüklenen dosyalar, her adımın çıktıları ve istemleri, düzenlenmiş sonuçlar.</li>
