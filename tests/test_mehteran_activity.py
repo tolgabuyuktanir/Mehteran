@@ -210,6 +210,25 @@ class UsageTests(HomeCase):
             self.assertEqual(call.call_count, 1)
 
 
+class QuotaLogTests(HomeCase):
+    def test_the_reason_is_in_the_log_when_a_step_shows_it_waits(self):
+        # A page (or a test) that sees "waiting_quota" reads the log at once; the reason must already be there.
+        # The write of the log line is slowed down so that the old order (status first) fails every time.
+        engine = self.engine(quota_delay=1)
+        append = livelog.append
+
+        def slow(path, text, *args, **kwargs):
+            if "Usage limit" in str(text):
+                time.sleep(1)
+            return append(path, text, *args, **kwargs)
+
+        with mock.patch.object(livelog, "append", slow):
+            run_id = engine.start(workflow(ai("ask", f"TASK:ask QUOTA=1:{(self.tmp / 'q').as_posix()}"), []))
+            self.wait_for(lambda: engine.get(run_id)["nodes"]["ask"]["status"] == "waiting_quota")
+            self.assertIn("Usage limit", engine.node_log(run_id, "ask")["text"])
+            self.assertEqual(engine.wait(run_id, 30), "succeeded")
+
+
 class ApiTests(HomeCase):
     def test_usage_activity_log_and_switch_routes(self):
         engine = self.engine(quota_delay=120)

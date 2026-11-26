@@ -938,9 +938,10 @@ class Engine:
                 if time.time() + delay - quota_since <= general.get("quota_max_hours", 24) * 3600:
                     until = time.strftime("%H:%M", time.localtime(time.time() + delay))
                     message = t("quota_waiting", time=until)
-                    self.store.update_node(run_id, node_id, status="waiting_quota", error=message, quota_until=time.time() + delay)
-                    self.store.event(run_id, node_id, "quota_wait", t("quota_wait_event", time=until, error=limit))
+                    # The reason first, then the status: whoever sees "waiting_quota" finds why in the log.
                     livelog.append(log, str(t("quota_wait_event", time=until, error=limit)), stamp=True)
+                    self.store.event(run_id, node_id, "quota_wait", t("quota_wait_event", time=until, error=limit))
+                    self.store.update_node(run_id, node_id, status="waiting_quota", error=message, quota_until=time.time() + delay)
                     # Wait, but end the wait when the model of this node is switched (switch(), any process).
                     end = time.time() + delay
                     while time.time() < end and not cancel.wait(min(0.5, max(0.0, end - time.time()))):
