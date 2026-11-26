@@ -44,6 +44,16 @@ The tests use a fake AI tool and make no network calls. A bug fix needs a test t
 - Match the style of the code around your change. Keep the change small: no features that nobody asked for.
 - The reference ([docs/mehteran.md](docs/mehteran.md) and [docs/mehteran.tr.md](docs/mehteran.tr.md)) describes every screen, setting and API route. When you change one of them, update both files.
 
+## AI tools
+
+You may write a pull request with an AI tool, also with an agent that works on its own. The rules are the same as for any other pull request, and you, the person who opens it, are responsible for it.
+
+- Say in the pull request which tool you used and for what (for example "the code was written with Claude Code; I read and tested it").
+- Report only checks that you ran, with their real output. Do not tick a check that you did not run, and do not describe a test result that you did not see.
+- Take one roadmap item at a time. Comment in the issue only when you start the work, and finish it or say that you stop.
+- Answer review comments yourself. An answer that only repeats the tool's output is not enough.
+- Pull requests that do not follow these rules are closed without a review.
+
 ## Interface texts and translations
 
 The interface has 18 languages. The texts are in `mehteran/locales/<language>.json`.

@@ -44,6 +44,16 @@ Testler sahte bir yapay zekâ aracı kullanır ve ağa bağlanmaz. Bir hata düz
 - Değişikliğinizin çevresindeki kodun üslubuna uyun. Değişikliği küçük tutun: kimsenin istemediği özellik eklemeyin.
 - Başvuru belgesi ([docs/mehteran.md](docs/mehteran.md) ve [docs/mehteran.tr.md](docs/mehteran.tr.md)) her ekranı, ayarı ve API yolunu anlatır. Bunlardan birini değiştirdiğinizde iki dosyayı da güncelleyin.
 
+## Yapay zekâ araçları
+
+Bir pull request'i yapay zekâ aracıyla, kendi başına çalışan bir ajanla da yazabilirsiniz. Kurallar diğer pull request'lerle aynıdır; sorumluluk onu açan kişide, yani sizdedir.
+
+- Pull request'te hangi aracı ne için kullandığınızı yazın (örneğin "kodu Claude Code yazdı; ben okudum ve denedim").
+- Yalnızca çalıştırdığınız kontrolleri, gerçek çıktılarıyla bildirin. Çalıştırmadığınız bir kontrolü işaretlemeyin; görmediğiniz bir test sonucunu anlatmayın.
+- Yol haritasından aynı anda tek bir madde üstlenin. Issue'ya ancak işe başladığınızda yorum yazın; işi bitirin ya da bıraktığınızı söyleyin.
+- İnceleme yorumlarını kendiniz yanıtlayın. Yalnızca aracın çıktısını tekrarlayan bir yanıt yeterli değildir.
+- Bu kurallara uymayan pull request'ler incelenmeden kapatılır.
+
 ## Arayüz metinleri ve çeviriler
 
 Arayüz 18 dildedir. Metinler `mehteran/locales/<dil>.json` dosyalarındadır.
