@@ -436,11 +436,13 @@ function renderLibrary() {
 }
 
 
-// The same buttons on every card of the library: the star, "Edit" (the workflow's steps and instructions) and "Open"
-// (the workflow's page; a run starts there). Running is never a card button, so every card reads the same way.
+// The same buttons on every card of the library: the star, "Visual editor" (the workflow opens in the visual editor;
+// a built-in as your own unsaved copy) and "Open" (the workflow's page; a run starts there). Running is never a card
+// button, so every card reads the same way.
 function cardActions(star, edit, open, name) {
+  const label = S("open_visual_editor") + ": " + name;
   return h("span", {class: "row"}, star,
-    h("button", {type: "button", class: "btn small", onclick: edit, "aria-label": S("edit") + ": " + name}, S("edit")),
+    h("button", {type: "button", class: "btn small", onclick: edit, "aria-label": label, title: label}, S("visual_editor")),
     h("button", {type: "button", class: "btn small primary", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
 }
 
