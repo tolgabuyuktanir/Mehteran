@@ -1,37 +1,94 @@
-<p align="center"><img src="docs/assets/icon.svg" width="96" alt="Mehteran"></p>
+<div align="center">
 
-<h1 align="center">Mehteran</h1>
+<img src="docs/assets/icon.svg" width="80" alt="Mehteran">
 
-<p align="center"><b>Kendi bilgisayarınızda, zaten sahip olduğunuz yapay zekâ abonelikleriyle iş akışları.</b><br>Ücretsiz ve açık kaynak · ek fatura yok · dosyalarınız sizde kalır</p>
+# Mehteran
 
-<p align="center">
-  <a href="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml"><img src="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml/badge.svg" alt="Kontroller"></a>
-  <a href="https://www.npmjs.com/package/mehteran"><img src="https://img.shields.io/npm/v/mehteran?color=2151af&label=npm" alt="npm sürümü"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/tolgabuyuktanir/Mehteran?color=017272" alt="MIT lisansı"></a>
-  <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-11213e" alt="macOS, Windows, Linux">
-  <img src="https://img.shields.io/badge/diller-18-2151af" alt="18 arayüz dili">
-  <a href="https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22good+first+issue%22"><img src="https://img.shields.io/github/issues/tolgabuyuktanir/Mehteran/good%20first%20issue?label=ilk%20katk%C4%B1%20i%C3%A7in&color=57b6b6" alt="İlk katkı için maddeler"></a>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/banner-tr-dark.png">
+  <img src="docs/assets/readme/banner-tr.png" width="880" alt="Yapay zekâ iş akışlarınız, kendi bilgisayarınızda. Oku: PDF, Word, web, tarama. Sor: Claude, Codex, Gemini, yerel. Denetle: ikinci bir model. Onayla: karar sizde. Kaydet: Word, PDF, HTML ve fazlası. Ücretsiz ve açık kaynak, ek fatura yok, dosyalarınız sizde kalır, adımlar sırayla ya da paralel çalışır.">
+</picture>
 
-<p align="center">
-  <a href="#hızlı-başlangıç"><b>Hızlı başlangıç</b></a> ·
-  <a href="#nasıl-görünüyor">Ekran görüntüleri</a> ·
-  <a href="#neden-mehteran">Özellikler</a> ·
-  <a href="#yapay-zekâ-araçları">Yapay zekâ araçları</a> ·
-  <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr">Belgeler</a> ·
-  <a href="#katkı">Katkı</a> ·
-  <a href="README.md">English</a>
-</p>
+✍️ **Yeni: [Değişikliği anlatın](#tek-uygulama-üç-yol).** Bir iş akışında neyin değişmesini istediğinizi tek cümleyle yazın; hiçbir şey kaydedilmeden önce yeni adımları görün.
 
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr"><img src="docs/assets/video/intro-tr.jpg" width="720" alt="Mehteran tanıtım videosu"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=tr">▶ 39 saniyede Mehteran'ı izleyin</a></p>
+<a href="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml"><img src="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml/badge.svg" alt="Kontroller"></a>
+<a href="https://www.npmjs.com/package/mehteran"><img src="https://img.shields.io/npm/v/mehteran?color=2151af&label=npm" alt="npm sürümü"></a>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/tolgabuyuktanir/Mehteran?color=017272" alt="MIT lisansı"></a>
+<img src="https://img.shields.io/badge/çalışır-bilgisayarınızda-915c08" alt="Bilgisayarınızda çalışır">
+<img src="https://img.shields.io/badge/dil-18-2151af" alt="18 arayüz dili">
+<a href="https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22good+first+issue%22"><img src="https://img.shields.io/github/issues/tolgabuyuktanir/Mehteran/good%20first%20issue?label=ilk%20katk%C4%B1%20i%C3%A7in&color=57b6b6" alt="İlk katkı için uygun işler"></a>
 
-Mehteran, yapay zekâyla tekrarlanan işleri kendi bilgisayarınızda yapar. Örneğin bir belgeyi okur, yapay zekâdan bir özet ister, onayınızı bekler ve sonucu Word dosyası olarak kaydeder. Zaten sahip olduğunuz yapay zekâ hesabını (Claude, ChatGPT ya da Google) ya da bu bilgisayarda çalışan ücretsiz bir modeli kullanır. Mehteran'ın kendisi ücretsizdir.
+[English](README.md) · **Türkçe**
+
+**Verin:** PDF · Word · EPUB · Excel · web sayfaları · haber akışları · taranmış belgeler (OCR) · ses kayıtları (yazıya dökme)<br>
+**Alın:** Word · PDF · HTML · Markdown · EPUB · e-posta taslağı · JSON · CSV<br>
+**Birlikte çalıştığı araçlar:** [Claude Code · Codex · Antigravity CLI · Ollama · LM Studio](#yapay-zekânızı-bağlayın)
+
+**[Hızlı başlangıç ↓](#hızlı-başlangıç)** · [50 saniyelik videoyu izleyin ▶](https://tolgabuyuktanir.github.io/Mehteran/assets/video/literature-tr.mp4) · [Belgeler](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr) · [Yenilikler ↓](#yenilikler)
+
+<br>
+
+<img src="docs/assets/readme/hero-tr.gif" width="880" alt="Mehteran'da bir literatür sentezi: üç makale ve bir araştırma sorusu; Claude yazar, Codex ikinci görüşü verir; makaleler paralel okunur; Codex her atfı denetler; rapor uyuşmaları, çelişkileri ve düzeltilen ya da sınırlanan 16 iddiayı listeler; Word, HTML ve Markdown olarak kaydedilir">
+
+</div>
+
+## Bir iş akışı nasıl çalışır
+
+Bir iş akışı birkaç adımdan oluşur. Her adımı okuyabilirsiniz; her yapay zekâ talimatı, değiştirebileceğiniz düz bir metindir.
+
+| | Adım | Ne yapar | Kim yapar |
+|:-:|---|---|---|
+| 📄 | **Oku** | PDF, Word dosyası, web sayfası, taranmış belge ya da ses kaydını metne çevirir | Mehteran, bu bilgisayarda |
+| ✦ | **Sor** | bu metni bir talimatla gönderir ve cevabı alır | seçtiğiniz bir yapay zekâ modeli |
+| 🔁 | **Döngü** | uzun bir belgeyi parçalara böler ve her parçayı paralel olarak sorar | Mehteran ve model |
+| ✓ | **Denetle** | cevabı kaynakla karşılaştırır, yanlış ya da eksik olanı listeler | ikinci bir model (ya da aynısı) |
+| ⑂ | **Dallan** | bir kurala göre ya da bir modele sorarak iki yoldan birini seçer | Mehteran ya da model |
+| ✋ | **Onayla** | siz metni kabul edene kadar bekler | siz |
+| ⬇ | **Kaydet** | Word, PDF, HTML, Markdown, EPUB, e-posta taslağı, JSON ya da CSV yazar | Mehteran, bu bilgisayarda |
+
+Bir adım, ihtiyaç duyduğu adımlar bitince başlar. Birbirine bağlı olmayan adımlar aynı anda çalışır.
+
+## Tek uygulama, üç yol
+
+- **Hazır bir iş akışını çalıştırın.** 10 kategoride 78 şablon: bir sözleşmeyi anlatın, toplantı tutanağı yazın, üç makaleyi sentezleyin, sınav alıştırma seti hazırlayın, teklifleri karşılaştırın, ilan sitelerinde arayın. [Hızlı başlangıç ↓](#hızlı-başlangıç)
+- **Kendinizinkini kurun.** Neye ihtiyacınız olduğunu bir cümleyle yazın ("Anlat, oluşturayım"); kurulu yapay zekâ aracınız iş akışını kurar. Sonra **Değişikliği anlatın**: bir cümle yazın, kaydetmeden önce "Yeni" ve "Değişti" olarak işaretlenmiş yeni adımları görün. Ya da adımları bir tuvale çizin ve tek bir adımı tek başına deneyin.
+- **Sizin yerinize çalışsın.** Bir iş akışını her dosya için ayrı, bir zamanlamayla, arka planda ya da komut satırından çalıştırın: `./mehter run <iş akışı> --input ad=değer`. [Komut satırı ↓](#komut-satırı)
+
+## Neler sunar
+
+- 💳 **Ek fatura yok.** Mehteran zaten ödediğiniz yapay zekâ aboneliğini ya da bu bilgisayardaki ücretsiz bir modeli kullanır. Her model çağrısından API anahtarlarını çıkarır; böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Mehteran'ın kendisi ücretsizdir.
+- 🔒 **Dosyalarınız sizde kalır.** Arayüz yalnızca `127.0.0.1` üzerinde çalışır. Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. "Yalnızca yerel" işaretli bir iş akışı bilgisayardan hiçbir metin göndermez.
+- ✓ **Denetlenmiş cevaplar.** Birçok iş akışı kendi işini ayrı bir adımda, çoğu zaman başka bir şirketin modeliyle denetler; önemli adımlar onayınızı bekler.
+- 📄 **Gerçek belgeler girer, çıkar.** Sonuçlar biçimli açılır; tablolarla ve Mehteran'ın kendi çizdiği grafiklerle. Bir sonucu düzenleyin, iki çalıştırmayı karşılaştırın ve ihtiyacınız olan biçimde indirin.
+- ⏳ **Kullanım sınırları çalıştırmayı bozmaz.** Adım sınırın sıfırlanmasını bekler ya da model sıranızdaki bir sonraki modelle devam eder.
+- 🔎 **Sizin için sitelerde arar.** Ev ya da araba ilanı, tarihlerinize uygun otel; bağlantılarıyla tek bir tabloda karşılaştırılır. Bunu yalnızca okuyan bir tarayıcı yapar; rezervasyon yapmaz, kimseyle iletişime geçmez.
+- 🗂️ **Her çalıştırma saklanır.** Canlı izleyin, durdurup devam ettirin, aynı değerlerle yeniden çalıştırın.
+- 🌍 **Sizin diliniz.** Arayüz 18 dilde; yapay zekâ seçtiğiniz dilde cevap verir.
 
 <table>
 <tr>
-<td width="33%" valign="top"><h3>🔒 Dosyalarınız sizde kalır</h3>Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. Arayüz yalnızca bu bilgisayarda çalışır. "Yalnızca yerel" bir iş akışı hiçbir metni dışarı göndermez.</td>
-<td width="33%" valign="top"><h3>💳 Ek fatura yok</h3>Mehteran zaten ödediğiniz yapay zekâ aboneliğini ya da bu bilgisayardaki ücretsiz bir modeli kullanır. Anahtar saklamaz, ücret almaz.</td>
-<td width="33%" valign="top"><h3>🧩 78 hazır iş akışı</h3>Bir sözleşmeyi anlatın, toplantı tutanağı yazın, sınav sorusu hazırlayın, teklifleri karşılaştırın. Ya da kendi işinizi tek cümleyle anlatın.</td>
+<td width="50%"><img src="docs/assets/readme/tr-setup.jpg" alt="Oturum açıldıktan sonra Kurulum sekmesi"></td>
+<td width="50%"><img src="docs/assets/readme/tr-library.jpg" alt="İş akışı kitaplığı"></td>
+</tr>
+<tr>
+<td align="center"><sub>Yapay zekâ hesabınızı seçin, tek düğmeyle oturum açın…</sub></td>
+<td align="center"><sub>…sonra 78 iş akışından birini seçin ya da kendinizinkini anlatın.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/readme/tr-parallel.jpg" alt="Çalıştırma çizimi: paralel okunan üç makale sentez adımına bağlanır"></td>
+<td width="50%"><img src="docs/assets/readme/tr-check.jpg" alt="Atıf denetimi: düzeltmelerle güvenilir; sentezden ve makaleden alıntılarla"></td>
+</tr>
+<tr>
+<td align="center"><sub>Üç makale paralel okunur, sentezi Claude yazar…</sub></td>
+<td align="center"><sub>…ardından Codex her atfı makalelerle karşılaştırır.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/readme/tr-run.jpg" alt="Süren bir çalıştırma"></td>
+<td width="50%"><img src="docs/assets/readme/tr-result.jpg" alt="Grafikli bir çalıştırma sonucu"></td>
+</tr>
+<tr>
+<td align="center"><sub>Her adım canlı görünür; bir şey kaydedilmeden önce siz onaylarsınız…</sub></td>
+<td align="center"><sub>…ve sonuç biçimli açılır; Word, HTML ya da Markdown olarak hazırdır.</sub></td>
 </tr>
 </table>
 
@@ -69,50 +126,20 @@ Windows ya da Mac bir bilgisayar ve internet bağlantısı yeterlidir. Önceden 
 
 Ayarlar, yerel modeller, zamanlamalar ve komut satırı gibi diğer her şey [belgelerde](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr) anlatılır.
 
-## Nasıl görünüyor
+## Yapay zekânızı bağlayın
 
-<table>
-<tr>
-<td width="50%"><img src="docs/assets/readme/tr-setup.jpg" alt="Girişten sonra Kurulum sekmesi"><br><b>1. Kurulum.</b> Yapay zekâ hesabınızı seçin, tek düğmeyle giriş yapın.</td>
-<td width="50%"><img src="docs/assets/readme/tr-library.jpg" alt="İş akışı kitaplığı"><br><b>2. Seçin.</b> Hazır bir iş akışından başlayın ya da kendinizinkini anlatın.</td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/assets/readme/tr-run.jpg" alt="Devam eden bir çalıştırma"><br><b>3. İzleyin.</b> Her adım canlı görünür. Bir şey kaydedilmeden önce siz onaylarsınız.</td>
-<td width="50%"><img src="docs/assets/readme/tr-result.jpg" alt="Bir çalıştırmanın sonucu"><br><b>4. Sonucu alın.</b> Okuyun, düzenleyin; Word, HTML ya da Markdown olarak indirin.</td>
-</tr>
-</table>
+Mehteran zaten sahip olduğunuz bir yapay zekâ aracını kullanır; oluşturmanız gereken bir Mehteran hesabı yoktur. **Kurulum** sekmesi **Hangi yapay zekâ hesabınız var?** diye sorar, aracı kurar ve oturum açmanızı sağlar.
 
-**Daha fazlasını deneyin:** toplantı notlarınızı **Toplantı tutanağı ve aksiyonlar** iş akışına verin. İş akışı bir özet ve bir aksiyon listesi hazırlar, incelemenizi bekler ve sonucu Word, HTML ya da Markdown dosyası olarak kaydeder. Ya da **Sınav alıştırma seti** ile zor SAT Matematik soruları hazırlayın: grafikler ve şekiller dahil, çözümlü cevap anahtarı ve bağımsız bir kontrolle:
-
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-tr.mp4"><img src="docs/assets/video/sat-tr.jpg" width="560" alt="Video: Mehteran ile grafikli, zor SAT Matematik soruları"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-tr.mp4">▶ İzleyin: 47 saniyede grafikli, zor SAT Matematik soruları</a></p>
-
-[İlk iş akışınızı çalıştırın](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-calistir) · [Kendi iş akışınızı oluşturun](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr#tr-olustur)
-
-## Neden Mehteran
-
-Mehteran, zaten kullandığınız yapay zekâ araçlarını tekrar tekrar kullanılabilen iş akışlarına dönüştürür. Bir iş akışı belgeyi okur, modele sorar, cevabı kontrol eder, bir kişinin onayını alır ve sonucu Word ya da PDF olarak kaydeder. Mehteran yapay zekâyı aboneliklerinizin komut satırı araçlarıyla (Claude Code, Codex, Antigravity CLI) ya da bu bilgisayardaki modellerle (Ollama, LM Studio, llama.cpp) çağırır. Kendi anahtarı ve hesabı yoktur; hiçbir ücret almaz. Kendi planlarınızı, onların koşulları içinde kullanırsınız (bkz. [Abonelikler ve sağlayıcı koşulları](#abonelikler-ve-sağlayıcı-koşulları)). macOS, Windows ve Linux'ta, 18 arayüz dilinde çalışır.
-
-- 💳 **Ek fatura yok.** Mehteran her model çağrısından API anahtarlarını çıkarır; böylece bir araç yanlışlıkla bir API hesabına ücret yazamaz. Ücretli bir API anahtarı yalnızca o araç için izin verirseniz kullanılır.
-- 🔒 **Dosyalarınız sizde kalır.** Arayüz yalnızca `127.0.0.1` üzerinde çalışır. Çalıştırmalar, sonuçlar ve ayarlar diskinizdeki klasörlerdir. "Yalnızca yerel" işaretli bir iş akışı bilgisayardan hiçbir metin göndermez.
-- 🧩 **10 kategoride 78 hazır şablon:** internetten araştırma, belgeler, yazı, iş, hukuk, eğitim, sınavlar, araştırma, veri ve yazılım. Bunların dördü "Deneysel" olarak işaretlidir: sık değişen web sitelerine ya da ücretli servislere bağlıdırlar.
-- ✦ **"Anlat, oluşturayım":** ne istediğinizi bir cümleyle yazın. Kurulu yapay zekâ aracınız iş akışını kurar ve kaydeder; o çalışırken dökümünü izlersiniz. Sonra her adımın talimatını görür ve düzenleyebilirsiniz. Ya da adımları bir tuvale çizin (yapay zekâ adımları, koşullar, döngüler, kişi onayları). "Bu adımı dene" tek bir adımı tek başına çalıştırır.
-- 🔎 **Sizin için sitelerde arar:** ev ya da araba ilanı, tarihlerinize uygun otel; bağlantılarıyla tek bir tabloda karşılaştırılır. Bunu yalnızca okuyan bir tarayıcı pencere açmadan yapar; rezervasyon yapmaz, kimseyle iletişime geçmez.
-- 📄 **Gerçek belgeler girer, çıkar.** PDF, Word, EPUB, Excel, web sayfaları, taranmış belgeler (OCR) ve ses kayıtlarını (konuşmayı yazıya çevirme) okur. Markdown, Word, HTML, PDF, EPUB, e-posta taslağı, JSON ve CSV olarak kaydeder.
-- ⏳ **Kullanım sınırları çalıştırmayı bozmaz.** Adım sınırın sıfırlanmasını bekler ya da model sıranızdaki bir sonraki modelle devam eder.
-- 🗂️ **Her çalıştırma saklanır:** canlı izleyin, durdurup devam ettirin, iki çalıştırmayı karşılaştırın, bir sonucu düzenleyip dışa aktarın.
-
-## Yapay zekâ araçları
-
-| Araç | Nasıl ödenir | Metin nereye gider |
+| Elinizde olan | Kurulum sekmesinde seçin | Metin nereye gider |
 |---|---|---|
-| Claude Code | Abonelik (Claude Pro / Max) | Anthropic |
-| Codex CLI | Abonelik (ücretli bir ChatGPT planı) | OpenAI |
-| Antigravity CLI | Ücretsiz Google hesabı | Google |
-| Ollama | Yerel | Bu bilgisayarda kalır |
-| LM Studio, llama.cpp, vLLM (OpenAI uyumlu yerel sunucu) | Yerel | Bu bilgisayarda kalır |
-| Gemini CLI | API anahtarı (ücretli) | Google |
+| Claude Pro ya da Max aboneliği | **Claude** (Claude Code) | Anthropic |
+| Ücretli bir ChatGPT planı | **ChatGPT** (Codex CLI) | OpenAI |
+| Bir Google hesabı | **Google** (Antigravity CLI, ücretsiz) | Google |
+| Abonelik yok | **Abonelik yok**: bu bilgisayarda ücretsiz bir model (Ollama) | Bu bilgisayarda kalır |
+| LM Studio, llama.cpp ya da vLLM | **Yerel sunucu (OpenAI uyumlu)** | Bu bilgisayarda kalır |
+| Bir Gemini API anahtarı | **Gemini CLI** (anahtar üzerinden ücretli) | Google |
 
-En az birine ihtiyacınız var. Kurulum sekmesi araçları kurar ve oturum açmanızı sağlar. Kurulum sekmesindeki her araç kartı, o aracın kullanım sınırından ne kadar kaldığını gösterir; üst çubuk aynısını her sekmede gösterir. Bir adımın modeli `auto` ise Mehteran, model sıranızda kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer.
+Kurulum sekmesindeki her araç kartı, o aracın kullanım sınırından ne kadar kaldığını gösterir; üst çubuk aynısını her sekmede gösterir. Bir adımın modeli `auto` ise Mehteran, model sıranızda kurulu, oturumu açık ve API anahtarıyla ücretlendirilmeyen ilk aracı seçer. Bir adım diğerlerinden farklı bir model de kullanabilir: örneğin Claude yazar, Codex denetler.
 
 İsteğe bağlı yerel araçlar (Ollama, Tesseract OCR, PDF için Typst, Pandoc, konuşmayı yazıya çevirmek için whisper.cpp, qpdf) yalnızca siz isteyince kurulur; sabitlenmiş sürümlerdir ve SHA-256 özetleriyle doğrulanır.
 
@@ -258,6 +285,25 @@ Kitap çevirisi uygulaması artık Mehteran'ın bir parçası değildir. Onu kul
 
 </details>
 
+## Yenilikler
+
+- **26 Kasım 2026:** her iş akışında değişikliği anlatın, kaydetmeden önce yeni adımları görün; şablon kartından görsel düzenleyiciye tek tık.
+- **25 Kasım 2026:** sonuçlarda Mehteran'ın çizdiği grafikler ve şekiller; grafikli, zor sınav alıştırma setleri; arayüz dilinde metin varsayılanları ([@Daytonrad](https://github.com/Daytonrad)'a teşekkürler, [#12](https://github.com/tolgabuyuktanir/Mehteran/pull/12)).
+- **24 Kasım 2026:** 0.2.0 sürümü: tek soru ve tek oturum düğmesiyle kurulum, Çini renkleri, 18 arayüz dilinin tamamı, `mehter doctor` ve `mehter eval`.
+- **23 Kasım 2026:** her yapay zekâ aracının kalan kullanımı, her sekmede.
+
+<details>
+<summary>Her güncellemenin tamamı ve öncekiler</summary>
+
+- **26 Kasım 2026: değişikliği anlatın.** Bir iş akışının **Talimatlar** sekmesinde neyin değişmesi gerektiğini bir cümleyle yazın. Bir model, iş akışını dosyasından ve cümlenizden yeniden yazar. Önce yeni adımlar görünür: "Yeni" ve "Değişti" olarak işaretlenir, kaldırılan adımların adı yazılır. **Değişikliği kaydet** (kendi iş akışınız) ya da **Kopyam olarak kaydet** (hiç değişmeyen hazır bir şablon) seçilene kadar hiçbir şey kaydedilmez. Bir değişiklik, istemediğiniz şeyleri korur: her adım kendi modelini, talimatlar dillerini, tuval de düzenini tutar. Şablon kartlarında bir **Görsel düzenleyici** düğmesi var. Kullanım sınırını bekleyen bir adım artık nedeni önce log'una yazar.
+- **25 Kasım 2026: sonuçlarda şekiller.** Bir model bir grafiği ya da geometrik şekli veri olarak tarif edebilir; Mehteran onu sayfada ve HTML çıktısında çizer, model çizim kodu yazmaz. Sınav alıştırma seti grafikli, zor sorular yazar; her soruyu cevap anahtarına bakmadan çözer ve ikisinin uyuşmadığı soruları düzeltir. Metin girdilerinin her dil için bir varsayılanı olabilir. [@Daytonrad](https://github.com/Daytonrad)'a teşekkürler.
+- **24 Kasım 2026: 0.2.0 sürümü.** Kurulum sekmesi tek bir soruyla başlar: **Hangi yapay zekâ hesabınız var?** Ardından tek bir oturum düğmesi gelir. İznik çinilerinden esinlenen yeni renkler. 18 arayüz dilinin hepsi tamam (16'sı yapay zekâ araçlarıyla çevrildi; [kendi dilinizi gözden geçirin](ROADMAP.md)). `mehter doctor` kurulu yapay zekâ araçlarını model çağrısı yapmadan denetler; `mehter eval` bir değerlendirme setini çalıştırır. Testler Windows'ta da çalışır.
+- **23 Kasım 2026: kalan kullanım.** Her yapay zekâ aracının kalan kullanımı, sıfırlanmaya kalan süreyle bir çubuk olarak, Kurulum sekmesinde ve her sekmenin üst çubuğunda görünür.
+- **16 Kasım 2026: sonuçlar sayfada.** Bir çalıştırmanın ilk sonucu, sayfasında biçimli görünür; her dosya için bir indirme vardır.
+- **15 Kasım 2026: zamanlamalar, arka plan ve tarayıcı adımları.** Zamanlanmış çalıştırmalar, arka plan hizmeti, sitelerde arama yapan ve yalnızca okuyan tarayıcı adımları ve `npx mehteran`.
+
+</details>
+
 ## Katkı
 
 Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebilirsiniz. **[ROADMAP.md](ROADMAP.md) yapılacakları, seviyeleri ve gereken becerileriyle listeler.** Birçoğu küçük işlerdir:
@@ -270,8 +316,43 @@ Mehteran kod yazmayan insanlar için; onlara siz de kod yazmadan yardım edebili
 
 Başlamak için maddenin issue'suna bir yorum yazın ([açık maddelerin hepsi](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). Kendi fikriniz için "Yardım etmek istiyorum" ile bir issue açın. Sorularınızı her zaman sorabilirsiniz; [Discussions](https://github.com/tolgabuyuktanir/Mehteran/discussions) da açık. Mehteran'ı kaynak koddan çalıştırmayı ve kontrolleri [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) anlatıyor. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi özel olarak bildirin.
 
-## Lisans
+## Katkı verenler
 
-MIT. Ayrıntılar: [LICENSE](LICENSE).
+<a href="https://github.com/tolgabuyuktanir" title="@tolgabuyuktanir"><img src="https://github.com/tolgabuyuktanir.png?size=80" width="40" height="40" alt="@tolgabuyuktanir"></a>
+<a href="https://github.com/Daytonrad" title="@Daytonrad"><img src="https://github.com/Daytonrad.png?size=80" width="40" height="40" alt="@Daytonrad"></a>
+
+Sıradaki fotoğraf sizinki olabilir. [Katkı ↑](#katkı)
+
+## Atıf
+
+Mehteran'ı araştırmanızda ya da derslerinizde kullanırsanız lütfen şöyle atıf yapın:
+
+```bibtex
+@software{buyuktanir_mehteran_2026,
+  author  = {Büyüktanır, Tolga},
+  title   = {{Mehteran}: AI Workflows on Your Own Computer},
+  year    = {2026},
+  url     = {https://github.com/tolgabuyuktanir/Mehteran},
+  license = {MIT}
+}
+```
+
+<br>
+
+<div align="center">
+
+**Mehteran size zaman kazandırıyorsa, başkaları da bulabilsin diye ⭐ yıldız verin.**
+
+</div>
+
+---
+
+<div align="center">
+
+<sub>[PyYAML](https://pyyaml.org) (kodun içinde) ve, siz kurduğunuzda, şu araçlarla çalışır: tarayıcı adımlarını yürüten [Playwright MCP](https://github.com/microsoft/playwright-mcp), PDF metnini okuyan [Poppler](https://poppler.freedesktop.org), bozuk bir PDF'i onaran [qpdf](https://qpdf.sourceforge.io), taranmış belgeleri okuyan [Tesseract](https://github.com/tesseract-ocr/tesseract), ses kayıtlarını yazıya döken [whisper.cpp](https://github.com/ggml-org/whisper.cpp), PDF üreten [Typst](https://typst.app), EPUB ve Word denklemleri üreten [Pandoc](https://pandoc.org), yerel modelleri çalıştıran [Ollama](https://ollama.com) ve bilgisayarda Python yoksa onu getiren [uv](https://github.com/astral-sh/uv). Yazarlarına teşekkürler.</sub>
+
+[MIT](LICENSE) © 2026 Tolga Büyüktanır · [Belgeler](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr) · [Ayrıntılı başvuru](docs/mehteran.tr.md) · [Yol haritası](ROADMAP.md) · [Katkı](CONTRIBUTING.tr.md) · [Güvenlik](SECURITY.md) · [Discussions](https://github.com/tolgabuyuktanir/Mehteran/discussions)
 
 <sub>Mehteran bağımsız bir projedir. Anthropic, OpenAI ya da Google ile bağlantılı değildir; bu şirketler tarafından onaylanmamış ya da desteklenmemiştir. Claude ve Claude Code, Anthropic'in; Codex ve ChatGPT, OpenAI'ın; Gemini ve Antigravity, Google'ın ticari markalarıdır. Diğer adlar sahiplerinin ticari markalarıdır.</sub>
+
+</div>

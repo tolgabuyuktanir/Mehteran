@@ -1,37 +1,94 @@
-<p align="center"><img src="docs/assets/icon.svg" width="96" alt="Mehteran"></p>
+<div align="center">
 
-<h1 align="center">Mehteran</h1>
+<img src="docs/assets/icon.svg" width="80" alt="Mehteran">
 
-<p align="center"><b>AI workflows on your own computer, with the AI subscriptions you already have.</b><br>Free and open source · no extra bill · your files stay with you</p>
+# Mehteran
 
-<p align="center">
-  <a href="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml"><img src="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml/badge.svg" alt="Checks"></a>
-  <a href="https://www.npmjs.com/package/mehteran"><img src="https://img.shields.io/npm/v/mehteran?color=2151af&label=npm" alt="npm version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/tolgabuyuktanir/Mehteran?color=017272" alt="MIT license"></a>
-  <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-11213e" alt="macOS, Windows, Linux">
-  <img src="https://img.shields.io/badge/languages-18-2151af" alt="18 interface languages">
-  <a href="https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22good+first+issue%22"><img src="https://img.shields.io/github/issues/tolgabuyuktanir/Mehteran/good%20first%20issue?label=good%20first%20issues&color=57b6b6" alt="Good first issues"></a>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/banner-en-dark.png">
+  <img src="docs/assets/readme/banner-en.png" width="880" alt="Your AI workflows, on your computer. Read: PDF, Word, web, scans. Ask: Claude, Codex, Gemini, local. Check: a second model. Approve: you decide. Save: Word, PDF, HTML and more. Free and open source, no extra bill, your files stay with you, steps run one after another or in parallel.">
+</picture>
 
-<p align="center">
-  <a href="#quick-start"><b>Quick start</b></a> ·
-  <a href="#see-it-in-action">Screenshots</a> ·
-  <a href="#why-mehteran">Features</a> ·
-  <a href="#ai-tools">AI tools</a> ·
-  <a href="https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en">Docs</a> ·
-  <a href="#contributing">Contributing</a> ·
-  <a href="README.tr.md">Türkçe</a>
-</p>
+✍️ **New: [Describe a change](#one-app-three-ways).** Write in one sentence what should change in a workflow, and see the new steps before anything is saved.
 
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en"><img src="docs/assets/video/intro-en.jpg" width="720" alt="Mehteran intro video"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/?lang=en">▶ Watch Mehteran in 39 seconds</a></p>
+<a href="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml"><img src="https://github.com/tolgabuyuktanir/Mehteran/actions/workflows/checks.yml/badge.svg" alt="Checks"></a>
+<a href="https://www.npmjs.com/package/mehteran"><img src="https://img.shields.io/npm/v/mehteran?color=2151af&label=npm" alt="npm version"></a>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/tolgabuyuktanir/Mehteran?color=017272" alt="MIT license"></a>
+<img src="https://img.shields.io/badge/runs-on_your_computer-915c08" alt="Runs on your computer">
+<img src="https://img.shields.io/badge/languages-18-2151af" alt="18 interface languages">
+<a href="https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22good+first+issue%22"><img src="https://img.shields.io/github/issues/tolgabuyuktanir/Mehteran/good%20first%20issue?label=good%20first%20issues&color=57b6b6" alt="Good first issues"></a>
 
-Mehteran does repeatable jobs with AI on your own computer. For example, it reads a document, asks an AI for a summary, waits for your approval and saves the result as a Word file. It uses the AI account that you already have (Claude, ChatGPT or Google) or a free model on this computer. Mehteran itself is free.
+**English** · [Türkçe](README.tr.md)
+
+**Give it:** PDF · Word · EPUB · Excel · web pages · news feeds · scans (OCR) · recordings (speech to text)<br>
+**Get back:** Word · PDF · HTML · Markdown · EPUB · e-mail draft · JSON · CSV<br>
+**Works with:** [Claude Code · Codex · Antigravity CLI · Ollama · LM Studio](#connect-your-ai)
+
+**[Quick start ↓](#quick-start)** · [Watch the 50-second video ▶](https://tolgabuyuktanir.github.io/Mehteran/assets/video/literature-en.mp4) · [Docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en) · [What's new ↓](#whats-new)
+
+<br>
+
+<img src="docs/assets/readme/hero-en.gif" width="880" alt="A literature synthesis in Mehteran: three papers and a research question; Claude writes and Codex gives the second opinion; the papers are read in parallel; Codex checks every citation; the report lists agreements, contradictions and 18 claims corrected or qualified; it is saved as Word, HTML and Markdown">
+
+</div>
+
+## How a workflow works
+
+A workflow is a few steps. You can read every step, and every AI instruction is plain text that you can change.
+
+| | Step | What it does | Who does it |
+|:-:|---|---|---|
+| 📄 | **Read** | turns a PDF, Word file, web page, scan or recording into text | Mehteran, on this computer |
+| ✦ | **Ask** | sends that text with an instruction, and gets the answer | an AI model that you choose |
+| 🔁 | **Loop** | splits a long document into parts and asks about each part, in parallel | Mehteran and the model |
+| ✓ | **Check** | compares the answer with the source and lists what is wrong or missing | a second model (or the same one) |
+| ⑂ | **Branch** | takes one path or the other, by a rule or by asking a model | Mehteran or the model |
+| ✋ | **Approve** | waits until you accept the text | you |
+| ⬇ | **Save** | writes Word, PDF, HTML, Markdown, EPUB, an e-mail draft, JSON or CSV | Mehteran, on this computer |
+
+A step starts when the steps that it needs have finished. Steps that do not depend on each other run at the same time.
+
+## One app, three ways
+
+- **Run a ready workflow.** 78 templates in 10 categories: explain a contract, write meeting minutes, synthesize three papers, make an exam practice set, compare offers, search listing sites. [Quick start ↓](#quick-start)
+- **Build your own.** Write in a sentence what you need ("Describe it, I will build it"), and your installed AI tool builds the workflow. Then **Describe a change** in a sentence, and see the new steps, marked "New" and "Changed", before you save. Or draw the steps on a canvas, and test one step on its own.
+- **Let it run for you.** Run a workflow once per file, on a schedule, in the background, or from the command line: `./mehter run <workflow> --input name=value`. [Command line ↓](#command-line)
+
+## What you get
+
+- 💳 **No extra bill.** Mehteran uses the AI subscription that you already pay for, or a free model on this computer. It removes API keys from every model call, so a tool cannot bill an API account by accident. Mehteran itself is free.
+- 🔒 **Your files stay with you.** The interface runs only on `127.0.0.1`. Runs, results and settings are folders on your disk. A workflow marked "local only" sends no text off the computer.
+- ✓ **Answers that are checked.** Many workflows check their own work in a separate step, often with a second model from another company, and important steps wait for your approval.
+- 📄 **Real documents in and out.** Results open formatted, with tables and with graphs that Mehteran draws itself. Edit a result, compare two runs, and download it in the format that you need.
+- ⏳ **Usage limits do not break a run.** A step waits for the limit to reset, or continues with the next model of your order.
+- 🔎 **Searches sites for you.** Find home or car listings, or a hotel for your dates, compared in one table with links. A read-only browser does it; it never books or contacts anyone.
+- 🗂️ **Every run is kept.** Watch it live, stop and resume it, run it again with the same values.
+- 🌍 **Your language.** The interface has 18 languages, and the AI answers in the language that you choose.
 
 <table>
 <tr>
-<td width="33%" valign="top"><h3>🔒 Your files stay with you</h3>Runs, results and settings are folders on your disk. The interface runs only on this computer. A "local only" workflow sends no text away.</td>
-<td width="33%" valign="top"><h3>💳 No extra bill</h3>Mehteran uses the AI subscription that you already pay for, or a free model on this computer. It keeps no keys and charges nothing.</td>
-<td width="33%" valign="top"><h3>🧩 78 ready workflows</h3>Explain a contract, write meeting minutes, make exam questions, compare offers. Or describe your own job in one sentence.</td>
+<td width="50%"><img src="docs/assets/readme/en-setup.jpg" alt="The Setup tab after sign-in"></td>
+<td width="50%"><img src="docs/assets/readme/en-library.jpg" alt="The workflow library"></td>
+</tr>
+<tr>
+<td align="center"><sub>Choose your AI account and sign in with one button…</sub></td>
+<td align="center"><sub>…then pick one of 78 workflows, or describe your own.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/readme/en-parallel.jpg" alt="A run diagram: three papers read in parallel feed the synthesis step"></td>
+<td width="50%"><img src="docs/assets/readme/en-check.jpg" alt="The attribution check: reliable with corrections, with quotes from the synthesis and the paper"></td>
+</tr>
+<tr>
+<td align="center"><sub>Three papers are read in parallel, and Claude writes the synthesis…</sub></td>
+<td align="center"><sub>…then Codex checks every citation against the papers.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/readme/en-run.jpg" alt="A run in progress"></td>
+<td width="50%"><img src="docs/assets/readme/en-result.jpg" alt="The result of a run, with a graph"></td>
+</tr>
+<tr>
+<td align="center"><sub>Every step shows live, and you approve before anything is saved…</sub></td>
+<td align="center"><sub>…and the result opens formatted, ready as Word, HTML or Markdown.</sub></td>
 </tr>
 </table>
 
@@ -69,50 +126,20 @@ You need a Windows or Mac computer and an internet connection. You do not need t
 
 The [documentation](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en) explains everything else: settings, local models, schedules and the command line.
 
-## See it in action
+## Connect your AI
 
-<table>
-<tr>
-<td width="50%"><img src="docs/assets/readme/en-setup.jpg" alt="The Setup tab after sign-in"><br><b>1. Setup.</b> Choose your AI account and sign in with one button.</td>
-<td width="50%"><img src="docs/assets/readme/en-library.jpg" alt="The workflow library"><br><b>2. Choose.</b> Start from a ready workflow, or describe your own.</td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/assets/readme/en-run.jpg" alt="A run in progress"><br><b>3. Watch.</b> Every step shows live. You approve before anything is saved.</td>
-<td width="50%"><img src="docs/assets/readme/en-result.jpg" alt="The result of a run"><br><b>4. Get the result.</b> Read it, edit it, download it as Word, HTML or Markdown.</td>
-</tr>
-</table>
+Mehteran uses an AI tool that you already have, and there is no Mehteran account to create. The **Setup** tab asks **Which AI account do you have?**, installs the tool and signs you in.
 
-**Try more:** give the workflow **Meeting minutes and action items** your meeting notes. It drafts a summary and an action list, waits for your review, and saves the result as a Word, HTML or Markdown file. Or make hard SAT Math questions with **Exam practice set**: graphs and figures included, with a worked answer key and an independent check:
-
-<p align="center"><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-en.mp4"><img src="docs/assets/video/sat-en.jpg" width="560" alt="Video: hard SAT Math questions with graphs, made with Mehteran"></a><br><a href="https://tolgabuyuktanir.github.io/Mehteran/assets/video/sat-en.mp4">▶ Watch: hard SAT Math questions with graphs, in 47 seconds</a></p>
-
-[Run your first workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#run) · [Build your own workflow](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en#build)
-
-## Why Mehteran
-
-Mehteran turns the AI tools that you already use into repeatable workflows. A workflow reads a document, asks a model, checks the answer, lets a person approve and saves a Word or PDF file. Mehteran calls the AI through the command-line tools of your subscriptions (Claude Code, Codex, Antigravity CLI) or through models on this computer (Ollama, LM Studio, llama.cpp). It keeps no keys and no accounts of its own, and it charges nothing. You use your own plans, within their terms (see [Subscriptions and the providers' terms](#subscriptions-and-the-providers-terms)). It runs on macOS, Windows and Linux, in 18 interface languages.
-
-- 💳 **No extra bill.** Mehteran removes API keys from every model call, so a tool cannot bill an API account by accident. A billed API key is used only when you allow it for that tool.
-- 🔒 **Your files stay with you.** The interface runs only on `127.0.0.1`. Runs, results and settings are folders on your disk. A workflow marked "local only" sends no text off the computer.
-- 🧩 **78 ready-made templates** in 10 categories: web research, documents, writing, business, legal, education, exams, research, data and software. Four of them are marked "Experimental": they depend on websites or paid services that change often.
-- ✦ **"Describe it, I will build it"**: write in a sentence what you need. Your installed AI tool builds the workflow and saves it, and you watch its transcript while it works. You then see the instruction of every step and can edit it. Or draw the steps on a canvas (AI steps, conditions, loops, human approvals). "Test this step" runs one step on its own.
-- 🔎 **Searches sites for you**: find home or car listings, or a hotel for your dates, compared in one table with links. A read-only browser does it without a window; it never books or contacts anyone.
-- 📄 **Real documents in and out.** Reads PDF, Word, EPUB, Excel, web pages, scans (OCR) and recordings (speech to text). Saves Markdown, Word, HTML, PDF, EPUB, e-mail drafts, JSON and CSV.
-- ⏳ **Usage limits do not break a run.** A step waits for the limit to reset, or continues with the next model of your order.
-- 🗂️ **Every run is kept**: watch it live, stop and resume it, compare two runs, edit a result and export it.
-
-## AI tools
-
-| Tool | How it is paid | Where the text goes |
+| You have | Choose on the Setup tab | Where the text goes |
 |---|---|---|
-| Claude Code | Subscription (Claude Pro / Max) | Anthropic |
-| Codex CLI | Subscription (a paid ChatGPT plan) | OpenAI |
-| Antigravity CLI | Free Google account | Google |
-| Ollama | Local | Stays on this computer |
-| LM Studio, llama.cpp, vLLM (OpenAI-compatible local server) | Local | Stays on this computer |
-| Gemini CLI | API key (billed) | Google |
+| A Claude Pro or Max subscription | **Claude** (Claude Code) | Anthropic |
+| A paid ChatGPT plan | **ChatGPT** (Codex CLI) | OpenAI |
+| A Google account | **Google** (Antigravity CLI, free) | Google |
+| No subscription | **No subscription**: a free model on this computer (Ollama) | Stays on this computer |
+| LM Studio, llama.cpp or vLLM | **Local server (OpenAI-compatible)** | Stays on this computer |
+| A Gemini API key | **Gemini CLI** (billed by the key) | Google |
 
-You need at least one of them. The Setup tab installs the tools and signs you in. Each tool's card on the Setup tab shows how much of its usage limit is left; the header shows the same on every tab. With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key.
+Each tool's card on the Setup tab shows how much of its usage limit is left; the header shows the same on every tab. With `auto` as a step's model, Mehteran picks the first tool of your model order that is installed, signed in and not billed by an API key. A step can also use a different model than the others: for example, Claude writes and Codex checks.
 
 The optional local tools (Ollama, Tesseract OCR, Typst for PDF, Pandoc, whisper.cpp for speech to text, qpdf) are installed only when you ask, as pinned versions checked against SHA-256 sums.
 
@@ -258,6 +285,25 @@ The book translation app is no longer part of Mehteran. A computer that used it 
 
 </details>
 
+## What's new
+
+- **November 26, 2026:** describe a change to any workflow, and see the new steps before you save; one click from a template card to the visual editor.
+- **November 25, 2026:** graphs and figures in results, drawn by Mehteran; hard exam practice sets with graphs; text defaults in the language of the interface (thanks to [@Daytonrad](https://github.com/Daytonrad), [#12](https://github.com/tolgabuyuktanir/Mehteran/pull/12)).
+- **November 24, 2026:** version 0.2.0: setup in one question and one sign-in button, the Çini colours, all 18 interface languages complete, `mehter doctor` and `mehter eval`.
+- **November 23, 2026:** the remaining usage of each AI tool, on every tab.
+
+<details>
+<summary>Each update in full, and earlier ones</summary>
+
+- **November 26, 2026: describe a change.** On a workflow's **Instructions** tab, write in a sentence what should change. A model writes the workflow again from its file and your sentence. The new steps show first, marked "New" and "Changed", with the removed steps named; nothing is saved until you choose **Save the change** (your own workflow) or **Save as my copy** (a built-in template, which never changes). A change keeps what you did not ask to change: every step keeps its model, the instructions keep their language and the canvas keeps its layout. The template cards have a **Visual editor** button. A step that waits for a usage limit now writes the reason to its log first.
+- **November 25, 2026: figures in results.** A model can describe a graph or a geometric figure as data, and Mehteran draws it, in the page and in the HTML export; the model writes no drawing code. The exam practice set writes hard questions with graphs, solves each one without the answer key and fixes the questions where the two disagree. Text inputs can have a default per language. Thanks to [@Daytonrad](https://github.com/Daytonrad).
+- **November 24, 2026: version 0.2.0.** The Setup tab starts with one question, **Which AI account do you have?**, and one sign-in button. New colours, after İznik tiles. All 18 interface languages are complete (16 of them were translated with AI tools; [help review yours](ROADMAP.md)). `mehter doctor` checks the installed AI tools without a model call, and `mehter eval` runs an evaluation set. The tests run on Windows too.
+- **November 23, 2026: remaining usage.** Each AI tool's remaining usage shows as a bar with the time to its reset, on the Setup tab and in the header of every tab.
+- **November 16, 2026: results on the page.** A run's first result shows formatted on its page, with a download for each file.
+- **November 15, 2026: schedules, the background and browser steps.** Scheduled runs, a background service, read-only browser steps that search sites, and `npx mehteran`.
+
+</details>
+
 ## Contributing
 
 Mehteran is for people who do not write code, and you can help them without writing code too. **[ROADMAP.md](ROADMAP.md) lists things to do, each with a level and the skills it needs.** Many are small:
@@ -270,8 +316,43 @@ Mehteran is for people who do not write code, and you can help them without writ
 
 To start, write a comment in the item's issue ([all open items](https://github.com/tolgabuyuktanir/Mehteran/issues?q=is%3Aopen+label%3A%22help+wanted%22)). For an idea of your own, open an issue with "I want to help". Questions are always welcome, also in [Discussions](https://github.com/tolgabuyuktanir/Mehteran/discussions). [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run Mehteran from the source and the checks. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
-## License
+## Contributors
 
-MIT. See [LICENSE](LICENSE).
+<a href="https://github.com/tolgabuyuktanir" title="@tolgabuyuktanir"><img src="https://github.com/tolgabuyuktanir.png?size=80" width="40" height="40" alt="@tolgabuyuktanir"></a>
+<a href="https://github.com/Daytonrad" title="@Daytonrad"><img src="https://github.com/Daytonrad.png?size=80" width="40" height="40" alt="@Daytonrad"></a>
+
+Your picture can be the next one. [Contributing ↑](#contributing)
+
+## Cite
+
+If you use Mehteran in your research or teaching, please cite it as:
+
+```bibtex
+@software{buyuktanir_mehteran_2026,
+  author  = {Büyüktanır, Tolga},
+  title   = {{Mehteran}: AI Workflows on Your Own Computer},
+  year    = {2026},
+  url     = {https://github.com/tolgabuyuktanir/Mehteran},
+  license = {MIT}
+}
+```
+
+<br>
+
+<div align="center">
+
+**If Mehteran saves you time, ⭐ star it so that others can find it.**
+
+</div>
+
+---
+
+<div align="center">
+
+<sub>Built with [PyYAML](https://pyyaml.org) (included in the code), and, when you install them, [Playwright MCP](https://github.com/microsoft/playwright-mcp), which drives the browser steps, [Poppler](https://poppler.freedesktop.org), which reads a PDF's text, [qpdf](https://qpdf.sourceforge.io), which repairs a damaged PDF, [Tesseract](https://github.com/tesseract-ocr/tesseract), which reads scans, [whisper.cpp](https://github.com/ggml-org/whisper.cpp), which writes down recordings, [Typst](https://typst.app), which makes PDFs, [Pandoc](https://pandoc.org), which makes EPUB files and Word equations, [Ollama](https://ollama.com), which runs local models, and [uv](https://github.com/astral-sh/uv), which brings Python when the computer has none. Thanks to their authors.</sub>
+
+[MIT](LICENSE) © 2026 Tolga Büyüktanır · [Docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html) · [Full reference](docs/mehteran.md) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Discussions](https://github.com/tolgabuyuktanir/Mehteran/discussions)
 
 <sub>Mehteran is an independent project. It is not affiliated with, endorsed by or sponsored by Anthropic, OpenAI or Google. Claude and Claude Code are trademarks of Anthropic; Codex and ChatGPT are trademarks of OpenAI; Gemini and Antigravity are trademarks of Google. Other names are trademarks of their owners.</sub>
+
+</div>
