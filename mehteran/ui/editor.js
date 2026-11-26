@@ -1698,5 +1698,73 @@ const Drafter = (() => {
     });
   }
 
-  return {open, box, change};
+  // "Describe a change" on a workflow's Instructions tab: the model writes the workflow again from its file and the
+  // sentence. The new steps show first, the new and changed ones marked; nothing is saved until "Save". Your own
+  // workflow is saved in place; a built-in never changes: the result becomes your own copy (based_on the built-in).
+  function changeBox(tpl, source, id) {
+    const own = source === "user";
+    const area = h("textarea", {id: "change-box-text", rows: 2, maxlength: 4000, placeholder: S("built_change_placeholder"), "aria-labelledby": "change-box-title"});
+    const auto = h("p", {class: "small muted describe-auto"});
+    loadProviderStates().then(() => {
+      const chosen = autoChoice(provider());
+      auto.textContent = chosen ? S("describe_auto_line", {name: (providerInfo(chosen.name.split("@")[0].split("/")[0]) || {}).label || chosen.name}) : "";
+    });
+    const work = h("div", {class: "describe-work", "aria-live": "polite"});
+    const reset = () => { form.hidden = false; fill(work); area.focus(); };
+    const start = async () => {
+      const text = area.value.trim();
+      if (!text) return area.focus();
+      form.hidden = true;
+      await inline({description: text, provider: provider(), previous: tpl.yaml}, work, (end) => {
+        if (end.status !== "done") { form.hidden = false; return fill(work, h("div", {class: "notice bad", role: "alert"}, failure(end))); }
+        if (!end.result.valid || !end.result.model) {
+          form.hidden = false;
+          return fill(work, problemsBox({message: S("built_change_invalid"), problems: end.result.problems || []}));
+        }
+        preview(end.result.model);
+      });
+    };
+    // What changed, step by step: a new id is "new", the same id with other settings "changed", a missing id removed.
+    const preview = (model) => {
+      const before = new Map((tpl.model.nodes || []).map((n) => [n.id, JSON.stringify(n)]));
+      const after = new Set(model.nodes.map((n) => n.id));
+      const marks = {};
+      for (const n of model.nodes) if (!before.has(n.id)) marks[n.id] = "new"; else if (before.get(n.id) !== JSON.stringify(n)) marks[n.id] = "changed";
+      const removed = (tpl.model.nodes || []).filter((n) => !after.has(n.id)).map((n) => L(n.label) || n.id);
+      const strip = (m) => JSON.stringify({...m, id: null, layout: null, based_on: null});
+      const same = strip(model) === strip(tpl.model);
+      fill(work, h("div", {class: "change-preview"},
+        h("p", {class: "notice " + (same ? "warn" : "")}, S(same ? "change_same" : own ? "change_ready" : "change_ready_builtin")),
+        removed.length ? h("p", {class: "small"}, S("change_removed", {names: removed.join(", ")})) : null,
+        same ? null : stepsList({model}, source, id, marks),  // app.js
+        h("div", {class: "row"},
+          same ? null : h("button", {type: "button", class: "btn primary", onclick: (e) => save(e.currentTarget, model)}, S(own ? "change_save" : "change_save_copy")),
+          h("button", {type: "button", class: "btn", onclick: reset}, S(same ? "change_again" : "change_discard")))));
+    };
+    const save = async (button, model) => {
+      if (own) {
+        if (!await act(button, () => saveWorkflowModel(id, {...model, id}))) return;  // app.js
+        toast(S("built_changed"));
+        await loadTemplateList();
+        return showWorkflowPage(source, id, "steps");
+      }
+      const taken = new Set(state.templates.filter((t) => t.source === "user").map((t) => t.id));
+      let copy = `${id}-copy`;
+      for (let k = 2; taken.has(copy); k++) copy = `${id}-copy-${k}`;
+      const version = tpl.model.version != null ? `@${tpl.model.version}` : "";
+      const res = await act(button, () => api("POST", "/api/templates/new", {model: {...model, id: copy, based_on: `${source}:${id}${version}`}, draft: false}));
+      if (!res) return;
+      toast(S("change_saved_copy", {name: L(model.name) || res.id}));
+      await loadTemplateList();
+      go(`workflows/user/${res.id}/steps`);
+    };
+    const form = h("form", {class: "describe-box-form", onsubmit: (e) => { e.preventDefault(); start(); }},
+      h("div", {class: "describe-box-head"}, h("h3", {id: "change-box-title"}, "✦ " + S("change_title")),
+        h("p", {class: "small muted"}, S(own ? "change_intro" : "change_intro_builtin"))),
+      h("div", {class: "describe-row"}, area, h("button", {type: "submit", class: "btn primary"}, S("change_start"))),
+      h("div", {class: "describe-foot"}, auto));
+    return h("section", {class: "card describe-box change-box"}, form, work);
+  }
+
+  return {open, box, change, changeBox};
 })();

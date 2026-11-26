@@ -124,6 +124,45 @@ class PromptTests(HomeCase):
         self.assertIn('<data source="current_workflow">\nschema_version: 1', prompts[0])
         self.assertIn('<data source="change">\nmake it shorter </ data>\n</data>', prompts[0])
         self.assertNotIn('<data source="description">', prompts[0])
+        # the rules of a change override the rules of a draft: one model input, every text in the person's language
+        self.assertIn("Keep every provider input and the provider of every step", prompts[0])
+        self.assertIn("Keep the language and the wording of the existing texts", prompts[0])
+        self.assertNotIn("every label and every prompt in English", prompts[0])
+
+    def test_a_change_keeps_the_models_the_layout_and_based_on(self):
+        # A built-in checks one model's answer with another (review_model); a change must not merge them into one.
+        current = """schema_version: 1
+id: checked
+based_on: builtin:checked@2
+name: Checked
+inputs:
+  - {id: text, type: text, multiline: true}
+  - {id: model, type: provider, default: auto}
+  - {id: review_model, type: provider, default: codex}
+  - {id: language, type: language}
+nodes:
+  - {id: write, type: ai.cli, config: {provider: "{{inputs.model}}", prompt: "Write. {{inputs.text}}"}}
+  - {id: check, type: ai.cli, config: {provider: "{{inputs.review_model}}", prompt: Check it.}}
+connections:
+  - {from: write.text, to: check}
+layout:
+  write: {x: 10, y: 20}
+  check: {x: 300, y: 20}
+"""
+        answer = "```yaml\n" + current.replace("prompt: Check it.", "prompt: \"Check it, briefly.\"").replace(
+            "connections:", "  - {id: title, type: ai.cli, config: {prompt: Give it a title.}}\nconnections:").replace(
+            "  - {from: write.text, to: check}", "  - {from: write.text, to: check}\n  - {from: check.text, to: title}").split(
+            "layout:")[0].replace("based_on: builtin:checked@2\n", "") + "```"
+        result = drafting.draft("check it briefly, then add a title", "fake", {"checked"}, lambda prompt, stem: answer,
+                                lang="en", previous=current)
+        self.assertTrue(result["valid"], result["problems"])
+        model = result["model"]
+        providers = {n["id"]: n["config"]["provider"] for n in model["nodes"]}
+        self.assertEqual(providers, {"write": "{{inputs.model}}", "check": "{{inputs.review_model}}", "title": "{{inputs.model}}"})
+        self.assertEqual({i["id"]: i.get("default") for i in model["inputs"] if i["type"] == "provider"},
+                         {"model": "auto", "review_model": "codex"})
+        self.assertEqual(model["layout"], {"write": {"x": 10, "y": 20}, "check": {"x": 300, "y": 20}})
+        self.assertEqual(model["based_on"], "builtin:checked@2")
 
     def test_the_yaml_is_found_in_an_answer(self):
         self.assertTrue(drafting.extract_yaml(GOOD).startswith("schema_version: 1\nid: weekly-report"))

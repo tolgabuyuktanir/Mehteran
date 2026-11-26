@@ -669,7 +669,8 @@ async function duplicateWorkflow(source, id) {
   if (r) { toast(S("customized", {id: r.id})); await loadTemplateList(); go(`workflows/user/${r.id}/steps`); }
 }
 
-// The Instructions section: the description, the steps, then the editor link, the diagram and the YAML (folded).
+// The Instructions section: the description, the steps, "Describe a change" (editor.js), then the editor link, the
+// diagram and the YAML (folded).
 function stepsSection(tpl, source, id) {
   const graph = tpl.graph ? previewCanvas(tpl.graph) : null;
   return [
@@ -677,6 +678,7 @@ function stepsSection(tpl, source, id) {
     tpl.valid ? null : problemsBox({message: S(tpl.draft ? "draft_cannot_run" : "template_invalid", {count: tpl.problems.length}), problems: tpl.problems}),
     source === "builtin" ? h("p", {class: "small muted"}, S("builtin_edit_note")) : null,
     stepsList(tpl, source, id),
+    Drafter.changeBox(tpl, source, id),  // editor.js
     h("div", {class: "row"}, h("button", {type: "button", class: "btn", onclick: () => go(`workflows/edit/${source}/${id}`)}, S("open_visual_editor"))),
     graph ? h("details", {class: "drawer-sec", ontoggle: (e) => { if (e.currentTarget.open) graph.fit(); }}, h("summary", {}, S("graph")), graph) : null,
     h("details", {class: "drawer-sec placeholders"}, h("summary", {}, S("yaml_source")),
@@ -694,9 +696,10 @@ async function saveWorkflowModel(id, model) {
   return res.saved ? res : api("PUT", `/api/templates/user/${id}/model`, {model, drop_comments: true});
 }
 
-function stepsList(tpl, source, id) {
+// marks: {<step id>: "new" | "changed"} shows a badge on those steps (the preview of a described change; nothing to edit).
+function stepsList(tpl, source, id, marks) {
   const steps = (Array.isArray(tpl.model && tpl.model.nodes) ? tpl.model.nodes : []).filter((n) => n && typeof n === "object");
-  const editable = source === "user";
+  const editable = source === "user" && !marks;
   const instruction = (n, key) => {
     const box = h("div", {class: "step-instr"});
     const show = () => {
@@ -734,7 +737,8 @@ function stepsList(tpl, source, id) {
     return h("li", {class: "step-item" + (key ? " has-instr" : "")},
       h("span", {class: "step-n", "aria-hidden": "true"}, String(i + 1)),
       h("div", {class: "step-main"},
-        h("div", {class: "step-head"}, h("b", {}, L(n.label) || n.id), h("span", {class: "small muted"}, (GLYPH[n.type] ? GLYPH[n.type] + " " : "") + typeLabel(n.type))),
+        h("div", {class: "step-head"}, h("b", {}, L(n.label) || n.id), h("span", {class: "small muted"}, (GLYPH[n.type] ? GLYPH[n.type] + " " : "") + typeLabel(n.type)),
+          marks && marks[n.id] ? h("span", {class: "badge " + (marks[n.id] === "new" ? "good" : "warn")}, S("change_mark_" + marks[n.id])) : null),
         key ? instruction(n, key) : null));
   }));
 }
@@ -1400,8 +1404,8 @@ function runForm(tpl, source, id, priorRun) {
       submit.disabled = false;
     }
   }},
-  h("div", {class: "run-fields"}, tpl.description ? h("details", {},
-    h("summary", {}, S("details")), h("p", {class: "muted"}, L(tpl.description))) : null,
+  // The description is one or two sentences: shown as it is ("Details" further down folds the estimate).
+  h("div", {class: "run-fields"}, tpl.description ? h("p", {class: "muted run-desc"}, L(tpl.description)) : null,
     h("p", {class: "small muted"}, S("new_run_lede")),
     // warnings of the workflow (schema.warnings): shown before the run; they do not block it
     (tpl.warnings || []).length ? h("details", {class: "notice warn run-warnings"}, h("summary", {}, S("warnings_found", {count: tpl.warnings.length})),

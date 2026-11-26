@@ -281,6 +281,18 @@ def draft_prompt(description: str, lang: str) -> str:
         f"The person's description of the workflow:\n{nodes.wrap_data('description', description)}")
 
 
+# A change of a file that exists: the rules above are for a new draft (one model input, every text in the person's
+# language); a built-in may check one model's answer with another and keep its instructions in English.
+CHANGE_RULES = """\
+Rules of a change (they come first; where the rules above say otherwise, follow these):
+- Change only what the request asks for. Keep everything else exactly as it is: every input, and every step's id,
+  label, prompt, provider and other settings, every connection and every output.
+- Keep every provider input and the provider of every step, also when the file has several provider inputs (for
+  example a second model that checks the first one). A new step that calls a model uses the first provider input.
+- Keep the language and the wording of the existing texts. Write the texts that you add or that the change
+  rewrites in {language}.
+"""
+
 PREVIOUS_LIMIT = 60_000  # characters of the current workflow file sent with a change
 
 
@@ -290,10 +302,9 @@ def change_prompt(change: str, previous: str, lang: str) -> str:
     return (
         f"{nodes.DATA_PREAMBLE}You change a workflow file for Mehteran, a program that runs AI workflows on a person's own "
         f"computer. The current file and the change the person asked for are the data blocks at the end. Write the "
-        f"complete changed workflow file. Change only what the request requires. Keep existing IDs and connections "
-        f"unless the change requires updating them.\n\n{RULES}\n"
+        f"complete changed workflow file.\n\n{RULES}\n"
         f"Node types (* marks a required setting):\n{schema_summary()}\n\n"
-        f"Write name, description, every label and every prompt in {languages.english_name(lang)}. "
+        f"{CHANGE_RULES.format(language=languages.english_name(lang))}\n"
         f"Output only the YAML file in one ```yaml block, nothing before or after it.\n\n"
         f"The current workflow file:\n{nodes.wrap_data('current_workflow', previous[:PREVIOUS_LIMIT])}\n\n"
         f"The change the person asked for:\n{nodes.wrap_data('change', change)}")
@@ -329,14 +340,25 @@ def slug(text: str) -> str:
     return re.sub(r"^[^a-z]+", "", out).strip("-")[:56].strip("-") or "workflow"
 
 
-def normalize(data, taken: set[str], provider: str):
+def normalize(data, taken: set[str], provider: str, previous: dict | None = None):
     """Forces the style of a draft on the parsed answer, where its form allows (anything else is left for the check):
-    no layout or based_on, a free id, one model input that every model step uses, a "language" input."""
+    no layout or based_on, a free id, one model input that every model step uses, a "language" input.
+    previous (the parsed workflow that was changed): a change instead. Every step keeps the model it has (a workflow
+    may check one model's answer with another); only a new model step without one gets the first model input. The
+    layout of the steps that are still there and based_on come from previous; the language input is not touched."""
     if not isinstance(data, dict):
         return data
     data = copy.deepcopy(data)
     for key in ("layout", "based_on"):
         data.pop(key, None)
+    if previous is not None:
+        if isinstance(previous.get("based_on"), str):
+            data["based_on"] = previous["based_on"]
+        steps = data.get("nodes") if isinstance(data.get("nodes"), list) else []
+        kept = {node.get("id") for node in steps if isinstance(node, dict)}
+        layout = previous.get("layout") if isinstance(previous.get("layout"), dict) else {}
+        if layout := {k: v for k, v in layout.items() if k in kept}:
+            data["layout"] = layout
     data.setdefault("schema_version", schema.SCHEMA_VERSION)
     name = i18n.localized(data.get("name")) if isinstance(data.get("name"), (str, dict)) else ""
     base = data["id"] if isinstance(data.get("id"), str) and nodes.ID_RE.match(data["id"]) else slug(name)
@@ -360,6 +382,13 @@ def normalize(data, taken: set[str], provider: str):
              and "provider" in getattr(nodes.REGISTRY.get(node.get("type")) if isinstance(node.get("type"), str) else None,
                                        "config", {})
              and (node["type"] != "condition" or node["config"].get("operator") == "ai")]
+    if calls and previous is not None:  # a change: only a model step without a model gets one
+        missing = [node for node in calls if not str(node["config"].get("provider") or "").strip()]
+        model = next((item for item in inputs if isinstance(item, dict) and item.get("type") == "provider"
+                      and isinstance(item.get("id"), str)), None)
+        for node in missing:
+            node["config"]["provider"] = "{{inputs.%s}}" % model["id"] if model else "auto"
+        return data
     if calls:
         model = next((item for item in inputs if isinstance(item, dict) and item.get("type") == "provider"
                       and isinstance(item.get("id"), str)), None)
@@ -374,6 +403,8 @@ def normalize(data, taken: set[str], provider: str):
         model.pop("required", None)
         for node in calls:
             node["config"]["provider"] = "{{inputs.%s}}" % model["id"]
+    if previous is not None:
+        return data
     # the language of the answer: an input "language" of type language (nodes.language_line reads that id)
     language = next((item for item in inputs if isinstance(item, dict) and item.get("type") == "language"), None)
     named = next((item for item in inputs if isinstance(item, dict) and item.get("id") == "language"), None)
@@ -401,8 +432,9 @@ def _problems(error: schema.WorkflowError, lang: str) -> list[str]:
         i18n.set_request(before)
 
 
-def read_answer(answer: str, taken: set[str], provider: str) -> dict:
-    """An answer -> {"valid", "model", "yaml", "problems" (in the request's language), "english" (for the repair)}."""
+def read_answer(answer: str, taken: set[str], provider: str, previous: dict | None = None) -> dict:
+    """An answer -> {"valid", "model", "yaml", "problems" (in the request's language), "english" (for the repair)}.
+    previous: the parsed workflow that the answer changes (normalize)."""
     text = extract_yaml(answer)
     try:
         if len(text) > 1_000_000:
@@ -416,7 +448,7 @@ def read_answer(answer: str, taken: set[str], provider: str) -> dict:
     except schema.WorkflowError as e:
         return {"valid": False, "model": None, "yaml": text, "problems": _problems(e, i18n.current()),
                 "english": _problems(e, "en")}
-    data = normalize(data, taken, provider)
+    data = normalize(data, taken, provider, previous)
     try:
         text = schema.dump(data)
     except Exception:  # noqa: BLE001 - a form the writer does not know: the answer's own text is shown
@@ -441,11 +473,16 @@ def draft(description: str, provider: str, taken: set[str], ask_model, lang: str
     lang = lang or i18n.current()
     previous = str(previous or "").strip()
     prompt = change_prompt(description, previous, lang) if previous else draft_prompt(description, lang)
+    try:
+        changed = yamlio.load(previous) if previous else None
+    except yamlio.YAMLError:
+        changed = None
+    changed = changed if isinstance(changed, dict) else ({} if previous else None)
     answer = ask_model(prompt, "draft-1")
-    found, calls = read_answer(answer, taken, provider), 1
+    found, calls = read_answer(answer, taken, provider, changed), 1
     if not found["valid"]:
         answer = ask_model(repair_prompt(prompt, answer, found["english"]), "draft-2")
-        found, calls = read_answer(answer, taken, provider), 2
+        found, calls = read_answer(answer, taken, provider, changed), 2
     found.pop("english")
     return {**found, "calls": calls, "provider": provider}
 
