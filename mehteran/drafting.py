@@ -284,16 +284,26 @@ def draft_prompt(description: str, lang: str) -> str:
 PREVIOUS_LIMIT = 60_000  # characters of the current workflow file sent with a change
 
 
-def change_prompt(change: str, previous: str, lang: str) -> str:
+def change_prompt(change: str, previous: str, lang: str, *, revision: bool = False) -> str:
     """A change of a workflow that a model wrote before ("Change: make it shorter"): the same rules, the current file
     and the change, both as data."""
+    rules = RULES
+    language = f"Write name, description, every label and every prompt in {languages.english_name(lang)}."
+    if revision:
+        rules = (
+            f"Allowed top-level keys: {', '.join(schema.TOP_ORDER)}. Keep schema_version at 1. "
+            "Keep unchanged fields, including localized text, model settings, inputs, outputs and metadata. "
+            "Use the existing workflow's structure and the node registry to make only the requested changes. "
+            "Omit layout; the editor will place new steps and keep existing positions."
+        )
+        language = "Write new text in the language of the surrounding workflow text."
     return (
         f"{nodes.DATA_PREAMBLE}You change a workflow file for Mehteran, a program that runs AI workflows on a person's own "
         f"computer. The current file and the change the person asked for are the data blocks at the end. Write the "
         f"complete changed workflow file. Change only what the request requires. Keep existing IDs and connections "
-        f"unless the change requires updating them.\n\n{RULES}\n"
+        f"unless the change requires updating them.\n\n{rules}\n"
         f"Node types (* marks a required setting):\n{schema_summary()}\n\n"
-        f"Write name, description, every label and every prompt in {languages.english_name(lang)}. "
+        f"{language} "
         f"Output only the YAML file in one ```yaml block, nothing before or after it.\n\n"
         f"The current workflow file:\n{nodes.wrap_data('current_workflow', previous[:PREVIOUS_LIMIT])}\n\n"
         f"The change the person asked for:\n{nodes.wrap_data('change', change)}")
@@ -401,7 +411,7 @@ def _problems(error: schema.WorkflowError, lang: str) -> list[str]:
         i18n.set_request(before)
 
 
-def read_answer(answer: str, taken: set[str], provider: str) -> dict:
+def read_answer(answer: str, taken: set[str], provider: str, *, current: dict | None = None) -> dict:
     """An answer -> {"valid", "model", "yaml", "problems" (in the request's language), "english" (for the repair)}."""
     text = extract_yaml(answer)
     try:
@@ -416,7 +426,20 @@ def read_answer(answer: str, taken: set[str], provider: str) -> dict:
     except schema.WorkflowError as e:
         return {"valid": False, "model": None, "yaml": text, "problems": _problems(e, i18n.current()),
                 "english": _problems(e, "en")}
-    data = normalize(data, taken, provider)
+    if current is None:
+        data = normalize(data, taken, provider)
+    else:
+        # Identity, provenance and privacy belong to the workflow being edited.
+        for key in ("id", "based_on", "author", "privacy"):
+            if key in current:
+                data[key] = current[key]
+            else:
+                data.pop(key, None)
+        data.pop("layout", None)
+        layout = current.get("layout")
+        if isinstance(layout, dict) and isinstance(data.get("nodes"), list):
+            data["layout"] = {step["id"]: layout[step["id"]] for step in data["nodes"]
+                              if isinstance(step, dict) and isinstance(step.get("id"), str) and step["id"] in layout}
     try:
         text = schema.dump(data)
     except Exception:  # noqa: BLE001 - a form the writer does not know: the answer's own text is shown
@@ -429,7 +452,8 @@ def read_answer(answer: str, taken: set[str], provider: str) -> dict:
     return {"valid": True, "model": data, "yaml": text, "problems": [], "english": []}
 
 
-def draft(description: str, provider: str, taken: set[str], ask_model, lang: str | None = None, previous: str = "") -> dict:
+def draft(description: str, provider: str, taken: set[str], ask_model, lang: str | None = None, previous: str = "",
+          *, current: dict | None = None) -> dict:
     """The draft of a workflow for a description. ask_model(prompt, stem) -> the model's answer (one call each time).
     At most two calls: the draft, and one repair when the draft does not pass the check. previous: the YAML of a
     workflow to change; the description is then the change asked for."""
@@ -440,17 +464,24 @@ def draft(description: str, provider: str, taken: set[str], ask_model, lang: str
         raise DraftError(t("draft_too_long", limit=DESCRIPTION_LIMIT))
     lang = lang or i18n.current()
     previous = str(previous or "").strip()
-    prompt = change_prompt(description, previous, lang) if previous else draft_prompt(description, lang)
+    prompt = change_prompt(description, previous, lang, revision=current is not None) if previous else draft_prompt(description, lang)
     answer = ask_model(prompt, "draft-1")
-    found, calls = read_answer(answer, taken, provider), 1
+    found, calls = read_answer(answer, taken, provider, current=current), 1
     if not found["valid"]:
         answer = ask_model(repair_prompt(prompt, answer, found["english"]), "draft-2")
-        found, calls = read_answer(answer, taken, provider), 2
+        found, calls = read_answer(answer, taken, provider, current=current), 2
     found.pop("english")
     return {**found, "calls": calls, "provider": provider}
 
 
-def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[str], previous: str = "") -> str:
+def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[str], previous: str = "",
+                *, current: dict | None = None) -> str:
+    if current is not None:
+        previous = schema.dump({key: value for key, value in current.items() if key != "layout"})
+        if len(previous) > PREVIOUS_LIMIT:
+            raise DraftError(t("workflow_revision_too_large"))
+        if current.get("privacy") == "local":
+            provider = "auto:local"
     provider = checked_provider(engine, provider)
     description = str(description or "").strip()
     if not description:
@@ -459,7 +490,7 @@ def start_draft(jobs: Jobs, engine, description: str, provider: str, taken: set[
         raise DraftError(t("draft_too_long", limit=DESCRIPTION_LIMIT))
     return jobs.start("draft", lambda job: draft(description, provider, taken,
                                                   lambda prompt, stem: ask(engine, job, provider, prompt, stem),
-                                                  previous=previous))
+                                                  previous=previous, current=current))
 
 
 # --- "Test this step" ---------------------------------------------------------------------------------------

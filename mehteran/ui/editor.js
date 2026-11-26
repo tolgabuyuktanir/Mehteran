@@ -87,7 +87,7 @@ const Editor = (() => {
   async function load(source, id) {
     const tpl = await api("GET", `/api/templates/${source}/${id}`);
     Object.assign(ed, {source, id, isNew: false, fresh: false, origin: null, readOnly: false, storedYaml: tpl.yaml, sel: null, draft: Boolean(tpl.draft),
-      mode: "visual", history: [], future: [], problems: [], warnings: [], ports: {}, canvas: null, wfTab: "general", draftBy: "", palOpen: false, tries: {}});
+      mode: "visual", history: [], future: [], problems: [], warnings: [], ports: {}, canvas: null, wfTab: "general", draftBy: "", palOpen: false, tries: {}, revision: null});
     ed.model = obj(tpl.model) || {schema_version: 1, id, name: id, nodes: []};
     if (!obj(tpl.model)) { ed.mode = "yaml"; ed.yamlBase = tpl.yaml; }
     if (source === "builtin") {
@@ -127,7 +127,7 @@ const Editor = (() => {
   function startNew(model, opts = {}) {
     const id = String(model.id || "");
     Object.assign(ed, {source: "user", id, isNew: true, fresh: true, origin: null, draft: false, readOnly: false, storedYaml: null, sel: null, mode: "visual", problems: [], warnings: [], wfTab: "general",
-      ports: {}, canvas: null, model, draftBy: opts.draftBy || "", palOpen: true, tries: {}, valid: false});
+      ports: {}, canvas: null, model, draftBy: opts.draftBy || "", palOpen: true, tries: {}, valid: false, revision: null});
     if (nodes().length) ensureLayout(true);
     if (opts.yaml != null) { ed.mode = "yaml"; ed.yamlBase = opts.yaml; }
     ed.saved = "";
@@ -278,7 +278,7 @@ const Editor = (() => {
     const toolbar = h("div", {class: "ed-toolbar"},
       h("button", {type: "button", class: "btn small", onclick: () => go("workflows"), title: S("back_to_library")}, "← " + S("tab_workflows")),
       h("div", {class: "ed-titles"},
-        h("h2", {id: "wf-title"}, L(ed.model.name) || ed.id || S("new_workflow"),
+        h("h2", {id: "wf-title"}, h("span", {id: "wf-name"}, L(ed.model.name) || ed.id || S("new_workflow")),
           " ", h("span", {class: "badge warn", id: "ed-draft", hidden: !ed.draft}, S("draft"))),
         h("p", {id: "wf-sub", class: "small muted"}, ed.origin ? S("copy_note_short", {name: L(ed.origin.name) || ed.origin.id}) : h("code", {}, ed.id))),
       h("div", {class: "seg", role: "tablist", "aria-label": S("view_mode")},
@@ -328,6 +328,7 @@ const Editor = (() => {
     parts.push(empty ? S("status_no_steps") : ed.valid ? "✓ " + S("valid_short") + (ed.warnings.length ? ` · ${S("warnings_short", {count: ed.warnings.length})}` : "")
       : S("problems_found", {count: ed.problems.length}));
     if (!$("#board-status")) return;
+    $("#wf-name").textContent = L(ed.model.name) || ed.id || S("new_workflow");
     $("#board-status").textContent = parts.join(" · ");
     $("#board-status").className = "small " + (empty ? "muted" : !ed.valid ? "warn-text" : dirty() ? "warn-text" : "muted");
     if ($("#ed-draft")) $("#ed-draft").hidden = !ed.draft;
@@ -1006,6 +1007,7 @@ const Editor = (() => {
     category.setAttribute("list", "category-list");
     return [head, tabs,
       h("div", {class: "node-settings"},
+        !ed.readOnly && nodes().length ? (ed.revision || (ed.revision = revisionForm())) : null,
         localizedPair(m, "name", "name", S("workflow_name"), {required: true, only: "main"}),
         localizedPair(m, "description", "description", S("workflow_description"), {area: true, rows: 3, only: "main"})),
       advancedBox("workflow", [
@@ -1015,6 +1017,46 @@ const Editor = (() => {
         h("div", {class: "grid2"},
           field(S("version"), textControl(() => m.version, (v) => setOrDelete(m, "version", v.trim()), "version", {}), "version"),
           field(S("category"), h("span", {}, category, h("datalist", {id: "category-list"}, categories.map((c) => h("option", {value: c}, categoryLabel(c))))), "category"))])];
+  }
+
+  function revisionForm() {
+    const input = h("textarea", {id: "wf-revision", "data-key": "wf-revision", rows: 3, maxlength: 4000,
+      required: true, placeholder: S("workflow_revision_example")});
+    const submit = h("button", {type: "submit", class: "btn small"}, S("workflow_revision_start"));
+    const progress = h("div", {class: "stack", "aria-live": "polite"});
+    const form = h("form", {class: "sub-box stack", onsubmit: revise},
+      h("label", {class: "fld-label", for: input.id}, S("workflow_revision_label")),
+      h("p", {class: "small muted", id: "wf-revision-hint"}, S("workflow_revision_hint")),
+      input, h("div", {class: "row"}, submit), progress);
+    input.setAttribute("aria-describedby", "wf-revision-hint");
+    return form;
+
+    async function revise(event) {
+      event.preventDefault();
+      const description = input.value.trim();
+      if (!description || submit.disabled) return;
+      const hash = state.hash;
+      const snapshot = JSON.stringify(ed.model);
+      input.readOnly = submit.disabled = true;
+      fill(progress, h("p", {role: "status"}, S("describe_working_short")));
+      await Drafter.revise({description, model: JSON.parse(snapshot)}, progress, (end) => {
+        input.readOnly = submit.disabled = false;
+        if (end.status !== "done") return fill(progress, h("div", {class: "notice bad", role: "alert"}, Drafter.failure(end)));
+        if (!end.result.valid || !end.result.model) {
+          return fill(progress, problemsBox({message: S("built_change_invalid"), problems: end.result.problems || []}));
+        }
+        if (ed.revision !== form || state.hash !== hash || ed.mode !== "visual" || JSON.stringify(ed.model) !== snapshot) {
+          return fill(progress, h("div", {class: "notice warn", role: "status"}, S("workflow_revision_stale")));
+        }
+        ed.model = end.result.model;
+        ed.sel = null;
+        ed.wfTab = "general";
+        ensureLayout();
+        input.value = "";
+        fill(progress, h("p", {role: "status"}, S("workflow_revision_ready")));
+        changed();
+      });
+    }
   }
 
   function move(list, i, d) {
@@ -1520,7 +1562,15 @@ const Editor = (() => {
     if (e.key === "Escape" && !typing && ed.sel) select(null);
   }
 
-  function relabel() { if (ed.model) render(); }
+  function relabel() {
+    if (ed.revision) {
+      $("label", ed.revision).textContent = S("workflow_revision_label");
+      $("#wf-revision-hint", ed.revision).textContent = S("workflow_revision_hint");
+      $("#wf-revision", ed.revision).placeholder = S("workflow_revision_example");
+      $('button[type="submit"]', ed.revision).textContent = S("workflow_revision_start");
+    }
+    if (ed.model) render();
+  }
 
   return {init, open, dirty, relabel, startNew, followJob, current: () => (ed.model && ed.isNew && !nodes().length ? {id: ed.id, name: ed.model.name} : null)};
 })();
@@ -1698,5 +1748,5 @@ const Drafter = (() => {
     });
   }
 
-  return {open, box, change};
+  return {open, box, change, failure, revise: (body, el, onEnd) => inline({...body, provider: provider()}, el, onEnd)};
 })();

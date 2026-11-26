@@ -129,6 +129,21 @@ class PromptTests(HomeCase):
         self.assertTrue(drafting.extract_yaml(GOOD).startswith("schema_version: 1\nid: weekly-report"))
         self.assertEqual(drafting.extract_yaml("Sure.\nschema_version: 1\nid: x\n"), "schema_version: 1\nid: x\n")
 
+    def test_editor_revision_keeps_identity_layout_and_privacy_without_normalizing(self):
+        current = yamlio.load(drafting.EXAMPLE_TEXT)
+        current.update(based_on="builtin:polite-reply", privacy="local",
+                       layout={"reply": {"x": 17, "y": 30}, "tone": {"x": 100, "y": 80}})
+        answer = yamlio.load(drafting.EXAMPLE_TEXT)
+        answer["id"] = "different-id"
+        answer["nodes"][0]["config"]["provider"] = "claude/opus"
+        answer["layout"] = {"reply": {"x": 999, "y": 999}}
+        found = drafting.read_answer(schema.dump(answer), {current["id"]}, "fake/small", current=current)
+        self.assertTrue(found["valid"], found["problems"])
+        revised = found["model"]
+        for key in ("id", "based_on", "privacy", "layout", "inputs"):
+            self.assertEqual(revised[key], current[key])
+        self.assertEqual(revised["nodes"][0]["config"]["provider"], "claude/opus")
+
     def test_the_style_is_forced(self):
         found = drafting.read_answer(GOOD, {"weekly-report"}, "fake/small")
         self.assertTrue(found["valid"], found["problems"])
@@ -236,6 +251,23 @@ class DraftTests(JobCase):
         self.assertTrue(second.startswith(first))
         self.assertIn('<data source="previous_answer">', second)
         self.assertIn("nodes.a.type: unknown node type 'ai.magic'", second)  # the problem list, in English
+
+    def test_editor_revision_uses_the_current_model_and_keeps_the_result_unsaved(self):
+        current = yamlio.load(drafting.EXAMPLE_TEXT)
+        current["name"] = "Edited name in the editor"
+        updated = yamlio.load(drafting.EXAMPLE_TEXT)
+        updated["nodes"][0]["config"]["prompt"] = "Write a shorter reply."
+        self.answers(schema.dump(updated))
+        status, body = self.post("/api/editor/draft", {
+            "model": current, "description": "Shorten the reply", "provider": "drafter",
+        })
+        self.assertEqual(status, 200, body)
+        result = self.finish(body["id"])["result"]
+        self.assertTrue(result["valid"], result["problems"])
+        self.assertEqual(result["model"]["nodes"][0]["config"]["prompt"], "Write a shorter reply.")
+        self.assertIn("Edited name in the editor", self.sent()[0])
+        self.assertEqual(list((self.home / "templates").glob("*.yaml")), [])
+        self.assertEqual(self.app.engine.list(), [])
 
     def test_two_invalid_answers_give_the_text_and_its_problems(self):
         self.answers(BAD, BAD)

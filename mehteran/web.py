@@ -584,7 +584,7 @@ class App:
         taken = {item["id"] for item in templates.listing(self.home)}
         return self._editor_job(lambda: {"id": drafting.start_draft(
             self.editor_jobs, self.engine, str(body.get("description", "")), str(body.get("provider", "")), taken,
-            str(body.get("previous") or ""))})
+            str(body.get("previous") or ""), current=_model(body) if "model" in body else None)})
 
     def editor_try_source(self, m, body) -> dict:
         from . import drafting
