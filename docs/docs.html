@@ -233,7 +233,7 @@
 
   <section id="build">
     <h2>Build your own workflow</h2>
-    <p>Click <b>New workflow</b> and type a name. To change a template, click <b>Edit</b> on its card: a built-in template opens as your own unsaved copy.</p>
+    <p>Click <b>New workflow</b> and type a name. To change a template, click <b>Visual editor</b> on its card: a built-in template opens as your own unsaved copy. Or describe the change in a sentence (see below).</p>
     <h3>Start fast</h3>
     <p>The empty canvas offers three starters:</p>
     <ul>
@@ -243,6 +243,14 @@
       <li><b>Describe it, I will build it (editor)</b>: write what the workflow should do and choose a model. The model writes a first draft (one call, plus one repair call when the draft has problems). The draft opens in the editor unsaved. Check the instruction of every step before you run it.</li>
     </ul>
     <figure><div class="shot"><img src="assets/screens/en-editor.png" alt="The visual editor" width="1360" height="860" loading="lazy"></div><figcaption>The editor with a condition: the selected step's instruction and model are on the right.</figcaption></figure>
+    <h3>Describe a change</h3>
+    <p>On a workflow's <b>Instructions</b> tab, the box <b>Describe a change</b> is below the steps. Write in your own words what should change, for example "add a step at the end that lists the three key points", and click <b>Prepare the change</b>. A model (the automatic choice of your installed tools; the box names it) writes the workflow again from its current file and your sentence. You see its transcript while it works.</p>
+    <ul>
+      <li>The changed workflow shows first. New steps are marked <b>New</b>, changed steps <b>Changed</b>, and removed steps are named. Nothing is saved yet.</li>
+      <li>On your own workflow, <b>Save the change</b> saves it in place. On a built-in template, the button is <b>Save as my copy</b>: the result becomes your own workflow, and the template never changes. <b>Discard</b> keeps the workflow as it was.</li>
+      <li>A change keeps what you did not ask to change: every step keeps its model (also a second model that checks the first one), the existing instructions keep their language and wording, and the canvas keeps its layout.</li>
+      <li>A result that does not pass the check is not offered; the box shows its problems.</li>
+    </ul>
     <h3>Edit on the canvas</h3>
     <ul>
       <li>Click a step type in the palette to add it (a folded palette is one <b>+ Add step</b> button). It connects from the selected step and gets the run form's model input when it needs a model. <b>Undo</b> reverses it.</li>
@@ -653,7 +661,7 @@ outputs:
 
   <section id="tr-olustur">
     <h2>Kendi iş akışınızı oluşturma</h2>
-    <p><b>Yeni iş akışı</b>'na tıklayın ve bir ad yazın. Bir şablonu değiştirmek için kartındaki <b>Düzenle</b>'ye tıklayın: hazır şablon, kaydedilmemiş kendi kopyanız olarak açılır.</p>
+    <p><b>Yeni iş akışı</b>'na tıklayın ve bir ad yazın. Bir şablonu değiştirmek için kartındaki <b>Görsel düzenleyici</b>'ye tıklayın: hazır şablon, kaydedilmemiş kendi kopyanız olarak açılır. Ya da değişikliği bir cümleyle anlatın (aşağıya bakın).</p>
     <h3>Hızlı başlangıç</h3>
     <p>Boş tuval üç başlangıç sunar:</p>
     <ul>
@@ -663,6 +671,14 @@ outputs:
       <li><b>Anlat, oluşturayım (düzenleyici)</b>: iş akışının ne yapacağını yazın ve bir model seçin. Model ilk taslağı yazar (bir çağrı; taslakta sorun varsa bir onarım çağrısı daha). Taslak düzenleyicide kaydedilmemiş olarak açılır. Çalıştırmadan önce her adımın talimatını kontrol edin.</li>
     </ul>
     <figure><div class="shot"><img src="assets/screens/tr-editor.png" alt="Görsel düzenleyici" width="1360" height="860" loading="lazy"></div><figcaption>Koşullu bir akışla düzenleyici: seçili adımın talimatı ve modeli sağda.</figcaption></figure>
+    <h3>Değişikliği anlatın</h3>
+    <p>Bir iş akışının <b>Talimatlar</b> sekmesinde, adımların altında <b>Değişikliği anlatın</b> kutusu vardır. Neyin değişmesi gerektiğini kendi sözlerinizle yazın, örneğin "sona üç ana noktayı listeleyen bir adım ekle", ve <b>Değişikliği hazırla</b>'ya tıklayın. Bir model (kurulu araçlarınızın otomatik seçimi; kutu adını söyler) iş akışını mevcut dosyasından ve cümlenizden yeniden yazar. Çalışırken dökümünü görürsünüz.</p>
+    <ul>
+      <li>Önce değişen iş akışı görünür. Yeni adımlar <b>Yeni</b>, değişen adımlar <b>Değişti</b> olarak işaretlenir; kaldırılan adımların adı yazılır. Henüz hiçbir şey kaydedilmez.</li>
+      <li>Kendi iş akışınızda <b>Değişikliği kaydet</b> onu yerinde kaydeder. Hazır bir şablonda düğme <b>Kopyam olarak kaydet</b>'tir: sonuç kendi iş akışınız olur, şablon hiç değişmez. <b>Vazgeç</b> iş akışını olduğu gibi bırakır.</li>
+      <li>Bir değişiklik istemediğiniz şeyleri korur: her adım kendi modelini tutar (ilkini denetleyen ikinci bir model de), mevcut talimatlar dillerini ve ifadelerini, tuval de düzenini korur.</li>
+      <li>Denetimi geçmeyen bir sonuç önerilmez; kutu sorunlarını gösterir.</li>
+    </ul>
     <h3>Tuvalde düzenleme</h3>
     <ul>
       <li>Eklemek için paletteki bir adım türüne tıklayın (katlı palet tek bir <b>+ Adım ekle</b> düğmesidir). Yeni adım seçili adıma bağlanır; model gerektiriyorsa çalıştırma formunun model girdisini alır. <b>Geri al</b> bunu geri çevirir.</li>

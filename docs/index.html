@@ -66,14 +66,16 @@
         </div>
         <p class="hero-note" data-l="en">macOS, Windows and Linux · 78 ready-made templates · 18 interface languages</p>
         <p class="hero-note" data-l="tr">macOS, Windows ve Linux · 78 hazır şablon · 18 arayüz dili</p>
+        <p class="hero-note" data-l="en">✍️ <b>New:</b> describe a change to any workflow in one sentence, and see the new steps before you save.</p>
+        <p class="hero-note" data-l="tr">✍️ <b>Yeni:</b> bir iş akışındaki değişikliği tek cümleyle anlatın, kaydetmeden önce yeni adımları görün.</p>
       </div>
       <figure class="shot" style="margin:0">
         <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8766</span></div>
-        <!-- the intro video (39 s, with music): setup, the library, a run with the sample document, the result -->
-        <video data-l="en" src="assets/video/intro-en.mp4" poster="assets/video/intro-en.jpg" controls playsinline preload="none" width="1920" height="1080"
-          aria-label="Mehteran in 39 seconds: choose your AI account, pick a workflow, run it on a sample document, get the result"></video>
-        <video data-l="tr" src="assets/video/intro-tr.mp4" poster="assets/video/intro-tr.jpg" controls playsinline preload="none" width="1920" height="1080"
-          aria-label="39 saniyede Mehteran: yapay zekâ hesabınızı seçin, bir iş akışı seçin, örnek belgeyle çalıştırın, sonucu alın"></video>
+        <!-- a literature synthesis (50 s, with music): three papers read in parallel, Claude writes, Codex checks every citation -->
+        <video data-l="en" src="assets/video/literature-en.mp4" poster="assets/video/literature-en.jpg" controls playsinline preload="none" width="1920" height="1080"
+          aria-label="Three papers, two models, one checked report: the papers are read in parallel, Claude writes the synthesis, Codex checks every citation, and the report is saved as Word, HTML and Markdown"></video>
+        <video data-l="tr" src="assets/video/literature-tr.mp4" poster="assets/video/literature-tr.jpg" controls playsinline preload="none" width="1920" height="1080"
+          aria-label="Üç makale, iki model, denetlenmiş bir rapor: makaleler paralel okunur, sentezi Claude yazar, Codex her atfı denetler, rapor Word, HTML ve Markdown olarak kaydedilir"></video>
       </figure>
     </div>
   </section>
@@ -232,8 +234,8 @@
         <div>
           <h3 style="font-size:26px" data-l="en">Build it on a canvas, or in plain words</h3>
           <h3 style="font-size:26px" data-l="tr">Tuvalde kurun ya da düz cümlelerle anlatın</h3>
-          <p class="muted" style="margin-top:12px" data-l="en">The editor connects new steps for you and warns you about steps whose result nobody uses. "Test this step" runs a single step with your unsaved changes, so you can tune one instruction without running the whole workflow.</p>
-          <p class="muted" style="margin-top:12px" data-l="tr">Düzenleyici yeni adımları sizin için bağlar ve sonucunu kimsenin kullanmadığı adımlar için uyarır. "Bu adımı dene", kaydedilmemiş değişikliklerinizle tek bir adımı çalıştırır. Böylece bütün akışı çalıştırmadan tek bir talimatı ayarlayabilirsiniz.</p>
+          <p class="muted" style="margin-top:12px" data-l="en">The editor connects new steps for you and warns you about steps whose result nobody uses. "Test this step" runs a single step with your unsaved changes, so you can tune one instruction without running the whole workflow. Or describe a change in a sentence: you see the new steps, marked "New" and "Changed", before anything is saved.</p>
+          <p class="muted" style="margin-top:12px" data-l="tr">Düzenleyici yeni adımları sizin için bağlar ve sonucunu kimsenin kullanmadığı adımlar için uyarır. "Bu adımı dene", kaydedilmemiş değişikliklerinizle tek bir adımı çalıştırır. Böylece bütün akışı çalıştırmadan tek bir talimatı ayarlayabilirsiniz. Ya da değişikliği bir cümleyle anlatın: hiçbir şey kaydedilmeden önce "Yeni" ve "Değişti" olarak işaretlenmiş yeni adımları görürsünüz.</p>
         </div>
         <figure class="shot" style="margin:0">
           <div class="bar"><i></i><i></i><i></i><span>#workflows/edit</span></div>
@@ -287,30 +289,30 @@
   <!-- ======================================================================= templates -->
   <section class="band" id="workflow-tour">
     <div class="wrap">
-      <h2 data-l="en">From document to reviewed result</h2>
-      <h2 data-l="tr">Belgeden incelenmiş sonuca</h2>
+      <h2 data-l="en">Three papers. Two models. One checked report.</h2>
+      <h2 data-l="tr">Üç makale. İki model. Denetlenmiş bir rapor.</h2>
       <div class="tour-step">
         <div>
-          <h3 data-l="en">Choose what goes in</h3><h3 data-l="tr">Girdiyi seçin</h3>
-          <p data-l="en">In Document summary, choose a file and the level of detail. The run form shows the options for this workflow.</p>
-          <p data-l="tr">Belge özeti akışında dosyanızı ve ayrıntı düzeyini seçin. Çalıştırma formu bu akışın seçeneklerini gösterir.</p>
+          <h3 data-l="en">Read in parallel, write with sources</h3><h3 data-l="tr">Paralel okuyun, kaynağıyla yazın</h3>
+          <p data-l="en">Literature synthesis takes three papers and a research question. The papers are read at the same time; then Claude writes the synthesis and tags every claim with its paper: [P1], [P2], [P3].</p>
+          <p data-l="tr">Literatür sentezi üç makale ve bir araştırma sorusu alır. Makaleler aynı anda okunur; sonra sentezi Claude yazar ve her iddiayı makalesiyle etiketler: [P1], [P2], [P3].</p>
         </div>
         <figure class="shot tour-shot">
-          <img data-l="en" src="assets/screens/en-runform.png" width="1360" height="860" loading="lazy" alt="Document summary run form">
-          <img data-l="tr" src="assets/screens/tr-runform.png" width="1360" height="860" loading="lazy" alt="Belge özeti çalıştırma formu">
+          <img data-l="en" src="assets/readme/en-parallel.jpg" width="1360" height="765" loading="lazy" alt="The run diagram: three papers read in parallel feed the synthesis step, then the citation check">
+          <img data-l="tr" src="assets/readme/tr-parallel.jpg" width="1360" height="765" loading="lazy" alt="Çalıştırma çizimi: paralel okunan üç makale sentez adımına, ardından atıf denetimine bağlanır">
         </figure>
       </div>
       <div class="tour-step">
         <div>
-          <h3 data-l="en">Review what comes out</h3><h3 data-l="tr">Sonucu inceleyin</h3>
-          <p data-l="en">Open the summary in the reader. You can edit a copy, compare results, or download the original.</p>
-          <p data-l="tr">Özeti okuyucuda açın. Bir kopyasını düzenleyebilir, sonuçları karşılaştırabilir veya özgün çıktıyı indirebilirsiniz.</p>
+          <h3 data-l="en">A second model checks every citation</h3><h3 data-l="tr">İkinci bir model her atfı denetler</h3>
+          <p data-l="en">Codex, from another company, compares each tagged claim with the papers. It quotes both sides for every claim that it corrects or qualifies, and lists what the synthesis left out. The report is saved as Word, HTML and Markdown.</p>
+          <p data-l="tr">Başka bir şirketin modeli olan Codex, etiketli her iddiayı makalelerle karşılaştırır. Düzelttiği ya da sınırladığı her iddia için iki tarafı da alıntılar ve sentezin atladıklarını listeler. Rapor Word, HTML ve Markdown olarak kaydedilir.</p>
           <a data-l="en" href="docs.html?lang=en#run">Run your first workflow</a>
           <a data-l="tr" href="docs.html?lang=tr#tr-calistir">İlk iş akışınızı çalıştırın</a>
         </div>
         <figure class="shot tour-shot">
-          <img data-l="en" src="assets/screens/en-reader.png" width="1360" height="860" loading="lazy" alt="Document summary in the results reader">
-          <img data-l="tr" src="assets/screens/tr-reader.png" width="1360" height="860" loading="lazy" alt="Sonuç okuyucusunda belge özeti">
+          <img data-l="en" src="assets/readme/en-check.jpg" width="1360" height="765" loading="lazy" alt="The attribution check: reliable with corrections, quoting the synthesis and the paper">
+          <img data-l="tr" src="assets/readme/tr-check.jpg" width="1360" height="765" loading="lazy" alt="Atıf denetimi: düzeltmelerle güvenilir; sentezden ve makaleden alıntılarla">
         </figure>
       </div>
     </div>
