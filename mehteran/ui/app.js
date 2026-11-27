@@ -293,19 +293,73 @@ async function loadTemplateList() {
 }
 
 // The workflows run last (from the run history), newest first; only those still in the library.
-function recentTemplates(limit = 6) {
-  const seen = new Set(), out = [];
+// "Recent runs": the newest runs, each with its workflow (a run whose workflow is gone, or that the search hides, is
+// left out). The runs of one batch count once, by the newest. Two runs of one workflow with other files are two rows.
+function recentRuns(limit = 5) {
+  const batches = new Set(), out = [];
   for (const run of state.recentRuns || []) {
     // a run of a merged template names its old id: the template lists it under "aliases"
     const item = (state.templates || []).find((t) => `${t.source}:${t.id}` === run.template
       || (t.source === "builtin" && (t.aliases || []).some((old) => `builtin:${old}` === run.template)));
-    if (!item || !templateMatches(item) || seen.has(`${item.source}:${item.id}`)) continue;
-    seen.add(`${item.source}:${item.id}`);
-    out.push({item, at: run.created});
+    if (!item || !templateMatches(item) || (run.batch && batches.has(run.batch))) continue;
+    if (run.batch) batches.add(run.batch);
+    out.push({run, item});
     if (out.length === limit) break;
   }
   return out;
 }
+
+// The "Recent runs" list: where yesterday's result is, whether it finished, and how to do it again. While a shown run
+// is not final, the list is fetched again every 5 s (only on the Workflows tab, only while the page is visible) and
+// drawn again only when a row's status changed, so the keyboard focus in it stays where it is.
+const recentPoll = {timer: null, key: ""};
+const recentKey = (rows) => rows.map(({run}) => run.id + ":" + (run.waiting_quota ? "waiting_quota" : run.status)).join(",");
+
+function recentSection() {
+  const rows = recentRuns();
+  recentPoll.key = recentKey(rows);
+  if (!rows.length) return null;
+  const item = ({run, item: wf}) => {
+    const name = L(wf.name) || wf.id, title = run.label || run.main_input || name;
+    const status = run.waiting_quota ? "waiting_quota" : run.status, done = FINAL.has(run.status);
+    const error = run.status === "failed" && run.error ? String(run.error).split("\n")[0] : "";
+    const kind = wf.source === "user" ? "mine" : wf.category || "other";
+    return h("li", {class: `recent-item cat-${kind}`}, iconTile(kind),
+      h("div", {class: "recent-main"},
+        h("button", {type: "button", class: "linkish recent-title", onclick: () => go("runs/" + run.id)}, title),
+        h("span", {class: "small muted recent-sub"}, [title !== name ? name : null, fmtTime(run.created)].filter(Boolean).join(" · "),
+          error ? h("span", {class: "warn-text recent-error"}, " · " + error) : null)),
+      badge(status),
+      h("div", {class: "row recent-acts"},
+        h("button", {type: "button", class: "btn small", onclick: () => go("runs/" + run.id),
+          "aria-label": S(status === "succeeded" ? "results" : "open") + ": " + title}, S(status === "succeeded" ? "results" : "open")),
+        done ? h("button", {type: "button", class: "btn small", onclick: () => go(`runs/${run.id}/again`),
+          "aria-label": S("run_again") + ": " + title}, S("run_again")) : null));
+  };
+  const section = h("section", {class: "lib-recent", id: "lib-recent"},
+    h("div", {class: "lib-group-title recent-head"}, h("h3", {}, S("recent_runs")),
+      h("button", {type: "button", class: "linkish small", onclick: () => go("runs")}, S("all_runs"))),
+    h("ul", {class: "recent-list"}, rows.map(item)));
+  scheduleRecent(rows);
+  return section;
+}
+
+function scheduleRecent(rows) {
+  clearTimeout(recentPoll.timer);
+  if (rows.some(({run}) => !FINAL.has(run.status))) recentPoll.timer = setTimeout(refreshRecent, 5000);
+}
+
+async function refreshRecent() {
+  clearTimeout(recentPoll.timer);
+  const shown = document.getElementById("lib-recent");
+  if (!shown || state.tab !== "workflows" || state.libView !== "mine" || document.hidden) return;
+  try { state.recentRuns = await api("GET", "/api/runs"); } catch { return scheduleRecent(recentRuns()); }
+  const rows = recentRuns();
+  if (recentKey(rows) === recentPoll.key) return scheduleRecent(rows);
+  const next = recentSection();
+  if (next) shown.replaceWith(next); else shown.remove();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshRecent(); });
 
 function templateGroups(list) {
   const groups = new Map();
@@ -406,17 +460,10 @@ function renderLibrary() {
     const match = state.templates.filter(templateMatches);
     const favs = match.filter((t) => t.favorite), own = match.filter((t) => t.source === "user" && !t.draft && !t.favorite);
     const drafts = match.filter((t) => t.source === "user" && t.draft && !t.favorite);
-    const recent = recentTemplates();
-    total = recent.filter(({item}) => item.source !== "user" && !item.favorite).length;
+    // runs first: a running or failed run is the most urgent thing here; runs are not counted as workflows
+    const recent = recentSection();
+    if (recent) sections.push(recent);
     if (favs.length) { sections.push(group("lib-favorites", "★ " + S("favorites"), favs)); total += favs.length; }
-    // Like the cards: "Open" goes to the workflow's page, where it is run.
-    if (recent.length) sections.push(h("section", {class: "lib-recent"}, h("h3", {class: "lib-group-title"}, S("recently_used")),
-      h("div", {class: "recent-row"}, recent.map(({item, at}) => {
-        const open = () => go(`workflows/${item.source}/${item.id}`), name = L(item.name) || item.id;
-        return h("span", {class: "recent-chip"},
-          h("button", {type: "button", class: "linkish", onclick: open}, name, h("span", {class: "small muted"}, " · " + fmtTime(at))),
-          h("button", {type: "button", class: "btn small", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
-      }))));
     if (own.length) { sections.push(group("", S("my_templates"), own)); total += own.length; }
     if (drafts.length) { sections.push(group("", S("drafts"), drafts)); total += drafts.length; }
     if (!sections.length) sections.push(h("div", {class: "empty"}, searching ? S("no_templates_match") : S("mine_empty"),
@@ -443,23 +490,24 @@ function cardActions(star, edit, open, name) {
   const label = S("open_visual_editor") + ": " + name;
   return h("span", {class: "row"}, star,
     h("button", {type: "button", class: "btn small", onclick: edit, "aria-label": label, title: label}, S("visual_editor")),
-    h("button", {type: "button", class: "btn small primary", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
+    h("button", {type: "button", class: "btn small tpl-go", onclick: open, "aria-label": S("open") + ": " + name}, S("open")));
 }
 
 
 function templateCard(item) {
   const open = () => go(`workflows/${item.source}/${item.id}`);
   const kind = item.source === "user" ? "mine" : item.category || "other";
+  const badges = [
+    item.draft ? h("span", {class: "badge warn"}, S("draft")) : null,
+    item.tier === "experimental" ? h("span", {class: "badge warn", title: S("experimental_note")}, S("experimental")) : null,
+    item.source === "user" && item.category ? h("span", {class: "badge"}, categoryLabel(item.category)) : null,
+    item.valid || item.draft ? null : h("span", {class: "badge bad"}, S("invalid"))].filter(Boolean);
   return h("article", {class: `tpl-card cat-${kind}`},
     h("button", {type: "button", class: "tpl-open", onclick: open, "aria-label": S("details_of", {name: L(item.name) || item.id})},
       // The group heading names the category of a built-in; one of your own shows its category here.
-      h("span", {class: "tpl-head"}, iconTile(kind), h("span", {class: "tpl-badges"},
-        item.draft ? h("span", {class: "badge warn"}, S("draft")) : null,
-        item.tier === "experimental" ? h("span", {class: "badge warn", title: S("experimental_note")}, S("experimental")) : null,
-        item.source === "user" && item.category ? h("span", {class: "badge"}, categoryLabel(item.category)) : null,
-        item.valid || item.draft ? null : h("span", {class: "badge bad"}, S("invalid")))),
-      h("span", {class: "tpl-name"}, L(item.name) || item.id),
-      h("span", {class: "tpl-desc"}, L(item.description) || item.id)),
+      h("span", {class: "tpl-head"}, iconTile(kind), h("span", {class: "tpl-name"}, L(item.name) || item.id)),
+      h("span", {class: "tpl-desc"}, L(item.description) || item.id),
+      badges.length ? h("span", {class: "tpl-badges"}, badges) : null),
     h("div", {class: "tpl-foot"},
       h("span", {class: "small muted"}, needsLine(item)),
       cardActions(favoriteButton(item, renderLibrary),  // live.js
@@ -524,7 +572,8 @@ function welcomeTools(providers) {
   if (!data) return h("div", {class: "welcome-tools"}, h("p", {class: "small muted"}, S("welcome_checking")));
   const tools = providers.map((p) => data.tools.find((tool) => tool.provider === p) || p);
   const ready = tools.every((tool) => typeof tool === "string" || (tool.installed && tool.signed_in));
-  return h("div", {class: "welcome-tools"}, h("span", {class: "small fld-label"}, S("welcome_needs")),
+  const quiet = ready && tools.length;  // nothing to do: one quiet line, no label
+  return h("div", {class: "welcome-tools" + (quiet ? " ok" : "")}, quiet ? null : h("span", {class: "small fld-label"}, S("welcome_needs")),
     tools.length ? tools.map((tool) => (typeof tool === "string"  // a provider without a tool of its own (a local model)
       ? h("div", {class: "welcome-tool"}, h("span", {class: "welcome-tool-name"}, tool), localTag((INFO.providers || []).find((p) => p.name === tool)))
       : welcomeTool(tool, data.terminal)))
@@ -561,7 +610,8 @@ function drawWelcome() {
     const text = welcomeText(choice.id);
     if (!text) return null;
     const [kind, title, about, label] = text;
-    return h("article", {class: `tpl-card welcome-card cat-${kind}`},
+    const lead = choice.action === "run";  // the one choice that starts a run at once: the tall card, the one primary button
+    return h("article", {class: `tpl-card welcome-card cat-${kind}` + (lead ? " welcome-lead" : "")},
       h("div", {class: "welcome-main"}, h("span", {class: "tpl-head"}, iconTile(kind), h("h4", {class: "tpl-name"}, title)),
         h("p", {class: "tpl-desc"}, about)),
       welcomeTools(choice.providers),
@@ -572,7 +622,7 @@ function drawWelcome() {
             state.sampleRun = true;
             welcomeGo(choice, title);
           }}, S("welcome_sample")) : null,
-          h("button", {type: "button", class: "btn small primary", onclick: () => welcomeGo(choice, title)}, label))));
+          h("button", {type: "button", class: "btn small " + (lead ? "primary" : "tpl-go"), onclick: () => welcomeGo(choice, title)}, label))));
   };
   fill(panel,
     h("div", {class: "welcome-head"},

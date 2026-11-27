@@ -33,16 +33,19 @@ with TemporaryDirectory() as folder:
                     page.close()
                 for width in (375, 1280):
                     page = browser.new_page(viewport={"width": width, "height": 800}, locale="tr-TR")
-                    run = {"id": "old-run", "template": "builtin:document-summary", "created": 1700000000}
+                    run = {"id": "old-run", "template": "builtin:document-summary", "created": 1700000000, "status": "succeeded",
+                           "workflow_name": "Document summary", "main_input": "report.pdf"}
                     page.route("**/api/runs", lambda route: route.fulfill(json=[run]))
                     page.goto(f"http://127.0.0.1:{port}/#workflows")
                     page.wait_for_load_state("networkidle")
-                    recent = page.locator(".recent-chip")
+                    recent = page.locator(".recent-item")
+                    recent.first.wait_for(timeout=10000)  # the library draws after the templates and runs load
                     assert recent.count() == 1
+                    assert page.locator(".recent-item").get_by_role("button", name="Yeniden çalıştır").count() == 1, "A finished run offers Run again"
                     search = page.locator("#template-search")
                     search.fill("document-summary")
-                    assert recent.count() == 1, "Searching hides matching recent workflows"
-                    assert "1" in page.locator("#library-count").inner_text()
+                    assert recent.count() == 1, "Searching hides matching recent runs"
+                    assert page.locator("#library-count").inner_text() == "", "Runs are not counted as workflows"
                     search.fill("no match here")
                     assert recent.count() == 0
                     page.locator(".view-tab").last.click()

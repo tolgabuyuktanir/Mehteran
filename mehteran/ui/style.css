@@ -282,18 +282,35 @@ main:has(> .banner:not([hidden])) #workflow-page > .subnav { position: static; m
 .lib-group-title { font-size: 19px; display: flex; gap: 10px; align-items: baseline; margin-bottom: 12px; }
 .lib-group-title span { font: 13px ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif; }
 .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+/* A card is a glazed tile: flat, square-cornered, its category's colour (--cat) in a solid icon tile and in a quarter
+   "kös ripple" in the corner, the rings of a tile rosette and of the band's drum. No shadow, no lift. */
 .tpl-card {
-  display: flex; flex-direction: column; min-width: 0; background: var(--surface); border: 1px solid var(--line);
-  border-top: 4px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s;
+  --cat: var(--muted); --ripple: 48px;
+  position: relative; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; transition: border-color .15s;
 }
-.tpl-card:hover { border-color: var(--muted); box-shadow: 0 6px 18px rgb(var(--shadow-color) / .08); }
-.tpl-card.cat-mine, .tpl-card.cat-documents { border-top-color: var(--link); }
-.tpl-card.cat-research { border-top-color: var(--gemini); }
-.tpl-card.cat-legal { border-top-color: var(--gold); }
-.tpl-card.cat-business { border-top-color: var(--claude); }
-.tpl-card.cat-data { border-top-color: var(--gpt); }
-.tpl-card.cat-writing { border-top-color: var(--muted); }
-.tpl-card.cat-web { border-top-color: var(--gpt); }
+.tpl-card::after {
+  content: ""; position: absolute; inset-block-start: 0; inset-inline-end: 0; width: var(--ripple); height: var(--ripple);
+  pointer-events: none; opacity: .22; transition: opacity .15s;
+  background: radial-gradient(circle at 100% 0, transparent 0 16px, var(--cat) 16px 17.2px, transparent 17.2px 24.8px,
+    var(--cat) 24.8px 26px, transparent 26px 33.6px, var(--cat) 33.6px 34.8px, transparent 34.8px);
+}
+[dir="rtl"] .tpl-card::after { transform: scaleX(-1); }
+.tpl-card:hover, .tpl-card:focus-within { border-color: var(--cat); }
+.tpl-card:hover::after { opacity: .45; }
+.tpl-card .tpl-head { padding-inline-end: 36px; }  /* a long name wraps before the ripple */
+.tpl-card .tpl-icon { width: 36px; height: 36px; border-radius: 3px; background: var(--cat); color: var(--surface); }
+.cat-mine, .cat-documents, .lib-start .tpl-card { --cat: var(--link); }
+.cat-research, .cat-exams { --cat: var(--gemini); }
+.cat-legal, .cat-everyday { --cat: var(--gold); }
+.cat-business, .cat-developers { --cat: var(--claude); }
+.cat-data, .cat-web, .cat-education { --cat: var(--gpt); }
+.cat-writing { --cat: var(--muted); }
+/* "Open →": a quiet button with a visible edge (touch has no hover), filled on hover, focus and press */
+.tpl-go { border-color: var(--line); background: transparent; color: var(--link); font-weight: 600; }
+.tpl-go::after { content: " →"; }
+[dir="rtl"] .tpl-go::after { content: " ←"; }
+.tpl-card:hover .tpl-go, .tpl-go:focus-visible, .tpl-go:active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .tpl-open {
   flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 10px; border: 0; background: none; color: var(--ink);
   font: inherit; text-align: left; cursor: pointer; border-radius: var(--radius) var(--radius) 0 0;
@@ -568,14 +585,9 @@ dialog.confirm-dialog { width: min(520px, calc(100vw - 32px)); }
 .icon-data, .icon-education { color: var(--gpt); }
 .icon-developers { color: var(--claude); }
 .icon-exams { color: var(--gemini); }
-.tpl-card.cat-developers { border-top-color: var(--claude); }
-.tpl-card.cat-exams { border-top-color: var(--gemini); }
 /* the library views and the needs line */
 .view-switch { margin-bottom: 8px; }
 .view-tab { font-weight: 600; }
-.lib-start .tpl-card { border-top-color: var(--link); }
-.tpl-card.cat-everyday { border-top-color: var(--gold); }
-.tpl-card.cat-education { border-top-color: var(--gpt); }
 .rl-name .tpl-icon { width: 22px; height: 22px; border-radius: 6px; margin-inline-end: 6px; vertical-align: middle; }
 .rl-name .tpl-icon svg { width: 15px; height: 15px; }
 
@@ -683,9 +695,25 @@ details.advanced > .node-settings { gap: 12px; }
 .icon-btn.star.on { color: var(--gold); }
 .lib-favorites { margin-bottom: 8px; }
 .lib-recent { margin: 0 0 22px; }
-.recent-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.recent-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border: 1px solid var(--line); border-radius: 999px;
-  background: var(--surface); font-size: 14px; }
+/* "Recent runs": one bordered list, a row per run (app.js: recentSection) */
+.recent-head { justify-content: space-between; align-items: baseline; }
+.recent-head h3 { font-size: 19px; }
+.recent-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.recent-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 12px; }
+.recent-item + .recent-item { border-top: 1px solid var(--line); }
+.recent-item { --cat: var(--muted); }
+.recent-item .tpl-icon { width: 26px; height: 26px; border-radius: 3px; background: var(--cat); color: var(--surface); }
+.recent-head .linkish { color: var(--link); font-size: 13.5px; font-weight: 600; }
+.recent-item .tpl-icon svg { width: 16px; height: 16px; }
+.recent-main { display: flex; flex-direction: column; min-width: 0; }
+.recent-title { text-align: start; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-acts { gap: 6px; flex-wrap: nowrap; }
+@media (max-width: 600px) {
+  .recent-item { grid-template-columns: auto minmax(0, 1fr); }
+  .recent-item > .badge { justify-self: start; grid-column: 2; }
+  .recent-acts { grid-column: 2; }
+}
 .last-run { gap: 8px; align-items: center; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; }
 
 /* --- languages: the flag picker (langpicker.js) and right-to-left pages ------------------------------- */
@@ -850,7 +878,26 @@ main { min-height: calc(100vh - var(--top-h, 73px)); }
 .welcome-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .welcome-head h3 { font-size: 24px; }
 .welcome-head p { margin-top: 4px; }
-.welcome-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.welcome-grid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 14px; }
+.welcome-lead { grid-row: span 2; --ripple: 84px; }
+.welcome-lead::after { background: radial-gradient(circle at 100% 0, transparent 0 28px, var(--cat) 28px 30.1px, transparent 30.1px 43.4px,
+    var(--cat) 43.4px 45.5px, transparent 45.5px 58.8px, var(--cat) 58.8px 60.9px, transparent 60.9px); }
+.welcome-card:not(.welcome-lead)::after { display: none; }
+.welcome-card:not(.welcome-lead) .tpl-head { padding-inline-end: 0; }
+.welcome-lead .tpl-head { padding-inline-end: 62px; }
+.welcome-lead .tpl-icon { width: 48px; height: 48px; }
+.welcome-lead .tpl-icon svg { width: 26px; height: 26px; }
+.welcome-lead .tpl-name { font-size: 21px; }
+/* the tall card: its content in the middle, a larger text and full-size buttons, so the height reads as intended */
+.welcome-lead .welcome-main { flex: 1; justify-content: center; gap: 12px; padding: 22px 24px; }
+.welcome-lead .tpl-desc { font-size: 15.5px; line-height: 1.55; }
+.welcome-lead .welcome-tools { padding-inline: 24px; }
+.welcome-lead .tpl-foot { padding: 12px 24px 16px; justify-content: flex-start; }
+.welcome-lead .tpl-foot .row { flex-wrap: wrap; }
+.welcome-lead .tpl-foot .btn { font-size: 14.5px; padding: 8px 14px; }
+@media (max-width: 900px) { .welcome-lead .welcome-main { padding: 16px; } .welcome-lead .tpl-foot, .welcome-lead .welcome-tools { padding-inline: 16px; } }
+.welcome-tools.ok { border-top: 0; padding-block: 0 10px; flex: 0 0 auto; }
+@media (max-width: 900px) { .welcome-grid { grid-template-columns: minmax(0, 1fr); } .welcome-lead { grid-row: auto; } }
 .welcome-main { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 12px; }
 .welcome-card .tpl-desc { display: block; overflow: visible; }
 .welcome-tools { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); }
@@ -859,7 +906,7 @@ main { min-height: calc(100vh - var(--top-h, 73px)); }
 .welcome-tool-name { font-weight: 600; font-size: 13.5px; }
 .welcome-tool .badge { font-size: 11px; }
 .welcome-setup { color: var(--link); text-align: start; font-size: 13px; }
-.welcome-card .tpl-foot { padding-inline: 16px 12px; }
+.welcome-card .tpl-foot { padding-inline: 16px 12px; margin-top: auto; }  /* the footers line up whatever the text above */
 .lib-tools { scroll-margin-top: calc(var(--top-h, 73px) + 12px); }
 @media (max-width: 600px) { .welcome-panel { padding: 14px 12px 16px; } .welcome-head h3 { font-size: 21px; } }
 
@@ -1200,7 +1247,7 @@ pre.json-view { font: 13px/1.55 var(--mono); white-space: pre-wrap; overflow-wra
 }
 
 
-#video-settings-details { margin-block: 0 16px; }
+#video-settings-details { margin-bottom: 16px; }  /* the top margin is .setup-more's, as for the other sections */
 .video-settings-form { max-width: 38rem; }
 .video-settings-field input { flex: 1 1 14rem; width: 100%; min-width: 0; }
 .video-settings-field .row { flex-wrap: wrap; }
