@@ -26,7 +26,18 @@
 
 **[Hızlı başlangıç ↓](#hızlı-başlangıç)** · [50 saniyelik videoyu izleyin ▶](https://tolgabuyuktanir.github.io/Mehteran/assets/video/literature-tr.mp4) · [Belgeler](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=tr) · [Yenilikler ↓](#yenilikler)
 
-<br>
+</div>
+
+## Bir dakikada Mehteran
+
+- **Nedir?** Bilgisayarınızda çalışan ücretsiz bir uygulama. Bir işi iş akışı olarak yapar: okuyabileceğiniz birkaç adım.
+- **Ne yapar?** Dosyalarınızı okur, bir yapay zekâ modeline sorar, cevabı denetler, onayınızı bekler ve Word ya da PDF dosyası kaydeder.
+- **Neden kullanılır?** Talimatları bir kez yazarsınız. Sonra aynı işi tek tıklamayla tekrarlarsınız: bir dosya için ya da elli dosya için.
+- **Maliyeti nedir?** Ek ücret yok. Zaten ödediğiniz yapay zekâ aboneliğini ya da bilgisayarınızdaki ücretsiz bir modeli kullanır.
+- **Sohbet penceresinden farkı nedir?** Sohbet bir kez, tek bir cevap verir. İş akışı birkaç dosyayı paralel okur, ilk modeli ikinci bir modele denetletir ve her çalıştırmayı saklar.
+- **Otomasyon servislerinden farkı nedir?** Mehteran hesabı yok, Mehteran sunucusu yok, API anahtarı yok. Dosyalarınız ve sonuçlarınız diskinizde kalır.
+
+<div align="center">
 
 <img src="docs/assets/readme/hero-tr.gif" width="880" alt="Mehteran'da bir literatür sentezi: üç makale ve bir araştırma sorusu; Claude yazar, Codex ikinci görüşü verir; makaleler paralel okunur; Codex her atfı denetler; rapor uyuşmaları, çelişkileri ve düzeltilen ya da sınırlanan 16 iddiayı listeler; Word, HTML ve Markdown olarak kaydedilir">
 
@@ -47,6 +58,26 @@ Bir iş akışı birkaç adımdan oluşur. Her adımı okuyabilirsiniz; her yapa
 | ⬇ | **Kaydet** | Word, PDF, HTML, Markdown, EPUB, e-posta taslağı, JSON ya da CSV yazar | Mehteran, bu bilgisayarda |
 
 Bir adım, ihtiyaç duyduğu adımlar bitince başlar. Birbirine bağlı olmayan adımlar aynı anda çalışır.
+
+### Bir örnek: Literatür sentezi
+
+Üç makale ve bir araştırma sorusu verirsiniz. İş akışının tamamı şudur:
+
+```mermaid
+flowchart LR
+  q["❓ Araştırma sorusu"] --> s
+  p1["📄 Makale 1"] --> r1["Oku"]
+  p2["📄 Makale 2"] --> r2["Oku"]
+  p3["📄 Makale 3"] --> r3["Oku"]
+  r1 & r2 & r3 --> s["✦ Sentezi yaz<br><b>Claude</b>"]
+  s --> c["✓ Atıfları denetle<br><b>Codex</b>"]
+  r1 & r2 & r3 -.-> c
+  s --> m["Raporu birleştir"]
+  c --> m
+  m --> e["⬇ Raporu kaydet<br>Word · HTML · Markdown"]
+```
+
+Üç makale aynı anda okunur. Claude sentezi kaynak göstererek yazar. Codex her atfı makalelerle karşılaştırır ve düzeltmeleri listeler. Tek bir rapor alırsınız: Word, HTML ve Markdown.
 
 ## Tek uygulama, üç yol
 

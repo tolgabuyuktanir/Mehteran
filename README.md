@@ -26,7 +26,18 @@
 
 **[Quick start ↓](#quick-start)** · [Watch the 50-second video ▶](https://tolgabuyuktanir.github.io/Mehteran/assets/video/literature-en.mp4) · [Docs](https://tolgabuyuktanir.github.io/Mehteran/docs.html?lang=en) · [What's new ↓](#whats-new)
 
-<br>
+</div>
+
+## Mehteran in one minute
+
+- **What it is.** A free app that runs on your computer. It does a job as a workflow: a few steps that you can read.
+- **What it does.** It reads your files, asks an AI model, checks the answer, waits for your approval, and saves a Word or PDF file.
+- **Why use it.** You write the instructions once. Then you repeat the job with one click, for one file or for fifty.
+- **What it costs.** Nothing extra. It uses the AI subscription that you already pay for, or a free model on your computer.
+- **How it differs from a chat window.** A chat gives one answer, once. A workflow reads several files in parallel, lets a second model check the first, and keeps every run.
+- **How it differs from automation services.** No Mehteran account, no Mehteran server, no API key. Your files and results stay on your disk.
+
+<div align="center">
 
 <img src="docs/assets/readme/hero-en.gif" width="880" alt="A literature synthesis in Mehteran: three papers and a research question; Claude writes and Codex gives the second opinion; the papers are read in parallel; Codex checks every citation; the report lists agreements, contradictions and 18 claims corrected or qualified; it is saved as Word, HTML and Markdown">
 
@@ -47,6 +58,26 @@ A workflow is a few steps. You can read every step, and every AI instruction is 
 | ⬇ | **Save** | writes Word, PDF, HTML, Markdown, EPUB, an e-mail draft, JSON or CSV | Mehteran, on this computer |
 
 A step starts when the steps that it needs have finished. Steps that do not depend on each other run at the same time.
+
+### An example: Literature synthesis
+
+You give three papers and a research question. This is the whole workflow:
+
+```mermaid
+flowchart LR
+  q["❓ Research question"] --> s
+  p1["📄 Paper 1"] --> r1["Read"]
+  p2["📄 Paper 2"] --> r2["Read"]
+  p3["📄 Paper 3"] --> r3["Read"]
+  r1 & r2 & r3 --> s["✦ Write the synthesis<br><b>Claude</b>"]
+  s --> c["✓ Check the citations<br><b>Codex</b>"]
+  r1 & r2 & r3 -.-> c
+  s --> m["Combine the report"]
+  c --> m
+  m --> e["⬇ Save the report<br>Word · HTML · Markdown"]
+```
+
+The three papers are read at the same time. Claude writes the synthesis with sources. Codex compares every citation with the papers and lists the corrections. You get one report as Word, HTML and Markdown.
 
 ## One app, three ways
 
