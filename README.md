@@ -28,14 +28,23 @@
 
 </div>
 
-## Mehteran in one minute
+## Why Mehteran
 
-- **What it is.** A free app that runs on your computer. It does a job as a workflow: a few steps that you can read.
-- **What it does.** It reads your files, asks an AI model, checks the answer, waits for your approval, and saves a Word or PDF file.
-- **Why use it.** You write the instructions once. Then you repeat the job with one click, for one file or for fifty.
-- **What it costs.** Nothing extra. It uses the AI subscription that you already pay for, or a free model on your computer.
-- **How it differs from a chat window.** A chat gives one answer, once. A workflow reads several files in parallel, lets a second model check the first, and keeps every run.
-- **How it differs from automation services.** No Mehteran account, no Mehteran server, no API key. Your files and results stay on your disk.
+**Mehteran runs your AI jobs for you, the same way every time.**
+
+You already use Claude, ChatGPT or Gemini. But each time, you paste the document, write the prompt again, check the answer yourself and copy it into Word. In Mehteran, you set up these steps once, as a workflow. After that: choose your files, click **Start the run**, and get the finished file.
+
+|  | In a chat window | In Mehteran |
+|---|---|---|
+| **A job that you repeat** | You write the prompt again each time | One click runs the same steps |
+| **Many files** | One at a time, by hand | Read in parallel; up to 50 files in one go |
+| **Is the answer correct?** | You check it yourself | A separate step checks it against the source; important steps wait for your approval |
+| **The result** | Text that you copy | A Word, PDF or HTML file; every run is kept |
+| **The instructions** | Lost in an old conversation | Plain text that you can read and change |
+
+- **No extra bill.** Mehteran is free. It uses the AI subscription that you already pay for, or a free model on your computer.
+- **Your files stay with you.** No Mehteran account, no Mehteran server. Text goes only to the AI tool that you choose.
+- **Ready to use.** 78 workflows for documents, research, exams, business and software. Or describe your own in one sentence.
 
 <div align="center">
 

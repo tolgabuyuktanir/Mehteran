@@ -28,14 +28,23 @@
 
 </div>
 
-## Bir dakikada Mehteran
+## Neden Mehteran?
 
-- **Nedir?** Bilgisayarınızda çalışan ücretsiz bir uygulama. Bir işi iş akışı olarak yapar: okuyabileceğiniz birkaç adım.
-- **Ne yapar?** Dosyalarınızı okur, bir yapay zekâ modeline sorar, cevabı denetler, onayınızı bekler ve Word ya da PDF dosyası kaydeder.
-- **Neden kullanılır?** Talimatları bir kez yazarsınız. Sonra aynı işi tek tıklamayla tekrarlarsınız: bir dosya için ya da elli dosya için.
-- **Maliyeti nedir?** Ek ücret yok. Zaten ödediğiniz yapay zekâ aboneliğini ya da bilgisayarınızdaki ücretsiz bir modeli kullanır.
-- **Sohbet penceresinden farkı nedir?** Sohbet bir kez, tek bir cevap verir. İş akışı birkaç dosyayı paralel okur, ilk modeli ikinci bir modele denetletir ve her çalıştırmayı saklar.
-- **Otomasyon servislerinden farkı nedir?** Mehteran hesabı yok, Mehteran sunucusu yok, API anahtarı yok. Dosyalarınız ve sonuçlarınız diskinizde kalır.
+**Mehteran, yapay zekâ işlerinizi sizin yerinize, her seferinde aynı şekilde yapar.**
+
+Claude, ChatGPT ya da Gemini'yi zaten kullanıyorsunuz. Ama her seferinde belgeyi yapıştırıyor, istemi yeniden yazıyor, cevabı kendiniz kontrol ediyor ve Word'e kopyalıyorsunuz. Mehteran'da bu adımları bir kez, iş akışı olarak kurarsınız. Sonrası: dosyalarınızı seçin, **Çalıştırmayı başlat**'a tıklayın ve hazır dosyayı alın.
+
+|  | Sohbet penceresinde | Mehteran'da |
+|---|---|---|
+| **Tekrarladığınız iş** | İstemi her seferinde yeniden yazarsınız | Tek tıklama aynı adımları çalıştırır |
+| **Çok sayıda dosya** | Tek tek, elle | Paralel okunur; tek seferde 50 dosyaya kadar |
+| **Cevap doğru mu?** | Kendiniz kontrol edersiniz | Ayrı bir adım cevabı kaynakla karşılaştırır; önemli adımlar onayınızı bekler |
+| **Sonuç** | Kopyalayacağınız bir metin | Word, PDF ya da HTML dosyası; her çalıştırma saklanır |
+| **Talimatlar** | Eski bir sohbette kalır | Okuyup değiştirebileceğiniz düz metin |
+
+- **Ek fatura yok.** Mehteran ücretsizdir. Zaten ödediğiniz yapay zekâ aboneliğini ya da bilgisayarınızdaki ücretsiz bir modeli kullanır.
+- **Dosyalarınız sizde kalır.** Mehteran hesabı yok, Mehteran sunucusu yok. Metin yalnızca sizin seçtiğiniz yapay zekâ aracına gider.
+- **Kullanıma hazır.** Belge, araştırma, sınav, iş ve yazılım için 78 iş akışı. Ya da kendinizinkini tek cümleyle anlatın.
 
 <div align="center">
 
